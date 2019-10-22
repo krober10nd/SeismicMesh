@@ -1,0 +1,3 @@
+[submodule "thirdparty/segymat"]
+	path = thirdparty/segymat
+	url = https://github.com/cultpenguin/segymat.git
