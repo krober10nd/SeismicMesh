@@ -10,7 +10,9 @@ classdef edgefx
     %
     
     properties(Access=private)
-        wl  % size of elements (m) per speed of sound in sea water.
+        wl  % number of nodes given a wave with frequency f 
+        f   % maximum frequency of source injection
+        slp % number of nodes per gradient 
         hvp % mesh size as a function of seismic p-wavespeed.
         used % edge function keywords
         feat % geodata class instance
@@ -33,6 +35,8 @@ classdef edgefx
             
             % add name/value pairs
             addOptional(p,'wl',defval);
+            addOptional(p,'f',10); 
+            addOptional(p,'slp',0); 
             addOptional(p,'min_el',defval);
             addOptional(p,'max_el',defval);
             addOptional(p,'g',0.35);
@@ -43,7 +47,9 @@ classdef edgefx
             % store the inputs as a struct
             inp = p.Results;
             % get the fieldnames of the edge functions
-            inp = orderfields(inp,{'geodata','wl','min_el','max_el','g'});
+            inp = orderfields(inp,{'geodata','wl','f',...
+                                   'slp',...
+                                   'min_el','max_el','g'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
@@ -54,6 +60,18 @@ classdef edgefx
                             obj.wl = inp.(flds{i});
                         end
                         assert(obj.wl > 0); 
+                    case('f')
+                        obj.f = inp.(flds{i}); 
+                        if obj.f~=10
+                           obj.f = inp.(flds{i});  
+                        end
+                        assert(obj.f > 0); 
+                    case('slp')
+                          obj.slp = inp.(flds{i}); 
+                        if obj.slp~=0
+                           obj.slp = inp.(flds{i});  
+                        end
+                        assert(obj.f > 0); 
                     case('min_el')
                         obj.min_el = inp.(flds{i});
                         if obj.min_el~=0
@@ -94,6 +112,13 @@ classdef edgefx
                             obj = wlfx(obj);
                             obj.used{end+1} = 'wl';
                         end
+                    case('slp')
+                        obj.slp  = inp.(flds{i});
+                        if obj.slp(1)~=0
+                            disp('Building slope function...');
+                            obj = slpfx(obj);
+                            obj.used{end+1} = 'slp';
+                        end
                 end
             end
             
@@ -121,19 +146,28 @@ classdef edgefx
         
         function max_el = GetMaxEl(obj); max_el=obj.max_el; end 
         
+        function feat = GetFeat(obj); feat=obj.feat; end 
+
     end % end non-static public methods
     
     methods(Access=private)
         %% Wavelength edgefx.
-        % speed of sound in sea water gets wl element size (in m).
         function obj = wlfx(obj)
-            vp_sw = 1484; % m/s speed of sound in sea water
-            
             [yg,zg] = obj.feat.CreateStructGrid;
             Fvp = GetFvp(obj.feat);
-            tmp = Fvp(yg,zg);
-            obj.hvp=(obj.wl*tmp)./vp_sw;
+            vp = Fvp(yg,zg);
+            obj.hvp=(vp.*obj.f)./obj.wl;
         end
+        
+        function obj = slpfx(obj)
+            [yg,zg] = obj.feat.CreateStructGrid;
+            Fvp = GetFvp(obj.feat);
+            vp = Fvp(yg,zg);
+            % calculate the standard deviation of the neighborhood of each
+            % grid point
+            % NEED a function: given a point, give the index to its neighbors. 
+        end
+        
         
         
         function obj = finalize(obj)
