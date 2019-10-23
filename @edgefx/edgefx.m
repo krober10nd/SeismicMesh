@@ -16,8 +16,11 @@ classdef edgefx
         feat % geodata class instance
         min_el % minimum mesh size (m)
         max_el % maximum mesh size (m)
-        F % gridded interpolant mesh size function
         g % mesh size gradation rate (decimal percent)
+    end
+    
+    properties(Access=public)
+        F % gridded interpolant mesh size function
     end
     
     
@@ -188,28 +191,6 @@ classdef edgefx
         function [ffun,flag] = limgradStruct(ny,xeglen,yeglen,ffun,fdfdx,imax)
             %LIMGRAD impose "gradient-limits" on a function defined over
             %an undirected graph.
-            %   [FNEW] = LIMGRADStruct(NY,EGLEN,FFUN,DFDX,IMAX) computes a
-            %   "gradient-limited" function FNEW on the undirected structured graph
-            %   that has Ny rows when supplied with a fixed edgelength EGLEN.
-            %   It uses an 8 node stencil to relax the gradients.
-            %   FFUN must be numbered such that rows vary the fastest.
-            %   Gradients are limited over the graph edges, such that
-            %
-            %       ABS(FNEW(N2)-FNEW(N1)) <= ELEN(II) * DFDX,
-            %
-            %   where N1=EDGE(II,1) and N2=EDGE(II,2) are the two nodes
-            %   in the II-TH edge. An iterative algorithm is used, swee-
-            %   ping over an "active-set" of graph edges until converge-
-            %   nce is achieved. A maximum of IMAX iterations are done.
-            %
-            %   [FNEW,FLAG] = LIMGRADStruct(...) also returns a boolean FLAG,
-            %   with FLAG=TRUE denoting convergence.
-            
-            
-            %   Darren Engwirda : 2017 --
-            %   Email           : engwirda@mit.edu
-            %   Last updated    : 18/04/2017
-            % ---------------------
             %         Modified for a structred graph with eight node stencil
             %         Last updated: 24/06/2017
             %         Email       : krober10@nd.edu

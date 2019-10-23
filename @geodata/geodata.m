@@ -16,6 +16,10 @@ classdef geodata
         gridspace    % grid space (in m)
     end
     
+    properties(Access=public)
+        bbox % domain corners left, right, bottom, top.
+    end
+        
     methods(Access=public)
         % default class constructor
         % GEODATA construct the default class.
@@ -99,6 +103,8 @@ classdef geodata
                 [obj.ny,obj.nz]=size(tmp) ;
                 obj.x0y0=[0,0];
                 [yg,zg]=CreateStructGrid(obj);
+                obj.bbox = [min(yg(:)) max(yg(:))
+                            min(zg(:)) max(zg(:))];
                 obj.Fvp=griddedInterpolant(yg,zg,tmp) ;
                 clearvars yg zg tmp;
                 disp(['INFO: SUCCESFULLY READ IN FILE',obj.fname]);
