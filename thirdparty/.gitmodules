@@ -1,6 +1,0 @@
-[submodule "thirdparty/segymat"]
-	path = thirdparty/segymat
-	url = https://github.com/cultpenguin/segymat.git
-[submodule "thirdparty/distmesh"]
-	path = thirdparty/distmesh
-	url = https://github.com/ionhandshaker/distmesh.git
