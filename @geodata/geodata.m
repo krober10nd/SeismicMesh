@@ -87,8 +87,8 @@ classdef geodata
             set(gca,'FontSize',16) ;
         end
         
-        function [xg,yg]=CreateStructGrid(obj)
-            [xg,yg] = ndgrid(obj.x0y0(1) + (0:obj.ny-1)'*obj.gridspace, ...
+        function [yg,zg]=CreateStructGrid(obj)
+            [yg,zg] = ndgrid(obj.x0y0(1) + (0:obj.ny-1)'*obj.gridspace, ...
                 obj.x0y0(2) + (0:obj.nz-1)'*obj.gridspace);
         end
         

@@ -13,9 +13,9 @@ clearvars; close all; clc;
 % ensure path is set correctly
 libpath
 %%
-MIN_EL = 10 ; 
+MIN_EL = 25 ; 
 MAX_EL = 5e3 ;
-WL     = 10 ; 
+WL     = 25 ; 
 GRADE  = 0.90 ; 
 GRIDSPACE = 1.25 ; 
 FNAME = 'MODEL_P-WAVE_VELOCITY_1.25m.segy'; 
@@ -46,7 +46,9 @@ FIT=[];
 [ P, T, STAT ] = distmesh( fd, fh, MIN_EL, gdat.bbox', P_FIX, E_FIX, IT_MAX, FID, FIT ) ;
 
 
-patch( 'vertices', P, 'faces', T, 'facecolor', [.9, .9, .9] )
+P(:,2)=P(:,2)*-1;
+
+figure; patch( 'vertices', P, 'faces', T, 'facecolor', [.99 .99 .99] )
 
 
 
