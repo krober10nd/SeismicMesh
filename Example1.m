@@ -16,9 +16,9 @@ libpath
 MIN_EL = 25 ; 
 MAX_EL = 5e3 ;
 WL     = 500 ;
-SLP    = 10 ; 
+SLP    = 100 ; 
 FREQ   = 15 ; % maximum shot record frequency
-GRADE  = 0.90 ; 
+GRADE  = 0.45 ; 
 GRIDSPACE = 1.25 ; 
 FNAME = 'MODEL_P-WAVE_VELOCITY_1.25m.segy'; 
 %%
@@ -27,7 +27,7 @@ gdat = geodata('segy',FNAME,'gridspace',GRIDSPACE) ;
 %plot(gdat) % visualize p-wave velocity model
 
 ef = edgefx('geodata',gdat,...
-    'wl',WL,'f',FREQ,'slp',SLP,...
+    'slp',SLP,...%'wl',WL,'f',FREQ,'
     'min_el',MIN_EL,'max_el',MAX_EL,...
     'g',GRADE);
 

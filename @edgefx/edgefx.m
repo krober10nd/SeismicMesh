@@ -12,8 +12,9 @@ classdef edgefx
     properties(Access=private)
         wl  % number of nodes given a wave with frequency f 
         f   % maximum frequency of source injection
-        slp % number of nodes per gradient 
         hvp % mesh size as a function of seismic p-wavespeed.
+        slp % number of nodes per gradient 
+        hslp % mesh size as a function of seismic p-wavespeed gradient
         used % edge function keywords
         feat % geodata class instance
         min_el % minimum mesh size (m)
@@ -37,8 +38,8 @@ classdef edgefx
             addOptional(p,'wl',defval);
             addOptional(p,'f',10); 
             addOptional(p,'slp',0); 
-            addOptional(p,'min_el',defval);
-            addOptional(p,'max_el',defval);
+            addOptional(p,'min_el',0);
+            addOptional(p,'max_el',inf);
             addOptional(p,'g',0.35);
             addOptional(p,'geodata',defval);
             
@@ -58,32 +59,32 @@ classdef edgefx
                         obj.wl = inp.(flds{i});
                         if obj.wl~=0
                             obj.wl = inp.(flds{i});
+                            assert(obj.wl > 0);
                         end
-                        assert(obj.wl > 0); 
                     case('f')
-                        obj.f = inp.(flds{i}); 
+                        obj.f = inp.(flds{i});
                         if obj.f~=10
-                           obj.f = inp.(flds{i});  
+                            obj.f = inp.(flds{i});
+                            assert(obj.f > 0);
                         end
-                        assert(obj.f > 0); 
                     case('slp')
-                          obj.slp = inp.(flds{i}); 
+                        obj.slp = inp.(flds{i});
                         if obj.slp~=0
-                           obj.slp = inp.(flds{i});  
+                            obj.slp = inp.(flds{i});
+                            assert(obj.f > 0);
                         end
-                        assert(obj.f > 0); 
                     case('min_el')
                         obj.min_el = inp.(flds{i});
                         if obj.min_el~=0
                             obj.min_el = inp.(flds{i});
+                            assert(obj.min_el > 0);
                         end
-                        assert(obj.min_el > 0);
                     case('max_el')
-                        obj.max_el = inp.(flds{i}); 
-                        if obj.max_el~=0
-                            obj.max_el = inp.(flds{i}); 
+                        obj.max_el = inp.(flds{i});
+                        if ~isinf(obj.max_el)
+                            obj.max_el = inp.(flds{i});
+                            assert(obj.max_el > obj.min_el);
                         end
-                        assert(obj.max_el > obj.min_el);
                     case('geodata')
                         if isa(inp.(flds{i}),'geodata')
                             obj.feat = inp.(flds{i});
@@ -158,36 +159,55 @@ classdef edgefx
             vp = Fvp(yg,zg);
             obj.hvp=(vp.*obj.f)./obj.wl;
         end
-        
+        %% slope edge function
         function obj = slpfx(obj)
             [yg,zg] = obj.feat.CreateStructGrid;
             Fvp = GetFvp(obj.feat);
             vp = Fvp(yg,zg);
-            % calculate the standard deviation of the neighborhood of each
-            % grid point
-            % NEED a function: given a point, give the index to its neighbors. 
+            tmp = stdfilt(vp); % uses a default filter of 3x3
+            tmp = (1-tmp./max(tmp(:)));
+            obj.hslp = tmp*obj.slp + obj.min_el;
         end
-        
-        
+
         
         function obj = finalize(obj)
             ny = obj.feat.GetNy; 
             nz = obj.feat.GetNz; 
             gsp = obj.feat.GetGridspace; 
             
-            disp('Enforcing size bounds...'); 
+            % package the edge functions into a known order.
+            counter = 0;
+            hh = zeros([ny,nz]);
+            for i = 1 : numel(obj.used)
+                type = obj.used{i};
+                switch type
+                    case('wl')
+                        counter = counter + 1;
+                        hh(:,:,counter) = obj.hvp;
+                        obj.hvp = single(obj.hvp);
+                    case('slp')
+                        counter = counter + 1;
+                        hh(:,:,counter) = obj.hslp;
+                        obj.hslp = single(obj.hslp);
+                    otherwise
+                        error('FATAL:  Could not finalize edge function');
+                end
+            end
             
-            hh = obj.hvp ; 
-            hh(hh<obj.min_el)=obj.min_el;
-             hh(hh>obj.max_el)=obj.max_el;
-
+            [hh_m] = min(hh,[],3);
+            clearvars hh
+            
+            disp('Enforcing size bounds...');
+            hh_m(hh_m<obj.min_el)=obj.min_el;
+            hh_m(hh_m>obj.max_el)=obj.max_el;
+            
             disp('Relaxing the mesh size gradient...');
             hfun = zeros(ny*nz,1);
             nn = 0;
             for ipos = 1 : ny
                 for jpos = 1 : nz
                     nn = nn + 1;
-                    hfun(nn,1) = hh(ipos,jpos);
+                    hfun(nn,1) = hh_m(ipos,jpos);
                 end
             end
             dy = repmat(gsp,[1,nz]); % for gradient function
@@ -205,16 +225,13 @@ classdef edgefx
             for ipos = 1 : ny
                 for jpos = 1 : nz
                     nn = nn+1;
-                    hh(ipos,jpos) = hfun(nn);
+                    hh_m(ipos,jpos) = hfun(nn);
                 end
             end
             clearvars hfun fdfdx
             
-            % 
-            hh_m=hh;
-            
-            [xg,yg]=obj.feat.CreateStructGrid;
-            obj.F = griddedInterpolant(xg,yg,hh_m,'linear','nearest');
+            [yg,zg]=obj.feat.CreateStructGrid;
+            obj.F = griddedInterpolant(yg,zg,hh_m,'linear','nearest');
             clearvars xg yg
 
         end
@@ -333,6 +350,39 @@ classdef edgefx
                 
             end
         end % end limgradstruct 
-    end %% end static methods    
+        
+        function [IX,IX1,IX2] = FindLinearIdx(x,y,lon,lat)
+            % given points in vectors x,y (np x 1) find their linear indices IX (np x 1)
+            % from a matrix of x-locations X and y-locations Y of both size nx columns and ny rows.
+            % lon and lat must be matrices created by ndgrid.
+            % kjr, 20171210 chl, und.
+            ny = size(lon,1);
+            nx = size(lon,2);
+            np = numel(x);
+            
+            X = reshape(lon,[],1);
+            Y = reshape(lat,[],1);
+            
+            x = x(:);
+            y = y(:);
+            
+            dx  = X(2)-X(1);
+            dy  = dx;
+            
+            IX1 = (x-X(1))./dx + 1;
+            IX2 = (y-Y(1))./dy + 1;
+            
+            IX1 = round(IX1);
+            IX2 = round(IX2);
+            
+            IX1 = max([IX1,ones(np,1)],[],2);
+            IX1 = min([IX1,ny*ones(np,1)],[],2);
+            %
+            IX2 = max([IX2,ones(np,1)],[],2);
+            IX2 = min([IX2,nx*ones(np,1)],[],2);
+            
+            IX = sub2ind([ny,nx],IX1,IX2);
+        end % FindLinearIndx 
+    end %% end static methods
 end %% end class
     
