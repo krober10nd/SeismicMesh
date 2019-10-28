@@ -1,6 +1,10 @@
 # SeismicMesh
 2D/3D triangular meshing for a slab of Earth. 
 
+<p align="center">
+  <img src = "imgs/Example1.png"> &nbsp &nbsp &nbsp &nbsp
+</p>
+
 ## Installing
 
 Make sure to run libpath.m before executing any scripts. 
