@@ -6,32 +6,36 @@ clearvars; close all; clc;
 %-----------------------------------------------------------
 %   Keith Roberts   : 2019 --
 %   Email           : krober@usp.br
-%   Last updated    : 10/20/2019
+%   Last updated    : 10/27/2019
 %-----------------------------------------------------------
 %
 
 % ensure path is set correctly
 libpath
 %%
-MIN_EL = 25 ; 
-MAX_EL = 5e3 ;
-WL     = 500 ;
-SLP    = 100 ; 
-FREQ   = 15 ; % maximum shot record frequency
-GRADE  = 0.45 ; 
-GRIDSPACE = 1.25 ; 
-FNAME = 'MODEL_P-WAVE_VELOCITY_1.25m.segy'; 
+FNAME = 'MODEL_P-WAVE_VELOCITY_1.25m.segy'; % SegY file containing velocity model
+GRIDSPACE = 1.25 ; % grid spacing (meters) p-wave model. 
+MIN_EL = 25 ; % minimum element size (meters)
+MAX_EL = 5e3 ;% maximum element size (meters)
+WL     = 500 ;% number of nodes per wavelength of wave with FREQ (hz)
+FREQ   = 15 ; % maximum shot record frequency (hz)
+SLP    = 75 ; % element size (meters) near maximum gradient in P-wavepseed. 
+GRADE  = 0.15 ; % expansion rate of mesh resolution (in decimal percent).
+CR     = 0.1 ; % desired Courant number desired DT will be enforced for.
+DT     = 1e-3; % desired time step (seconds).
 %%
 gdat = geodata('segy',FNAME,'gridspace',GRIDSPACE) ;
 
-%plot(gdat) % visualize p-wave velocity model
+% plot(gdat) % visualize p-wave velocity model
 
 ef = edgefx('geodata',gdat,...
-    'slp',SLP,...%'wl',WL,'f',FREQ,'
+    'slp',SLP,...
+    'wl',WL,'f',FREQ,...
+    'dt',DT,'cr',CR,...
     'min_el',MIN_EL,'max_el',MAX_EL,...
     'g',GRADE);
 
-%plot(fh); % visualize mesh size function
+% plot(fh); % visualize mesh size function
 
 %% mesh generation step
 drectangle = @(p,x1,x2,y1,y2) -min(min(min(-y1+p(:,2),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
@@ -44,7 +48,7 @@ fh = @(p) ef.F(p);
 
 P_FIX=[]; 
 E_FIX=[]; 
-IT_MAX=100; % DEFAULT 1000
+IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 FID=1;
 FIT=[];
 

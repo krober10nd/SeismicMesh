@@ -18,6 +18,7 @@ function libpath
     addpath([filepath,'@geodata']) ;
     addpath([filepath,'@edgefx']) ;
     addpath(genpath('data/')) ;
+    addpath(genpath('utilities/')) ;
     addpath(genpath('distmesh')) ;
     addpath(genpath('segymat')) ;
 end

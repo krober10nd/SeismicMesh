@@ -5,7 +5,7 @@ classdef edgefx
     %-----------------------------------------------------------
     %   Keith Roberts   : 2019 --
     %   Email           : krober@usp.br
-    %   Last updated    : 10/20/2019
+    %   Last updated    : 10/27/2019
     %-----------------------------------------------------------
     %
     
@@ -20,6 +20,8 @@ classdef edgefx
         min_el % minimum mesh size (m)
         max_el % maximum mesh size (m)
         g % mesh size gradation rate (decimal percent)
+        cr % courant number 
+        dt % desired timestep 
     end
     
     properties(Access=public)
@@ -41,6 +43,8 @@ classdef edgefx
             addOptional(p,'min_el',0);
             addOptional(p,'max_el',inf);
             addOptional(p,'g',0.35);
+            addOptional(p,'dt',defval); 
+            addOptional(p,'cr',defval); 
             addOptional(p,'geodata',defval);
             
             % parse the inputs
@@ -50,7 +54,7 @@ classdef edgefx
             % get the fieldnames of the edge functions
             inp = orderfields(inp,{'geodata','wl','f',...
                                    'slp',...
-                                   'min_el','max_el','g'});
+                                   'min_el','max_el','g','cr','dt'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
@@ -93,11 +97,21 @@ classdef edgefx
                         end
                     case('g')
                         obj.g = inp.(flds{i});
-                        if obj.g~=0.35 
-                            obj.g = inp.(flds{i});
+                        if obj.g~=0.35
+                            assert(obj.g < 1);
+                            assert(obj.g > 0);
                         end
-                        assert(obj.g < 1);
-                        assert(obj.g > 0);
+                    case('cr')
+                        obj.cr = inp.(flds{i}); 
+                        if obj.cr~=0
+                          assert(obj.cr < 1); 
+                        end
+                    case('dt')
+                        obj.dt = inp.(flds{i});
+                        if obj.dt~=0
+                          assert(obj.dt > 0);
+                          assert(obj.cr > 0); % require cr to be set if dt is set.
+                        end
                 end
             end
             
@@ -171,6 +185,7 @@ classdef edgefx
 
         
         function obj = finalize(obj)
+            
             ny = obj.feat.GetNy; 
             nz = obj.feat.GetNz; 
             gsp = obj.feat.GetGridspace; 
@@ -229,6 +244,19 @@ classdef edgefx
                 end
             end
             clearvars hfun fdfdx
+            
+            % enforce the CFL if present
+            if obj.dt > 0
+                [yg,zg] = obj.feat.CreateStructGrid;
+                Fvp = GetFvp(obj.feat);
+                vp = Fvp(yg,zg);
+                %  vp*dt/dx < cr (generally < 1 for stability).
+                disp(['Enforcing timestep of ',num2str(obj.dt),' seconds.']);
+                cfl = (obj.dt*vp)./hh_m; % this is your cfl
+                dxn = vp.*obj.dt/obj.cr;      % assume simulation time step of dt sec and cfl of dcfl;
+                hh_m( cfl > obj.cr) = dxn( cfl > obj.cr);   %--in planar metres
+                clear cfl dxn u hh_d;
+            end
             
             [yg,zg]=obj.feat.CreateStructGrid;
             obj.F = griddedInterpolant(yg,zg,hh_m,'linear','nearest');
