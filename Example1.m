@@ -6,15 +6,16 @@ clearvars; close all; clc;
 %-----------------------------------------------------------
 %   Keith Roberts   : 2019 --
 %   Email           : krober@usp.br
-%   Last updated    : 10/27/2019
+%   Last updated    : 10/28/2019
 %-----------------------------------------------------------
 %
 
 % ensure path is set correctly
 libpath
-%%
+%% specify mesh design 
 FNAME = 'MODEL_P-WAVE_VELOCITY_1.25m.segy'; % SegY file containing velocity model
 GRIDSPACE = 1.25 ; % grid spacing (meters) p-wave model. 
+OFNAME = 'OUTPUT.msh'; % output fi
 MIN_EL = 25 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 500 ;% number of nodes per wavelength of wave with FREQ (hz)
@@ -23,7 +24,7 @@ SLP    = 75 ; % element size (meters) near maximum gradient in P-wavepseed.
 GRADE  = 0.15 ; % expansion rate of mesh resolution (in decimal percent).
 CR     = 0.1 ; % desired Courant number desired DT will be enforced for.
 DT     = 1e-3; % desired time step (seconds).
-%%
+%% build sizing function
 gdat = geodata('segy',FNAME,'gridspace',GRIDSPACE) ;
 
 % plot(gdat) % visualize p-wave velocity model
@@ -61,5 +62,12 @@ figure; patch( 'vertices', P, 'faces', T, 'facecolor', [.90 .90 .90] )
 
 axis equal
 
+%% write the mesh to disk. 
+% write mesh to a msh format
+gmsh_mesh2d_write ( 'output.msh', 2, length(P), P', ...
+  3, length(T), T' ) ;
 
+% write mesh to a vtu format
+P(:,3) = zeros*P(:,2); % add dummy 3rd dimension
+exportTriangulation2VTK('output',P,T) ;
 
