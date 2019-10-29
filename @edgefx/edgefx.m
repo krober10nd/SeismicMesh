@@ -34,18 +34,16 @@ classdef edgefx
             %
             p = inputParser;
             
-            defval = 0; % placeholder value if arg is not passed.
-            
             % add name/value pairs
-            addOptional(p,'wl',defval);
-            addOptional(p,'f',10); 
+            addOptional(p,'wl',0);
+            addOptional(p,'f',0); 
             addOptional(p,'slp',0); 
             addOptional(p,'min_el',0);
             addOptional(p,'max_el',inf);
-            addOptional(p,'g',0.35);
-            addOptional(p,'dt',defval); 
-            addOptional(p,'cr',defval); 
-            addOptional(p,'geodata',defval);
+            addOptional(p,'g',0);
+            addOptional(p,'dt',0); 
+            addOptional(p,'cr',0); 
+            addOptional(p,'geodata',0);
             
             % parse the inputs
             parse(p,varargin{:});
@@ -97,9 +95,8 @@ classdef edgefx
                         end
                     case('g')
                         obj.g = inp.(flds{i});
-                        if obj.g~=0.35
+                        if obj.g~=0
                             assert(obj.g < 1);
-                            assert(obj.g > 0);
                         end
                     case('cr')
                         obj.cr = inp.(flds{i}); 
@@ -168,10 +165,18 @@ classdef edgefx
     methods(Access=private)
         %% Wavelength edgefx.
         function obj = wlfx(obj)
-            [yg,zg] = obj.feat.CreateStructGrid;
-            Fvp = GetFvp(obj.feat);
-            vp = Fvp(yg,zg);
-            obj.hvp=(vp.*obj.f)./obj.wl;
+            
+            if obj.feat.GetDim == 2
+                [yg,zg] = obj.feat.CreateStructGrid;
+                Fvp = GetFvp(obj.feat);
+                vp = Fvp(yg,zg);
+                obj.hvp=(vp.*obj.f)./obj.wl;
+            else
+                [xg,yg,zg] = obj.feat.CreateStructGrid3D;
+                Fvp = GetFvp(obj.feat);
+                vp = Fvp(xg,yg,zg);
+                obj.hvp=(vp.*obj.f)./obj.wl;
+            end
         end
         %% slope edge function
         function obj = slpfx(obj)
@@ -186,88 +191,109 @@ classdef edgefx
         
         function obj = finalize(obj)
             
+            nx = obj.feat.GetNx; 
             ny = obj.feat.GetNy; 
             nz = obj.feat.GetNz; 
             gsp = obj.feat.GetGridspace; 
+            dim = obj.feat.GetDim; 
             
             % package the edge functions into a known order.
             counter = 0;
-            hh = zeros([ny,nz]);
+            if dim==2
+                hh = zeros([ny,nz,1])+obj.min_el;
+            else
+                hh = zeros([nx,ny,nz,1])+obj.min_el;;
+            end
             for i = 1 : numel(obj.used)
                 type = obj.used{i};
                 switch type
                     case('wl')
                         counter = counter + 1;
-                        hh(:,:,counter) = obj.hvp;
+                        if dim==2
+                            hh(:,:,counter) = obj.hvp;
+                        else
+                            hh(:,:,:,counter) = obj.hvp;
+                        end
                         obj.hvp = single(obj.hvp);
                     case('slp')
                         counter = counter + 1;
-                        hh(:,:,counter) = obj.hslp;
+                        if dim==2
+                            hh(:,:,counter) = obj.hslp;
+                        else
+                            hh(:,:,:,counter) = obj.hslp;
+                        end
                         obj.hslp = single(obj.hslp);
                     otherwise
                         error('FATAL:  Could not finalize edge function');
                 end
             end
             
-            [hh_m] = min(hh,[],3);
+            if dim==2
+                [hh_m] = min(hh,[],3);
+            else
+                [hh_m] = min(hh,[],4);
+            end
             clearvars hh
             
-            disp('Enforcing size bounds...');
-            hh_m(hh_m<obj.min_el)=obj.min_el;
-            hh_m(hh_m>obj.max_el)=obj.max_el;
+             disp('Enforcing size bounds...');
+             hh_m(hh_m<obj.min_el)=obj.min_el;
+             hh_m(hh_m>obj.max_el)=obj.max_el;
+             
+             if obj.g > 0
+                 disp('Relaxing the mesh size gradient...');
+                 hfun = reshape(hh_m',[numel(hh_m),1]);
+                 dy = repmat(gsp,[1,nz]); % for gradient function
+                 dz = gsp;        % for gradient function
+                 [hfun,flag] = obj.limgradStruct(nz,dy,dz,hfun,...
+                     obj.g,sqrt(length(hfun)));
+                 assert(flag ==1);
+                 disp('Gradient relaxing converged!');
+                 % reshape it back
+                 nn = 0;
+                 for ipos = 1 : ny
+                     for jpos = 1 : nz
+                         nn = nn+1;
+                         hh_m(ipos,jpos) = hfun(nn);
+                     end
+                 end
+                 clearvars hfun fdfdx
+             end
             
-            disp('Relaxing the mesh size gradient...');
-            hfun = zeros(ny*nz,1);
-            nn = 0;
-            for ipos = 1 : ny
-                for jpos = 1 : nz
-                    nn = nn + 1;
-                    hfun(nn,1) = hh_m(ipos,jpos);
-                end
-            end
-            dy = repmat(gsp,[1,nz]); % for gradient function
-            dz = gsp;        % for gradient function
-            [hfun,flag] = obj.limgradStruct(nz,dy,dz,hfun,...
-                obj.g,sqrt(length(hfun)));
-            if flag == 1
-                disp('Gradient relaxing converged!');
+             % enforce the CFL if present
+             if obj.dt > 0
+                 disp(['Enforcing timestep of ',num2str(obj.dt),' seconds.']);
+                 if dim==2
+                     [yg,zg] = obj.feat.CreateStructGrid;
+                     Fvp = GetFvp(obj.feat);
+                     vp = Fvp(yg,zg);
+                 else
+                     [xg,yg,zg] = obj.feat.CreateStructGrid3D;
+                     Fvp = GetFvp(obj.feat);
+                     vp = Fvp(xg,yg,zg);
+                 end
+                 %  vp*dt/dx < cr (generally < 1 for stability).
+                 cfl = (obj.dt*vp)./hh_m; % this is your cfl
+                 dxn = vp.*obj.dt/obj.cr;      % assume simulation time step of dt sec and cfl of dcfl;
+                 hh_m( cfl > obj.cr) = dxn( cfl > obj.cr);   %--in planar metres
+                 clear cfl dxn u hh_d;
+             end
+            
+            if dim==2
+                [yg,zg]=obj.feat.CreateStructGrid;
+                obj.F = griddedInterpolant(yg,zg,hh_m,'linear','nearest');
+                clearvars yg zg
             else
-                error(['FATAL: Gradient relaxing did not converge, '
-                    'please check your edge functions']);
+                [xg,yg,zg]=obj.feat.CreateStructGrid3D;
+                obj.F = griddedInterpolant(xg,yg,zg,hh_m,'linear','nearest');
+                clearvars xg yg zg
             end
-            % reshape it back
-            nn = 0;
-            for ipos = 1 : ny
-                for jpos = 1 : nz
-                    nn = nn+1;
-                    hh_m(ipos,jpos) = hfun(nn);
-                end
-            end
-            clearvars hfun fdfdx
-            
-            % enforce the CFL if present
-            if obj.dt > 0
-                [yg,zg] = obj.feat.CreateStructGrid;
-                Fvp = GetFvp(obj.feat);
-                vp = Fvp(yg,zg);
-                %  vp*dt/dx < cr (generally < 1 for stability).
-                disp(['Enforcing timestep of ',num2str(obj.dt),' seconds.']);
-                cfl = (obj.dt*vp)./hh_m; % this is your cfl
-                dxn = vp.*obj.dt/obj.cr;      % assume simulation time step of dt sec and cfl of dcfl;
-                hh_m( cfl > obj.cr) = dxn( cfl > obj.cr);   %--in planar metres
-                clear cfl dxn u hh_d;
-            end
-            
-            [yg,zg]=obj.feat.CreateStructGrid;
-            obj.F = griddedInterpolant(yg,zg,hh_m,'linear','nearest');
-            clearvars xg yg
 
         end
                 
     end % end private non-static methods
     
     methods(Static,Access=private)
-        function [ffun,flag] = limgradStruct(ny,xeglen,yeglen,ffun,fdfdx,imax)
+   function [ffun,flag] = limgradStruct(ny,xeglen,yeglen,ffun,fdfdx,imax)
             %LIMGRAD impose "gradient-limits" on a function defined over
             %an undirected graph.
             %         Modified for a structred graph with eight node stencil
@@ -378,39 +404,6 @@ classdef edgefx
                 
             end
         end % end limgradstruct 
-        
-        function [IX,IX1,IX2] = FindLinearIdx(x,y,lon,lat)
-            % given points in vectors x,y (np x 1) find their linear indices IX (np x 1)
-            % from a matrix of x-locations X and y-locations Y of both size nx columns and ny rows.
-            % lon and lat must be matrices created by ndgrid.
-            % kjr, 20171210 chl, und.
-            ny = size(lon,1);
-            nx = size(lon,2);
-            np = numel(x);
-            
-            X = reshape(lon,[],1);
-            Y = reshape(lat,[],1);
-            
-            x = x(:);
-            y = y(:);
-            
-            dx  = X(2)-X(1);
-            dy  = dx;
-            
-            IX1 = (x-X(1))./dx + 1;
-            IX2 = (y-Y(1))./dy + 1;
-            
-            IX1 = round(IX1);
-            IX2 = round(IX2);
-            
-            IX1 = max([IX1,ones(np,1)],[],2);
-            IX1 = min([IX1,ny*ones(np,1)],[],2);
-            %
-            IX2 = max([IX2,ones(np,1)],[],2);
-            IX2 = min([IX2,nx*ones(np,1)],[],2);
-            
-            IX = sub2ind([ny,nx],IX1,IX2);
-        end % FindLinearIndx 
     end %% end static methods
 end %% end class
     

@@ -1,4 +1,4 @@
-clearvars; close all; clc;
+clearvars; close all;% clc;
 % Read in the Marmousi ii p-wave velocity model.
 % Downloaded from here: http://www.agl.uh.edu/downloads/downloads.htm
 %
