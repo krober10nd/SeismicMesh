@@ -52,7 +52,8 @@ classdef edgefx
             % get the fieldnames of the edge functions
             inp = orderfields(inp,{'geodata','wl','f',...
                                    'slp',...
-                                   'min_el','max_el','g','cr','dt'});
+                                   'min_el','max_el',...
+                                   'g','cr','dt'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
@@ -65,7 +66,7 @@ classdef edgefx
                         end
                     case('f')
                         obj.f = inp.(flds{i});
-                        if obj.f~=10
+                        if obj.f~=0
                             obj.f = inp.(flds{i});
                             assert(obj.f > 0);
                         end
@@ -73,7 +74,7 @@ classdef edgefx
                         obj.slp = inp.(flds{i});
                         if obj.slp~=0
                             obj.slp = inp.(flds{i});
-                            assert(obj.f > 0);
+                            assert(obj.slp > 0);
                         end
                     case('min_el')
                         obj.min_el = inp.(flds{i});
@@ -152,6 +153,7 @@ classdef edgefx
             ylabel('Z-position/depth (m)');
             cb=colorbar; ylabel(cb,'Desired mesh size (m)') ;
             set(gca,'FontSize',16) ;
+            axis equal; axis tight; 
         end
         
         function min_el = GetMinEl(obj); min_el=obj.min_el; end
@@ -183,9 +185,10 @@ classdef edgefx
             [yg,zg] = obj.feat.CreateStructGrid;
             Fvp = GetFvp(obj.feat);
             vp = Fvp(yg,zg);
-            tmp = stdfilt(vp); % uses a default filter of 3x3
-            tmp = (1-tmp./max(tmp(:)));
-            obj.hslp = tmp*obj.slp + obj.min_el;
+            tmp = stdfilter(vp,[3,3],1,'replicate'); % use a larger stencil here for smoother variance
+            tmp = real(tmp); 
+            tmp = (1-tmp./500); %  demoninator is reference gradient for which min_el is mapped
+            obj.hslp = max(tmp*obj.slp + obj.min_el,10); % ensure result doesn't go negative.
         end
 
         
@@ -202,7 +205,7 @@ classdef edgefx
             if dim==2
                 hh = zeros([ny,nz,1])+obj.min_el;
             else
-                hh = zeros([nx,ny,nz,1])+obj.min_el;;
+                hh = zeros([nx,ny,nz,1])+obj.min_el;
             end
             for i = 1 : numel(obj.used)
                 type = obj.used{i};
@@ -241,24 +244,13 @@ classdef edgefx
              
              if obj.g > 0
                  disp('Relaxing the mesh size gradient...');
-                 hfun = reshape(hh_m',[numel(hh_m),1]);
-                 dy = repmat(gsp,[1,nz]); % for gradient function
-                 dz = gsp;        % for gradient function
-                 [hfun,flag] = obj.limgradStruct(nz,dy,dz,hfun,...
-                     obj.g,sqrt(length(hfun)));
-                 assert(flag ==1);
+                 hfun = reshape(hh_m,[numel(hh_m),1]); % reshape column wise
+                 hfun = FastHJ( int32([ny nz 1]), gsp, obj.g, int32(sqrt(length(hfun))), hfun);
                  disp('Gradient relaxing converged!');
-                 % reshape it back
-                 nn = 0;
-                 for ipos = 1 : ny
-                     for jpos = 1 : nz
-                         nn = nn+1;
-                         hh_m(ipos,jpos) = hfun(nn);
-                     end
-                 end
-                 clearvars hfun fdfdx
+                 hh_m = reshape(hfun,[ny,nz]);
+                 clearvars hfun
              end
-            
+             
              % enforce the CFL if present
              if obj.dt > 0
                  disp(['Enforcing timestep of ',num2str(obj.dt),' seconds.']);
@@ -293,7 +285,13 @@ classdef edgefx
     end % end private non-static methods
     
     methods(Static,Access=private)
-   function [ffun,flag] = limgradStruct(ny,xeglen,yeglen,ffun,fdfdx,imax)
+        % Suppose you have a 3D matrix A,
+        % and you want to get the singleton index for A(i1, i2, i3)
+        % which is given by  sub2ind(size(A), i1, i2, i3).
+        % This is the equivalent expression:
+        % i1 + (i2-1)*size(A,1) + (i3-1)*size(A,1)*size(A,2)
+        
+        function [ffun,flag] = limgradStruct(ny,elen,ffun,fdfdx,imax)
             %LIMGRAD impose "gradient-limits" on a function defined over
             %an undirected graph.
             %         Modified for a structred graph with eight node stencil
@@ -305,91 +303,72 @@ classdef edgefx
             %             Last updated: 27/04/2019
             %             Keith Roberts, 2019
             
-            if length(fdfdx)==1
-                fdfdx = ffun*0 + fdfdx ;
-            end
             %----------------------------- ASET=ITER if node is "active"
             aset = zeros(size(ffun,1),1) ;
             
-            %----------------------------- exhaustive 'til all satisfied
+            %----------------------------- exhaustive until all are satisfied
             ftol = min(ffun) * sqrt(eps) ;
             
-            % ------------------------ calculate hypotenuse eglen length
-            dgeglen = sqrt(xeglen.^2+repmat(yeglen,1,ny).^2);
-            eglen   = 0.5*(xeglen+repmat(yeglen,1,ny));
+            rm = zeros(5,1);
             
-            rm = zeros(9,1);
-            for iter = +1 : imax
+            % -----
+            elenXfdfdx = elen*fdfdx; 
+            
+            for iter = 1 : imax
                 
                 %------------------------- find "active" nodes this pass
                 aidx = find(aset == iter - 1) ;
                 
                 if (isempty(aidx)), break; end
                 %------------------------- reorder => better convergence
-                [aval,idxx] = sort(ffun(aidx)) ;
+                [~,idxx] = sort(ffun(aidx)) ;
                 
                 aidx = aidx(idxx);
                 
                 %------------------------- speed up a little by preallocating occasionally
-                npos = zeros(9,1); elens = zeros(9,1);
+                npos = zeros(5,1);
                 
-                %------------------------- visit adj. edges and set DFDX
+                %------------------------- 
                 for i = 1 : length(aidx)
+                                        
                     % ----- map doubly index to singly indexed
                     inod = aidx(i);
                     ipos = 1 + floor((inod-1)/ny);
                     jpos = inod - (ipos - 1)*ny;
+
                     
-                    % ------ use 8 edge stencil for higher order gradients
-                    nn=1;
-                    npos(nn) =  inod;                        nn=nn+1;
-                    npos(nn) =  ipos*ny    + jpos;           nn=nn+1;%--- nnod of right adj
-                    npos(nn) = (ipos-2)*ny + jpos;           nn=nn+1;%--- nnod of left adj
-                    npos(nn) = (ipos-1)*ny + min(jpos+1,ny); nn=nn+1;%--- nnod of above adj
-                    npos(nn) = (ipos-1)*ny + max(jpos-1,1);  nn=nn+1;%--- nnod of below adj
-                    npos(nn) = (ipos*ny)   +  max(jpos-1,1); nn=nn+1;%--- nnod of right bot diag adj
-                    npos(nn) =  (ipos*ny)  + min(jpos+1,ny); nn=nn+1;%--- nnod of right top diag adj
-                    npos(nn) = (ipos-2)*ny +  min(jpos+1,ny);nn=nn+1;%--- nnod of left top diag adj
-                    npos(nn) = (ipos-2)*ny + max(jpos-1,1);          %--- nnod of left bot diag adj
-                    
-                    
-                    % ------ populate elens
-                    nn = 1;
-                    elens(nn) = eglen(jpos);  nn=nn+1;
-                    elens(nn) = xeglen(jpos); nn=nn+1;
-                    elens(nn) = xeglen(jpos); nn=nn+1;
-                    elens(nn) = yeglen; nn=nn+1;
-                    elens(nn) = yeglen; nn=nn+1;
-                    elens(nn) = dgeglen(jpos); nn=nn+1;
-                    elens(nn) = dgeglen(jpos); nn=nn+1;
-                    elens(nn) = dgeglen(jpos); nn=nn+1;
-                    elens(nn) = dgeglen(jpos);
+                    % ------ gather indices use 4 edge stencil
+                    npos(1) =  inod;                       
+                    npos(2) =  ipos*ny    + jpos;           %--- nnod of right adj
+                    npos(3) = (ipos-2)*ny + jpos;           %--- nnod of left adj
+                    npos(4) = (ipos-1)*ny + min(jpos+1,ny); %--- nnod of above adj
+                    npos(5) = (ipos-1)*ny + max(jpos-1,1);  %--- nnod of below adj
                     
                     %----- handle boundary vertex adjs.
                     rm = npos <= 0 | npos > size(ffun,1);
                     npos(rm) = [];
-                    elens(rm)= [];
+                                            
+                    nod1 = npos(1);
+                    ffunNod1 = ffun(nod1); 
                     
                     for ne = 2 : length(npos)
-                        nod1 = npos(1);
-                        nod2 = npos(ne);
-                        elen = elens(ne);
+                        nod2 = npos(ne);                        
                         
                         %----------------- calc. limits about min.-value
-                        if (ffun(nod1) > ffun(nod2))
+                        if ( ffunNod1 > ffun(nod2))
                             
                             fun1 = ffun(nod2) ...
-                                + elen * fdfdx(nod2) ;
+                                + elenXfdfdx;
                             
-                            if (ffun(nod1) > fun1+ftol)
-                                ffun(nod1) = fun1;
+                            if (ffunNod1 > fun1+ftol)
+                                ffunNod1 = fun1;
                                 aset(nod1) = iter;
                             end
                             
                         else
                             
-                            fun2 = ffun(nod1) ...
-                                + elen * fdfdx(nod2) ;
+                            fun2 = ffunNod1 ...
+                                + elenXfdfdx ;
                             
                             if (ffun(nod2) > fun2+ftol)
                                 ffun(nod2) = fun2;

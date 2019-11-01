@@ -15,8 +15,6 @@ function libpath
     filename = mfilename('fullpath') ;
     filepath = fileparts( filename ) ;
     
-    addpath([filepath,'@geodata']) ;
-    addpath([filepath,'@edgefx']) ;
     addpath(genpath('data/')) ;
     addpath(genpath('utilities/')) ;
     addpath(genpath('distmesh')) ;
