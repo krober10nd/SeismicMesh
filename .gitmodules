@@ -1,6 +1,3 @@
 [submodule "segymat"]
 	path = segymat
 	url = https://github.com/cultpenguin/segymat.git
-[submodule "distmesh"]
-	path = distmesh
-	url = https://github.com/ionhandshaker/distmesh.git

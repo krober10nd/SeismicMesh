@@ -6,7 +6,7 @@ clearvars; close all;% clc;
 %-----------------------------------------------------------
 %   Keith Roberts   : 2019 --
 %   Email           : krober@usp.br
-%   Last updated    : 10/31/2019
+%   Last updated    : 11/3/2019
 %-----------------------------------------------------------
 %
 
@@ -48,12 +48,9 @@ fd = @(p) max( drectangle(p,...
 fh = @(p) ef.F(p); 
 
 P_FIX=[]; % INSERT FIXED POINTS HERE 
-E_FIX=[];  % INSERT FIXED EDGES HERE (MUST INDEX INTO P_FIX) 
 IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
-FID=1;
-FIT=[];
 
-[ P, T, STAT ] = distmesh( fd, fh, MIN_EL, gdat.bbox', P_FIX, E_FIX, IT_MAX, FID, FIT ) ;
+[ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
 
 
 %% Put the velocity onto the nodes and write this to disk 

@@ -39,18 +39,14 @@ fd = @(p) drectangle3D(p,...
 
 fh = @(p) ef.F(p);
 
-P_FIX=[];
-E_FIX=[];
+P_FIX=[]; % INSERT FIXED POINTS HERE 
 IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
-FID=1;
-FIT=[];
 
-[ P, T, STAT ] = distmesh( fd, fh, MIN_EL, gdat.bbox', P_FIX, E_FIX, IT_MAX, FID, FIT ) ;
-
+[ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
 P(:,2)=P(:,2)*-1;
 
 F = [T(:,[1:3]); T(:,[1,2,4]); T(:,[2,3,4]); T(:,[3,1,4])];
 
-patch( 'vertices', P, 'faces', F, 'facecolor', [.9, .9, .9] ), view(3)
+figure; patch( 'vertices', P, 'faces', F, 'facecolor', [.9, .9, .9] ), view(3)
 
 axis equal
