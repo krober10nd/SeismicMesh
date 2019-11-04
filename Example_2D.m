@@ -48,7 +48,7 @@ fd = @(p) max( drectangle(p,...
 fh = @(p) ef.F(p); 
 
 P_FIX=[]; % INSERT FIXED POINTS HERE 
-IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
+IT_MAX=100; % NUMBER OF MESH GENERATION ITERATIONS 
 
 [ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
 

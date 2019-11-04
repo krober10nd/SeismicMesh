@@ -23,13 +23,15 @@ function [p,t,count]=distmeshnd(fdist,fh,h,box,fix,itmax,varargin)
 %   Copyright (C) 2004-2012 Per-Olof Persson. See COPYRIGHT.TXT for details.
 %   Modified by Keith J. Roberts, 
 
-plot_on = 0 ; % switch on for plotting during mesh generation.
+plot_on = 1 ; % switch on for plotting during mesh generation.
+IALG    = 0 ; % IALG=0 is normal distmesh, IALG=1 is modified distmesh
 
 dim=size(box,2);
 ptol=.001; ttol=.1; L0mult=1+.4/2^(dim-1); deltat=.1; geps=1e-1*h; deps=sqrt(eps)*h;
 
 if nargin < 6, itmax=100; end 
 
+disp('Forming initial point distribution...');
 % 1. Create initial distribution in bounding box
 if dim==1
   p=(box(1):h:box(2))';
@@ -54,6 +56,7 @@ N=size(p,1);
 
 count=0;
 p0=inf;
+disp('Commencing mesh generation...');
 while 1
   % 3. Retriangulation by Delaunay
   if max(sqrt(sum((p-p0).^2,2)))>ttol*h
@@ -90,10 +93,19 @@ while 1
   % 6. Move mesh points based on edge lengths L and forces F
   bars=p(pair(:,1),:)-p(pair(:,2),:);
   L=sqrt(sum(bars.^2,2));
-  L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
-  L0=L0*L0mult*(sum(L.^dim)/sum(L0.^dim))^(1/dim);
-  F=max(L0-L,0);
-  Fbar=[bars,-bars].*repmat(F./L,1,2*dim);
+  if IALG == 0
+      L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
+      L0=L0*L0mult*(sum(L.^dim)/sum(L0.^dim))^(1/dim);
+      F=max(L0-L,0);
+      Fbar=[bars,-bars].*repmat(F./L,1,2*dim);
+  else
+      L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
+      L0 = L0*L0mult*median(L)/median(L0);                  % L0 = Desired lengths using ratio of medians scale factor
+      LN = L./L0;                                              % LN = Normalized bar lengths
+      F    = (1-LN.^4).*exp(-LN.^4)./LN;                       % Bessens-Heckbert edge force
+      Fbar=[bars,-bars].*repmat(F,1,2*dim);
+  end
+ 
   dp=full(sparse(pair(:,[ones(1,dim),2*ones(1,dim)]), ...
                  ones(size(pair,1),1)*[1:dim,1:dim], ...
                  Fbar,N,dim));

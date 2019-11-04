@@ -132,6 +132,7 @@ classdef geodata
                 else
                     tmp = ncread(obj.fname,'vp');
                     [obj.ny,obj.nx,obj.nz]=size(tmp) ;
+                    tmp=tmp.*1000;
                     obj.x0y0=[0,0,0];
                     [xg,yg,zg]=CreateStructGrid3D(obj);
                     obj.bbox = [min(xg(:)) max(xg(:))
