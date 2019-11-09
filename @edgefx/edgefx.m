@@ -96,9 +96,6 @@ classdef edgefx
                         end
                     case('g')
                         obj.g = inp.(flds{i});
-                        if obj.g~=0
-                            assert(obj.g < 1);
-                        end
                     case('cr')
                         obj.cr = inp.(flds{i}); 
                         if obj.cr~=0
@@ -140,11 +137,11 @@ classdef edgefx
         end
         
         
-        function [axH]=plot(obj)
+        function plot(obj)
             [yg,zg]=obj.feat.CreateStructGrid ;
             skip=5 ; % save memory and time by skipping
             figure;
-            axH=pcolor(yg(1:skip:end,1:skip:end),...
+            pcolor(yg(1:skip:end,1:skip:end),...
                 zg(1:skip:end,1:skip:end),...
                 obj.F.Values(1:skip:end,1:skip:end)) ;
             shading interp;
@@ -257,9 +254,19 @@ classdef edgefx
              if obj.g > 0
                  disp('Relaxing the mesh size gradient...');
                  hfun = reshape(hh_m,[numel(hh_m),1]); % reshape column wise
-                 hfun = FastHJ( int32([ny nz 1]), gsp, obj.g, int32(sqrt(length(hfun))), hfun);
+                 if(obj.feat.GetDim==2)
+                     dims = int32([size( hh_m),1]);
+                 else
+                     dims = int32(size(hh_m));
+                 end
+                 imax = int32(sqrt(length(hfun))); 
+                 hfun = FastHJ( dims, gsp, obj.g, imax, hfun);
                  disp('Gradient relaxing converged!');
-                 hh_m = reshape(hfun,[ny,nz]);
+                 if(obj.feat.GetDim==2)
+                     hh_m = reshape(hfun,[ny,nz]);
+                 else
+                     hh_m = reshape(hfun,[ny,nx,nz]);
+                 end
                  clearvars hfun
              end
              
@@ -295,106 +302,5 @@ classdef edgefx
         end
                 
     end % end private non-static methods
-    
-    methods(Static,Access=private)
-        % Suppose you have a 3D matrix A,
-        % and you want to get the singleton index for A(i1, i2, i3)
-        % which is given by  sub2ind(size(A), i1, i2, i3).
-        % This is the equivalent expression:
-        % i1 + (i2-1)*size(A,1) + (i3-1)*size(A,1)*size(A,2)
-        
-        function [ffun,flag] = limgradStruct(ny,elen,ffun,fdfdx,imax)
-            %LIMGRAD impose "gradient-limits" on a function defined over
-            %an undirected graph.
-            %         Modified for a structred graph with eight node stencil
-            %         Last updated: 24/06/2017
-            %         Email       : krober10@nd.edu
-            %         Keith Roberts, 2017.
-            % ---------------------
-            %             Modified to have spatially variable fdfdx
-            %             Last updated: 27/04/2019
-            %             Keith Roberts, 2019
-            
-            %----------------------------- ASET=ITER if node is "active"
-            aset = zeros(size(ffun,1),1) ;
-            
-            %----------------------------- exhaustive until all are satisfied
-            ftol = min(ffun) * sqrt(eps) ;
-            
-            rm = zeros(5,1);
-            
-            % -----
-            elenXfdfdx = elen*fdfdx; 
-            
-            for iter = 1 : imax
-                
-                %------------------------- find "active" nodes this pass
-                aidx = find(aset == iter - 1) ;
-                
-                if (isempty(aidx)), break; end
-                %------------------------- reorder => better convergence
-                [~,idxx] = sort(ffun(aidx)) ;
-                
-                aidx = aidx(idxx);
-                
-                %------------------------- speed up a little by preallocating occasionally
-                npos = zeros(5,1);
-                
-                %------------------------- 
-                for i = 1 : length(aidx)
-                                        
-                    % ----- map doubly index to singly indexed
-                    inod = aidx(i);
-                    ipos = 1 + floor((inod-1)/ny);
-                    jpos = inod - (ipos - 1)*ny;
-
-                    
-                    % ------ gather indices use 4 edge stencil
-                    npos(1) =  inod;                       
-                    npos(2) =  ipos*ny    + jpos;           %--- nnod of right adj
-                    npos(3) = (ipos-2)*ny + jpos;           %--- nnod of left adj
-                    npos(4) = (ipos-1)*ny + min(jpos+1,ny); %--- nnod of above adj
-                    npos(5) = (ipos-1)*ny + max(jpos-1,1);  %--- nnod of below adj
-                    
-                    %----- handle boundary vertex adjs.
-                    rm = npos <= 0 | npos > size(ffun,1);
-                    npos(rm) = [];
-                                            
-                    nod1 = npos(1);
-                    ffunNod1 = ffun(nod1); 
-                    
-                    for ne = 2 : length(npos)
-                        nod2 = npos(ne);                        
-                        
-                        %----------------- calc. limits about min.-value
-                        if ( ffunNod1 > ffun(nod2))
-                            
-                            fun1 = ffun(nod2) ...
-                                + elenXfdfdx;
-                            
-                            if (ffunNod1 > fun1+ftol)
-                                ffunNod1 = fun1;
-                                aset(nod1) = iter;
-                            end
-                            
-                        else
-                            
-                            fun2 = ffunNod1 ...
-                                + elenXfdfdx ;
-                            
-                            if (ffun(nod2) > fun2+ftol)
-                                ffun(nod2) = fun2;
-                                aset(nod2) = iter;
-                            end
-                            
-                        end
-                    end
-                end
-                rm = rm*0;
-                flag = (iter < imax) ;
-                
-            end
-        end % end limgradstruct 
-    end %% end static methods
 end %% end class
     

@@ -12,22 +12,18 @@ clearvars; close all; clc;
 libpath
 
 %% specify mesh design
-FNAME = 'SimpleTwoLayersVp.nc'; % file containing velocity model
-GRIDSPACE = 50 ; % grid spacing (meters) p-wave model.
-OFNAME = 'SimpleTwoLayersVp'; % output file name
-MIN_EL = 100 ; % minimum element size (meters)
+FNAME  = 'SeismicUnitCubeVp.nc'; % file containing velocity model
+OFNAME = 'SeismicUnitCubeVp'; % output file name
+MIN_EL = 25 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
-WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
-FREQ   = 15 ; % maximum shot record frequency (hz)
-GRADE  = 0.35 ; % expansion rate of element size
-DIM    = 3 ; % 3D problem!
-SLP    = 25 ; % element size (meters) near maximum gradient in P-wavepseed.
+WL     = 100 ;% number of nodes per wavelength of wave with FREQ (hz)
+FREQ   = 20 ; % maximum shot record frequency (hz)
+GRADE  = 0 ; % expansion rate of element size
 %% build sizing function
-gdat = geodata('segy',FNAME,'dim',DIM,'gridspace',GRIDSPACE) ;
+gdat = geodata('velocity_model',FNAME) ;
 
 ef = edgefx('geodata',gdat,...
     'wl',WL,'f',FREQ,...
-    'slp',SLP,...
     'min_el',MIN_EL,'max_el',MAX_EL);
 
 %% mesh generation step
@@ -45,8 +41,21 @@ P_FIX=[]; % INSERT FIXED POINTS HERE
 IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 
 [ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
+
+%% write the mesh to disk (0,0) is top left not bottom left corner. 
+% flip it upside down 
 P(:,2)=P(:,2)*-1;
 
-figure; simpplot(P,T); 
+%% visualize result
+figure; patch( 'vertices', P, 'faces', T, 'facecolor', [.90 .90 .90] )
 
 axis equal
+axis tight
+
+%% write mesh to a msh format
+gmsh_mesh2d_write ( 'output.msh', 2, length(P), P', ...
+  3, length(T), T' ) ;
+
+
+% write mesh to a vtu format
+exportTriangulation2VTK('output',P,T) 

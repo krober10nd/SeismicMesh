@@ -21,7 +21,7 @@ MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 0 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 0 ; % maximum shot record frequency (hz)
 SLP    = 50 ; % element size (meters) near maximum gradient in P-wavepseed.
-GRADE  = 0.1 ; % expansion rate of mesh resolution (in decimal percent).
+GRADE  = 0.50 ; % expansion rate of mesh resolution (in decimal percent).
 CR     = 0.1 ; % desired Courant number desired DT will be enforced for.
 DT     = 1e-3; % desired time step (seconds).
 %% build sizing function

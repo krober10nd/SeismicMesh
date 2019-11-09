@@ -19,13 +19,13 @@ classdef geodata
     end
     
     properties(Access=public)
-        bbox % domain corners left, right, bottom, top.
+        bbox % domain ranges in x y (and z)
     end
         
     methods(Access=public)
         % default class constructor
         % GEODATA construct the default class.
-        % loads in a 2D velocity model from a segy file.
+        % loads in a velocity model from a file.
         function obj = geodata(varargin)
             %
             p = inputParser;
@@ -33,39 +33,24 @@ classdef geodata
             defval=0;
             
             % add name/value pairs
-            addOptional(p,'segy',defval);
-            addOptional(p,'gridspace',defval);
-            addOptional(p,'dim',2);
+            addOptional(p,'velocity_model',defval);
 
             % parse the inputs
             parse(p,varargin{:});
             % store the inputs as a struct
             inp = p.Results;
             % get the fieldnames of the edge functions
-            inp = orderfields(inp,{'dim','gridspace','segy'});
+            inp = orderfields(inp,{'velocity_model'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
                 switch type
-                    case('segy')
+                    case('velocity_model')
                         obj.fname = inp.(flds{i});
                         if ~isempty(obj.fname)
                             obj.fname = inp.(flds{i});
                             obj = ReadVelocityData(obj);
                         end
-                    case('gridspace')
-                        obj.gridspace = inp.(flds{i}); 
-                        if obj.gridspace~=0
-                            obj.gridspace = inp.(flds{i});
-                        else
-                            error('Please pass a gridspace in meters to geodata!');
-                        end
-                    case('dim')
-                        obj.dim = inp.(flds{i}); 
-                        if obj.dim~=2
-                          obj.dim = inp.(flds{i}); 
-                        end
-                        assert(obj.dim <=3); 
                 end
             end
         end
@@ -84,19 +69,19 @@ classdef geodata
         function gsp=GetGridspace(obj), gsp = obj.gridspace; end
 
         % plotting
-        function [axH]=plot(obj)
+        function plot(obj)
             [yg,zg]=CreateStructGrid(obj) ;
             tmp=obj.Fvp(yg,zg);
             skip=5 ; % save memory and time by skipping
             figure;
-            axH=pcolor(yg(1:skip:end,1:skip:end)*obj.gridspace,...
+            pcolor(yg(1:skip:end,1:skip:end)*obj.gridspace,...
                 zg(1:skip:end,1:skip:end)*obj.gridspace,...
                 tmp(1:skip:end,1:skip:end)) ;
             shading interp;
             set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
             xlabel('Y-position (m)');
             ylabel('Z-position/depth (m)');
-            cb=colorbar; ylabel(cb,'P-wave speed (km/s)') ;
+            cb=colorbar; ylabel(cb,'P-wave speed (m/s)') ;
             set(gca,'FontSize',16) ;
         end
         
@@ -106,7 +91,7 @@ classdef geodata
         end
                 
         function [xg,yg,zg]=CreateStructGrid3D(obj)
-            [xg,yg,zg] = ndgrid(obj.x0y0(1) + (0:obj.nx-1)'*obj.gridspace,...
+            [xg,yg,zg] = ndgrid((0:obj.nx-1)'*obj.gridspace,...
                 obj.x0y0(1) + (0:obj.ny-1)'*obj.gridspace, ...
                 obj.x0y0(2) + (0:obj.nz-1)'*obj.gridspace);
         end
@@ -118,6 +103,8 @@ classdef geodata
         
         function obj = ReadVelocityData(obj)
             if exist(obj.fname, 'file') == 2
+                obj.dim=ncread(obj.fname,'dim'); 
+                obj.gridspace=ncread(obj.fname,'gridspace') ; 
                 % File exists.
                 if obj.dim == 2
                     tmp=ReadSegy(obj.fname)';
@@ -130,17 +117,28 @@ classdef geodata
                     clearvars yg zg tmp;
                     disp(['INFO: SUCCESFULLY READ IN FILE',obj.fname]);
                 else
+                    
                     tmp = ncread(obj.fname,'vp');
-                    [obj.ny,obj.nx,obj.nz]=size(tmp) ;
-                    tmp=tmp.*1000;
-                    obj.x0y0=[0,0,0];
+                    
+                    % determine size of grid
+                    obj.nx = ncread(obj.fname,'nx');
+                    obj.ny = ncread(obj.fname,'ny');
+                    obj.nz = ncread(obj.fname,'nz');
+
+                    % determine bottom front corner coordinate
+                    obj.x0y0(1:obj.dim) = ncread(obj.fname,'x0y0z0');
+                    
                     [xg,yg,zg]=CreateStructGrid3D(obj);
+                    
                     obj.bbox = [min(xg(:)) max(xg(:))
                         min(yg(:)) max(yg(:))
                         min(zg(:)) max(zg(:))];
+                    
                     obj.Fvp=griddedInterpolant(xg,yg,zg,tmp) ;
+                    
                     clearvars xg yg zg tmp;
-                     disp(['INFO: SUCCESFULLY READ IN FILE ',obj.fname]);
+                    
+                    disp(['INFO: SUCCESFULLY READ IN FILE ',obj.fname]);
                 end
             else
                 % File does not exist.

@@ -21,16 +21,17 @@ function [p,t,count]=distmeshnd(fdist,fh,h,box,fix,itmax,varargin)
 %   See also: DISTMESH2D, DELAUNAYN, TRIMESH, MESHDEMOND.
 
 %   Copyright (C) 2004-2012 Per-Olof Persson. See COPYRIGHT.TXT for details.
-%   Modified by Keith J. Roberts, 
+%   Modified by Keith J. Roberts, USP, 2019 
 
-plot_on = 1 ; % switch on for plotting during mesh generation.
-IALG    = 0 ; % IALG=0 is normal distmesh, IALG=1 is modified distmesh
+plot_on = 0; % switch on for plotting during mesh generation.
+nscreen = 1 ; % frequency to visualize mesh. 
 
 dim=size(box,2);
 ptol=.001; ttol=.1; L0mult=1+.4/2^(dim-1); deltat=.1; geps=1e-1*h; deps=sqrt(eps)*h;
 
 if nargin < 6, itmax=100; end 
 
+meshTime = tic; 
 disp('Forming initial point distribution...');
 % 1. Create initial distribution in bounding box
 if dim==1
@@ -60,6 +61,7 @@ disp('Commencing mesh generation...');
 while 1
   % 3. Retriangulation by Delaunay
   if max(sqrt(sum((p-p0).^2,2)))>ttol*h
+    tstart=tic;
     p0=p;
     t=delaunay(p); % call cgal del. 
     pmid=zeros(size(t,1),dim);
@@ -75,13 +77,16 @@ while 1
     end
     pair=unique(sort(pair,2),'rows');
     % 5. Graphical output of the current mesh
-    if dim==2 && plot_on == 1
-      trimesh(t,p(:,1),p(:,2),zeros(N,1))
+    if dim==2 && plot_on == 1 && mod(count,nscreen)==0
+      simpplot(p,t);
+      title(['Retriangulation #',int2str(count)])
       view(2),axis equal,axis off,drawnow
     elseif dim==3 && plot_on == 1
-      if mod(count,5)==0
-        simpplot(p,t,'p(:,2)>0');
+      if mod(count,nscreen)==0
+        simpplot(p,t);
+        xlabel('x'); ylabel('y'); zlabel('depth'); 
         title(['Retriangulation #',int2str(count)])
+        disp(['     Mesh has ',num2str(length(p)),' points and ',num2str(length(t)),' simplices']); 
         drawnow
       end
     else
@@ -93,21 +98,13 @@ while 1
   % 6. Move mesh points based on edge lengths L and forces F
   bars=p(pair(:,1),:)-p(pair(:,2),:);
   L=sqrt(sum(bars.^2,2));
-  if IALG == 0
-      L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
-      L0=L0*L0mult*(sum(L.^dim)/sum(L0.^dim))^(1/dim);
-      F=max(L0-L,0);
-      Fbar=[bars,-bars].*repmat(F./L,1,2*dim);
-  else
-      L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
-      L0 = L0*L0mult*median(L)/median(L0);                  % L0 = Desired lengths using ratio of medians scale factor
-      LN = L./L0;                                              % LN = Normalized bar lengths
-      F    = (1-LN.^4).*exp(-LN.^4)./LN;                       % Bessens-Heckbert edge force
-      Fbar=[bars,-bars].*repmat(F,1,2*dim);
-  end
- 
+  L0=feval(fh,(p(pair(:,1),:)+p(pair(:,2),:))/2);
+  L0=L0*L0mult*(sum(L.^dim)/sum(L0.^dim))^(1/dim);
+  F=max(L0-L,0);
+  Fbar=[bars,-bars].*repmat(F./L,1,2*dim);
+  
   dp=full(sparse(pair(:,[ones(1,dim),2*ones(1,dim)]), ...
-                 ones(size(pair,1),1)*[1:dim,1:dim], ...
+      ones(size(pair,1),1)*[1:dim,1:dim], ...
                  Fbar,N,dim));
   dp(1:size(fix,1),:)=0;
   p=p+deltat*dp;
@@ -125,6 +122,13 @@ while 1
 
   % 8. Termination criterion
   maxdp=max(deltat*sqrt(sum(dp(d<-geps,:).^2,2)));
-  if maxdp<ptol*h, break; end
-  if count>itmax,break; end
+  telapsed = toc(tstart); 
+  if mod(count,nscreen)==0
+      disp(['INFO: Iteration ',num2str(count),' completed in ',num2str(telapsed),' seconds...']);
+  end
+  if maxdp<ptol*h, close, break; end
+  if count>itmax, close, break; end
 end
+
+tfinal=toc(meshTime); 
+disp(['Total meshing time was ',num2str(tfinal)]);
