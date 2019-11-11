@@ -40,7 +40,8 @@ fh = @(p) ef.F(p);
 P_FIX=[]; % INSERT FIXED POINTS HERE 
 IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 
-[ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
+%[ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
+[P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', [] );
 
 %% write the mesh to disk (0,0) is top left not bottom left corner. 
 % flip it upside down 
