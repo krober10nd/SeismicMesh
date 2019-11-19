@@ -57,7 +57,7 @@ switch dim
   hold off
   set(h,'facecolor',bcol,'edgecolor','k');
   axis equal
-  cameratoolbar
+  cameramenu
  otherwise
   error('Unimplemented dimension.');
 end

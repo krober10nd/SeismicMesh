@@ -72,7 +72,7 @@ classdef geodata
         function plot(obj)
             [yg,zg]=CreateStructGrid(obj) ;
             tmp=obj.Fvp(yg,zg);
-            skip=5 ; % save memory and time by skipping
+            skip=1 ; % save memory and time by skipping
             figure;
             pcolor(yg(1:skip:end,1:skip:end)*obj.gridspace,...
                 zg(1:skip:end,1:skip:end)*obj.gridspace,...
@@ -96,6 +96,11 @@ classdef geodata
                 obj.x0y0(2) + (0:obj.nz-1)'*obj.gridspace);
         end
         
+        function [vpOnNodes]=InterpVP(obj,P)
+            f=GetFvp(obj); 
+            vpOnNodes=f(P(:,1:2)); 
+        end
+        
         
     end % end non-static public methods
     
@@ -103,19 +108,29 @@ classdef geodata
         
         function obj = ReadVelocityData(obj)
             if exist(obj.fname, 'file') == 2
-                obj.dim=ncread(obj.fname,'dim'); 
-                obj.gridspace=ncread(obj.fname,'gridspace') ; 
+                obj.dim=ncread(obj.fname,'dim');
+                obj.gridspace=ncread(obj.fname,'gridspace') ;
                 % File exists.
                 if obj.dim == 2
-                    tmp=ReadSegy(obj.fname)';
-                    [obj.ny,obj.nz]=size(tmp) ;
-                    obj.x0y0=[0,0];
-                    [yg,zg]=CreateStructGrid(obj);
-                    obj.bbox = [min(yg(:)) max(yg(:))
-                        min(zg(:)) max(zg(:))];
-                    obj.Fvp=griddedInterpolant(yg,zg,tmp) ;
+                    tmp = ncread(obj.fname,'vp');
+                    
+                    % determine size of grid
+                    obj.ny = ncread(obj.fname,'ny');
+                    obj.nz = ncread(obj.fname,'nz');
+                    
+                    % determine bottom front corner coordinate
+                    obj.x0y0(1:obj.dim) = ncread(obj.fname,'x0y0z0');
+                    
+                    [zg,yg]=CreateStructGrid(obj);
+                    
+                    obj.bbox = [min(zg(:)) max(zg(:))
+                        min(yg(:)) max(yg(:))];
+                    
+                    obj.Fvp=griddedInterpolant(zg,yg,tmp) ;
+                    
                     clearvars yg zg tmp;
-                    disp(['INFO: SUCCESFULLY READ IN FILE',obj.fname]);
+                    
+                    disp(['INFO: SUCCESFULLY READ IN FILE ',obj.fname]);
                 else
                     
                     tmp = ncread(obj.fname,'vp');

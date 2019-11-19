@@ -17,6 +17,6 @@ function libpath
     
     addpath(genpath('data/')) ;
     addpath(genpath('utilities/')) ;
-    addpath(genpath('distmesh')) ;
+    addpath(genpath('distmesh-master')) ;
     addpath(genpath('segymat')) ;
 end

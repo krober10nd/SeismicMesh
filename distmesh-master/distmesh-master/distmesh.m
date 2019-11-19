@@ -21,7 +21,7 @@ function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, it_max, fid,
 %   in the resulting mesh. E_FIX can be sets of edge vertex indices to
 %   constrain, or alternatively a cell array with function handle to
 %   call. IT_MAX sets the maximum number of grid generation iterations
-%   allowed (default 1000). Finally, FID specifies a file identifies
+%   allowed (default 1000). Finally, FID specifies a fible identifies
 %   for output (default 1 = terminal output), FIT is an optional
 %   function to call every iteration to check for early termination.
 %
@@ -160,8 +160,8 @@ IT_MIN  = 20;             % Minimum number of iterations.
 IT_MINC = 50;             % Minimum number of iter. after which to call constraint function.
 IT_PRT  = 1;              % Output every IT_PRT iterations.
 
-N_RECV  = 1;              % Number of recovery iteration steps to move points outside back to boundary.
-N_DCF   = 10;             % Frequency of density control checks.
+N_RECV  = 2;              % Number of recovery iteration steps to move points outside back to boundary.
+N_DCF   = 30;             % Frequency of density control checks.
 n_sdim  = size(bbox,2);
 if( n_sdim==2 )
   dp_tol   = -0.001*h0;   % Abs point rejection tol (p(dist(p)>=dp0_tol) are rejected).
@@ -248,7 +248,7 @@ while( it<it_max )
       n_p = size(p,1);
       t_tri = t_tri + td;
 
-      % clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]), drawnow, pause
+      %clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]), drawnow, pause(0.01)
 
       % Describe each edge by a unique edge_pairs of nodes.
       if( IALG<=1 )
@@ -281,10 +281,12 @@ while( it<it_max )
     p1 = p(edge_pairs(:,1),:);
     p2 = p(edge_pairs(:,2),:);
     bars = p1 - p2;              % Bar vectors.
+    %L0 = hbars*Fscale*median(L)/median(hbars);                  % L0 = Desired lengths using ratio of medians scale factor
+    %LN = L./L0;
     L = sqrt(sum(bars.^2,2));    % Bar lengths.
     hbars = l_call_function( fh,0.5*( p1 + p2 ) );   % Rel bar mid point sizes.
-    L_target = hbars*F_scale*(sum(L.^n_sdim)/sum(hbars.^n_sdim))^(1/n_sdim);   % Bar target lengths.
-
+    %L_target = hbars*F_scale*(sum(L.^n_sdim)/sum(hbars.^n_sdim))^(1/n_sdim);   % Bar target lengths.
+    L_target = hbars*F_scale*median(L)/median(hbars); 
 
     % Density control, remove points that are too close to each other.
     if( mod(it,N_DCF)==0 && any(L_target>F_DCF*L) )
@@ -294,16 +296,20 @@ while( it<it_max )
       p0  = inf;
       continue;
     end
-
+    
     % Compute grid point movements.
-    F = max( L_target-L, 0 );   % Scalar bar forces.
+    LN = L./L_target;
+    F    = (1-LN.^4).*exp(-LN.^4)./LN;                         % Bessens-Heckbert edge force
+    %Fvec = F*[1,1].*barvec;
+    %F = max( L_target-L, 0 );   % Scalar bar forces.
     if( IALG<=1 )
-      F_bar = [bars,-bars].*repmat(F./L,1,2*n_sdim);
-      delta_p = full(sparse( edge_pairs(:,[ones(1,n_sdim), 2*ones(1,n_sdim)]), ...
-                             ones(size(edge_pairs,1),1)*[1:n_sdim,1:n_sdim], ...
-                             F_bar, n_p, n_sdim ));
+        F_bar = [bars,-bars].*repmat(F./L,1,2*n_sdim);
+        delta_p = full(sparse( edge_pairs(:,[ones(1,n_sdim), 2*ones(1,n_sdim)]), ...
+            ones(size(edge_pairs,1),1)*[1:n_sdim,1:n_sdim], ...
+            F_bar, n_p, n_sdim ));
     else
-      F_bar = F./L*ones(1,n_sdim).*bars;
+     % F_bar = F./L*ones(1,n_sdim).*bars;
+      F_bar = F*ones(1,n_sdim).*bars;
       delta_p = [];
       for i=1:n_sdim
         delta_p = [ delta_p, ...

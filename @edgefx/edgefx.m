@@ -139,7 +139,7 @@ classdef edgefx
         
         function plot(obj)
             [yg,zg]=obj.feat.CreateStructGrid ;
-            skip=5 ; % save memory and time by skipping
+            skip=1 ; % save memory and time by skipping
             figure;
             pcolor(yg(1:skip:end,1:skip:end),...
                 zg(1:skip:end,1:skip:end),...
