@@ -1,4 +1,4 @@
-function [Xout,Yout,Zout] = BezierSurface(cp,U,V)
+function [Xout,Yout,Zout] = BezierSurface(cp,U,V,W)
 %
 % Fast calculation of the point cloud of a Bezier surface
 %
@@ -13,7 +13,8 @@ function [Xout,Yout,Zout] = BezierSurface(cp,U,V)
 %     V ([1 x nV]) is a vector containing the values in the 2-direction
 %         (the second dimension of the matrix of points (x,y) at which the
 %         Bezier surface is plotted). max(V) must be <=1.
-%
+%     W ({n x m}) cell-array of weights for each cp. 
+% 
 % Output parameters
 %     Xout ([nU x nV]) is the X-coordinates of the points of the
 %         Bezier surface.
@@ -32,26 +33,45 @@ m=m-1; % 2-direction
 % convert plotting vectors into matrices
 p2=numel(U);
 
-X=zeros(p2,(n+1)*(m+1)); 
-Y=zeros(p2,(n+1)*(m+1)); 
-Z=zeros(p2,(n+1)*(m+1)); 
+numx=zeros(p2,(n+1)*(m+1)); 
+numy=zeros(p2,(n+1)*(m+1)); 
+numz=zeros(p2,(n+1)*(m+1)); 
+
+demx=zeros(p2,(n+1)*(m+1)); 
+demy=zeros(p2,(n+1)*(m+1)); 
+demz=zeros(p2,(n+1)*(m+1)); 
 
 k=1;
 for i=0:n
     for j=0:m
         niF=factorial(n)/(factorial(i)*factorial(n-i));
         Bin=niF*V.^i.*(1-V).^(n-i);
+        
         mjF=factorial(m)/(factorial(j)*factorial(m-j));
         Bjm=mjF*U.^j.*(1-U).^(m-j);
-        X(:,k)=Bin.*Bjm.*cp{i+1,j+1}(1);
-        Y(:,k)=Bin.*Bjm.*cp{i+1,j+1}(2);
-        Z(:,k)=Bin.*Bjm.*cp{i+1,j+1}(3);
+        
+        numx(:,k)=W{i+1,j+1}(1).*Bin.*Bjm.*cp{i+1,j+1}(1);
+        numy(:,k)=W{i+1,j+1}(2).*Bin.*Bjm.*cp{i+1,j+1}(2);
+        numz(:,k)=W{i+1,j+1}(3).*Bin.*Bjm.*cp{i+1,j+1}(3);
+        
+        demx(:,k)=W{i+1,j+1}(1).*Bin.*Bjm;
+        demy(:,k)=W{i+1,j+1}(2).*Bin.*Bjm;
+        demz(:,k)=W{i+1,j+1}(3).*Bin.*Bjm;
+        
         k=k+1;
     end
 end
-Xout=sum(X,2); 
-Yout=sum(Y,2); 
-Zout=sum(Z,2); 
+XoutNum=sum(numx,2); 
+YoutNum=sum(numy,2); 
+ZoutNum=sum(numz,2); 
+
+XoutDem=sum(demx,2); 
+YoutDem=sum(demy,2); 
+ZoutDem=sum(demz,2); 
+
+Xout=XoutNum./XoutDem;
+Yout=YoutNum./YoutDem;
+Zout=ZoutNum./ZoutDem;
 
 end
 

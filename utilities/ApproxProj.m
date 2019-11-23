@@ -1,22 +1,22 @@
-function [Xnew,Ynew,Znew,u0,v0] = ApproxProj( cp, qp )
+function [Xnew,Ynew,Znew,u0,v0] = ApproxProj( cp, qp, w )
 % Projects the query point in R^3 onto the Bezier surface defined by the
 % control points located in the cell-array cp using a binary search
 % algorithm. 
-% kjr, usp, 2019 
-thres = 1e-6; % threshold to stop binary search. 
+% Kjr, usp, 2019 
+
+thres = 1e-3; % threshold to stop binary search. 
 
 % Initial grid to find starting point 
 N=10; 
 [u,v]=meshgrid(linspace(0,1,N),linspace(0,1,N)); 
 
-[X,Y,Z]=BezierSurface(cp,u(:),v(:));
+[X,Y,Z]=BezierSurface(cp,u(:),v(:),w);
 
 % compute distance from qp to coarse representation of surface 
 for i = 1 : numel(u)
    td(i) = sqrt( (X(i) - qp(1)).^2 + ...
                  (Y(i) - qp(2)).^2 + ...
                  (Z(i) - qp(3)).^2); 
-  
 end
 
 minTd = min(td);
@@ -40,7 +40,7 @@ while 1
     Tests(7,:) = [u0, v0-halfInterval];
     Tests(8,:) = [u0+halfInterval,v0-halfInterval];
     
-    [Xr,Yr,Zr]=BezierSurface(cp,Tests(:,1),Tests(:,2));
+    [Xr,Yr,Zr]=BezierSurface(cp,Tests(:,1),Tests(:,2),w);
     
     % is there a distance shorter than the current point? 
     for i = 1 : 8
@@ -52,9 +52,8 @@ while 1
     minTdd = min(tdd) ;
     idd = find(tdd==minTdd,1,'first');
 
-    % nope, all the distances are larger. Lets try again but halve the search space. 
+    % all the distances are larger. Lets try again but halve the search space. 
     if(update || minTdd >= minTd)
-        %disp('Halving interval'); 
         interval = interval/2;
         halfInterval = halfInterval/2;
     end
@@ -62,7 +61,6 @@ while 1
     % all the distances are smaller, lets start from this position
     if(minTdd < minTd)
         update=1 ; 
-        %disp('Updating position');
         u0 = Tests(idd,1);
         v0 = Tests(idd,2);
     end
@@ -70,10 +68,9 @@ while 1
     count = count + 1;
     
     if interval < thres
-        %disp(['Convergence after ',num2str(count),' iterations']);
         break
     end
 end
-[Xnew,Ynew,Znew]=BezierSurface(cp,u0,v0);
+[Xnew,Ynew,Znew]=BezierSurface(cp,u0,v0,w);
 
 
