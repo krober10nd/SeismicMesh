@@ -138,19 +138,28 @@ classdef edgefx
         
         
         function plot(obj)
-            [yg,zg]=obj.feat.CreateStructGrid ;
-            skip=1 ; % save memory and time by skipping
-            figure;
-            pcolor(yg(1:skip:end,1:skip:end),...
-                zg(1:skip:end,1:skip:end),...
-                obj.F.Values(1:skip:end,1:skip:end)) ;
-            shading interp;
-            set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
-            xlabel('Y-position (m)');
-            ylabel('Z-position/depth (m)');
-            cb=colorbar; ylabel(cb,'Desired mesh size (m)') ;
-            set(gca,'FontSize',16) ;
-            axis equal; axis tight; 
+            if obj.feat.GetDim == 2
+                [yg,zg]=obj.feat.CreateStructGrid ;
+                figure;
+                pcolor(yg,zg,obj.F.Values) ;
+                shading interp;
+                set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
+                xlabel('Y-position (m)');
+                ylabel('Z-position/depth (m)');
+                cb=colorbar; ylabel(cb,'Desired mesh size (m)') ;
+                set(gca,'FontSize',16) ;
+                axis equal; axis tight;
+            else
+                [xg,yg,zg]=obj.feat.CreateStructGrid3D;
+                figure; scatter3(xg(:),yg(:),zg(:),5,obj.F.Values(:) ) ;
+                set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
+                xlabel('X-position (m)');
+                ylabel('Y-position (m)');
+                zlabel('Z-position/depth (m)'); 
+                cb=colorbar; ylabel(cb,'Desired mesh size (m)') ;
+                set(gca,'FontSize',16) ;
+                axis equal; axis tight;
+            end
         end
         
         function min_el = GetMinEl(obj); min_el=obj.min_el; end
