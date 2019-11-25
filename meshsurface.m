@@ -42,7 +42,8 @@ N=size(p,1);                                         % Number of points N
 pold=inf;                                            % For first iteration
 it = 0 ;
 disp('Meshing...');
-while 1
+while 1  
+    tic
     p0=p;
     it = it + 1 ;
     % 3. Retriangulation by edge flips
@@ -90,7 +91,9 @@ while 1
     if mod(it,nscreen)==0
         disp(['Iteration ',num2str(it),' complete']);
     end
-    
+    toc
+    disp(['Mesh has ',num2str(length(p)),' vertices']);
+    disp(['Mesh has ',num2str(length(t)),' simplices']);
     % 9. Termination criterion:
     %    a)All nodes move less than dptol (scaled)
     if max(sqrt(sum((p-p0).^2,2))/h0)<dptol, break; end
