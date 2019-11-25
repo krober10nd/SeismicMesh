@@ -1,5 +1,5 @@
 # SeismicMesh
-2D/3D triangular meshing for a slab of Earth. 
+2D/3D and surface triangular meshing for a slab of Earth. 
 
 <p align="center">
   <img src = "imgs/Example.jpg"> &nbsp &nbsp &nbsp &nbsp
