@@ -20,7 +20,7 @@ MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 20 ; % maximum shot record frequency (hz)
 GRADE  = 2 ; % expansion rate of element size
-ITMAX  = 50 ;
+ITMAX  = 30 ;
 %% build sizing function
 gdat = geodata('velocity_model',FNAME) ;
 
