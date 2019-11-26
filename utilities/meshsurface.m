@@ -23,7 +23,7 @@ up=unique(up,'rows');
 t = delaunay(up) ; p=[];
 [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
 
-% density control
+% Density control
 bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
 bars=unique(sort(bars,2),'rows');
 barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
@@ -64,7 +64,6 @@ while 1
     barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
     L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
     hbars=fh( (p(bars(:,1),:)+p(bars(:,2),:))/2);
-    %L0=hbars*Fscale*sqrt(sum(L.^2)/sum(hbars.^2));     % L0 = Desired lengths
     L0=hbars*Fscale*median(L)/median(hbars); 
     
     F=max(L0-L,0);                                     % Bar forces (scalars)

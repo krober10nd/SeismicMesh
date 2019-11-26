@@ -40,6 +40,9 @@ while 1
     Tests(7,:) = [u0, v0-halfInterval];
     Tests(8,:) = [u0+halfInterval,v0-halfInterval];
     
+    % 75% of all the time is spent in this line 
+    % projecting points in the parameter space to the 
+    % Bezier surface. 
     [Xr,Yr,Zr]=BezierSurface(cp,Tests(:,1),Tests(:,2),w);
     
     % is there a distance shorter than the current point? 
