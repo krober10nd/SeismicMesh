@@ -42,13 +42,29 @@ demy=zeros(p2,(n+1)*(m+1));
 demz=zeros(p2,(n+1)*(m+1)); 
 
 k=1;
+
+% lift all the expensive operations. every bit counts 
+nfact=mfactorial(n); 
+mfact=mfactorial(m); 
+
 for i=0:n
+    ifact(i+1)=mfactorial(i);
+    Vi(:,i+1)=V.^i; 
+    vm1(:,i+1)=(1-V).^(n-i); 
+end
+for j=0:m
+    jfact(j+1)=mfactorial(j);
+    Uj(:,j+1)=U.^j;
+    um1(:,j+1)=(1-U).^(m-j);
+end
+
+for i=0:n
+    niF=nfact/(ifact(i+1)*ifact(n+1-i));
+    Bin=niF*Vi(:,i+1).*vm1(:,i+1);
     for j=0:m
-        niF=factorial(n)/(factorial(i)*factorial(n-i));
-        Bin=niF*V.^i.*(1-V).^(n-i);
         
-        mjF=factorial(m)/(factorial(j)*factorial(m-j));
-        Bjm=mjF*U.^j.*(1-U).^(m-j);
+        mjF=mfact/(jfact(j+1)*jfact(m+1-j));
+        Bjm=mjF*Uj(:,j+1).*um1(:,j+1);
         
         numx(:,k)=W{i+1,j+1}(1).*Bin.*Bjm.*cp{i+1,j+1}(1);
         numy(:,k)=W{i+1,j+1}(2).*Bin.*Bjm.*cp{i+1,j+1}(2);

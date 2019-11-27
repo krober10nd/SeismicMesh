@@ -4,10 +4,10 @@ function [Xnew,Ynew,Znew,u0,v0] = ApproxProj( cp, qp, w )
 % algorithm. 
 % Kjr, usp, 2019 
 
-thres = 1e-3; % threshold to stop binary search. 
+thres = 1e-6; % threshold to stop binary search. 
 
 % Initial grid to find starting point 
-N=10; 
+N=2; 
 [u,v]=meshgrid(linspace(0,1,N),linspace(0,1,N)); 
 
 [X,Y,Z]=BezierSurface(cp,u(:),v(:),w);

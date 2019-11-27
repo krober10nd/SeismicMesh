@@ -18,8 +18,9 @@ up=mapToUnitSpace(p) ;
 [bp(:,1),bp(:,2),bp(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
 r0=fh(bp);                                    % Probability to keep point
 up=up(rand(size(bp,1),1)<min(r0)^2./r0.^2,:);
-up=[0,0; 0,1 ; 1,1; 1,0; up];                 % Add corner points
+pfix=[0,0; 0,1 ; 1,1; 1,0];
 up=unique(up,'rows');
+up=[pfix; up];                 % Add corner points
 t = delaunay(up) ; p=[];
 [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
 
@@ -42,7 +43,7 @@ N=size(p,1);                                         % Number of points N
 pold=inf;                                            % For first iteration
 it = 0 ;
 disp('Meshing...');
-while 1  
+while 1
     tic
     p0=p;
     it = it + 1 ;
@@ -57,37 +58,49 @@ while 1
         % 5. Graphical output of the current mesh
         clf,patch('faces',t,'vertices',p,'facecol',[.8,.9,1],'edgecol','k');
         title(['Iteration # ',num2str(it)])
+        hold on;
+        for ii=1:size(cp,1)
+            for jj=1:size(cp,2)
+                hold on; plot3(cp{ii,jj}(1),cp{ii,jj}(2),cp{ii,jj}(3),'rs','MarkerSize',10,...
+                    'MarkerFaceColor','red');
+            end
+        end
         axis equal;view(3);cameramenu;drawnow
+        
     end
     
     % 6. Move mesh points based on bar lengths L and forces F
     barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
     L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
     hbars=fh( (p(bars(:,1),:)+p(bars(:,2),:))/2);
-    %L0=hbars*Fscale*sqrt(sum(L.^2)/sum(hbars.^2));     % L0 = Desired lengths
-    L0=hbars*Fscale*median(L)/median(hbars); 
-    
-    F=max(L0-L,0);                                     % Bar forces (scalars)
-    Fvec=F./L*[1,1,1].*barvec;                         % Bar forces (x,y,z components)
-    Ftot=full(sparse(bars(:,[1,1,1,2,2,2]),ones(size(F))*[1,2,3,1,2,3],[Fvec,-Fvec],N,3));
+    L0=hbars*Fscale*median(L)/median(hbars);
+    LN = L./L0;                                              % LN = Normalized bar lengths
+    F    = (1-LN.^4).*exp(-LN.^4)./LN;                       % Bessens-Heckbert edge force
+    Fvec=[barvec,-barvec].*repmat(F,1,2*3);
+    Ftot=full(sparse(bars(:,[ones(1,3),2*ones(1,3)]), ...
+        ones(size(bars,1),1)*[1:3,1:3], ...
+        Fvec,N,3));
+    Ftot(1:4)=0; % for corner points.
     p=p+deltat*Ftot;                                   % Update node positions in R^3
     
     if sum(L==0) >0
-      error('Zero edgelengths detected...Lower timestep?');
+        error('Zero edgelengths detected...Lower timestep?');
     end
     
     % 7. Project all points back to the surface
-    for nn = 1 : length(p)
+    for nn = 5 : length(p)
         [p(nn,1),p(nn,2),p(nn,3),up(nn,1),up(nn,2)]=ApproxProj(cp,p(nn,:),w);
     end
     
     % 8. Project points back in the [0x1] x [0x1] domain
-    d=drectangle(up); ix=d>0;                                % Find points outside (d>0)
-    dgradx=(drectangle([up(ix,1)+deps,up(ix,2)])-d(ix))/deps; %    Numerical
-    dgrady=(drectangle([up(ix,1),up(ix,2)+deps])-d(ix))/deps; %    gradient
-    up(ix,:)=up(ix,:)-[d(ix).*dgradx,d(ix).*dgrady];     % Project back to boundary
-    [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
-    
+    for i=1:2
+        d=drectangle(up); ix=d>0;                                % Find points outside (d>0)
+        ix(1:4) = -1; % for corner points
+        dgradx=(drectangle([up(ix,1)+deps,up(ix,2)])-d(ix))/deps; %    Numerical
+        dgrady=(drectangle([up(ix,1),up(ix,2)+deps])-d(ix))/deps; %    gradient
+        up(ix,:)=up(ix,:)-[d(ix).*dgradx,d(ix).*dgrady];     % Project back to boundary
+        [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
+    end
     if mod(it,nscreen)==0
         disp(['Iteration ',num2str(it),' complete']);
     end
@@ -96,7 +109,7 @@ while 1
     disp(['Mesh has ',num2str(length(t)),' simplices']);
     % 9. Termination criterion:
     %    a)All nodes move less than dptol (scaled)
-    if max(sqrt(sum((p-p0).^2,2))/h0)<dptol, break; end
+    if max(sqrt(sum((p-p0).^2,2))/h0)<dptol, dips('Convergence met!'); break; end
     %    b)or exhausted iterations
     if it == itmax, disp('Exhausted iterations'); break; end
 end
