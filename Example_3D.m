@@ -14,11 +14,11 @@ libpath
 %% specify mesh design
 FNAME  = 'SeismicUnitCubeVp.nc'; % file containing velocity model
 OFNAME = 'SeismicUnitCubeVp'; % output file name
-MIN_EL = 20 ; % minimum element size (meters)
+MIN_EL = 100 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 40 ; % maximum shot record frequency (hz)
-GRADE  = 0 ; % expansion rate of element size
+GRADE  = 5 ; % expansion rate of element size
 %% build sizing function
 gdat = geodata('velocity_model',FNAME) ;
 
@@ -40,17 +40,18 @@ fh = @(p) ef.F(p);
 P_FIX=[]; % INSERT FIXED POINTS HERE 
 IT_MAX=50; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 
-%[ P, T, COUNT ] = distmeshnd( fd, fh, MIN_EL, gdat.bbox', P_FIX, IT_MAX ) ;
-[P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', [], [], IT_MAX );
+load Constraints
+[P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', pfix , [], IT_MAX );
 
 %% write the mesh to disk (0,0) is top left not bottom left corner. 
 % flip it upside down 
 P(:,2)=P(:,2)*-1;
 
 %% visualize result
-simpplot(P,T) ; 
+figure; simpplot(P,T) ; 
 
 %% write mesh to a msh format
 gmsh_mesh2d_write ( 'output.msh', 2, length(P), P', ...
   3, length(T), T' ) ;
 
+vtkwrite('volume_wsurface.vtk','polydata','tetrahedron',P(:,1),P(:,2),P(:,3),T)

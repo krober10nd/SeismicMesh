@@ -24,7 +24,7 @@ up=[pfix; up];                 % Add corner points
 t = delaunay(up) ; p=[];
 [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
 
-% density control
+% Density control
 bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
 bars=unique(sort(bars,2),'rows');
 barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
@@ -73,6 +73,7 @@ while 1
     barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
     L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
     hbars=fh( (p(bars(:,1),:)+p(bars(:,2),:))/2);
+<<<<<<< HEAD
     L0=hbars*Fscale*median(L)/median(hbars);
     LN = L./L0;                                              % LN = Normalized bar lengths
     F    = (1-LN.^4).*exp(-LN.^4)./LN;                       % Bessens-Heckbert edge force
@@ -81,6 +82,13 @@ while 1
         ones(size(bars,1),1)*[1:3,1:3], ...
         Fvec,N,3));
     Ftot(1:4)=0; % for corner points.
+=======
+    L0=hbars*Fscale*median(L)/median(hbars); 
+    
+    F=max(L0-L,0);                                     % Bar forces (scalars)
+    Fvec=F./L*[1,1,1].*barvec;                         % Bar forces (x,y,z components)
+    Ftot=full(sparse(bars(:,[1,1,1,2,2,2]),ones(size(F))*[1,2,3,1,2,3],[Fvec,-Fvec],N,3));
+>>>>>>> 9bf4a5a0489cb4bce768d82633f875bc52f296a8
     p=p+deltat*Ftot;                                   % Update node positions in R^3
     
     if sum(L==0) >0

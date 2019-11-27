@@ -59,13 +59,17 @@ fh = @(p) ef.F(p) ;
 
 [p,t]=meshsurface(cp,w,fh,MIN_EL,gdat.bbox',ITMAX);
 
-%%
-pmid=(p(t(:,1),:)+p(t(:,2),:)+p(t(:,3),:))/3;    % Compute centroids
+pfix1 = p ; 
+[pfix2,pfix3]=extrudeMesh(p,t);
+pfix=[pfix1; pfix2; pfix3];
+% remve any outliers (i.e., outside the bbox);
+bbox=[          0        4900
+    0        4900
+    0        4900];
+drectangle3D=@(p,x1,x2,y1,y2,z1,z2)-min(min(min(min(min(-z1+p(:,3),z2-p(:,3)),-y1+p(:,2)),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
+d = drectangle3D(pfix,0,4900,0,4900,0,4900); 
+out = d > 0; 
+pfix(out,:) =[]; 
+save Constraints pfix 
 
-tria = triangulation(t,p); 
-
-%% for each face, place a node 
-for i =  1 : tria.size(1)
-    fN=tria.faceNormal(i);
-    pause
-end
+vtkwrite('surface.vtk','polydata','triangle',p(:,1),p(:,2),p(:,3),t)
