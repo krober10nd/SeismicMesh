@@ -63,16 +63,22 @@ for i=0:n
     Bin=niF*Vi(:,i+1).*vm1(:,i+1);
     for j=0:m
         
+        pt=cp{i+1,j+1}; 
+        we=W{i+1,j+1}; 
+        ptwe=pt.*we; 
+        
         mjF=mfact/(jfact(j+1)*jfact(m+1-j));
         Bjm=mjF*Uj(:,j+1).*um1(:,j+1);
         
-        numx(:,k)=W{i+1,j+1}(1).*Bin.*Bjm.*cp{i+1,j+1}(1);
-        numy(:,k)=W{i+1,j+1}(2).*Bin.*Bjm.*cp{i+1,j+1}(2);
-        numz(:,k)=W{i+1,j+1}(3).*Bin.*Bjm.*cp{i+1,j+1}(3);
+        Bcomb=Bjm.*Bin;
         
-        demx(:,k)=W{i+1,j+1}(1).*Bin.*Bjm;
-        demy(:,k)=W{i+1,j+1}(2).*Bin.*Bjm;
-        demz(:,k)=W{i+1,j+1}(3).*Bin.*Bjm;
+        numx(:,k)=Bcomb.*ptwe(1); 
+        numy(:,k)=Bcomb.*ptwe(2); 
+        numz(:,k)=Bcomb.*ptwe(3); 
+        
+        demx(:,k)=we(1).*Bcomb;
+        demy(:,k)=we(2).*Bcomb;
+        demz(:,k)=we(3).*Bcomb;
         
         k=k+1;
     end

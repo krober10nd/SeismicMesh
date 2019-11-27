@@ -7,18 +7,14 @@ function [Xnew,Ynew,Znew,u0,v0] = ApproxProj( cp, qp, w )
 thres = 1e-6; % threshold to stop binary search. 
 
 % Initial grid to find starting point 
-N=2; 
+N=9; 
 [u,v]=meshgrid(linspace(0,1,N),linspace(0,1,N)); 
 
 [X,Y,Z]=BezierSurface(cp,u(:),v(:),w);
 
 % compute distance from qp to coarse representation of surface 
-for i = 1 : numel(u)
-   td(i) = sqrt( (X(i) - qp(1)).^2 + ...
-                 (Y(i) - qp(2)).^2 + ...
-                 (Z(i) - qp(3)).^2); 
-end
-
+% dst = sqrt((testset(:,1)-dataset(idx,1)).^2 + (testset(:,2)-dataset(idx,2)).^2);
+td=(X - qp(1)).^2+(Y-qp(2)).^2 +(Z-qp(3)).^2; 
 minTd = min(td);
 id=find(td==minTd,1,'first');
 u0=u(id) ; v0=v(id) ; % starting point for binary search
@@ -46,12 +42,7 @@ while 1
     [Xr,Yr,Zr]=BezierSurface(cp,Tests(:,1),Tests(:,2),w);
     
     % is there a distance shorter than the current point? 
-    for i = 1 : 8
-        tdd(i) = sqrt( (Xr(i) - qp(1)).^2 + ...
-            (Yr(i) - qp(2)).^2 + ...
-            (Zr(i) - qp(3)).^2);
-    end
-    
+    tdd=(Xr-qp(1)).^2 +(Yr-qp(2)).^2 +(Zr-qp(3)).^2;
     minTdd = min(tdd) ;
     idd = find(tdd==minTdd,1,'first');
 

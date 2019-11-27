@@ -214,6 +214,14 @@ r0 = l_call_function(fh,p);   % Probability to keep point.
 p  = p( rand(size(p,1),1) < min(r0)^n_sdim./r0.^n_sdim, : );
 p_fix   = l_deduplicate( p_fix );
 n_p_fix = size(p_fix,1);
+if n_p_fix > 0 
+  % delete points inside boundary of pfix 
+  faces = boundary(p_fix(:,1),p_fix(:,2),p_fix(:,3));
+  in = in_polyhedron(faces,p_fix,p);
+  % remove points inside 
+  p(in,:)=[]; 
+end
+
 if( ~isempty(p_fix) )
   p = [ p_fix; setdiff(p,p_fix,'rows') ];
 end
