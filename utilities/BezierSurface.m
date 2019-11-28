@@ -41,11 +41,17 @@ demx=zeros(p2,(n+1)*(m+1));
 demy=zeros(p2,(n+1)*(m+1)); 
 demz=zeros(p2,(n+1)*(m+1)); 
 
+ifact=zeros(n); jfact=zeros(m); 
+Vi=zeros(p2,n+1); Uj=zeros(p2,m+1); 
+vm1=zeros(p2,n+1); um1=zeros(p2,m+1); 
+
+
 k=1;
 
 % lift all the expensive operations. every bit counts 
 nfact=mfactorial(n); 
 mfact=mfactorial(m); 
+
 
 for i=0:n
     ifact(i+1)=mfactorial(i);

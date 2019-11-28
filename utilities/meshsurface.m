@@ -4,7 +4,7 @@ function [p,t]=meshsurface(cp,w,fh,h0,bbox,itmax)
 %   [P,T]=MESHSURFACE(CP,W,FH,H0,BBOX,ITMAX)
 %    Kjr, usp, 2019
 
-dptol=1e-4; ttol=.1; Fscale=1.20; deltat=0.2; deps=sqrt(eps)*h0; nscreen=5;
+dptol=1e-4; ttol=.1; Fscale=1.2; deltat=0.2; deps=sqrt(eps)*h0; nscreen=5;
 densitycntrlfreq=10; 
 %1a. Create distribution of points in unit plane
 pinit{1} = bbox(1,1):h0:bbox(2,1);
@@ -133,7 +133,7 @@ while 1
     
     % 7. Project all points back to the surface
     for nn = 5 : length(p) % starts at 5 because 4 corner points. 
-        [p(nn,1),p(nn,2),p(nn,3),up(nn,1),up(nn,2)]=ApproxProj(cp,p(nn,:),w);
+        [p(nn,1),p(nn,2),p(nn,3),up(nn,1),up(nn,2)]=ApproxProj(cp,p(nn,:),w,up(nn,1),up(nn,2));
     end
     
     % 8. Project points back in the [0x1] x [0x1] domain
