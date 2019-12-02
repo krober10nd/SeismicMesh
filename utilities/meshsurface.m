@@ -25,7 +25,7 @@ t = delaunay(up) ; p=[];
 [p(:,1),p(:,2),p(:,3)] = BezierSurface(cp,up(:,1),up(:,2),w);
 
 % Density control
-% Remove points where too far. 
+% Remove points too far apart. 
 bars=[t(:,[1,2]);t(:,[1,3]);t(:,[2,3])];         % Interior bars duplicated
 bars=unique(sort(bars,2),'rows');
 barvec=p(bars(:,1),:)-p(bars(:,2),:);              % List of bar vectors
@@ -76,11 +76,11 @@ while 1
     L=sqrt(sum(barvec.^2,2));                          % L = Bar lengths
     hbars=fh( (p(bars(:,1),:)+p(bars(:,2),:))/2);
     L0=hbars*Fscale*median(L)/median(hbars);
-    LN = L./L0;                                              % LN = Normalized bar lengths
+    LN = L./L0;                                         % LN = Normalized bar lengths
     
     % Split bars in parameter space based on values in R^3. 
     % Periodically do this to produce better sized elements.
-    if mod(it,densitycntrlfreq)==0
+    if mod(it,densitycntrlfreq)==0 && it~=itmax
         upst=[]; 
         if any(LN > 2)
             nsplit = floor(LN);
@@ -124,8 +124,8 @@ while 1
     Ftot=full(sparse(bars(:,[ones(1,3),2*ones(1,3)]), ...
         ones(size(bars,1),1)*[1:3,1:3], ...
         Fvec,N,3));
-    Ftot(1:4)=0; % for corner points.
-    p=p+deltat*Ftot;                                   % Update node positions in R^3
+    Ftot(1:4)=0;                                             % To preserve corner points.
+    p=p+deltat*Ftot;                                         % Update node positions in R^3
     
     if sum(L==0) >0
         error('Zero edgelengths detected...Lower timestep?');

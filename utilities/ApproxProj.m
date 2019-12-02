@@ -10,7 +10,7 @@ u0 = ustart; v0 = vstart;
 
 [X,Y,Z]=BezierSurface(cp,u0,v0,w);
 
-td=(X - qp(1)).^2+(Y-qp(2)).^2 +(Z-qp(3)).^2; 
+td=sqrt((X - qp(1)).^2+(Y-qp(2)).^2 +(Z-qp(3)).^2); 
 minTd = min(td);
 
 interval = 1e-3; halfInterval = interval/2;
@@ -18,6 +18,7 @@ count  = 0 ;
 update = 0 ; 
 Tests=[];
 %disp(['min dis at begin is ',num2str(sqrt(minTd))]); 
+minTdPast=inf; 
 while 1
     
     % grid around the point in question 
@@ -34,7 +35,7 @@ while 1
     [Xr,Yr,Zr]=BezierSurface(cp,Tests(:,1),Tests(:,2),w);
     
     % is there a distance shorter than the current point?
-    tdd=(Xr-qp(1)).^2 +(Yr-qp(2)).^2 +(Zr-qp(3)).^2;
+    tdd=sqrt((Xr-qp(1)).^2 +(Yr-qp(2)).^2 +(Zr-qp(3)).^2);
     minTdd = min(tdd) ;
     idd = find(tdd==minTdd,1,'first');
     
@@ -46,6 +47,7 @@ while 1
     
     % all the distances are smaller, lets start from this position
     if(minTdd < minTd)
+        minTdPast=minTd; 
         minTd=minTdd;
         update=1 ; 
         u0 = Tests(idd,1);
@@ -56,8 +58,8 @@ while 1
     
     %saveMinTd(count) = minTd;
     
-    if interval < thres
-        %disp(['min dis at begin is ',num2str(sqrt(minTd))]);
+    if abs(minTd - minTdPast) < 0.20 || minTd < 0.20
+        %disp(['min dis at end is ',num2str(sqrt(minTd))]);
         break
     end
 end
