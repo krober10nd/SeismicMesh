@@ -214,13 +214,13 @@ r0 = l_call_function(fh,p);   % Probability to keep point.
 p  = p( rand(size(p,1),1) < min(r0)^n_sdim./r0.^n_sdim, : );
 p_fix   = l_deduplicate( p_fix );
 n_p_fix = size(p_fix,1);
-if n_p_fix > 0 
-  % delete points inside boundary of pfix 
-  faces = boundary(p_fix(:,1),p_fix(:,2),p_fix(:,3));
-  in = in_polyhedron(faces,p_fix,p);
-  % remove points inside 
-  p(in,:)=[]; 
-end
+% if n_p_fix > 0 
+%   % delete points inside boundary of pfix 
+%   faces = boundary(p_fix(:,1),p_fix(:,2),p_fix(:,3));
+%   in = in_polyhedron(faces,p_fix,p);
+%   % remove points inside 
+%   p(in,:)=[]; 
+% end
 
 if( ~isempty(p_fix) )
   p = [ p_fix; setdiff(p,p_fix,'rows') ];
@@ -255,9 +255,12 @@ while( it<it_max )
       p0  = p;
       n_p = size(p,1);
       t_tri = t_tri + td;
-
-      %clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]), drawnow, pause(0.01)
-
+      
+      clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]);
+      if ~isempty(p_fix)
+          hold on; drawedge2(p_fix,e_fix);
+      end
+      drawnow, pause(0.01)
       % Describe each edge by a unique edge_pairs of nodes.
       if( IALG<=1 )
         edge_pairs = zeros(0,2);
