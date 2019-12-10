@@ -4,8 +4,6 @@ function [Xnew,Ynew,Znew,u0,v0] = ApproxProj( cp, qp, w, ustart,vstart )
 % algorithm. 
 % Kjr, usp, 2019 
 
-thres = 1e-6; % threshold to stop binary search. 
-
 u0 = ustart; v0 = vstart;
 
 [X,Y,Z]=BezierSurface(cp,u0,v0,w);

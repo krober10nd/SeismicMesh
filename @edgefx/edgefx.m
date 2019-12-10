@@ -141,10 +141,10 @@ classdef edgefx
             if obj.feat.GetDim == 2
                 [yg,zg]=obj.feat.CreateStructGrid ;
                 figure;
-                pcolor(yg,zg,obj.F.Values) ;
+                pcolor(zg,yg,obj.F.Values) ;
                 shading interp;
                 set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
-                xlabel('Y-position (m)');
+                xlabel('X-position (m)');
                 ylabel('Z-position/depth (m)');
                 cb=colorbar; ylabel(cb,'Desired mesh size (m)') ;
                 set(gca,'FontSize',16) ;
@@ -195,6 +195,7 @@ classdef edgefx
                 tmp = stdfilter(vp,[3,3],1,'replicate'); % use a larger stencil here for smoother variance
                 tmp = real(tmp);
                 tmp = (1-tmp./500); %  demoninator is reference gradient for which min_el is mapped
+                tmp(tmp > 0.5) = inf; 
                 obj.hslp = max(tmp*obj.slp + obj.min_el,10); % ensure result doesn't go negative.
             else
                 [xg,yg,zg] = obj.feat.CreateStructGrid3D;
@@ -204,6 +205,7 @@ classdef edgefx
                     tmp = stdfilter(squeeze(vp(k,:,:)),[3,3],1,'replicate'); % use a larger stencil here for smoother variance
                     tmp = real(tmp);
                     tmp = (1-tmp./500); %  demoninator is reference gradient for which min_el is mapped
+                    tmp(tmp > 0.5) = 100e3; 
                     obj.hslp(k,:,:) = max(tmp*obj.slp + obj.min_el,10); % ensure result doesn't go negative.
                 end
             end

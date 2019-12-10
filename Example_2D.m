@@ -1,14 +1,11 @@
 clearvars; close all; clc;
 % Read in a subsection of the Marmousi ii p-wave velocity model.
 % File is included in the data directory. 
-
 %-----------------------------------------------------------
 %   Keith Roberts   : 2019 --
 %   Email           : krober@usp.br
 %   Last updated    : 11/19/2019
 %-----------------------------------------------------------
-%
-
 % ensure path is set correctly
 libpath
 %% specify mesh design
@@ -18,14 +15,14 @@ MIN_EL = 10 ; % minimum element size (meters)
 MAX_EL = 1e3 ;% maximum element size (meters)
 WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 20 ; % maximum shot record frequency (hz)
-SLP    = 10 ; % element size (meters) near maximum gradient in P-wavepseed.
-GRADE  = 0.10 ; % expansion rate of mesh resolution (in decimal percent).
-CR     = 0.1 ; % desired Courant number desired DT will be enforced for.
+SLP    = 100 ; % element size (meters) near maximum gradient in P-wavepseed.
+GRADE  = 0.15 ; % expansion rate of mesh resolution (in decimal percent).
+CR     = 0.99 ; % desired Courant number desired DT will be enforced for.
 DT     = 1e-3; % desired time step (seconds).
 %% build sizing function
 gdat = geodata('velocity_model',FNAME) ;
 
-% plot(gdat) % visualize p-wave velocity model
+plot(gdat) % visualize p-wave velocity model
 
 ef = edgefx('geodata',gdat,...
     'wl',WL,'f',FREQ,...
@@ -38,7 +35,7 @@ ef = edgefx('geodata',gdat,...
 plot(ef); % visualize mesh size function
 
 %% mesh generation step
-drectangle = @(p,x1,x2,y1,y2) -min(min(min(-y1+p(:,2),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
+drectangle=@(p,x1,x2,y1,y2) -min(min(min(-y1+p(:,2),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
 
 fd = @(p) max( drectangle(p,...
      gdat.bbox(1,1),gdat.bbox(1,2),gdat.bbox(2,1),gdat.bbox(2,2)),...
@@ -54,6 +51,9 @@ IT_MAX=50; % NUMBER OF MESH GENERATION ITERATIONS
 %% Mesh improvement 
 
 [P2,T2]=direct_smoother_lur(P,T,[],1);
+
+P2=protate(P2,(90*pi)/180);
+figure; simpplot(P2,T2)
 
 vp_on_nodes = InterpVP(gdat,P2); 
 
@@ -76,6 +76,6 @@ gmsh_mesh2d_write ( OFNAME, 2, length(P2), P2', ...
 
 % write mesh to a vtu format
 P2(:,3) = zeros*P2(:,2); % add dummy 3rd dimension
-exportTriangulation2VTK(OFNAME,P2,T2) ;
- 
+
+vtkwrite(OFNAME,'polydata','triangle',P2(:,1),P2(:,2),P2(:,2)*0,T2) 
 

@@ -246,6 +246,7 @@ while( it<it_max )
     % Retriangulate, if grid points have moved significantly.
     delta_p_max = max( sqrt(sum((p-p0).^2,2)) );
     if( rt_tol*h0<delta_p_max )
+        
       n_tri = n_tri + 1;
 
       [p,t,td] = l_triangulate( p, fd, e_fix, dtrm_tol );
@@ -478,9 +479,12 @@ else
   elseif( exist('DelaunayTri') )
 
     if( size(p,2)==3 )
-      t = DelaunayTri( p(:,1), p(:,2), p(:,3) );
+      t = delaunay( p );
+
+      %t = DelaunayTri( p(:,1), p(:,2), p(:,3) );
     else
-      t = DelaunayTri( p(:,1), p(:,2) );
+     t = delaunay( p );
+      %t = DelaunayTri( p(:,1), p(:,2) );
     end
 
   elseif( size(p,2)==3 && exist('delaunay3') && ...
