@@ -70,19 +70,32 @@ classdef geodata
 
         % plotting
         function plot(obj)
-            [yg,zg]=CreateStructGrid(obj) ;
-            tmp=obj.Fvp(yg,zg);
-            skip=1 ; % save memory and time by skipping
-            figure;
-            pcolor(yg(1:skip:end,1:skip:end)*obj.gridspace,...
-                zg(1:skip:end,1:skip:end)*obj.gridspace,...
-                tmp(1:skip:end,1:skip:end)) ;
-            shading interp;
-            set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
-            xlabel('Y-position (m)');
-            ylabel('Z-position/depth (m)');
-            cb=colorbar; ylabel(cb,'P-wave speed (m/s)') ;
-            set(gca,'FontSize',16) ;
+            if(obj.GetDim == 2)
+                [yg,zg]=CreateStructGrid(obj) ;
+                tmp=obj.Fvp(yg,zg);
+                skip=1 ; % save memory and time by skipping
+                figure;
+                pcolor(zg(1:skip:end,1:skip:end)*obj.gridspace,...
+                    yg(1:skip:end,1:skip:end)*obj.gridspace,...
+                    tmp(1:skip:end,1:skip:end)) ;
+                shading interp;
+                set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
+                xlabel('X-position (m)');
+                ylabel('Z-position/depth (m)');
+                cb=colorbar; ylabel(cb,'P-wave speed (m/s)') ;
+                set(gca,'FontSize',16) ;
+            elseif obj.GetDim == 3
+                [xg,yg,zg]=CreateStructGrid3D(obj);
+                tmp=obj.Fvp(xg,yg,zg);
+                figure; scatter3(xg(:),yg(:),zg(:),5,tmp(:) ) ;
+                set(gca,'XAxisLocation','top','YAxisLocation','left','ydir','reverse');
+                xlabel('X-position (m)');
+                ylabel('Y-position (m)');
+                zlabel('Z-position/depth (m)');
+                cb=colorbar; ylabel(cb,'P-wave speed (m/s)') ;
+                set(gca,'FontSize',16) ;
+                axis equal; axis tight;
+            end
         end
         
         function [yg,zg]=CreateStructGrid(obj)

@@ -14,21 +14,29 @@ libpath
 %% specify mesh design
 FNAME  = 'SeismicUnitCubeVp.nc'; % file containing velocity model
 OFNAME = 'SeismicUnitCubeVp'; % output file name
-MIN_EL = 75 ; % minimum element size (meters)
+IN_EL = 50 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
-WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
-FREQ   = 40 ; % maximum shot record frequency (hz)
-GRADE  = 1.75 ; % expansion rate of element size
+WL     = 50 ;% number of nodes per wavelength of wave with FREQ (hz)
+FREQ   = 3 ; % maximum shot record frequency (hz)
+GRADE  = 0.35 ; % expansion rate of element size
+SLP    = 50;
 %% build sizing function
 gdat = geodata('velocity_model',FNAME) ;
 
+plot(gdat);
+
 ef = edgefx('geodata',gdat,...
-    'wl',WL,'f',FREQ,...
-    'min_el',MIN_EL,'max_el',MAX_EL);
+    'wl',WL,'f',FREQ,'slp',SLP,...
+    'min_el',MIN_EL,'max_el',MAX_EL,'g',GRADE);
+
+plot(ef);
+
+
 
 %% mesh generation step
 
-drectangle3D=@(p,x1,x2,y1,y2,z1,z2)-min(min(min(min(min(-z1+p(:,3),z2-p(:,3)),-y1+p(:,2)),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
+drectangle3D=@(p,x1,x2,y1,y2,z1,z2)-min(min(min(min(min(-z1+p(:,3),z2-...
+    p(:,3)),-y1+p(:,2)),y2-p(:,2)),-x1+p(:,1)),x2-p(:,1));
 
 fd = @(p) drectangle3D(p,...
     gdat.bbox(1,1),gdat.bbox(1,2),...
@@ -38,12 +46,12 @@ fd = @(p) drectangle3D(p,...
 fh = @(p) ef.F(p);
 
 P_FIX=[]; % INSERT FIXED POINTS HERE 
-IT_MAX=50; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
+IT_MAX=100; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 
-load Constraints
 tic
 [P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', [] , [], IT_MAX );
 toc
+
 %% write the mesh to disk (0,0) is top left not bottom left corner. 
 % flip it upside down 
 P(:,2)=P(:,2)*-1;
