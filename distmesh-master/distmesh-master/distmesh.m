@@ -1,4 +1,4 @@
-function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, it_max, fid, fit )
+function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, poly_fix, it_max, fid, fit )
 % DISTMESH 2D/3D Mesh generation using distance functions.
 %
 %   [ P, T, STAT ] = DISTMESH( FD, FH, H0, BBOX, P_FIX, E_FIX, IT_MAX, FID, FIT )
@@ -136,13 +136,13 @@ function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, it_max, fid,
 if( ~(nargin || nargout) ),help distmesh, return, end
 
 t0 = tic;
-if( nargin<9 )
+if( nargin<10 )
   fit = [];
 end
-if( nargin<8 )
+if( nargin<9 )
   fid = 1;
 end
-if( nargin<7 )
+if( nargin<8 )
   it_max = 50;
 end
 if( nargin<6 )
@@ -214,13 +214,19 @@ r0 = l_call_function(fh,p);   % Probability to keep point.
 p  = p( rand(size(p,1),1) < min(r0)^n_sdim./r0.^n_sdim, : );
 p_fix   = l_deduplicate( p_fix );
 n_p_fix = size(p_fix,1);
-% if n_p_fix > 0 
-%   % delete points inside boundary of pfix 
-%   faces = boundary(p_fix(:,1),p_fix(:,2),p_fix(:,3));
-%   in = in_polyhedron(faces,p_fix,p);
-%   % remove points inside 
-%   p(in,:)=[]; 
-% end
+if n_p_fix > 0 
+    if n_sdim > 2
+        % delete points inside boundary of pfix
+        faces = boundary(p_fix(:,1),p_fix(:,2),p_fix(:,3));
+        in = in_polyhedron(faces,p_fix,p);
+        % remove points inside
+        p(in,:)=[];
+    else
+        edges = Get_poly_edges( poly_fix ) ;
+        [in, on] = inpoly(p,poly_fix, edges); 
+        p(in | on,:) = []; 
+    end
+end
 
 if( ~isempty(p_fix) )
   p = [ p_fix; setdiff(p,p_fix,'rows') ];
@@ -256,11 +262,11 @@ while( it<it_max )
       n_p = size(p,1);
       t_tri = t_tri + td;
       
-      clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]);
-      if ~isempty(p_fix)
-          hold on; drawedge2(p_fix,e_fix);
-      end
-      drawnow, pause(0.01)
+%       clf, l_plot(p,t), title(['retriangulated mesh ',num2str(n_tri)]);
+%       if ~isempty(p_fix)
+%           hold on; drawedge2(p_fix,e_fix);
+%       end
+%       drawnow, pause(0.01)
       % Describe each edge by a unique edge_pairs of nodes.
       if( IALG<=1 )
         edge_pairs = zeros(0,2);

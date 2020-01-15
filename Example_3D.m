@@ -14,11 +14,11 @@ libpath
 %% specify mesh design
 FNAME  = 'SeismicUnitCubeVp.nc'; % file containing velocity model
 OFNAME = 'SeismicUnitCubeVp'; % output file name
-MIN_EL = 100 ; % minimum element size (meters)
+MIN_EL = 75 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 20 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 40 ; % maximum shot record frequency (hz)
-GRADE  = 5 ; % expansion rate of element size
+GRADE  = 1.75 ; % expansion rate of element size
 %% build sizing function
 gdat = geodata('velocity_model',FNAME) ;
 
@@ -41,8 +41,9 @@ P_FIX=[]; % INSERT FIXED POINTS HERE
 IT_MAX=50; % DEFAULT NUMBER OF MESH GENERATION ITERATIONS 1000
 
 load Constraints
-[P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', pfix , [], IT_MAX );
-
+tic
+[P,T,STATS] = distmesh( fd, fh, MIN_EL, gdat.bbox', [] , [], IT_MAX );
+toc
 %% write the mesh to disk (0,0) is top left not bottom left corner. 
 % flip it upside down 
 P(:,2)=P(:,2)*-1;

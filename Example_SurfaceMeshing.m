@@ -15,7 +15,7 @@ libpath
 %% specify mesh design
 FNAME  = 'SeismicUnitCubeVp.nc'; % file containing velocity model
 OFNAME = 'SeismicUnitCubeVp'; % output file name
-MIN_EL = 100 ; % minimum element size (meters)
+MIN_EL = 200 ; % minimum element size (meters)
 MAX_EL = 5e3 ;% maximum element size (meters)
 WL     = 100 ;% number of nodes per wavelength of wave with FREQ (hz)
 FREQ   = 20 ; % maximum shot record frequency (hz)
@@ -30,27 +30,19 @@ ef = edgefx('geodata',gdat,...
       
 
 % control points for a cubic surface
-cp{1,1}=[0,0,0];cp{1,2}=[0,0.33,2];cp{1,3}=[0,0.66,0];cp{1,4}=[0,1.0,0];
+cp{1,1}=[0,0,-1];cp{1,2}=[0,0.33,2];cp{1,3}=[0,0.66,-5];cp{1,4}=[0,1.0,0];
 
 cp{2,1}=[0.33 0 2];cp{2,2}=[0.33 0.33 0]; cp{2,3}=[0.33 0.66 0]; cp{2,4}=[0.33 1 0];
 
-% original
-%cp{3,1}=[0.66 0 0];cp{3,2}=[0.66 0.33 0]; cp{3,3}=[0.66 0.66 0]; cp{3,4}=[0.66 1 0]; 
-% modified
-cp{3,1}=[0.66 0 0];cp{3,2}=[0.66 0.33 0]; cp{3,3}=[0.5 0.5 2]; cp{3,4}=[0.66 1 0]; 
 
-
-cp{4,1}=[1 0 0];cp{4,2}=[1 0.33 0];cp{4,3}=[1 0.66 0];cp{4,4}=[1 1 0.5];
-
-
-w=cell(4,4); % weights
-for i=1:4
-    for j=1:4
-        cp{i,j}(1)=cp{i,j}(1)*4900;
-        cp{i,j}(2)=cp{i,j}(2)*4900;
-        cp{i,j}(3)=cp{i,j}(3)*4900;
+w=cell(2,2); % weights
+for i=1:2
+    for j=1:2
+        cp{i,j}(1)=cp{i,j}(1)*10e3;
+        cp{i,j}(2)=cp{i,j}(2)*10e3;
+        cp{i,j}(3)=cp{i,j}(3)*10e3;
         w{i,j}(1)=1;
-        w{i,j}(2)=1;
+        w{i,j}(2)=2;
         w{i,j}(3)=1;
     end
 end
