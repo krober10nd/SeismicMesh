@@ -20,8 +20,8 @@ classdef edgefx
         min_el % minimum mesh size (m)
         max_el % maximum mesh size (m)
         g % mesh size gradation rate (decimal percent)
-        cr % courant number 
-        dt % desired timestep 
+        cr % courant number (unitless)
+        dt % desired timestep (s)
     end
     
     properties(Access=public)
@@ -36,13 +36,13 @@ classdef edgefx
             
             % add name/value pairs
             addOptional(p,'wl',0);
-            addOptional(p,'f',0); 
-            addOptional(p,'slp',0); 
+            addOptional(p,'f',0);
+            addOptional(p,'slp',0);
             addOptional(p,'min_el',0);
             addOptional(p,'max_el',inf);
             addOptional(p,'g',0);
-            addOptional(p,'dt',0); 
-            addOptional(p,'cr',0); 
+            addOptional(p,'dt',0);
+            addOptional(p,'cr',0);
             addOptional(p,'geodata',0);
             
             % parse the inputs
@@ -171,6 +171,8 @@ classdef edgefx
     end % end non-static public methods
     
     methods(Access=private)
+        
+        
         %% Wavelength edgefx.
         function obj = wlfx(obj)
             
@@ -178,6 +180,7 @@ classdef edgefx
                 [yg,zg] = obj.feat.CreateStructGrid;
                 Fvp = GetFvp(obj.feat);
                 vp = Fvp(yg,zg);
+                vp(vp < 0 ) = NaN; 
                 obj.hvp=(vp.*obj.f)./obj.wl;
             else
                 [xg,yg,zg] = obj.feat.CreateStructGrid3D;
@@ -192,6 +195,7 @@ classdef edgefx
                 [yg,zg] = obj.feat.CreateStructGrid;
                 Fvp = GetFvp(obj.feat);
                 vp = Fvp(yg,zg);
+                vp(vp < 0 ) = NaN; 
                 tmp = stdfilter(vp,[3,3],1,'replicate'); % use a larger stencil here for smoother variance
                 tmp = real(tmp);
                 tmp = (1-tmp./500); %  demoninator is reference gradient for which min_el is mapped
@@ -262,6 +266,11 @@ classdef edgefx
              hh_m(hh_m<obj.min_el)=obj.min_el;
              hh_m(hh_m>obj.max_el)=obj.max_el;
              
+             % if the expand option has been activated then we 
+             % need to 1) insert a large dummy value for the mesh sizes, 
+             % 2) grade the mesh with a low grade and only keep the outer
+             % part (keeping the inner part the same). 
+            
              if obj.g > 0
                  disp('Relaxing the mesh size gradient...');
                  hfun = reshape(hh_m,[numel(hh_m),1]); % reshape column wise

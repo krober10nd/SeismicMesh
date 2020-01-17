@@ -172,13 +172,16 @@ classdef geodata
                         % interpolant the smaller velocity model onto the
                         % expanded domain 
                         vp_ = obj.Fvp(zg_,yg_);
-                        vp_(isnan(vp_))= 5000;
+                        vp_(isnan(vp_))= -9999; % FLAG VALUE 
                         obj.Fvp=griddedInterpolant(zg_,yg_,vp_) ;
 
                         obj.bbox = bbox_ ; 
                         obj.ny = ny_ ; 
                         obj.nz = nz_ ; 
                         obj.x0y0 = x0y0_; 
+                        
+                        % also have the code output a new Vp_EXACT Vp_GUESS
+                        % to run the FWI code 
                     end
                     
                     clearvars yg zg tmp;
