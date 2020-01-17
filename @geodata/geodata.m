@@ -16,6 +16,7 @@ classdef geodata
         nz    % number of grid points in z-direction
         gridspace    % grid space (in m)
         dim   % dimension of problem 
+        expand % amount of expand the domain in the -x, +x, and -z directions
     end
     
     properties(Access=public)
@@ -34,17 +35,23 @@ classdef geodata
             
             % add name/value pairs
             addOptional(p,'velocity_model',defval);
+            addOptional(p,'expand',0);
 
             % parse the inputs
             parse(p,varargin{:});
             % store the inputs as a struct
             inp = p.Results;
             % get the fieldnames of the edge functions
-            inp = orderfields(inp,{'velocity_model'});
+            inp = orderfields(inp,{'expand','velocity_model'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
                 switch type
+                    case('expand')
+                        obj.expand = inp.(flds{i}); 
+                        if ~isempty(obj.expand) 
+                            obj.expand = inp.(flds{i}); 
+                        end
                     case('velocity_model')
                         obj.fname = inp.(flds{i});
                         if ~isempty(obj.fname)
@@ -139,7 +146,40 @@ classdef geodata
                     obj.bbox = [min(zg(:)) max(zg(:))
                         min(yg(:)) max(yg(:))];
                     
-                    obj.Fvp=griddedInterpolant(zg,yg,tmp) ;
+                    obj.Fvp=griddedInterpolant(zg,yg,tmp,'linear','none') ;
+
+                    % if expansion is enabled, we must also expand the
+                    % velocity model with a constant velocity 
+                    if obj.expand~=0
+                        
+                        add_ny_ = ceil(obj.expand/obj.gridspace);
+                        add_nz_ = add_ny_ ;
+                        
+                        y_exp = add_ny_ * obj.gridspace;
+                        
+                        x0y0_(1) = obj.x0y0(1)  ;
+                        x0y0_(2) = obj.x0y0(2) - y_exp;
+                        
+                        ny_ = obj.ny + add_ny_ ;
+                        nz_ = obj.nz + 2*add_nz_ ;
+                        
+                        [zg_,yg_] = ndgrid(x0y0_(1) + (0:ny_-1)'*obj.gridspace, ...
+                            x0y0_(2) + (0:nz_-1)'*obj.gridspace);
+                        
+                        bbox_ = [min(zg_(:)) max(zg_(:))
+                            min(yg_(:)) max(yg_(:))];
+                        
+                        % interpolant the smaller velocity model onto the
+                        % expanded domain 
+                        vp_ = obj.Fvp(zg_,yg_);
+                        vp_(isnan(vp_))= 5000;
+                        obj.Fvp=griddedInterpolant(zg_,yg_,vp_) ;
+
+                        obj.bbox = bbox_ ; 
+                        obj.ny = ny_ ; 
+                        obj.nz = nz_ ; 
+                        obj.x0y0 = x0y0_; 
+                    end
                     
                     clearvars yg zg tmp;
                     
