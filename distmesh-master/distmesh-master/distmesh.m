@@ -1,4 +1,4 @@
-function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, poly_fix, it_max, fid, fit )
+function [ p, t, stat ] = distmesh( fd, fh, h0, bbox, p_fix, e_fix, poly_fix, IT_MAX , fid, fit )
 % DISTMESH 2D/3D Mesh generation using distance functions.
 %
 %   [ P, T, STAT ] = DISTMESH( FD, FH, H0, BBOX, P_FIX, E_FIX, IT_MAX, FID, FIT )
@@ -143,7 +143,7 @@ if( nargin<9 )
   fid = 1;
 end
 if( nargin<8 )
-  it_max = 50;
+  IT_MAX = 50;
 end
 if( nargin<6 )
   e_fix = [];
@@ -157,7 +157,7 @@ end
 %------------------------------------------------------------------------------%
 IALG    = 2;              % Optimized algorithm selection.
 IT_MIN  = 20;             % Minimum number of iterations.
-IT_MINC = 50;             % Minimum number of iter. after which to call constraint function.
+IT_MINC = 30;             % Minimum number of iter. after which to call constraint function.
 IT_PRT  = 1;              % Output every IT_PRT iterations.
 
 N_RECV  = 2;              % Number of recovery iteration steps to move points outside back to boundary.
@@ -236,7 +236,7 @@ n_p = size( p, 1 );
 
 l_message( fid, 'Grid generation (DistMesh):' )
 t1 = tic;
-if( it_max<=0 )
+if( IT_MAX<=0 )
   t = l_delaunay_triangulation( p, e_fix );
 end
 t_tri = toc(t1);
@@ -246,7 +246,7 @@ n_tri = 0;
 n_dcs = 0;
 do_break = false;
 is_converged = false;
-while( it<it_max )
+while( it<IT_MAX )
     it = it + 1;
 
     % Retriangulate, if grid points have moved significantly.
@@ -372,7 +372,7 @@ while( it<it_max )
 
 
     % Check for convergence.
-    if( (it>IT_MIN && delta_p_max<dpc_tol) || size(t,1)<=2 || it>it_max || do_break )
+    if( (it>IT_MIN && delta_p_max<dpc_tol) || size(t,1)<=2 || it>IT_MAX || do_break )
       if( delta_p_max<dpc_tol )
         is_converged = true;
       end

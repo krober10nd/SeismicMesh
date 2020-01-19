@@ -16,11 +16,11 @@ classdef geodata
         nz    % number of grid points in z-direction
         gridspace    % grid space (in m)
         dim   % dimension of problem 
-        expand % amount of expand the domain in the -x, +x, and -z directions
     end
     
     properties(Access=public)
         bbox % domain ranges in x y (and z)
+        expand % amount of expand the domain in the -x, +x, and -z directions
     end
         
     methods(Access=public)
@@ -91,6 +91,7 @@ classdef geodata
                 ylabel('Z-position/depth (m)');
                 cb=colorbar; ylabel(cb,'P-wave speed (m/s)') ;
                 set(gca,'FontSize',16) ;
+                caxis([1000 5000])
             elseif obj.GetDim == 3
                 [xg,yg,zg]=CreateStructGrid3D(obj);
                 tmp=obj.Fvp(xg,yg,zg);
@@ -160,8 +161,8 @@ classdef geodata
                         x0y0_(1) = obj.x0y0(1)  ;
                         x0y0_(2) = obj.x0y0(2) - y_exp;
                         
-                        ny_ = obj.ny + add_ny_ ;
                         nz_ = obj.nz + 2*add_nz_ ;
+                        ny_ = obj.ny + add_ny_ ;
                         
                         [zg_,yg_] = ndgrid(x0y0_(1) + (0:ny_-1)'*obj.gridspace, ...
                             x0y0_(2) + (0:nz_-1)'*obj.gridspace);
@@ -172,7 +173,7 @@ classdef geodata
                         % interpolant the smaller velocity model onto the
                         % expanded domain 
                         vp_ = obj.Fvp(zg_,yg_);
-                        vp_(isnan(vp_))= -9999; % FLAG VALUE 
+                        vp_(isnan(vp_))= NaN ; % FLAG VALUE 
                         obj.Fvp=griddedInterpolant(zg_,yg_,vp_) ;
 
                         obj.bbox = bbox_ ; 

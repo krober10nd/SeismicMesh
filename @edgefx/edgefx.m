@@ -266,11 +266,76 @@ classdef edgefx
              hh_m(hh_m<obj.min_el)=obj.min_el;
              hh_m(hh_m>obj.max_el)=obj.max_el;
              
-             % if the expand option has been activated then we 
-             % need to 1) insert a large dummy value for the mesh sizes, 
-             % 2) grade the mesh with a low grade and only keep the outer
-             % part (keeping the inner part the same). 
-            
+             tmp = obj.GetFeat;
+             if tmp.expand > 0
+                 [zg,yg] = obj.feat.CreateStructGrid;
+                 tmpFvp = tmp.GetFvp; 
+                 tmpvp  = tmpFvp(zg,yg);
+                 vp     = tmpvp;
+                 border = find(isnan(tmpvp));
+                 tmphh_m = hh_m ; 
+                 
+                 tmphh_m(border)=1e3; % MAYBE CHANGE THIS?
+                 
+                 hfun = reshape(tmphh_m,[numel(tmphh_m),1]); % reshape column wise
+                 if(obj.feat.GetDim==2)
+                     dims = int32([size( tmphh_m),1]);
+                 else
+                     dims = int32(size(tmphh_m));
+                 end
+                 imax = int32(sqrt(length(hfun)));
+                 hfun = FastHJ( dims, gsp, 5.0, imax, hfun);
+                 disp('Gradient relaxing converged!');
+                 if(obj.feat.GetDim==2)
+                     tmphh_m = reshape(hfun,[ny,nz]);
+                 else
+                     tmphh_m = reshape(hfun,[ny,nx,nz]);
+                 end
+                 clearvars hfun
+                 
+                 hh_m(border)=tmphh_m(border); 
+                 
+                 
+                 % Grade the 1/velocity and then invert back
+                 tmpvp(border)=1500; 
+                 tmpvp=1./tmpvp; 
+                 
+                 hfun = reshape(tmpvp,[numel(tmpvp),1]); % reshape column wise
+                 if(obj.feat.GetDim==2)
+                     dims = int32([size( tmpvp),1]);
+                 else
+                     dims = int32(size(tmpvp));
+                 end
+                 imax = int32(sqrt(length(hfun)));
+                 hfun = FastHJ( dims, gsp, 1e-6, imax, hfun);
+                 disp('Gradient relaxing converged!');
+                 if(obj.feat.GetDim==2)
+                     tmpvp = reshape(hfun,[ny,nz]);
+                 else
+                     tmpvp = reshape(hfun,[ny,nx,nz]);
+                 end
+                 clearvars hfun
+                 vp(border)=1./tmpvp(border);
+                 
+                 % write to disk
+                 fid=fopen('Vp_EXTENDED_EXACT.txt','w');
+                 vp = flipud(vp);
+                 for i = 1 : size(zg,1)
+                     for j =  1 : size(zg,2)
+                         if j == size(zg,2)
+                             fprintf(fid,'%f',vp(i,j));
+                         else
+                             fprintf(fid,'%f,',vp(i,j));
+                         end
+                     end
+                     fprintf(fid,'\n') ;
+                 end
+                 fclose(fid);
+                 
+                 clearvars vp 
+                 
+             end
+             
              if obj.g > 0
                  disp('Relaxing the mesh size gradient...');
                  hfun = reshape(hh_m,[numel(hh_m),1]); % reshape column wise
