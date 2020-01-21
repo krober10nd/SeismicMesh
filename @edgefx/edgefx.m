@@ -22,6 +22,7 @@ classdef edgefx
         g % mesh size gradation rate (decimal percent)
         cr % courant number (unitless)
         dt % desired timestep (s)
+        max_sponge_res % max. mesh size in sponge layer
     end
     
     properties(Access=public)
@@ -44,7 +45,8 @@ classdef edgefx
             addOptional(p,'dt',0);
             addOptional(p,'cr',0);
             addOptional(p,'geodata',0);
-            
+            addOptional(p,'max_sponge_res',10e3);
+
             % parse the inputs
             parse(p,varargin{:});
             % store the inputs as a struct
@@ -53,11 +55,18 @@ classdef edgefx
             inp = orderfields(inp,{'geodata','wl','f',...
                                    'slp',...
                                    'min_el','max_el',...
-                                   'g','cr','dt'});
+                                   'g','cr','dt',...
+                                   'max_sponge_res'});
             flds = fieldnames(inp);
             for i = 1 : numel(flds)
                 type = flds{i};
                 switch type
+                    case('max_sponge_res')
+                        obj.max_sponge_res = inp.(flds{i}); 
+                        if obj.max_sponge_res~=0 
+                            obj.max_sponge_res = inp.(flds{i}); 
+                            assert(obj.max_sponge_res > 0); 
+                        end
                     case('wl')
                         obj.wl = inp.(flds{i});
                         if obj.wl~=0
@@ -268,6 +277,7 @@ classdef edgefx
              
              tmp = obj.GetFeat;
              if tmp.expand > 0
+                 disp('Building domain extension...');
                  [zg,yg] = obj.feat.CreateStructGrid;
                  tmpFvp = tmp.GetFvp; 
                  tmpvp  = tmpFvp(zg,yg);
@@ -275,7 +285,7 @@ classdef edgefx
                  border = find(isnan(tmpvp));
                  tmphh_m = hh_m ; 
                  
-                 tmphh_m(border)=1e3; % MAYBE CHANGE THIS?
+                 tmphh_m(border)=obj.max_sponge_res; %
                  
                  hfun = reshape(tmphh_m,[numel(tmphh_m),1]); % reshape column wise
                  if(obj.feat.GetDim==2)
@@ -285,7 +295,6 @@ classdef edgefx
                  end
                  imax = int32(sqrt(length(hfun)));
                  hfun = FastHJ( dims, gsp, 5.0, imax, hfun);
-                 disp('Gradient relaxing converged!');
                  if(obj.feat.GetDim==2)
                      tmphh_m = reshape(hfun,[ny,nz]);
                  else
@@ -308,7 +317,6 @@ classdef edgefx
                  end
                  imax = int32(sqrt(length(hfun)));
                  hfun = FastHJ( dims, gsp, 1e-6, imax, hfun);
-                 disp('Gradient relaxing converged!');
                  if(obj.feat.GetDim==2)
                      tmpvp = reshape(hfun,[ny,nz]);
                  else
@@ -318,6 +326,7 @@ classdef edgefx
                  vp(border)=1./tmpvp(border);
                  
                  % write to disk
+                 disp('Writing velocity file to disk...'); 
                  fid=fopen('Vp_EXTENDED_EXACT.txt','w');
                  vp = flipud(vp);
                  for i = 1 : size(zg,1)
