@@ -31,6 +31,7 @@ fprintf(fileID,'%s\n','$Nodes');
 fprintf(fileID,'%i\n',NP); 
 
 disp('Writing nodal table...')
+tic
 for i = 1 : NP
    nodal_table(i,1) = i ; 
    nodal_table(i,2) = P3(i,1)./1e3 ; % convert to km
@@ -40,11 +41,13 @@ for i = 1 : NP
    fprintf(fileID,'%i %f %f %i\n',nodal_table(i,:)); 
    
 end
-fprintf('%s\n','$EndNodes'); 
+toc
+fprintf(fileID, '%s\n','$EndNodes'); 
 
 disp('Writing element table...'); 
 fprintf(fileID,'%s\n','$Elements'); 
 fprintf(fileID,'%i\n',NT); 
+tic
 for i = 1 : NT
     if keep(i)
         element_table(i,1) = i; % element number
@@ -75,7 +78,7 @@ for i = 1 : NT
     end
 end
 fprintf('%s\n','$EndElements'); 
-
+toc 
 fclose(fileID);
 
 disp('Finished writing file...'); 
