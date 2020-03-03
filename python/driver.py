@@ -1,3 +1,7 @@
 import edgefx as ef
 
-ef.edgefx((0, 1, 0, 1), 0.1, wl=5, segy='vp_marmousi-ii.segy',freq=5)
+size_fx,nz,nx = ef.edgefx(bbox=(-3.5,0,0,17),segy='vp_marmousi-ii.segy',
+            wl=5,freq=5,
+            hmin=1e3,hmax=10e3)
+
+ef.PlotMeshSizes(nz,nx,-3.5,17,size_fx)
