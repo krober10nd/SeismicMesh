@@ -136,8 +136,8 @@ classdef geodata
                     tmp = ncread(obj.fname,'vp');
                     
                     % determine size of grid
-                    obj.ny = ncread(obj.fname,'ny');
-                    obj.nz = ncread(obj.fname,'nz');
+                    obj.ny = ncread(obj.fname,'nx');
+                    obj.nz = ncread(obj.fname,'ny');
                     
                     % determine bottom front corner coordinate
                     obj.x0y0(1:obj.dim) = ncread(obj.fname,'x0y0z0');

@@ -286,7 +286,7 @@ classdef edgefx
                  tmphh_m = hh_m ; 
                  
                  tmphh_m(border)=obj.max_sponge_res; %
-                 
+%                  
                  hfun = reshape(tmphh_m,[numel(tmphh_m),1]); % reshape column wise
                  if(obj.feat.GetDim==2)
                      dims = int32([size( tmphh_m),1]);
@@ -294,7 +294,7 @@ classdef edgefx
                      dims = int32(size(tmphh_m));
                  end
                  imax = int32(sqrt(length(hfun)));
-                 hfun = FastHJ( dims, gsp, 5.0, imax, hfun);
+                 hfun = FastHJ( dims, gsp, 5.0, imax, int32(1), hfun);
                  if(obj.feat.GetDim==2)
                      tmphh_m = reshape(hfun,[ny,nz]);
                  else
@@ -302,46 +302,38 @@ classdef edgefx
                  end
                  clearvars hfun
                  
-                 hh_m(border)=tmphh_m(border); 
+                 hh_m = tmphh_m; 
                  
-                 
-                 % Grade the 1/velocity and then invert back
-                 tmpvp(border)=1500; 
-                 tmpvp=1./tmpvp; 
-                 
-                 hfun = reshape(tmpvp,[numel(tmpvp),1]); % reshape column wise
+                 vp(border) = 1500;                 
+                 hfun = reshape(vp,[numel(vp),1]); % reshape column wise
                  if(obj.feat.GetDim==2)
-                     dims = int32([size( tmpvp),1]);
+                     dims = int32([size( vp),1]);
                  else
-                     dims = int32(size(tmpvp));
+                     dims = int32(size(vp));
                  end
                  imax = int32(sqrt(length(hfun)));
-                 hfun = FastHJ( dims, gsp, 1e-6, imax, hfun);
+                 hfun = FastHJ( dims, gsp, 0.55, imax, int32(0), hfun);
                  if(obj.feat.GetDim==2)
-                     tmpvp = reshape(hfun,[ny,nz]);
+                     vp = reshape(hfun,[ny,nz]);
                  else
-                     tmpvp = reshape(hfun,[ny,nx,nz]);
+                     vp = reshape(hfun,[ny,nx,nz]);
                  end
                  clearvars hfun
-                 vp(border)=1./tmpvp(border);
                  
                  % write to disk
-                 disp('Writing velocity file to disk...'); 
+                 disp('Writing velocity file to disk...');
                  fid=fopen('Vp_EXTENDED_EXACT.txt','w');
                  vp = flipud(vp);
+                 fprintf(fid,'%d,%d\n',size(zg,1),size(zg,2));
+                 fprintf(fid,'%f,%f,%f,%f\n',-0.5,17.5,-4.0,0.0);
                  for i = 1 : size(zg,1)
-                     for j =  1 : size(zg,2)
-                         if j == size(zg,2)
-                             fprintf(fid,'%f',vp(i,j));
-                         else
-                             fprintf(fid,'%f,',vp(i,j));
-                         end
-                     end
+                     fprintf(fid,'%f,',vp(i,1:end-1));
+                     fprintf(fid,'%f',vp(i,end));
                      fprintf(fid,'\n') ;
                  end
                  fclose(fid);
                  
-                 clearvars vp 
+                clearvars vp 
                  
              end
              
@@ -354,7 +346,7 @@ classdef edgefx
                      dims = int32(size(hh_m));
                  end
                  imax = int32(sqrt(length(hfun))); 
-                 hfun = FastHJ( dims, gsp, obj.g, imax, hfun);
+                 hfun = FastHJ( dims, gsp, obj.g, imax, int32(1), hfun);
                  disp('Gradient relaxing converged!');
                  if(obj.feat.GetDim==2)
                      hh_m = reshape(hfun,[ny,nz]);
