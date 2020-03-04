@@ -25,12 +25,14 @@ def edgefx(bbox, hmin, segy,  **kwargs):
         wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl.)
         freq: maximum source frequency for which to estimate wl (hertz)
         hmax: maximum edgelength in the domain (meters)
-        dt: maximum stable timestep (in seconds given a Cr of 0.2)
+        dt: maximum stable timestep (in seconds given Courant number cr)
+        cr_max: dt is theoretically stable with this Courant number (default 0.2)
 
 
     Returns
     -------
         fh: scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
+        fd: lambda representing the signed distance function of the domain
 
 
     Example
@@ -41,7 +43,8 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     hmax = np.inf # meters
     maxFreq = 5  # hz
     alpha_wl = 5 # no. of nodes per wavelength
-    dt = 0.001 # maximum stable timestep
+    dt = 0.01 # maximum stable timestep
+    cr_max = 0.2 # dt is enforced for this Courant number
     # set the values defined by the user
     for key, value in kwargs.items():
         if(key == "wl"):
@@ -52,6 +55,8 @@ def edgefx(bbox, hmin, segy,  **kwargs):
             hmax = value
         elif(key == "dt"):
             dt = value
+        elif(key == "cr_max"): 
+            cr_max = value 
     # read in velocity model as a segy file
     width = max(bbox)
     depth = min(bbox)
@@ -69,7 +74,13 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     if(hmax < np.inf):
         hh_m=np.where(hh_m>hmax, hmax, hh_m)
     # grade the mesh sizes (optional)
-    # adjust based on the CFL limit (optional)
+
+    # adjust based on the CFL limit so cr < cr_max 
+    print('Enforcing timestep of '+str(dt)+' seconds...')
+    cr_old = (vp*dt)/hh_m
+    dxn = (vp*dt)/cr_max
+    hh_m = np.where( cr_old > cr_max, dxn, hh_m) 
+    cr_old = (vp*dt)/hh_m
     # construct a interpolator object to be queried during mesh generation
     z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)
     interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m)
