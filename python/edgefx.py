@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import os,sys
 
-import utils 
+import utils
 
 
 def edgefx(bbox, hmin, segy,  **kwargs):
@@ -20,11 +20,12 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     -------
         bbox: Bounding box, (xmin, xmax, ymin, ymax)
         hmin: Minimum edgelength populating domain, (meters)
-        segy: Segy file containing velocity model, (assumes velocity is in KM PER SECOND)
-                                **kwargs 
+        segy: Segy file containing velocity model, (assumes velocity is in METERS PER SECOND)
+                                **kwargs
         wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl.)
         freq: maximum source frequency for which to estimate wl (hertz)
-        hmax: maximum edgelength in the domain (meters) 
+        hmax: maximum edgelength in the domain (meters)
+        dt: maximum stable timestep (in seconds given a Cr of 0.2)
 
 
     Returns
@@ -36,45 +37,73 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     ------
 
     """
-    # call the desired mesh size functions
+    # set reasonable default values
+    hmax = np.inf # meters
+    maxFreq = 5  # hz
+    alpha_wl = 5 # no. of nodes per wavelength
+    dt = 0.001 # maximum stable timestep
+    # set the values defined by the user
     for key, value in kwargs.items():
-        # read in velocity model as a segy file 
-        width = max(bbox) 
-        depth = min(bbox) 
-        vp,nz,nx = utils.ReadVelocityModel(segy, width, depth)
-        # build the wavelength mesh size function
         if(key == "wl"):
             alpha_wl = value
+        elif(key == "freq"):
+            maxFreq = value
+        elif(key == "hmax"):
+            hmax = value
+        elif(key == "dt"):
+            dt = value
+    # read in velocity model as a segy file
+    width = max(bbox)
+    depth = min(bbox)
+    vp,nz,nx = utils.ReadVelocityModel(segy, width, depth)
+    # call the desired mesh size functions
+    hh_m=np.zeros(shape=(nz, nx)) + hmin
+    for key, value in kwargs.items():
+        if(key == "wl"):
             print('INFO: wavelength sizing function is activated...')
-            print(' Mesh sizes with be built to resolve the wavelength with ' +
+            print(' Mesh sizes with be built to resolve an estimate of wavelength with ' +
                   str(alpha_wl)+' vertices...')
-            maxFreq = 2  # 2 hz by default
-            for key2, value2 in kwargs.items():
-                if(key2 == "freq"): 
-                    maxFreq = value2
-                    print(' Mesh sizes will be built for a max. source freq. of ' + str(maxFreq)+" hz...")
-            hh_m=np.zeros(shape=(nz, nx))
             hh_m=(vp*maxFreq)/alpha_wl
-
-        # Grade the mesh sizes 
-
-        # Adjust based on the CFL limit 
-
-        # Construct a interpolator object to be queried during mesh generation
-        z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)
-        interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m)
+    # enforce min (and optionally max) sizes
+    hh_m=np.where(hh_m<hmin, hmin, hh_m)
+    if(hmax < np.inf):
+        hh_m=np.where(hh_m>hmax, hmax, hh_m)
+    # grade the mesh sizes (optional)
+    # adjust based on the CFL limit (optional)
+    # construct a interpolator object to be queried during mesh generation
+    z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)
+    interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m)
     return interpolant,nz,nx
 
+def PlotMeshSizes(nz,nx,depth,width,fh,stride=5):
+    ''' Plot the isotropic mesh size function
 
-def PlotMeshSizes(nz,nx,depth,width,size_fx,stride=5):
-    ''' Plot the isotropic mesh size function '''
+    Usage
+    -------
+    >>>> PlotMeshSizes(nz,nx,depth,width,fh)
+
+
+    Parameters
+    -------
+        nz:  number of points in the depth dimension
+        nx:  number of points in the width dimension
+        depth: min. z (- in km)
+        width: max. x (+ in km)
+        fh: mesh size function (SciPy.RegularGriddedInterpolant)
+                                **kwargs
+        stride: Downsample the image by n (n=5 by default)
+
+     Returns
+    -------
+        none
+    '''
     zg,xg = utils.CreateDomainMatrices(nz,nx,depth,width)
     sz1z,sz1x = zg.shape
     sz2 = sz1z*sz1x
     _zg = np.reshape(zg,(sz2,1))
     _xg = np.reshape(xg,(sz2,1))
-    hh_m  = size_fx((_zg,_xg))
-    hh_m  = np.reshape(hh_m,(sz1z,sz1x))
+    hh_m = fh((_zg,_xg))
+    hh_m = np.reshape(hh_m,(sz1z,sz1x))
     plt.pcolormesh(xg[0::stride],zg[0::stride],hh_m[0::stride],edgecolors='none')
     plt.title('Isotropic mesh sizes')
     plt.colorbar(label='mesh size (m)')

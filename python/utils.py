@@ -7,13 +7,13 @@ def ReadVelocityModel(segy,width,depth):
     FOUND = False
     with segyio.open(segy, ignore_geometry=True) as f:
         FOUND = True
-        # determine length of velocity model from file 
+        # determine length of velocity model from file
         nz = len(f.samples)
         nx = len(f.trace)
         vp = np.zeros(shape=(nz, nx))
         index = 0
         for trace in f.trace:
-            vp[:,index]=trace*1e3 # convert to m-s
+            vp[:,index]=trace # convert to m-s?
             index += 1
         vp = np.flipud(vp)
         if not FOUND:
@@ -26,7 +26,7 @@ def CreateDomainVectors(nz,nx,depth,width):
     zvec = np.linspace(depth, 0, nz)
     return zvec,xvec
 
-def CreateDomainMatrices(nz,nx,depth,width): 
+def CreateDomainMatrices(nz,nx,depth,width):
     zvec,xvec = CreateDomainVectors(nz,nx,depth,width)
     zg, xg = np.meshgrid(zvec, xvec, indexing='ij')
     return zg,xg
