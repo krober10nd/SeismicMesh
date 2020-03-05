@@ -5,7 +5,7 @@ import matplotlib
 import os,sys
 
 import utils
-import hjac
+from gradlim import hj
 
 def edgefx(bbox, hmin, segy,  **kwargs):
     """
@@ -81,7 +81,7 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     elen=width/nx
     imax=2000
     ffun=hh_m.flatten()
-    tmp=hjac.gradlim((nz,nx),elen,grade,imax,ffun)
+    tmp=hj((nz,nx),elen,grade,imax,ffun)
     hh_m=np.reshape(ffun,(nz,nx))
     # adjust based on the CFL limit so cr < cr_max
     print('Enforcing timestep of '+str(dt)+' seconds...')
