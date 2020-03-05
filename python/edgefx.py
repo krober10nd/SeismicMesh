@@ -5,7 +5,7 @@ import matplotlib
 import os,sys
 
 import utils
-
+import hjac
 
 def edgefx(bbox, hmin, segy,  **kwargs):
     """
@@ -27,6 +27,7 @@ def edgefx(bbox, hmin, segy,  **kwargs):
         hmax: maximum edgelength in the domain (meters)
         dt: maximum stable timestep (in seconds given Courant number cr)
         cr_max: dt is theoretically stable with this Courant number (default 0.2)
+        grade: maximum allowable variation in mesh size (default 0.15)
 
 
     Returns
@@ -45,6 +46,7 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     alpha_wl = 5 # no. of nodes per wavelength
     dt = 0.01 # maximum stable timestep
     cr_max = 0.2 # dt is enforced for this Courant number
+    grade = 0.15 # maximum variation in mesh size
     # set the values defined by the user
     for key, value in kwargs.items():
         if(key == "wl"):
@@ -55,12 +57,14 @@ def edgefx(bbox, hmin, segy,  **kwargs):
             hmax = value
         elif(key == "dt"):
             dt = value
-        elif(key == "cr_max"): 
-            cr_max = value 
+        elif(key == "cr_max"):
+            cr_max = value
+        elif(key == "grade"):
+            grade = value
     # read in velocity model as a segy file
     width = max(bbox)
     depth = min(bbox)
-    vp,nz,nx = utils.ReadVelocityModel(segy, width, depth)
+    vp,nz,nx = utils.ReadVelocityModel(segy, depth, width)
     # call the desired mesh size functions
     hh_m=np.zeros(shape=(nz, nx)) + hmin
     for key, value in kwargs.items():
@@ -73,13 +77,17 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     hh_m=np.where(hh_m<hmin, hmin, hh_m)
     if(hmax < np.inf):
         hh_m=np.where(hh_m>hmax, hmax, hh_m)
-    # grade the mesh sizes (optional)
-
-    # adjust based on the CFL limit so cr < cr_max 
+    # grade the mesh sizes
+    elen=width/nx
+    imax=2000
+    ffun=hh_m.flatten()
+    tmp=hjac.gradlim((nz,nx),elen,grade,imax,ffun)
+    hh_m=np.reshape(ffun,(nz,nx))
+    # adjust based on the CFL limit so cr < cr_max
     print('Enforcing timestep of '+str(dt)+' seconds...')
     cr_old = (vp*dt)/hh_m
     dxn = (vp*dt)/cr_max
-    hh_m = np.where( cr_old > cr_max, dxn, hh_m) 
+    hh_m = np.where( cr_old > cr_max, dxn, hh_m)
     cr_old = (vp*dt)/hh_m
     # construct a interpolator object to be queried during mesh generation
     z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)

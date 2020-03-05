@@ -2,7 +2,7 @@ import segyio
 import numpy as np
 import sys,io
 
-def ReadVelocityModel(segy,width,depth):
+def ReadVelocityModel(segy,depth,width):
     ''' Read a velocity model from disk in a segy format '''
     FOUND = False
     with segyio.open(segy, ignore_geometry=True) as f:
