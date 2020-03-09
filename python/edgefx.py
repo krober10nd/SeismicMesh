@@ -5,7 +5,7 @@ import matplotlib
 import os,sys
 
 import utils
-from gradlim import hj
+import FastHJ 
 
 def edgefx(bbox, hmin, segy,  **kwargs):
     """
@@ -44,9 +44,9 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     hmax = np.inf # meters
     maxFreq = 5  # hz
     alpha_wl = 5 # no. of nodes per wavelength
-    dt = 0.01 # maximum stable timestep
+    dt = 0.0 # maximum stable timestep
     cr_max = 0.2 # dt is enforced for this Courant number
-    grade = 0.15 # maximum variation in mesh size
+    grade = 0.0 # maximum variation in mesh size
     # set the values defined by the user
     for key, value in kwargs.items():
         if(key == "wl"):
@@ -78,17 +78,21 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     if(hmax < np.inf):
         hh_m=np.where(hh_m>hmax, hmax, hh_m)
     # grade the mesh sizes
-    elen=width/nx
-    imax=2000
-    ffun=hh_m.flatten()
-    tmp=hj((nz,nx),elen,grade,imax,ffun)
-    hh_m=np.reshape(ffun,(nz,nx))
+    if(grade > 0):
+        elen=width/nx
+        imax=10000
+        ffun=hh_m.flatten('F')
+        ffun_list = ffun.tolist()
+        # limgrad(arg0: List[int], arg1: float, arg2: float, arg3: int, arg4: List[float]) -> List[float]
+        tmp = FastHJ.limgrad([nz,nx,1],elen,grade,imax,ffun_list)
+        tmp = np.asarray(tmp)
+        hh_m = np.reshape(tmp,(nz,nx),'F')
     # adjust based on the CFL limit so cr < cr_max
-    print('Enforcing timestep of '+str(dt)+' seconds...')
-    cr_old = (vp*dt)/hh_m
-    dxn = (vp*dt)/cr_max
-    hh_m = np.where( cr_old > cr_max, dxn, hh_m)
-    cr_old = (vp*dt)/hh_m
+    if( dt > 0 ):
+        print('Enforcing timestep of '+str(dt)+' seconds...')
+        cr_old = (vp*dt)/hh_m
+        dxn = (vp*dt)/cr_max
+        hh_m = np.where( cr_old > cr_max, dxn, hh_m)
     # construct a interpolator object to be queried during mesh generation
     z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)
     interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m)
