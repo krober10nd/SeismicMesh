@@ -1,13 +1,10 @@
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
-import matplotlib.pyplot as plt
-import matplotlib
-import os,sys
-
 import utils
-import FastHJ 
+
 
 def edgefx(bbox, hmin, segy,  **kwargs):
+    from scipy.interpolate import RegularGridInterpolator
+    import FastHJ 
     """
     edgefx: build a mesh size function for seismic problems
 
@@ -33,17 +30,20 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     Returns
     -------
         fh: scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
-        fd: lambda representing the signed distance function of the domain
-
 
     Example
     ------
+
+    fh,nz,nx = ef.edgefx(bbox=(-12.0,0,0,67),segy=fname,
+            wl=5,freq=5,
+            hmin=2e3,hmax=4e3,
+            grade=10.0)
 
     """
     # set reasonable default values
     hmax = np.inf # meters
     maxFreq = 5  # hz
-    alpha_wl = 5 # no. of nodes per wavelength
+    alpha_wl = 0.0 # no. of nodes per wavelength
     dt = 0.0 # maximum stable timestep
     cr_max = 0.2 # dt is enforced for this Courant number
     grade = 0.0 # maximum variation in mesh size
@@ -67,23 +67,22 @@ def edgefx(bbox, hmin, segy,  **kwargs):
     vp,nz,nx = utils.ReadVelocityModel(segy, depth, width)
     # call the desired mesh size functions
     hh_m=np.zeros(shape=(nz, nx)) + hmin
-    for key, value in kwargs.items():
-        if(key == "wl"):
-            print('INFO: wavelength sizing function is activated...')
-            print(' Mesh sizes with be built to resolve an estimate of wavelength with ' +
-                  str(alpha_wl)+' vertices...')
-            hh_m=(vp*maxFreq)/alpha_wl
+    if(alpha_wl > 0):
+        print('Mesh sizes with be built to resolve an estimate of wavelength with ' +
+          str(alpha_wl)+' vertices...')
+        hh_m=(vp*maxFreq)/alpha_wl
     # enforce min (and optionally max) sizes
     hh_m=np.where(hh_m<hmin, hmin, hh_m)
     if(hmax < np.inf):
+        print('Enforcing maximum mesh resolution...')
         hh_m=np.where(hh_m>hmax, hmax, hh_m)
     # grade the mesh sizes
     if(grade > 0):
+        print('Enforcing mesh gradation...')
         elen=width/nx
         imax=10000
         ffun=hh_m.flatten('F')
         ffun_list = ffun.tolist()
-        # limgrad(arg0: List[int], arg1: float, arg2: float, arg3: int, arg4: List[float]) -> List[float]
         tmp = FastHJ.limgrad([nz,nx,1],elen,grade,imax,ffun_list)
         tmp = np.asarray(tmp)
         hh_m = np.reshape(tmp,(nz,nx),'F')
@@ -95,10 +94,13 @@ def edgefx(bbox, hmin, segy,  **kwargs):
         hh_m = np.where( cr_old > cr_max, dxn, hh_m)
     # construct a interpolator object to be queried during mesh generation
     z_vec,x_vec = utils.CreateDomainVectors(nz,nx,depth,width)
-    interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m)
+    assert np.all(hh_m > 0.0),"edge_size_function must be strictly positive."
+    interpolant = RegularGridInterpolator((z_vec,x_vec),hh_m,bounds_error=False)
     return interpolant,nz,nx
 
+
 def PlotMeshSizes(nz,nx,depth,width,fh,stride=5):
+    import matplotlib.pyplot as plt
     ''' Plot the isotropic mesh size function
 
     Usage
@@ -133,4 +135,4 @@ def PlotMeshSizes(nz,nx,depth,width,fh,stride=5):
     plt.xlabel('x-direction (km)')
     plt.ylabel('z-direction (km)')
     plt.show()
-    return plt
+    return
