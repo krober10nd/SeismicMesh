@@ -23,15 +23,15 @@ class MeshSizeFunction:
     -------
         bbox: Bounding box, (xmin, xmax, ymin, ymax)
         hmin: Minimum triangular edgelength populating domain, (meters)
-        segy: Segy file containing velocity model, (assumes velocity is in METERS PER SECOND)
+        segy: Seg-y file containing velocity model, (assumes velocity is in METERS PER SECOND)
 
                                 **kwargs
-        wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl.)
-        freq: maximum source frequency for which to estimate wl (hertz)
-        hmax: maximum edgelength in the domain (meters)
-        dt: maximum stable timestep (in seconds given Courant number cr)
-        cr_max: dt is theoretically stable with this Courant number (default 0.2)
-        grade: maximum allowable variation in mesh size (default 0.15)
+        wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl., default=disabled)
+        freq: maximum source frequency for which to estimate wl (hertz, default=disabled)
+        hmax: maximum edgelength in the domain (meters, default=disabled)
+        dt: maximum stable timestep (in seconds given Courant number cr, default=disabled)
+        cr_max: dt is theoretically stable with this Courant number (default=0.2)
+        grade: maximum allowable variation in mesh size (default=disabled)
 
 
     Returns
@@ -41,7 +41,6 @@ class MeshSizeFunction:
 
     Example
     ------
-    from MeshSizeFunction import MeshSizeFunction
     ef = MeshSizeFunction(
             bbox=(-12e3,0,0,67e3),
             ,segy=fname,
@@ -69,11 +68,27 @@ class MeshSizeFunction:
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
-        self.vp = None
         self.nz = None
         self.nx = None
         self.fh = None
         self.fd = None
+
+    # SETTERS AND GETTERS 
+    @property 
+    def fh(self): 
+        return self.__fh 
+
+    @fh.setter 
+    def fh(self,value):
+        self.__fh = value 
+
+    @property
+    def fd(self): 
+        return self.__fd 
+
+    @fd.setter 
+    def fd(self,value): 
+        self.__fd = value 
 
     @property
     def bbox(self):
@@ -94,26 +109,12 @@ class MeshSizeFunction:
         assert value > 0.0, "hmin must be non-zero"
         self.__hmin = value
 
-    @property
-    def segy(self):
-        return self.__segy
-
-    @segy.setter
-    def segy(self, value):
-        assert isinstance(value, str) is True, "segy must be a filename"
-        self.__segy = value
-        _vp, _nz, _nx = self.__ReadVelocityModel()
-        self.__vp = _vp
-        self.__nz = _nz
-        self.__nx = _nx
-
     @property 
     def vp(self): 
         return self.__vp 
 
     @vp.setter 
     def vp(self,value): 
-        # PROVIDE CHECKS ON VP 
         self.__vp = value
 
     @property 
@@ -122,7 +123,6 @@ class MeshSizeFunction:
 
     @nz.setter
     def nz(self,value):
-        assert value is None or value > 0, "nz must be non-zero"
         self.__nz = value
 
     @property 
@@ -131,9 +131,17 @@ class MeshSizeFunction:
 
     @nx.setter
     def nx(self,value):
-        assert value is None or value > 0, "nx must be non-zero"
         self.__nx = value 
 
+    @property
+    def segy(self):
+        return self.__segy
+
+    @segy.setter
+    def segy(self, value):
+        assert isinstance(value, str) is True, "segy must be a filename"
+        self.__segy = value
+        
     @property
     def wl(self):
         return self.__wl
@@ -186,7 +194,7 @@ class MeshSizeFunction:
 
     def build(self):
         '''Builds the isotropic mesh size function according
-            to the user arguments that were pased.
+            to the user arguments that were passed.
 
         Usage
         -------
@@ -200,14 +208,16 @@ class MeshSizeFunction:
          Returns
         -------
             MeshSizeFunction object with specific fields populated:
-                fh: lambda function w/ scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
-                fd: lambda function representing the signed distance function of domain
+                self.fh: lambda function w/ scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
+                self.fd: lambda function representing the signed distance function of domain
 
         '''
         _bbox = self.bbox
-        _nz = self.nz
-        _nx = self.nx
-        _vp = self.vp
+        _vp,_nz,_nx = self.__ReadVelocityModel()
+
+        self.vp = _vp 
+        self.nz = _nz 
+        self.nx = _nx 
 
         _hmax = self.hmax
         _hmin = self.hmin
@@ -222,8 +232,6 @@ class MeshSizeFunction:
         width = max(_bbox)
         depth = min(_bbox)
 
-        print(_hmin)
-        print(_nz,_nx)
         hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
         if(_wl > 0):
             print('Mesh sizes with be built to resolve an estimate of wavelength with ' +
@@ -251,15 +259,16 @@ class MeshSizeFunction:
             dxn = (_vp*_dt)/_cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
         # construct a interpolator object to be queried during mesh generation
-        z_vec, x_vec = __CreateDomainVectors(_nz, _nx, depth, width)
+        z_vec, x_vec = self.__CreateDomainVectors()
         assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
         interpolant = RegularGridInterpolator(
             (z_vec, x_vec), hh_m, bounds_error=False)
-
         # create a mesh size function interpolant
         self.fh = lambda p: interpolant(p)
-
         # create a signed distance function
+        self.fd = lambda p: dm.drectangle(p,bbox[0],bbox[1],bbox[2],bbox[3])
+        return self
+
 
     def plot(self, stride=5):
         ''' Plot the isotropic mesh size function
@@ -286,7 +295,7 @@ class MeshSizeFunction:
         depth = min(_bbox)
         fh = self.fh 
 
-        zg, xg=__CreateDomainMatrices(_nz, _nx, depth, width)
+        zg, xg=self.__CreateDomainMatrices()
         sz1z, sz1x=zg.shape
         sz2=sz1z*sz1x
         _zg=np.reshape(zg, (sz2, 1))
@@ -299,7 +308,10 @@ class MeshSizeFunction:
         plt.colorbar(label = 'mesh size (m)')
         plt.xlabel('x-direction (km)')
         plt.ylabel('z-direction (km)')
+        plt.axis('equal')
         plt.show()
+        return None 
+
 
     ### PRIVATE METHODS ###
     def __ReadVelocityModel(self):
@@ -327,12 +339,22 @@ class MeshSizeFunction:
             sys.exit(1)
         return vp, nz, nx
 
-    def __CreateDomainVectors(nz, nx, depth, width):
-        xvec=np.linspace(0, width, nx)
-        zvec=np.linspace(depth, 0, nz)
+    def __CreateDomainVectors(self):
+        _bbox = self.bbox 
+        _nx = self.nx 
+        _nz = self.nz 
+        width=max(_bbox)
+        depth=min(_bbox)
+        xvec=np.linspace(0, width, _nx)
+        zvec=np.linspace(depth, 0, _nz)
         return zvec, xvec
 
-    def __CreateDomainMatrices(nz, nx, depth, width):
-        zvec, xvec=_CreateDomainVectors(nz, nx, depth, width)
+    def __CreateDomainMatrices(self):
+        _bbox = self.bbox 
+        _nx = self.nx 
+        _nz = self.nz 
+        width=max(_bbox)
+        depth=min(_bbox)
+        zvec, xvec=self.__CreateDomainVectors()
         zg, xg=np.meshgrid(zvec, xvec, indexing = 'ij')
         return zg, xg
