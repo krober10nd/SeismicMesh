@@ -1,0 +1,3 @@
+After installing pybind11 (pip install pybind11), run the following command in the directory with the code...
+
+c++ -O3 -Wall -shared -std=c++11 -fPIC -Wl,-undefined,dynamic_lookup `python3 -m pybind11 --includes` FastHJ.cpp -o FastHJ`python3-config --extension-suffix`

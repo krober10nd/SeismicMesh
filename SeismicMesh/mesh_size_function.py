@@ -1,20 +1,37 @@
-#-----------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 #  Copyright (C) 2020 Keith Jared Roberts
 
 #  Distributed under the terms of the GNU General Public License. You should
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
-#-----------------------------------------------------------------------------
-import sys
-import io
-
+# -----------------------------------------------------------------------------
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 import matplotlib.pyplot as plt
-import segyio
-import distmesh as dm  # for signed distnace function
 
-import FastHJ
+import segyio
+
+from SeismicMesh.FastHJ import limgrad
+
+
+def drectangle(p, x1, x2, y1, y2):
+    min = np.minimum
+    """Signed distance function for rectangle with corners (x1,y1), (x2,y1),
+    (x1,y2), (x2,y2).
+    This has an incorrect distance to the four corners but that isn't a big deal
+    """
+    return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
+
+
+def hj(fun, elen, grade, imax):
+    """ Call-back to the cpp gradient limiter code """
+    _nz, _nx = np.shape(fun)
+    ffun = fun.flatten("F")
+    ffun_list = ffun.tolist()
+    tmp = limgrad([_nz, _nx, 1], elen, grade, imax, ffun_list)
+    tmp = np.asarray(tmp)
+    fun_s = np.reshape(tmp, (_nz, _nx), "F")
+    return fun_s
 
 
 class MeshSizeFunction:
@@ -48,7 +65,8 @@ class MeshSizeFunction:
 
     Example
     ------
-    ef = MeshSizeFunction(
+    import SeismicMesh
+    ef = SeismicMesh.MeshSizeFunction(
             bbox=(-12e3,0,0,67e3),
             ,segy=fname,
             hmin=2e3
@@ -62,9 +80,16 @@ class MeshSizeFunction:
     """
 
     def __init__(
-            self, bbox, hmin, segy,
-            wl=0.0, freq=5.0, hmax=np.inf,
-            dt=0.0, cr_max=0.2, grade=0.0
+        self,
+        bbox,
+        hmin,
+        segy,
+        wl=0.0,
+        freq=5.0,
+        hmax=np.inf,
+        dt=0.0,
+        cr_max=0.2,
+        grade=0.0,
     ):
         self.bbox = bbox
         self.hmin = hmin
@@ -80,13 +105,14 @@ class MeshSizeFunction:
         self.fh = None
         self.fd = None
 
-    # SETTERS AND GETTERS
+    ### SETTERS AND GETTERS ###
+
     @property
     def fh(self):
         return self.__fh
 
     @fh.setter
-    def fh(self,value):
+    def fh(self, value):
         self.__fh = value
 
     @property
@@ -94,7 +120,7 @@ class MeshSizeFunction:
         return self.__fd
 
     @fd.setter
-    def fd(self,value):
+    def fd(self, value):
         self.__fd = value
 
     @property
@@ -103,8 +129,7 @@ class MeshSizeFunction:
 
     @bbox.setter
     def bbox(self, value):
-        assert len(value) >= 4 and len(
-            value) <= 6, "bbox has wrong number of args"
+        assert len(value) >= 4 and len(value) <= 6, "bbox has wrong number of args"
         self.__bbox = value
 
     @property
@@ -121,7 +146,7 @@ class MeshSizeFunction:
         return self.__vp
 
     @vp.setter
-    def vp(self,value):
+    def vp(self, value):
         self.__vp = value
 
     @property
@@ -129,7 +154,7 @@ class MeshSizeFunction:
         return self.__nz
 
     @nz.setter
-    def nz(self,value):
+    def nz(self, value):
         self.__nz = value
 
     @property
@@ -137,7 +162,7 @@ class MeshSizeFunction:
         return self.__nx
 
     @nx.setter
-    def nx(self,value):
+    def nx(self, value):
         self.__nx = value
 
     @property
@@ -179,6 +204,7 @@ class MeshSizeFunction:
 
     @dt.setter
     def dt(self, value):
+        assert value >= 0, "dt must be > 0"
         self.__dt = value
 
     @property
@@ -197,10 +223,10 @@ class MeshSizeFunction:
     def grade(self, value):
         self.__grade = value
 
-    ### PUBLIC METHODS ###
+    # ---PUBLIC METHODS---#
 
     def build(self):
-        '''Builds the isotropic mesh size function according
+        """Builds the isotropic mesh size function according
             to the user arguments that were passed.
 
         Usage
@@ -214,13 +240,14 @@ class MeshSizeFunction:
 
          Returns
         -------
-            MeshSizeFunction object with specific fields populated:
+            SeismicMesh.MeshSizeFunction object with specific fields populated:
                 self.fh: lambda function w/ scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
                 self.fd: lambda function representing the signed distance function of domain
 
-        '''
+        """
         _bbox = self.bbox
-        _vp,_nz,_nx = self.__ReadVelocityModel()
+        width = max(_bbox)
+        _vp, _nz, _nx = self.__ReadVelocityModel()
 
         self.vp = _vp
         self.nz = _nz
@@ -236,49 +263,48 @@ class MeshSizeFunction:
         _dt = self.dt
         _cr_max = self.cr_max
 
-        width = max(_bbox)
-        depth = min(_bbox)
-
         hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
-        if(_wl > 0):
-            print('Mesh sizes with be built to resolve an estimate of wavelength with ' +
-                  str(_wl)+' vertices...')
-            hh_m = _vp/(_freq*_wl)
+        if _wl > 0:
+            print(
+                "Mesh sizes with be built to resolve an estimate of wavelength with "
+                + str(_wl)
+                + " vertices..."
+            )
+            hh_m = _vp / (_freq * _wl)
         # enforce min (and optionally max) sizes
         hh_m = np.where(hh_m < _hmin, _hmin, hh_m)
-        if(_hmax < np.inf):
-            print('Enforcing maximum mesh resolution...')
+        if _hmax < np.inf:
+            print("Enforcing maximum mesh resolution...")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
         # grade the mesh sizes
-        if(_grade > 0):
-            print('Enforcing mesh gradation...')
-            elen = width/_nx
-            imax = 10000
-            ffun = hh_m.flatten('F')
-            ffun_list = ffun.tolist()
-            tmp = FastHJ.limgrad([_nz, _nx, 1], elen, _grade, imax, ffun_list)
-            tmp = np.asarray(tmp)
-            hh_m = np.reshape(tmp, _nz, _nx, 'F')
+        if _grade > 0:
+            print("Enforcing mesh gradation...")
+            hh_m = hj(hh_m, width / _nx, _grade, 10000)
         # adjust based on the CFL limit so cr < cr_max
-        if(_dt > 0):
-            print('Enforcing timestep of '+str(dt)+' seconds...')
-            cr_old = (_vp*_dt)/hh_m
-            dxn = (_vp*_dt)/_cr_max
+        if _dt > 0:
+            print("Enforcing timestep of " + str(_dt) + " seconds...")
+            cr_old = (_vp * _dt) / hh_m
+            dxn = (_vp * _dt) / _cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
+
         # construct a interpolator object to be queried during mesh generation
         z_vec, x_vec = self.__CreateDomainVectors()
         assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
         interpolant = RegularGridInterpolator(
-            (z_vec, x_vec), hh_m, bounds_error=False)
+            (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
+        )
         # create a mesh size function interpolant
         self.fh = lambda p: interpolant(p)
+
+        def fdd(p):
+            return drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
+
         # create a signed distance function
-        self.fd = lambda p: dm.drectangle(p,bbox[0],bbox[1],bbox[2],bbox[3])
+        self.fd = lambda p: fdd(p)
         return self
 
-
     def plot(self, stride=5):
-        ''' Plot the isotropic mesh size function
+        """ Plot the isotropic mesh size function
 
         Usage
         -------
@@ -287,81 +313,64 @@ class MeshSizeFunction:
 
         Parameters
         -------
-            self: MeshSizeFunction object
+            self: SeismicMesh.MeshSizeFunction object
                         **kwargs
             stride: downsample the image by n (n=5 by default)
 
          Returns
         -------
             none
-            '''
-        _nz = self.nz
-        _nx = self.nx
-        _bbox = self.bbox
-        width = max(_bbox)
-        depth = min(_bbox)
+            """
         fh = self.fh
-
-        zg, xg=self.__CreateDomainMatrices()
-        sz1z, sz1x=zg.shape
-        sz2=sz1z*sz1x
-        _zg=np.reshape(zg, (sz2, 1))
-        _xg=np.reshape(xg, (sz2, 1))
-        hh_m=fh((_zg, _xg))
-        hh_m=np.reshape(hh_m, (sz1z, sz1x))
-        plt.pcolormesh(xg[0::stride], zg[0::stride],
-                       hh_m[0::stride], edgecolors = 'none')
-        plt.title('Isotropic mesh sizes')
-        plt.colorbar(label = 'mesh size (m)')
-        plt.xlabel('x-direction (km)')
-        plt.ylabel('z-direction (km)')
-        plt.axis('equal')
+        zg, xg = self.__CreateDomainMatrices()
+        sz1z, sz1x = zg.shape
+        sz2 = sz1z * sz1x
+        _zg = np.reshape(zg, (sz2, 1))
+        _xg = np.reshape(xg, (sz2, 1))
+        hh = fh((_zg, _xg))
+        hh = np.reshape(hh, (sz1z, sz1x))
+        plt.pcolormesh(xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none")
+        plt.title("Isotropic mesh sizes")
+        plt.colorbar(label="mesh size (m)")
+        plt.xlabel("x-direction (km)")
+        plt.ylabel("z-direction (km)")
+        plt.axis("equal")
         plt.show()
         return None
 
+    def GetDomainMatrices(self):
+        """ Accessor to private method"""
+        zg, xg = self.__CreateDomainMatrices()
+        return zg, xg
 
-    ### PRIVATE METHODS ###
+    # ---PRIVATE METHODS---#
+
     def __ReadVelocityModel(self):
-        """ uses the python package segyio."""
-        _fname=self.segy
-        _bbox=self.bbox
-
-        width=max(_bbox)
-        depth=min(_bbox)
-
-        found=False
-        with segyio.open(_fname, ignore_geometry = True) as f:
-            found=True
+        """ Reads a velocity model from segY. Uses the python package segyio."""
+        _fname = self.segy
+        with segyio.open(_fname, ignore_geometry=True) as f:
             # determine length of velocity model from file
-            nz=len(f.samples)
-            nx=len(f.trace)
-            vp=np.zeros(shape = (nz, nx))
-            index=0
+            nz = len(f.samples)
+            nx = len(f.trace)
+            vp = np.zeros(shape=(nz, nx))
+            index = 0
             for trace in f.trace:
-                vp[:, index]=trace  # convert to m-s?
+                vp[:, index] = trace  # convert to m-s?
                 index += 1
-            vp=np.flipud(vp)
-        if not found:
-            print('Exiting...segy file called '+_fname+'not found...')
-            sys.exit(1)
+            vp = np.flipud(vp)
         return vp, nz, nx
 
     def __CreateDomainVectors(self):
         _bbox = self.bbox
         _nx = self.nx
         _nz = self.nz
-        width=max(_bbox)
-        depth=min(_bbox)
-        xvec=np.linspace(0, width, _nx)
-        zvec=np.linspace(depth, 0, _nz)
+        width = max(_bbox)
+        depth = min(_bbox)
+        xvec = np.linspace(0, width, _nx)
+        zvec = np.linspace(depth, 0, _nz)
         return zvec, xvec
 
     def __CreateDomainMatrices(self):
-        _bbox = self.bbox
-        _nx = self.nx
-        _nz = self.nz
-        width=max(_bbox)
-        depth=min(_bbox)
-        zvec, xvec=self.__CreateDomainVectors()
-        zg, xg=np.meshgrid(zvec, xvec, indexing = 'ij')
+        zvec, xvec = self.__CreateDomainVectors()
+        zg, xg = np.meshgrid(zvec, xvec, indexing="ij")
         return zg, xg

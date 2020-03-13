@@ -6,12 +6,5 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 
-from .mesh_size_function import MeshSizeFunction
-from .mesh_generator import MeshGenerator
-from .FastHJ import limgrad
 
-__all__ = [
-    "limgrad",
-    "MeshSizeFunction",
-    "MeshGenerator",
-]
+__all__ = ["test_hmin.py"]

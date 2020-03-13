@@ -1,0 +1,16 @@
+[MESSAGES CONTROL]
+
+disable=
+    anomalous-backslash-in-string,
+    duplicate-code,
+    fixme,
+    invalid-name,
+    locally-disabled,
+    missing-docstring,
+    no-member,
+    too-many-arguments,
+    too-many-branches,
+    too-many-locals,
+    too-many-statements,
+    unused-argument,
+    wildcard-import,
