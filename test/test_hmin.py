@@ -9,7 +9,7 @@ def test_hmin():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     hmin = 100
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-1e3, 0, 0, 1e3), wl=5, segy=fname, hmin=hmin
+        bbox=(-1e3, 0, 0, 1e3), wl=5, model=fname, hmin=hmin
     )
     ef = ef.build()
 

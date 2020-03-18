@@ -28,7 +28,7 @@ def test_grade():
     grade = 0.005
     elen = 1e3
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, segy=fname, hmin=hmin
+        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
     )
     ef = ef.build()
 

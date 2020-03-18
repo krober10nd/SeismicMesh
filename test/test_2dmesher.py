@@ -12,14 +12,14 @@ def test_2dmesher():
     hmin = 100
     grade = 0.005
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, segy=fname, hmin=hmin
+        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
     )
     ef = ef.build()
     mshgen = SeismicMesh.MeshGenerator(ef)
-    points, facets = mshgen.build(max_iter=100)
-    # should have: 7601 vertices and 14873 cells
-    assert np.abs((len(points) - 7601)) < 50
-    assert (len(facets) - 14873) < 50
+    points, facets = mshgen.build(max_iter=100, seed=0)
+    # should have: 7690 vertices and 15045 cells
+    assert np.abs((len(points) == 7690))
+    assert len(facets) == 15045
 
 
 if __name__ == "__main__":

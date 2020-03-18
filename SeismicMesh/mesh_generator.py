@@ -143,20 +143,21 @@ class MeshGenerator:
         self.__SizingFunction = value
 
     ### PUBLIC METHODS ###
-    def build(self, pfix=None, max_iter=10, nscreen=5, plot=False):
+    def build(self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None):
         """
         distmeshnd: 2D/3D mesh generator using distance functions.
 
         Usage
         -----
-        >>> p, t = build(self, pfix=None, max_iter=20, plot=True)
+        >>> p, t = build(self, pfix=None, max_iter=20, plot=False, seed=None)
 
         Parameters
         ----------
-        pfix: points that you wish you constrain
-        max_iter: maximum number of iterations
-        nscreen: output to screen nscreen
-        plot: Visualize incremental meshes
+        pfix: points that you wish you constrain (default==None)
+        max_iter: maximum number of iterations (default==20)
+        nscreen: output to screen nscreen (default==5)
+        plot: Visualize incremental meshes (default==False)
+        seed: Random seed to ensure results are deterministic
 
         Returns
         -------
@@ -169,6 +170,11 @@ class MeshGenerator:
         fh = _ef.fh
         h0 = _ef.hmin
         bbox = _ef.bbox
+
+        # set random seed to ensure deterministic results for mesh generator
+        if seed is not None:
+            print("Setting psuedo-random number seed to " + str(seed))
+            np.random.seed(seed)
 
         if plot:
             import matplotlib.pyplot as plt
@@ -216,26 +222,38 @@ class MeshGenerator:
                 t = spspatial.Delaunay(p).vertices  # List of triangles
                 pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
                 t = t[fd(pmid) < -geps]  # Keep interior triangles
+
                 # 4. Describe each bar by a unique pair of nodes
                 if dim == 2:
                     bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
                     bars = np.sort(bars, axis=1)
                 elif dim == 3:
-                    # TODO PROVIDE SUPPORT FOR 3D
-                    bars = []
+                    bars = np.concatenate(
+                        [
+                            t[:, [1, 2]],
+                            t[:, [2, 0]],
+                            t[:, [0, 1]],
+                            t[:, [2, 3]],
+                            t[:, [0, 3]],
+                            t[:, [1, 3]],
+                        ]
+                    )
+                    bars = np.sort(bars, axis=1)
                 bars = unique_rows(bars)  # Bars as node pairs
+
                 # 5. Graphical output of the current mesh
                 if plot:
-                    if dim == 2:
-                        plt.triplot(p[:, 0], p[:, 1], t)
-                        plt.title("Retriangulation %d" % count)
-                        plt.axis("equal")
-                        plt.show()
-                    elif dim == 3:
-                        if count % 5 == 0:
+                    if count % nscreen == 0:
+                        if dim == 2:
+                            plt.triplot(p[:, 0], p[:, 1], t)
+                            plt.title("Retriangulation %d" % count)
+                            plt.axis("equal")
+                            plt.show()
+                        elif dim == 3:
                             # TODO ALL 3D VIZ
                             plt.title("Retriangulation %d" % count)
                             plt.axis("equal")
+
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
             L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths

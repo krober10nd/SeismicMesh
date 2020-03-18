@@ -47,9 +47,17 @@ class MeshSizeFunction:
     -------
         bbox: Bounding box, (xmin, xmax, ymin, ymax)
         hmin: Minimum triangular edgelength populating domain, (meters)
-        segy: Seg-y file containing velocity model, (assumes velocity is in METERS PER SECOND)
+        model: (2D) Seg-y file containing velocity model, (assumes velocity is in METERS PER SECOND)
+                                                OR
+        (3D) binary file containing velocity model, (assumes velocity is in METERS PER SECOND)
+             -Litte endian.
+             -Requires to specify number of grid points in each dimension. nx, ny, and nz.
 
                                 **kwargs
+        nx: for velocity model, number of grid points in x-direction
+        ny: for velocity model, number of grid points in y-direction
+        nz: for velocity model, number of grid points in z-direction
+        units: velocity is in either m-s or km-s (default='m-s')
         wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl., default=disabled)
         freq: maximum source frequency for which to estimate wl (hertz, default=disabled)
         hmax: maximum edgelength in the domain (meters, default=disabled)
@@ -66,9 +74,10 @@ class MeshSizeFunction:
     Example
     ------
     import SeismicMesh
+    # In 2D
     ef = SeismicMesh.MeshSizeFunction(
             bbox=(-12e3,0,0,67e3),
-            ,segy=fname,
+            ,model=fname,
             hmin=2e3
             # ,wl=5,freq=5
             # ,hmax=4e3
@@ -83,7 +92,8 @@ class MeshSizeFunction:
         self,
         bbox,
         hmin,
-        segy,
+        model,
+        units="m-s",
         wl=0.0,
         freq=5.0,
         hmax=np.inf,
@@ -93,7 +103,8 @@ class MeshSizeFunction:
     ):
         self.bbox = bbox
         self.hmin = hmin
-        self.segy = segy
+        self.model = model
+        self.units = units
         self.wl = wl
         self.freq = freq
         self.hmax = hmax
@@ -101,6 +112,7 @@ class MeshSizeFunction:
         self.cr_max = cr_max
         self.grade = grade
         self.nz = None
+        self.ny = None
         self.nx = None
         self.fh = None
         self.fd = None
@@ -151,6 +163,7 @@ class MeshSizeFunction:
 
     @property
     def nz(self):
+        assert self.__nz is not None, "binary file specified but nz was not."
         return self.__nz
 
     @nz.setter
@@ -159,6 +172,7 @@ class MeshSizeFunction:
 
     @property
     def nx(self):
+        assert self.__nx is not None, "binary file specified but nx was not."
         return self.__nx
 
     @nx.setter
@@ -166,13 +180,31 @@ class MeshSizeFunction:
         self.__nx = value
 
     @property
-    def segy(self):
-        return self.__segy
+    def ny(self):
+        assert self.__ny is not None, "binary file specified but ny was not."
+        return self.__ny
 
-    @segy.setter
-    def segy(self, value):
-        assert isinstance(value, str) is True, "segy must be a filename"
-        self.__segy = value
+    @ny.setter
+    def ny(self, value):
+        self.__ny = value
+
+    @property
+    def model(self):
+        return self.__model
+
+    @model.setter
+    def model(self, value):
+        assert isinstance(value, str) is True, "model must be a filename"
+        self.__model = value
+
+    @property
+    def units(self):
+        return self.__units
+
+    @units.setter
+    def units(self, value):
+        assert value == "m-s" or value == "km-s", "units are not compatible"
+        self.__units = value
 
     @property
     def wl(self):
@@ -346,18 +378,38 @@ class MeshSizeFunction:
     # ---PRIVATE METHODS---#
 
     def __ReadVelocityModel(self):
-        """ Reads a velocity model from segY. Uses the python package segyio."""
-        _fname = self.segy
-        with segyio.open(_fname, ignore_geometry=True) as f:
-            # determine length of velocity model from file
-            nz = len(f.samples)
-            nx = len(f.trace)
-            vp = np.zeros(shape=(nz, nx))
-            index = 0
-            for trace in f.trace:
-                vp[:, index] = trace  # convert to m-s?
-                index += 1
-            vp = np.flipud(vp)
+        """ Reads a velocity model from a SEG-Y file (2D) or a binary file (3D). Uses the python package segyio."""
+        _fname = self.model
+        # determine type of file
+        isSegy = _fname.lower().endswith((".segy"))
+        isBin = _fname.lower().endswith((".bin"))
+        if isSegy:
+            print("Found SEG-Y file")
+            with segyio.open(_fname, ignore_geometry=True) as f:
+                # determine dimensions of velocity model from trace length
+                nz = len(f.samples)
+                nx = len(f.trace)
+                vp = np.zeros(shape=(nz, nx))
+                index = 0
+                for trace in f.trace:
+                    vp[:, index] = trace
+                    index += 1
+                vp = np.flipud(vp)
+        elif isBin:
+            print("Found binary file")
+            nx = self.nx
+            ny = self.ny
+            nz = self.nz
+            with open(_fname, "r") as file:
+                vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+                vp = vp.reshape(nx, ny, nz, order="F")
+        else:
+            print("Did not recognize file type...either .bin or .segy")
+            quit()
+        if self.__units == "km-s":
+            print("Converting model velocities to m-s...")
+            vp *= 1e3
+        assert np.amin(vp) > 1000, "Min. velocity too low. Units may be incorrect."
         return vp, nz, nx
 
     def __CreateDomainVectors(self):
