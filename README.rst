@@ -1,5 +1,8 @@
 .. image:: https://circleci.com/gh/krober10nd/SeismicMesh/tree/master.svg?style=shield
-        :target: https://circleci.com/gh/krober10nd/SeismicMesh/tree/master     
+        :target: https://circleci.com/gh/krober10nd/SeismicMesh/tree/master 
+
+.. image:: https://codecov.io/gh/krober10nd/SeismicMesh/branch/master/graph/badge.svg
+  	:target: https://codecov.io/gh/krober10nd/SeismicMesh
     
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
         :target: https://github.com/ambv/black
