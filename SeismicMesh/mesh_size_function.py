@@ -5,6 +5,8 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
+import warnings
+
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 import matplotlib.pyplot as plt
@@ -23,15 +25,15 @@ def drectangle(p, x1, x2, y1, y2):
     return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
 
 
-def hj(fun, elen, grade, imax):
-    """ Call-back to the cpp gradient limiter code """
-    _nz, _nx = np.shape(fun)
-    ffun = fun.flatten("F")
-    ffun_list = ffun.tolist()
-    tmp = limgrad([_nz, _nx, 1], elen, grade, imax, ffun_list)
-    tmp = np.asarray(tmp)
-    fun_s = np.reshape(tmp, (_nz, _nx), "F")
-    return fun_s
+def dblock(p, x1, x2, y1, y2, z1, z2):
+    min = np.minimum
+    return -min(
+        min(
+            min(min(min(-z1 + p[:, 2], z2 - p[:, 2]), -y1 + p[:, 1]), y2 - p[:, 1]),
+            -x1 + p[:, 0],
+        ),
+        x2 - p[:, 0],
+    )
 
 
 class MeshSizeFunction:
@@ -54,9 +56,9 @@ class MeshSizeFunction:
              -Requires to specify number of grid points in each dimension. nx, ny, and nz.
 
                                 **kwargs
-        nx: for velocity model, number of grid points in x-direction
-        ny: for velocity model, number of grid points in y-direction
         nz: for velocity model, number of grid points in z-direction
+        nx: for velocity model, number of grid points in x-direction
+        ny: for velocity model, number of grid points in y-direction (only for 3D)
         units: velocity is in either m-s or km-s (default='m-s')
         wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl., default=disabled)
         freq: maximum source frequency for which to estimate wl (hertz, default=disabled)
@@ -100,6 +102,9 @@ class MeshSizeFunction:
         dt=0.0,
         cr_max=0.2,
         grade=0.0,
+        nx=None,
+        ny=None,
+        nz=None,
     ):
         self.bbox = bbox
         self.hmin = hmin
@@ -111,11 +116,12 @@ class MeshSizeFunction:
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
-        self.nz = None
-        self.ny = None
-        self.nx = None
+        self.dim = int(len(self.bbox) / 2)
         self.fh = None
         self.fd = None
+        self.nx = nx
+        self.ny = ny
+        self.nz = nz
 
     ### SETTERS AND GETTERS ###
 
@@ -141,7 +147,9 @@ class MeshSizeFunction:
 
     @bbox.setter
     def bbox(self, value):
-        assert len(value) >= 4 and len(value) <= 6, "bbox has wrong number of args"
+        assert (
+            len(value) >= 4 and len(value) <= 6
+        ), "bbox has wrong number of values. either 4 or 6."
         self.__bbox = value
 
     @property
@@ -154,11 +162,24 @@ class MeshSizeFunction:
         self.__hmin = value
 
     @property
+    def dim(self):
+        return self.__dim
+
+    @dim.setter
+    def dim(self, value):
+        assert value == 2 or value == 3, "dim must be either 2 or 3"
+        self.__dim = value
+
+    @property
     def vp(self):
         return self.__vp
 
     @vp.setter
     def vp(self, value):
+        if np.amin(value) < 1000:
+            warnings.warn("Min. velocity < 1000 m-s. Units may be incorrect.")
+        if np.amax(value) > 10000:
+            warnings.warn("Max. velocity > 10,000 m-s. Units may be incorrect.")
         self.__vp = value
 
     @property
@@ -168,6 +189,7 @@ class MeshSizeFunction:
 
     @nz.setter
     def nz(self, value):
+        assert value is None or value > 0, " nz is not > 0"
         self.__nz = value
 
     @property
@@ -177,6 +199,7 @@ class MeshSizeFunction:
 
     @nx.setter
     def nx(self, value):
+        assert value is None or value > 0, " nx is not > 0"
         self.__nx = value
 
     @property
@@ -186,6 +209,7 @@ class MeshSizeFunction:
 
     @ny.setter
     def ny(self, value):
+        assert value is None or value > 0, " ny is not > 0"
         self.__ny = value
 
     @property
@@ -245,6 +269,7 @@ class MeshSizeFunction:
 
     @cr_max.setter
     def cr_max(self, value):
+        assert value >= 0, "Cr_max must be > 0"
         self.__cr_max = value
 
     @property
@@ -253,6 +278,7 @@ class MeshSizeFunction:
 
     @grade.setter
     def grade(self, value):
+        assert value >= 0, "grade must be > 0"
         self.__grade = value
 
     # ---PUBLIC METHODS---#
@@ -277,13 +303,15 @@ class MeshSizeFunction:
                 self.fd: lambda function representing the signed distance function of domain
 
         """
-        _bbox = self.bbox
-        width = max(_bbox)
-        _vp, _nz, _nx = self.__ReadVelocityModel()
+        self.__ReadVelocityModel()
+        _vp = self.vp
 
-        self.vp = _vp
-        self.nz = _nz
-        self.nx = _nx
+        _bbox = self.bbox
+        _dim = self.dim
+        _nz = self.nz
+        _nx = self.nx
+        if _dim == 3:
+            _ny = self.ny
 
         _hmax = self.hmax
         _hmin = self.hmin
@@ -295,7 +323,12 @@ class MeshSizeFunction:
         _dt = self.dt
         _cr_max = self.cr_max
 
-        hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
+        width = _bbox[3] - _bbox[2]
+
+        if _dim == 2:
+            hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
+        if _dim == 3:
+            hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
         if _wl > 0:
             print(
                 "Mesh sizes with be built to resolve an estimate of wavelength with "
@@ -311,28 +344,42 @@ class MeshSizeFunction:
         # grade the mesh sizes
         if _grade > 0:
             print("Enforcing mesh gradation...")
-            hh_m = hj(hh_m, width / _nx, _grade, 10000)
-        # adjust based on the CFL limit so cr < cr_max
+            hh_m = self.hj(hh_m, width / _nx, 10000)
+        # adjust mesh res. based on the CFL limit so cr < cr_max
         if _dt > 0:
             print("Enforcing timestep of " + str(_dt) + " seconds...")
             cr_old = (_vp * _dt) / hh_m
             dxn = (_vp * _dt) / _cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
-
         # construct a interpolator object to be queried during mesh generation
-        z_vec, x_vec = self.__CreateDomainVectors()
+        print("Building a gridded interpolant...")
+        if _dim == 2:
+            z_vec, x_vec = self.__CreateDomainVectors()
+        if _dim == 3:
+            z_vec, x_vec, y_vec = self.__CreateDomainVectors()
         assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
-        interpolant = RegularGridInterpolator(
-            (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
-        )
+        if _dim == 2:
+            interpolant = RegularGridInterpolator(
+                (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
+            )
+        if _dim == 3:
+            interpolant = RegularGridInterpolator(
+                (x_vec, y_vec, z_vec), hh_m, bounds_error=False, fill_value=None
+            )
         # create a mesh size function interpolant
         self.fh = lambda p: interpolant(p)
 
         def fdd(p):
             return drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
 
+        def fdd2(p):
+            return dblock(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5])
+
         # create a signed distance function
-        self.fd = lambda p: fdd(p)
+        if _dim == 2:
+            self.fd = lambda p: fdd(p)
+        if _dim == 3:
+            self.fd = lambda p: fdd2(p)
         return self
 
     def plot(self, stride=5):
@@ -353,27 +400,56 @@ class MeshSizeFunction:
         -------
             none
             """
-        fh = self.fh
-        zg, xg = self.__CreateDomainMatrices()
-        sz1z, sz1x = zg.shape
-        sz2 = sz1z * sz1x
-        _zg = np.reshape(zg, (sz2, 1))
-        _xg = np.reshape(xg, (sz2, 1))
-        hh = fh((_zg, _xg))
-        hh = np.reshape(hh, (sz1z, sz1x))
-        plt.pcolormesh(xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none")
-        plt.title("Isotropic mesh sizes")
-        plt.colorbar(label="mesh size (m)")
-        plt.xlabel("x-direction (km)")
-        plt.ylabel("z-direction (km)")
-        plt.axis("equal")
-        plt.show()
+        _dim = self.dim
+        _fh = self.fh
+
+        if _dim == 2:
+            zg, xg = self.__CreateDomainMatrices()
+            sz1z, sz1x = zg.shape
+            sz2 = sz1z * sz1x
+            _zg = np.reshape(zg, (sz2, 1))
+            _xg = np.reshape(xg, (sz2, 1))
+            hh = _fh((_zg, _xg))
+            hh = np.reshape(hh, (sz1z, sz1x))
+            plt.pcolormesh(
+                xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none"
+            )
+            plt.title("Isotropic mesh sizes")
+            plt.colorbar(label="mesh size (m)")
+            plt.xlabel("x-direction (km)")
+            plt.ylabel("z-direction (km)")
+            plt.axis("equal")
+            plt.show()
+        elif _dim == 3:
+            print("visualization in 3D not yet supported")
         return None
 
     def GetDomainMatrices(self):
         """ Accessor to private method"""
         zg, xg = self.__CreateDomainMatrices()
         return zg, xg
+
+    def hj(self, fun, elen, imax):
+        """ Call-back to the cpp gradient limiter code """
+        _dim = self.dim
+        _nz = self.nz
+        _nx = self.nx
+        if _dim == 3:
+            _ny = self.ny
+        _grade = self.grade
+
+        ffun = fun.flatten("F")
+        ffun_list = ffun.tolist()
+        if _dim == 2:
+            tmp = limgrad([_nz, _nx, 1], elen, _grade, imax, ffun_list)
+        if _dim == 3:
+            tmp = limgrad([_nx, _ny, _nz], elen, _grade, imax, ffun_list)
+        tmp = np.asarray(tmp)
+        if _dim == 2:
+            fun_s = np.reshape(tmp, (_nz, _nx), "F")
+        if _dim == 3:
+            fun_s = np.reshape(tmp, (_nx, _ny, _nz), "F")
+        return fun_s
 
     # ---PRIVATE METHODS---#
 
@@ -384,45 +460,64 @@ class MeshSizeFunction:
         isSegy = _fname.lower().endswith((".segy"))
         isBin = _fname.lower().endswith((".bin"))
         if isSegy:
-            print("Found SEG-Y file")
+            print("Found SEG-Y file: " + _fname)
             with segyio.open(_fname, ignore_geometry=True) as f:
                 # determine dimensions of velocity model from trace length
-                nz = len(f.samples)
-                nx = len(f.trace)
-                vp = np.zeros(shape=(nz, nx))
+                self.nz = len(f.samples)
+                self.nx = len(f.trace)
+                _nz = self.nz
+                _nx = self.nx
+                _vp = np.zeros(shape=(_nz, _nx))
                 index = 0
                 for trace in f.trace:
-                    vp[:, index] = trace
+                    _vp[:, index] = trace
                     index += 1
-                vp = np.flipud(vp)
+                _vp = np.flipud(_vp)
         elif isBin:
-            print("Found binary file")
-            nx = self.nx
-            ny = self.ny
-            nz = self.nz
+            print("Found binary file: " + _fname)
+            _nx = self.nx
+            _ny = self.ny
+            _nz = self.nz
+            # assumes: little endian byte order and fortran ordering
             with open(_fname, "r") as file:
-                vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
-                vp = vp.reshape(nx, ny, nz, order="F")
+                _vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+                _vp = _vp.reshape(_nx, _ny, _nz, order="F")
         else:
             print("Did not recognize file type...either .bin or .segy")
             quit()
         if self.__units == "km-s":
             print("Converting model velocities to m-s...")
-            vp *= 1e3
-        assert np.amin(vp) > 1000, "Min. velocity too low. Units may be incorrect."
-        return vp, nz, nx
+            _vp *= 1e3
+        self.vp = _vp
+        return None
 
     def __CreateDomainVectors(self):
+        _dim = self.dim
         _bbox = self.bbox
-        _nx = self.nx
         _nz = self.nz
-        width = max(_bbox)
-        depth = min(_bbox)
-        xvec = np.linspace(0, width, _nx)
-        zvec = np.linspace(depth, 0, _nz)
-        return zvec, xvec
+        _nx = self.nx
+        if _dim == 3:
+            _ny = self.ny
+        width = _bbox[3] - _bbox[2]
+        depth = _bbox[1] - _bbox[0]
+        zvec = np.linspace(-depth, 0, _nz, dtype=np.float32)
+        xvec = np.linspace(0, width, _nx, dtype=np.float32)
+        if _dim == 2:
+            return zvec, xvec
+        elif _dim == 3:
+            length = _bbox[5] - _bbox[4]
+            yvec = np.linspace(0, length, _ny, dtype=np.float32)
+            return zvec, xvec, yvec
 
     def __CreateDomainMatrices(self):
-        zvec, xvec = self.__CreateDomainVectors()
-        zg, xg = np.meshgrid(zvec, xvec, indexing="ij")
-        return zg, xg
+        _dim = self.dim
+        if _dim == 2:
+            zvec, xvec = self.__CreateDomainVectors()
+            zg, xg = np.meshgrid(zvec, xvec, indexing="ij")
+            return zg, xg
+        elif _dim == 3:
+            zvec, xvec, yvec = self.__CreateDomainVectors()
+            xg, yg, zg = np.meshgrid(
+                xvec, yvec, zvec, indexing="ij", sparse=True, copy=False
+            )
+            return zg, xg, yg

@@ -197,6 +197,7 @@ class MeshGenerator:
             nfix = 0
 
         # 1. Create initial distribution in bounding box (equilateral triangles)
+        # TODO THIS NEEDS TO BE REPRESENTED WITH GENERATORS
         p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox.T)]
         p = p.reshape(dim, -1).T
 

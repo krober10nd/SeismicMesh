@@ -3,21 +3,25 @@ import meshio
 import SeismicMesh
 
 
-def example_2D():
+def example_3D():
     # Name of SEG-Y file containg velocity model.
-    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
-    bbox = (-12e3, 0, 0, 67e3)
-
+    fname = "velocity_models/EGAGE_Salt.bin"
+    bbox = (-4.2e3, 0, 0, 13520e3, 0, 13520e3)
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, dt=0.001, freq=5, wl=5, hmin=50.0, grade=0.05
+        bbox=bbox,
+        model=fname,
+        nx=676,
+        ny=676,
+        nz=210,
+        dt=0.001,
+        freq=5,
+        wl=5,
+        hmin=50.0,
     )
 
     # Build mesh size function
     ef = ef.build()
-
-    # Visualize mesh size function
-    ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(ef)
@@ -27,10 +31,10 @@ def example_2D():
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
-        "foo.vtk", points, [("triangle", facets)],
+        "foo3D.vtk", points, [("triangle", facets)],
     )
 
 
 if __name__ == "__main__":
 
-    example_2D()
+    example_3D()
