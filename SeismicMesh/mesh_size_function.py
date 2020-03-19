@@ -364,7 +364,7 @@ class MeshSizeFunction:
             )
         if _dim == 3:
             # x,y,z -> z,x,y
-            hh_m = hh_m.transpose((2,0,1))
+            hh_m = hh_m.transpose((2, 0, 1))
             interpolant = RegularGridInterpolator(
                 (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
             )
