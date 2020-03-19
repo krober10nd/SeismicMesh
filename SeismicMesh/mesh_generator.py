@@ -180,7 +180,7 @@ class MeshGenerator:
             import matplotlib.pyplot as plt
 
         dim = int(len(bbox) / 2)
-        bbox = np.array(bbox).reshape(-1,2)
+        bbox = np.array(bbox).reshape(-1, 2)
 
         ptol = 0.001
         ttol = 0.1
@@ -211,7 +211,7 @@ class MeshGenerator:
         count = 0
         pold = float("inf")  # For first iteration
 
-        print('Commencing mesh generation with %d vertices'% N)
+        print("Commencing mesh generation with %d vertices." % N)
 
         while True:
 
@@ -220,6 +220,8 @@ class MeshGenerator:
                 return np.sqrt(((p1 - p2) ** 2).sum(1))
 
             if (dist(p, pold) / h0).max() > ttol:  # Any large movement?
+                # Make sure all points are unique
+                p = np.unique(p, axis=0)
                 pold = p.copy()  # Save current positions
                 t = spspatial.Delaunay(p).vertices  # List of triangles
                 pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
@@ -228,19 +230,18 @@ class MeshGenerator:
                 # 4. Describe each bar by a unique pair of nodes
                 if dim == 2:
                     bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
-                    bars = np.sort(bars, axis=1)
                 elif dim == 3:
                     bars = np.concatenate(
                         [
+                            t[:, [0, 1]],
                             t[:, [1, 2]],
                             t[:, [2, 0]],
-                            t[:, [0, 1]],
-                            t[:, [2, 3]],
                             t[:, [0, 3]],
                             t[:, [1, 3]],
+                            t[:, [2, 3]],
                         ]
                     )
-                    bars = np.sort(bars, axis=1)
+                bars = np.sort(bars, axis=1)
                 bars = unique_rows(bars)  # Bars as node pairs
 
                 # 5. Graphical output of the current mesh

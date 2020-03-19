@@ -17,7 +17,7 @@ def example_3D():
         dt=0.001,
         freq=5,
         wl=5,
-        hmin=500,
+        hmin=100,
     )
 
     # Build mesh size function
@@ -27,7 +27,7 @@ def example_3D():
     mshgen = SeismicMesh.MeshGenerator(ef)
 
     # Build the mesh
-    points, facets = mshgen.build(max_iter=50, nscreen=1)
+    points, facets = mshgen.build(max_iter=20, nscreen=1)
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
