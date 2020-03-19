@@ -6,7 +6,7 @@ import SeismicMesh
 def example_3D():
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/EGAGE_Salt.bin"
-    bbox = (-4.2e3, 0, 0, 13520e3, 0, 13520e3)
+    bbox = (-4200, 0, 0, 13520, 0, 13520)
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
@@ -17,7 +17,7 @@ def example_3D():
         dt=0.001,
         freq=5,
         wl=5,
-        hmin=50.0,
+        hmin=500,
     )
 
     # Build mesh size function
@@ -31,7 +31,7 @@ def example_3D():
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
-        "foo3D.vtk", points, [("triangle", facets)],
+        "foo3D.vtk", points, [("tetra", facets)],
     )
 
 

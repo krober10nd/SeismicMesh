@@ -180,7 +180,7 @@ class MeshGenerator:
             import matplotlib.pyplot as plt
 
         dim = int(len(bbox) / 2)
-        bbox = np.array(bbox).reshape(2, -1)
+        bbox = np.array(bbox).reshape(-1,2)
 
         ptol = 0.001
         ttol = 0.1
@@ -197,8 +197,7 @@ class MeshGenerator:
             nfix = 0
 
         # 1. Create initial distribution in bounding box (equilateral triangles)
-        # TODO THIS NEEDS TO BE REPRESENTED WITH GENERATORS
-        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox.T)]
+        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
         p = p.reshape(dim, -1).T
 
         # 2. Remove points outside the region, apply the rejection method
@@ -211,6 +210,8 @@ class MeshGenerator:
 
         count = 0
         pold = float("inf")  # For first iteration
+
+        print('Commencing mesh generation with %d vertices'% N)
 
         while True:
 
