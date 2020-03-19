@@ -292,6 +292,7 @@ class MeshGenerator:
 
                 dgrads = [(fd(p[ix] + deps_vec(i)) - d[ix]) / deps for i in range(dim)]
                 dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+                dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
