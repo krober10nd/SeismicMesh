@@ -66,7 +66,7 @@ class MeshSizeFunction:
         dt: maximum stable timestep (in seconds given Courant number cr, default=disabled)
         cr_max: dt is theoretically stable with this Courant number (default=0.2)
         grade: maximum allowable variation in mesh size (default=disabled)
-        domain_ext: width of domain extension (in meters)
+        domain_ext: width of domain extension (in meters, default=0.0)
 
 
     Returns
@@ -74,7 +74,7 @@ class MeshSizeFunction:
         MeshSizeFunction object
 
 
-    Example
+    Example (see examples/)
     ------
     import SeismicMesh
     # In 2D
@@ -324,6 +324,7 @@ class MeshSizeFunction:
 
         _bbox = self.bbox
         _dim = self.dim
+        _width = self.width
         _nz = self.nz
         _nx = self.nx
         if _dim == 3:
@@ -339,8 +340,6 @@ class MeshSizeFunction:
 
         _dt = self.dt
         _cr_max = self.cr_max
-
-        _width = self.width
 
         if _dim == 2:
             hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
@@ -368,21 +367,9 @@ class MeshSizeFunction:
             cr_old = (_vp * _dt) / hh_m
             dxn = (_vp * _dt) / _cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
-        # edit bbox to reflect domain extension (should be a function)
+        # edit the bbox to reflect the new domain size
         if _domain_ext > 0:
-            if _dim == 2:
-                bbox_new = (
-                    _bbox[0] - _domain_ext,
-                    _bbox[1],
-                    _bbox[2] - _domain_ext,
-                    _bbox[3] + _domain_ext,
-                )
-            if _dim == 3:
-                bbox_new = ()
-            self.bbox = bbox_new
-            # recalc these
-            self.width = bbox_new[3] - bbox_new[2]
-            self.depth = bbox_new[1] - bbox_new[0]
+            self = self.__EditDomain()
         # construct a interpolator object to be queried during mesh generation
         print("Building a gridded interpolant...")
         if _dim == 2:
@@ -582,3 +569,24 @@ class MeshSizeFunction:
             hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
+
+    def __EditDomain(self):
+        """ edit bbox to reflect domain extension (should be a function) """
+        _dim = self.dim
+        _bbox = self.bbox
+        _domain_ext = self.domain_ext
+        if _domain_ext > 0:
+            if _dim == 2:
+                bbox_new = (
+                    _bbox[0] - _domain_ext,
+                    _bbox[1],
+                    _bbox[2] - _domain_ext,
+                    _bbox[3] + _domain_ext,
+                )
+            if _dim == 3:
+                bbox_new = ()
+            self.bbox = bbox_new
+            # recalc these
+            self.width = bbox_new[3] - bbox_new[2]
+            self.depth = bbox_new[1] - bbox_new[0]
+        return self
