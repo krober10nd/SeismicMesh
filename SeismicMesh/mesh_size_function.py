@@ -370,6 +370,7 @@ class MeshSizeFunction:
         # edit the bbox to reflect the new domain size
         if _domain_ext > 0:
             self = self.__EditDomain()
+            hh_m = self.__CreateDomainExtentsion(hh_m)
         # construct a interpolator object to be queried during mesh generation
         print("Building a gridded interpolant...")
         if _dim == 2:
@@ -378,9 +379,6 @@ class MeshSizeFunction:
             z_vec, x_vec, y_vec = self.__CreateDomainVectors()
         assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
         if _dim == 2:
-            if _domain_ext > 0:
-                print("Including a " + str(_domain_ext) + " meter domain extension...")
-                hh_m = self.__CreateDomainExtentsion(hh_m)
             interpolant = RegularGridInterpolator(
                 (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
             )
@@ -565,8 +563,14 @@ class MeshSizeFunction:
 
         spacing = _width / _nx
         nnx = int(_domain_ext / spacing)
+
+        print("Including a " + str(_domain_ext) + " meter domain extension...")
         if _dim == 2:
             hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
+            hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
+            return hh_m
+        if _dim == 3:
+            hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
 
@@ -584,9 +588,18 @@ class MeshSizeFunction:
                     _bbox[3] + _domain_ext,
                 )
             if _dim == 3:
-                bbox_new = ()
+                bbox_new = (
+                    _bbox[0] - _domain_ext,
+                    _bbox[1],
+                    _bbox[2] - _domain_ext,
+                    _bbox[3] + _domain_ext,
+                    _bbox[4] - _domain_ext,
+                    _bbox[5] + _domain_ext,
+                )
+
             self.bbox = bbox_new
-            # recalc these
             self.width = bbox_new[3] - bbox_new[2]
             self.depth = bbox_new[1] - bbox_new[0]
+            if _dim == 3:
+                self.length = bbox_new[5] - bbox_new[4]
         return self
