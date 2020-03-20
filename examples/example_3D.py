@@ -17,7 +17,7 @@ def example_3D():
         dt=0.001,
         freq=5,
         wl=1,
-        hmin=150,
+        hmin=100,
     )
 
     # Build mesh size function

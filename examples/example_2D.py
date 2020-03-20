@@ -10,7 +10,15 @@ def example_2D():
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, dt=0.001, freq=5, wl=5, hmin=50.0, grade=0.05
+        bbox=bbox,
+        model=fname,
+        domain_ext=2e3,
+        dt=0.001,
+        freq=5,
+        wl=5,
+        hmax=1e3,
+        hmin=50.0,
+        grade=0.05,
     )
 
     # Build mesh size function

@@ -66,6 +66,7 @@ class MeshSizeFunction:
         dt: maximum stable timestep (in seconds given Courant number cr, default=disabled)
         cr_max: dt is theoretically stable with this Courant number (default=0.2)
         grade: maximum allowable variation in mesh size (default=disabled)
+        domain_ext: width of domain extension (in meters)
 
 
     Returns
@@ -105,8 +106,14 @@ class MeshSizeFunction:
         nx=None,
         ny=None,
         nz=None,
+        domain_ext=0.0,
     ):
         self.bbox = bbox
+        self.dim = int(len(self.bbox) / 2)
+        self.width = bbox[3] - bbox[2]
+        self.depth = bbox[1] - bbox[0]
+        if self.dim == 3:
+            self.length = bbox[5] - bbox[4]
         self.hmin = hmin
         self.model = model
         self.units = units
@@ -116,12 +123,12 @@ class MeshSizeFunction:
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
-        self.dim = int(len(self.bbox) / 2)
         self.fh = None
         self.fd = None
         self.nx = nx
         self.ny = ny
         self.nz = nz
+        self.domain_ext = domain_ext
 
     ### SETTERS AND GETTERS ###
 
@@ -281,6 +288,15 @@ class MeshSizeFunction:
         assert value >= 0, "grade must be > 0"
         self.__grade = value
 
+    @property
+    def domain_ext(self):
+        return self.__domain_ext
+
+    @domain_ext.setter
+    def domain_ext(self, value):
+        assert value >= 0, "domain extent must be > 0"
+        self.__domain_ext = value
+
     # ---PUBLIC METHODS---#
 
     def build(self):
@@ -312,6 +328,7 @@ class MeshSizeFunction:
         _nx = self.nx
         if _dim == 3:
             _ny = self.ny
+        _domain_ext = self.domain_ext
 
         _hmax = self.hmax
         _hmin = self.hmin
@@ -323,7 +340,7 @@ class MeshSizeFunction:
         _dt = self.dt
         _cr_max = self.cr_max
 
-        width = _bbox[3] - _bbox[2]
+        _width = self.width
 
         if _dim == 2:
             hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
@@ -344,13 +361,28 @@ class MeshSizeFunction:
         # grade the mesh sizes
         if _grade > 0:
             print("Enforcing mesh gradation...")
-            hh_m = self.hj(hh_m, width / _nx, 10000)
+            hh_m = self.hj(hh_m, _width / _nx, 10000)
         # adjust mesh res. based on the CFL limit so cr < cr_max
         if _dt > 0:
             print("Enforcing timestep of " + str(_dt) + " seconds...")
             cr_old = (_vp * _dt) / hh_m
             dxn = (_vp * _dt) / _cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
+        # edit bbox to reflect domain extension (should be a function)
+        if _domain_ext > 0:
+            if _dim == 2:
+                bbox_new = (
+                    _bbox[0] - _domain_ext,
+                    _bbox[1],
+                    _bbox[2] - _domain_ext,
+                    _bbox[3] + _domain_ext,
+                )
+            if _dim == 3:
+                bbox_new = ()
+            self.bbox = bbox_new
+            # recalc these
+            self.width = bbox_new[3] - bbox_new[2]
+            self.depth = bbox_new[1] - bbox_new[0]
         # construct a interpolator object to be queried during mesh generation
         print("Building a gridded interpolant...")
         if _dim == 2:
@@ -359,6 +391,9 @@ class MeshSizeFunction:
             z_vec, x_vec, y_vec = self.__CreateDomainVectors()
         assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
         if _dim == 2:
+            if _domain_ext > 0:
+                print("Including a " + str(_domain_ext) + " meter domain extension...")
+                hh_m = self.__CreateDomainExtentsion(hh_m)
             interpolant = RegularGridInterpolator(
                 (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
             )
@@ -370,6 +405,8 @@ class MeshSizeFunction:
             )
         # create a mesh size function interpolant
         self.fh = lambda p: interpolant(p)
+
+        _bbox = self.bbox
 
         def fdd(p):
             return drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
@@ -408,9 +445,8 @@ class MeshSizeFunction:
         if _dim == 2:
             zg, xg = self.__CreateDomainMatrices()
             sz1z, sz1x = zg.shape
-            sz2 = sz1z * sz1x
-            _zg = np.reshape(zg, (sz2, 1))
-            _xg = np.reshape(xg, (sz2, 1))
+            _zg = np.reshape(zg, (-1, 1))
+            _xg = np.reshape(xg, (-1, 1))
             hh = _fh((_zg, _xg))
             hh = np.reshape(hh, (sz1z, sz1x))
             plt.pcolormesh(
@@ -423,7 +459,7 @@ class MeshSizeFunction:
             plt.axis("equal")
             plt.show()
         elif _dim == 3:
-            print("visualization in 3D not yet supported")
+            print("visualization in 3D not yet supported!")
         return None
 
     def GetDomainMatrices(self):
@@ -480,7 +516,7 @@ class MeshSizeFunction:
             _nx = self.nx
             _ny = self.ny
             _nz = self.nz
-            # assumes: little endian byte order and fortran ordering
+            # assumes: little endian byte order and fortran ordering (column-wise)
             with open(_fname, "r") as file:
                 _vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
                 _vp = _vp.reshape(_nx, _ny, _nz, order="F")
@@ -495,20 +531,28 @@ class MeshSizeFunction:
 
     def __CreateDomainVectors(self):
         _dim = self.dim
-        _bbox = self.bbox
         _nz = self.nz
         _nx = self.nx
         if _dim == 3:
             _ny = self.ny
-        width = _bbox[3] - _bbox[2]
-        depth = _bbox[1] - _bbox[0]
-        zvec = np.linspace(-depth, 0, _nz, dtype=np.float32)
-        xvec = np.linspace(0, width, _nx, dtype=np.float32)
+            _len = self.length
+        _width = self.width
+        _depth = self.depth
+        _domain_ext = self.domain_ext
+
+        spacing = _width / _nx
+        nnx = int(_domain_ext / spacing)
+        if _domain_ext > 0:
+            _nz += nnx  # only bottom
+            _nx += nnx * 2  # left and right
+            if _dim == 3:
+                _ny += nnx * 2  # behind and in front
+        zvec = np.linspace(-_depth, 0, _nz, dtype=np.float32)
+        xvec = np.linspace(0, _width, _nx, dtype=np.float32)
         if _dim == 2:
             return zvec, xvec
         elif _dim == 3:
-            length = _bbox[5] - _bbox[4]
-            yvec = np.linspace(0, length, _ny, dtype=np.float32)
+            yvec = np.linspace(0, _len, _ny, dtype=np.float32)
             return zvec, xvec, yvec
 
     def __CreateDomainMatrices(self):
@@ -523,3 +567,18 @@ class MeshSizeFunction:
                 xvec, yvec, zvec, indexing="ij", sparse=True, copy=False
             )
             return zg, xg, yg
+
+    def __CreateDomainExtentsion(self, hh_m):
+        """ Edits domain to support PML of variable width """
+        _nx = self.nx
+        _width = self.width
+        _domain_ext = self.domain_ext
+        _dim = self.dim
+        _hmax = self.hmax
+
+        spacing = _width / _nx
+        nnx = int(_domain_ext / spacing)
+        if _dim == 2:
+            hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
+            hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
+            return hh_m

@@ -18,7 +18,7 @@ setup(
     long_description=open("README.rst").read(),
     long_description_content_type="text/markdown",
     url="https://github.com/krober10nd/SeismicMesh",
-    download_url="https://github.com/nschloe/SeismicMesh/releases",
+    download_url="https://github.com/krober10nd/SeismicMesh/releases",
     license=about["__license__"],
     platforms="any",
     install_requires=["numpy", "segyio", "scipy", "meshio", "pybind11"],

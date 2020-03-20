@@ -7,4 +7,4 @@
 #  see <http://www.gnu.org/licenses/>.
 
 
-__all__ = ["test_hmin.py", "test_grade.py", "test_2dmesher.py"]
+__all__ = ["test_hmin.py", "test_grade.py", "test_2dmesher.py", "test_2d_domain_ext.py"]
