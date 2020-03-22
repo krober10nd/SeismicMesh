@@ -42,7 +42,7 @@ class MeshSizeFunction:
 
     Usage
     -------
-    >>>> obj = MeshSizeFunction(bbox,hmin,segy,**kwargs)
+    >>> obj = MeshSizeFunction(bbox,hmin,segy,**kwargs)
 
 
     Parameters
@@ -114,12 +114,12 @@ class MeshSizeFunction:
         self.depth = bbox[1] - bbox[0]
         if self.dim == 3:
             self.length = bbox[5] - bbox[4]
-        self.hmin = hmin
         self.model = model
         self.units = units
+        self.hmin = hmin
+        self.hmax = hmax
         self.wl = wl
         self.freq = freq
-        self.hmax = hmax
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
@@ -342,7 +342,7 @@ class MeshSizeFunction:
         _cr_max = self.cr_max
 
         if _dim == 2:
-            hh_m = np.zeros(shape=(_nz, _nx)) + _hmin
+            hh_m = np.zeros(shape=(_nz, _nx), dtype=np.float32) + _hmin
         if _dim == 3:
             hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
         if _wl > 0:
@@ -369,8 +369,8 @@ class MeshSizeFunction:
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
         # edit the bbox to reflect the new domain size
         if _domain_ext > 0:
-            self = self.__EditDomain()
-            hh_m = self.__CreateDomainExtentsion(hh_m)
+            self = self.__CreateDomainExtension()
+            hh_m = self.__EditMeshSizeFunction(hh_m)
         # construct a interpolator object to be queried during mesh generation
         print("Building a gridded interpolant...")
         if _dim == 2:
@@ -525,6 +525,7 @@ class MeshSizeFunction:
         _depth = self.depth
         _domain_ext = self.domain_ext
 
+        # if domain extension is enabled, we augment the domain vectors
         spacing = _width / _nx
         nnx = int(_domain_ext / spacing)
         if _domain_ext > 0:
@@ -553,8 +554,8 @@ class MeshSizeFunction:
             )
             return zg, xg, yg
 
-    def __CreateDomainExtentsion(self, hh_m):
-        """ Edits domain to support PML of variable width """
+    def __EditMeshSizeFunction(self, hh_m):
+        """ Edits sizing function to support domain extension of variable width """
         _nx = self.nx
         _width = self.width
         _domain_ext = self.domain_ext
@@ -574,7 +575,7 @@ class MeshSizeFunction:
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
 
-    def __EditDomain(self):
+    def __CreateDomainExtension(self):
         """ edit bbox to reflect domain extension (should be a function) """
         _dim = self.dim
         _bbox = self.bbox

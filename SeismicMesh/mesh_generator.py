@@ -8,6 +8,7 @@
 import numpy as np
 import scipy.spatial as spspatial
 import scipy.sparse as spsparse
+import time
 
 
 def dense(I, J, S, shape=None, dtype=None):
@@ -109,7 +110,8 @@ class MeshGenerator:
 
     Usage
     -------
-    >>>> obj = MeshGenerator(MeshSizeFunction_obj,method=DistMesh)
+    >>> obj = MeshGenerator(MeshSizeFunction_obj,method=DistMesh)
+    -------
 
 
     Parameters
@@ -117,16 +119,19 @@ class MeshGenerator:
         MeshSizeFunction_obj: self-explantatory
                         **kwargs
         method: verbose name of mesh generation method to use  (default=DistMesh)
+    -------
 
 
     Returns
     -------
         A mesh object
+    -------
 
 
     Example
     ------
-    msh = MeshSizeFunction(ef,fd)
+    >>> msh = MeshSizeFunction(ef)
+    -------
 
     """
 
@@ -161,7 +166,7 @@ class MeshGenerator:
 
         Returns
         -------
-        p:         Node positions (np, dim)
+        p:         Point positions (np, dim)
         t:         Triangle indices (nt, dim+1)
         """
 
@@ -219,6 +224,7 @@ class MeshGenerator:
             def dist(p1, p2):
                 return np.sqrt(((p1 - p2) ** 2).sum(1))
 
+            start = time.time()
             if (dist(p, pold) / h0).max() > ttol:  # Any large movement?
                 # Make sure all points are unique
                 p = np.unique(p, axis=0)
@@ -310,4 +316,6 @@ class MeshGenerator:
                 print("Termination reached...maximum number of iterations reached.")
                 break
             count += 1
+            end = time.time()
+            print("     Elapsed wall-clock time %f : " % (end - start))
         return p, t
