@@ -11,3 +11,4 @@ build/
 .pytest_cache/
 *.segy
 *.vtk
+*.hdf5

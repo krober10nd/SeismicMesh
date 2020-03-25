@@ -119,7 +119,7 @@ setup(
     cmdclass={"build_ext": BuildExt},
     platforms="any",
     setup_requires=["pybind11"],
-    install_requires=["numpy", "segyio", "scipy", "meshio", "pybind11"],
+    install_requires=["numpy", "segyio", "scipy", "meshio", "h5py", "pybind11"],
     extras_require={"all": ["matplotlib"], "plot": ["matplotlib"]},
     classifiers=[
         "Intended Audience :: Science/Research",

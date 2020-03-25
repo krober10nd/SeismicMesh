@@ -158,7 +158,7 @@ class MeshGenerator:
         self.__method = value
 
     ### PUBLIC METHODS ###
-    def build(self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None):
+    def build(self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None): # noqa: ignore=C901
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
         User has option to use either qhull or cgal for Del. retriangulation.
@@ -250,7 +250,6 @@ class MeshGenerator:
                         t = simple_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles
-                    t = np.asarray(t).T
 
                 pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
                 t = t[fd(pmid) < -geps]  # Keep interior triangles

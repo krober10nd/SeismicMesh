@@ -10,6 +10,7 @@ import warnings
 from scipy.interpolate import RegularGridInterpolator
 import numpy as np
 import matplotlib.pyplot as plt
+import h5py
 
 import segyio
 
@@ -359,7 +360,7 @@ class MeshSizeFunction:
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
         # grade the mesh sizes
         if _grade > 0:
-            print("Enforcing mesh gradation...")
+            print("Enforcing mesh gradation in sizing function...")
             hh_m = self.hj(hh_m, _width / _nx, 10000)
         # adjust mesh res. based on the CFL limit so cr < cr_max
         if _dt > 0:
@@ -473,6 +474,47 @@ class MeshSizeFunction:
         if _dim == 3:
             fun_s = np.reshape(tmp, (_nx, _ny, _nz), "F")
         return fun_s
+
+    def WriteVelocityModel(self, ofname):
+        """ Writes a velocity model as a hdf5 file for use in Spyro """
+        _dim = self.dim
+        _vp = self.vp
+        _nz = self.nz
+        _nx = self.nx
+        if _dim == 3:
+            _ny = self.ny
+        model_fname = self.model
+        ofname += ".hdf5"
+        print("Writing velocity model " + ofname)
+        with h5py.File(ofname, "w") as f:
+            f.create_dataset("velocity model", data=_vp, dtype="f")
+            if _dim == 2:
+                f.attrs["shape"] = (_nz, _nx)
+            elif _dim == 3:
+                f.attrs["shape"] = (_nz, _nx, _ny)
+            f.attrs["units"] = "m/s"
+            f.attrs["source"] = model_fname
+
+    def SaveMeshSizeFunctionOptions(self, ofname):
+        " Save your mesh size function options as a hdf5 file" ""
+        ofname += ".hdf5"
+        print("Saving mesh size function options " + ofname)
+        with h5py.File(ofname, "a") as f:
+            f.attrs["bbox"] = self.bbox
+            f.attrs["model"] = self.model
+            f.attrs["units"] = self.units
+            f.attrs["hmin"] = self.hmin
+            f.attrs["hmax"] = self.hmax
+            f.attrs["wl"] = self.wl
+            f.attrs["freq"] = self.freq
+            f.attrs["dt"] = self.dt
+            f.attrs["cr_max"] = self.cr_max
+            f.attrs["grade"] = self.grade
+            f.attrs["nx"] = self.nx
+            if self.dim == 3:
+                f.attrs["ny"] = self.ny
+            f.attrs["nz"] = self.nz
+            f.attrs["domain_ext"] = self.domain_ext
 
     # ---PRIVATE METHODS---#
 
