@@ -20,3 +20,10 @@ SeismicMesh_: Mesh generation for Seismology in Python
 .. _SeismicMesh: https://github.com/krober10nd/SeismicMesh
 .. _DistMesh: http://persson.berkeley.edu/distmesh/
 .. _`GNU-GPL`: http://www.gnu.org/copyleft/gpl.html
+
+Installation :
+==============================================
+
+1. ``pip setup.py install``
+
+2. build the submodule ``/simple_cgal`` by following the instructions.  
