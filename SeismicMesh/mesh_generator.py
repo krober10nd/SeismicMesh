@@ -9,6 +9,7 @@ import numpy as np
 import scipy.spatial as spspatial
 import scipy.sparse as spsparse
 import time
+import simple_cgal
 
 
 def dense(I, J, S, shape=None, dtype=None):
@@ -135,8 +136,9 @@ class MeshGenerator:
 
     """
 
-    def __init__(self, SizingFunction, method="DistMesh"):
+    def __init__(self, SizingFunction, method="qhull"):
         self.SizingFunction = SizingFunction
+        self.method = method
 
     # SETTERS AND GETTERS
     @property
@@ -147,10 +149,19 @@ class MeshGenerator:
     def SizingFunction(self, value):
         self.__SizingFunction = value
 
+    @property
+    def method(self):
+        return self.__method
+
+    @method.setter
+    def method(self, value):
+        self.__method = value
+
     ### PUBLIC METHODS ###
     def build(self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None):
         """
-        distmeshnd: 2D/3D mesh generator using distance functions.
+        Interface to either DistMesh2D/3D mesh generator using signed distance functions.
+        User has option to use either qhull or cgal for Del. retriangulation.
 
         Usage
         -----
@@ -175,6 +186,7 @@ class MeshGenerator:
         fh = _ef.fh
         h0 = _ef.hmin
         bbox = _ef.bbox
+        _method = self.method
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -216,7 +228,7 @@ class MeshGenerator:
         count = 0
         pold = float("inf")  # For first iteration
 
-        print("Commencing mesh generation with %d vertices." % N)
+        print("Commencing mesh generation with %d vertices." % N, flush=True)
 
         while True:
 
@@ -229,7 +241,17 @@ class MeshGenerator:
                 # Make sure all points are unique
                 p = np.unique(p, axis=0)
                 pold = p.copy()  # Save current positions
-                t = spspatial.Delaunay(p).vertices  # List of triangles
+                if _method == "qhull":
+                    t = spspatial.Delaunay(p).vertices  # List of triangles
+                elif _method == "cgal":
+                    if dim == 2:
+                        t = simple_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                    elif dim == 3:
+                        t = simple_cgal.delaunay3(
+                            p[:, 0], p[:, 1], p[:, 2]
+                        )  # List of triangles
+                    t = np.asarray(t).T
+
                 pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
                 t = t[fd(pmid) < -geps]  # Keep interior triangles
 
@@ -306,16 +328,23 @@ class MeshGenerator:
             if count % nscreen == 0:
                 print(
                     "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
-                    % (count + 1, maxdp, len(p), len(t))
+                    % (count + 1, maxdp, len(p), len(t)),
+                    flush=True,
                 )
             if maxdp < ptol * h0:
-                print("Termination reached...all interior nodes move less than dptol.")
+                print(
+                    "Termination reached...all interior nodes move less than dptol.",
+                    flush=True,
+                )
                 break
             # 8b. Number of iterations reached.
             if count == max_iter - 1:
-                print("Termination reached...maximum number of iterations reached.")
+                print(
+                    "Termination reached...maximum number of iterations reached.",
+                    flush=True,
+                )
                 break
             count += 1
             end = time.time()
-            print("     Elapsed wall-clock time %f : " % (end - start))
+            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
         return p, t

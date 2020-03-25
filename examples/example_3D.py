@@ -15,24 +15,24 @@ def example_3D():
         ny=676,
         nz=210,
         dt=0.001,
-        freq=5,
-        wl=1,
-        hmin=100,
-        domain_ext=1e3,
+        freq=10,
+        wl=10,
+        hmin=500,
+        domain_ext=100,
     )
 
     # Build mesh size function
     ef = ef.build()
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef)
+    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
     # Build the mesh
-    points, facets = mshgen.build(max_iter=100, nscreen=1)
+    points, cells = mshgen.build()
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
-        "foo3D.vtk", points, [("tetra", facets)],
+        "foo3D.vtk", points, [("tetra", cells)],
     )
 
 

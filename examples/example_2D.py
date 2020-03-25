@@ -28,7 +28,7 @@ def example_2D():
     ef.plot()
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef)
+    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
     # Build the mesh
     points, facets = mshgen.build(max_iter=50, nscreen=1)
