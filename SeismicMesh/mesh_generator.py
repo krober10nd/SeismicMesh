@@ -105,7 +105,7 @@ def unique_rows(A, return_index=False, return_inverse=False):
             return B
 
 
-class MeshGenerator:
+class MeshGenerator:  # noqa: C901
     """
     MeshGenerator: using sizng function and signed distance field build a mesh
 
@@ -158,7 +158,9 @@ class MeshGenerator:
         self.__method = value
 
     ### PUBLIC METHODS ###
-    def build(self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None): # noqa: ignore=C901
+    def build(  # noqa: ignore=C901
+        self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None
+    ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
         User has option to use either qhull or cgal for Del. retriangulation.
