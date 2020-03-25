@@ -24,14 +24,17 @@ def example_2D():
     # Build mesh size function
     ef = ef.build()
 
+    # Save your mesh size function options.
+    ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
+
     # Visualize mesh size function
     ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
-    # Build the mesh
-    points, facets = mshgen.build(max_iter=50, nscreen=1)
+    # Build the mesh (note the seed makes the result deterministic)
+    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0)
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(

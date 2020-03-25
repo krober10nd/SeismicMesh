@@ -15,20 +15,24 @@ def example_3D():
         ny=676,
         nz=210,
         dt=0.001,
-        freq=10,
+        freq=2,
         wl=10,
-        hmin=500,
-        domain_ext=100,
+        hmin=50,
+        grade=0.35,
+        domain_ext=1000,
     )
 
     # Build mesh size function
     ef = ef.build()
 
+    # Save your options so you have a record
+    ef.SaveMeshSizeFunctionOptions("EGAGE_Salt")
+
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
     # Build the mesh
-    points, cells = mshgen.build()
+    points, cells = mshgen.build(nscreen=1, max_iter=30, seed=0)
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
