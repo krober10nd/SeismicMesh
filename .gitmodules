@@ -1,3 +1,6 @@
 [submodule "segymat"]
 	path = segymat
 	url = https://github.com/cultpenguin/segymat.git
+[submodule "simple_cgal"]
+	path = simple_cgal
+	url = https://github.com/krober10nd/simple_cgal
