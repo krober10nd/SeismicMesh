@@ -27,3 +27,6 @@ Installation :
 1. ``pip setup.py install``
 
 2. build the submodule ``/simple_cgal`` by following the instructions.  
+
+.. image:: imgs/seismic_example.png
+
