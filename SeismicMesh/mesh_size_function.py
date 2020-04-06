@@ -108,6 +108,7 @@ class MeshSizeFunction:
         ny=None,
         nz=None,
         domain_ext=0.0,
+        endianness="little",
     ):
         self.bbox = bbox
         self.dim = int(len(self.bbox) / 2)
@@ -130,6 +131,7 @@ class MeshSizeFunction:
         self.ny = ny
         self.nz = nz
         self.domain_ext = domain_ext
+        self.endianness = endianness
 
     ### SETTERS AND GETTERS ###
 
@@ -297,6 +299,15 @@ class MeshSizeFunction:
     def domain_ext(self, value):
         assert value >= 0, "domain extent must be > 0"
         self.__domain_ext = value
+
+    @property
+    def endianness(self):
+        return self.__endianness
+
+    @endianness.setter
+    def endianness(self, value):
+        assert value == "big" or value == "little", "endianness must be little or big"
+        self.__endianness = value
 
     # ---PUBLIC METHODS---#
 
@@ -559,10 +570,14 @@ class MeshSizeFunction:
             _nx = self.nx
             _ny = self.ny
             _nz = self.nz
-            # assumes: little endian byte order and fortran ordering (column-wise)
+            _type = self.endianness
+            # assumes file is little endian byte order and fortran ordering (column-wise)
             with open(_fname, "r") as file:
                 _vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
                 _vp = _vp.reshape(_nx, _ny, _nz, order="F")
+            # if file was big endian then switch to little endian
+            if _type == "big":
+                _vp = _vp.byteswap()
         else:
             print("Did not recognize file type...either .bin or .segy")
             quit()
