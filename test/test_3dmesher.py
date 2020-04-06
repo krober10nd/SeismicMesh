@@ -23,11 +23,11 @@ def test_3dmesher():
         hmin=hmin,
     )
     ef = ef.build()
-    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(ef)
     points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
-    # should have  17577 vertices and 111191 cells
+    # should have  17577 vertices and 110461 cells
     assert len(points) == 17577
-    assert len(cells) == 111191
+    assert len(cells) == 110461
 
 
 if __name__ == "__main__":

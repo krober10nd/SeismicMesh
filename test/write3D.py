@@ -1,8 +1,5 @@
-import zipfile
 import numpy as np
 import numpy.matlib as npm
-
-import array
 
 # Dimensions
 nx, ny, nz = 10, 20, 10
