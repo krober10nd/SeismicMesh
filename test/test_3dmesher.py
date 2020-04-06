@@ -27,7 +27,7 @@ def test_3dmesher():
     points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
     # should have  17577 vertices and 110461 cells
     assert len(points) == 17577
-    assert len(cells) == 110461
+    assert len(cells) == 110729
 
 
 if __name__ == "__main__":
