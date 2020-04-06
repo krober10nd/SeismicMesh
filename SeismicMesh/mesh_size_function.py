@@ -481,13 +481,29 @@ class MeshSizeFunction:
         _vp = self.vp
         _nz = self.nz
         _nx = self.nx
+        _width = self.width
+        _domain_ext = self.domain_ext
+
+        spacing = _width / _nx
+        nnx = int(_domain_ext / spacing)
+
+        # create domain extension in velocity model
+        if _dim == 2:
+            _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
+        if _dim == 3:
+            _vp = np.pad(_vp, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+
+        _nz += nnx  # only bottom
+        _nx += nnx * 2  # left and right
         if _dim == 3:
             _ny = self.ny
+            _ny += nnx * 2  # behind and in front
+
         model_fname = self.model
         ofname += ".hdf5"
         print("Writing velocity model " + ofname)
         with h5py.File(ofname, "w") as f:
-            f.create_dataset("velocity model", data=_vp, dtype="f")
+            f.create_dataset("velocity_model", data=_vp, dtype="f")
             if _dim == 2:
                 f.attrs["shape"] = (_nz, _nx)
             elif _dim == 3:

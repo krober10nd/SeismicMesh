@@ -12,7 +12,7 @@ def example_2D():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        domain_ext=2e3,
+        domain_ext=1,
         dt=0.001,
         freq=5,
         wl=5,
@@ -24,11 +24,13 @@ def example_2D():
     # Build mesh size function
     ef = ef.build()
 
+    ef.WriteVelocityModel("BP2004")
+
     # Save your mesh size function options.
     ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
 
     # Visualize mesh size function
-    ef.plot()
+    # ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
@@ -38,7 +40,11 @@ def example_2D():
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
-        "foo.vtk", points, [("triangle", facets)],
+        "BP2004.msh",
+        points / 1000,
+        [("triangle", facets)],
+        file_format="gmsh22",
+        binary=False,
     )
 
 
