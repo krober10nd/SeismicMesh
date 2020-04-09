@@ -24,7 +24,7 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation :
 ==============================================
 
-1. ``pip setup.py install``
+1. ``pip install SeismicMesh``
 
 2. build the submodule ``/simple_cgal`` by following the instructions.  
 
