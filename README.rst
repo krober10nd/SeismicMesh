@@ -24,7 +24,7 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation :
 ==============================================
 
-1. ``pip install SeismicMesh``
+1. ``pip install .``
 
 2. (optional) build the submodule ``/simple_cgal`` by following the instructions. cgal is faster than qhull at triangulation. 
 
