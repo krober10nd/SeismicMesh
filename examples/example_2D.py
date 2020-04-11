@@ -12,7 +12,7 @@ def example_2D():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        domain_ext=1,
+        domain_ext=500,
         dt=0.001,
         freq=5,
         wl=5,
