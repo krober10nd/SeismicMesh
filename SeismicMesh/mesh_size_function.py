@@ -359,7 +359,7 @@ class MeshSizeFunction:
             hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
         if _wl > 0:
             print(
-                "Mesh sizes with be built to resolve an estimate of wavelength with "
+                "Mesh sizes will be built to resolve an estimate of wavelength with "
                 + str(_wl)
                 + " vertices..."
             )
