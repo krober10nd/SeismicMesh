@@ -111,7 +111,7 @@ class MeshGenerator:  # noqa: C901
 
     Usage
     -------
-    >>> obj = MeshGenerator(MeshSizeFunction_obj,method=DistMesh)
+    >>> obj = MeshGenerator(MeshSizeFunction_obj,method='qhull')
     -------
 
 

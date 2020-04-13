@@ -1,7 +1,5 @@
 import os
 
-import numpy as np
-
 import SeismicMesh
 
 
@@ -26,10 +24,10 @@ def test_2d_domain_ext():
     )
     ef = ef.build()
     mshgen = SeismicMesh.MeshGenerator(ef)
-    points, facets = mshgen.build(max_iter=100, seed=0)
-    # should have: 12564 vertices and 24703 cells
-    assert np.abs((len(points) == 12564))
-    assert len(facets) == 24703
+    points, facets = mshgen.build(max_iter=100, seed=0, nscreen=1)
+    # 12284 vertices and 24144 cells
+    assert len(points) == 12284
+    assert len(facets) == 24144
 
 
 if __name__ == "__main__":

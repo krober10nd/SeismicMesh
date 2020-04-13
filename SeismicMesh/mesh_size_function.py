@@ -116,6 +116,7 @@ class MeshSizeFunction:
         self.depth = bbox[1] - bbox[0]
         if self.dim == 3:
             self.length = bbox[5] - bbox[4]
+        self.spacing = None
         self.model = model
         self.units = units
         self.hmin = hmin
@@ -359,7 +360,7 @@ class MeshSizeFunction:
             hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
         if _wl > 0:
             print(
-                "Mesh sizes with be built to resolve an estimate of wavelength with "
+                "Mesh sizes will be built to resolve an estimate of wavelength with "
                 + str(_wl)
                 + " vertices..."
             )
@@ -438,6 +439,9 @@ class MeshSizeFunction:
             """
         _dim = self.dim
         _fh = self.fh
+        _domain_ext = self.domain_ext
+        _width = self.width
+        _depth = self.depth
 
         if _dim == 2:
             zg, xg = self.__CreateDomainMatrices()
@@ -446,14 +450,28 @@ class MeshSizeFunction:
             _xg = np.reshape(xg, (-1, 1))
             hh = _fh((_zg, _xg))
             hh = np.reshape(hh, (sz1z, sz1x))
+
+            fig, ax = plt.subplots()
             plt.pcolormesh(
                 xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none"
             )
+            if _domain_ext > 0:
+                rect = plt.Rectangle(
+                    (0, -_depth + _domain_ext),
+                    _width - 2 * _domain_ext,
+                    _depth - _domain_ext,
+                    fill=False,
+                    edgecolor="black",
+                )
+                ax.add_patch(rect)
+
             plt.title("Isotropic mesh sizes")
             plt.colorbar(label="mesh size (m)")
             plt.xlabel("x-direction (km)")
             plt.ylabel("z-direction (km)")
-            plt.axis("equal")
+            ax.axis("equal")
+            # ax.set_xlim(0 - _domain_ext, _width)
+            # ax.set_ylim(-_depth, 0)
             plt.show()
         elif _dim == 3:
             print("visualization in 3D not yet supported!")
@@ -492,12 +510,9 @@ class MeshSizeFunction:
         _vp = self.vp
         _nz = self.nz
         _nx = self.nx
-        _width = self.width
         _domain_ext = self.domain_ext
-
-        spacing = _width / _nx
-        nnx = int(_domain_ext / spacing)
-
+        _spacing = self.spacing
+        nnx = int(_domain_ext / _spacing)
         # create domain extension in velocity model
         if _dim == 2:
             _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
@@ -559,6 +574,7 @@ class MeshSizeFunction:
                 self.nx = len(f.trace)
                 _nz = self.nz
                 _nx = self.nx
+                self.spacing = self.width / _nx
                 _vp = np.zeros(shape=(_nz, _nx))
                 index = 0
                 for trace in f.trace:
@@ -570,6 +586,7 @@ class MeshSizeFunction:
             _nx = self.nx
             _ny = self.ny
             _nz = self.nz
+            self.spacing = self.width / _nx
             _type = self.endianness
             # assumes file is little endian byte order and fortran ordering (column-wise)
             with open(_fname, "r") as file:
@@ -597,21 +614,25 @@ class MeshSizeFunction:
         _width = self.width
         _depth = self.depth
         _domain_ext = self.domain_ext
+        _spacing = self.spacing
 
         # if domain extension is enabled, we augment the domain vectors
-        spacing = _width / _nx
-        nnx = int(_domain_ext / spacing)
+        nnx = int(_domain_ext / _spacing)
         if _domain_ext > 0:
             _nz += nnx  # only bottom
             _nx += nnx * 2  # left and right
             if _dim == 3:
                 _ny += nnx * 2  # behind and in front
+
         zvec = np.linspace(-_depth, 0, _nz, dtype=np.float32)
-        xvec = np.linspace(0, _width, _nx, dtype=np.float32)
+        xvec = np.linspace(0 - _domain_ext, _width - _domain_ext, _nx, dtype=np.float32)
+
         if _dim == 2:
             return zvec, xvec
         elif _dim == 3:
-            yvec = np.linspace(0, _len, _ny, dtype=np.float32)
+            yvec = np.linspace(
+                0 - _domain_ext, _len - _domain_ext, _ny, dtype=np.float32
+            )
             return zvec, xvec, yvec
 
     def __CreateDomainMatrices(self):
@@ -629,14 +650,12 @@ class MeshSizeFunction:
 
     def __EditMeshSizeFunction(self, hh_m):
         """ Edits sizing function to support domain extension of variable width """
-        _nx = self.nx
-        _width = self.width
         _domain_ext = self.domain_ext
         _dim = self.dim
         _hmax = self.hmax
+        _spacing = self.spacing
 
-        spacing = _width / _nx
-        nnx = int(_domain_ext / spacing)
+        nnx = int(_domain_ext / _spacing)
 
         print("Including a " + str(_domain_ext) + " meter domain extension...")
         if _dim == 2:

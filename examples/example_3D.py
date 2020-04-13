@@ -17,7 +17,7 @@ def example_3D():
         dt=0.001,
         freq=2,
         wl=10,
-        hmin=50,
+        hmin=25,
         grade=0.35,
         domain_ext=1000,
     )
@@ -36,7 +36,7 @@ def example_3D():
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
-        "foo3D.vtk", points, [("tetra", cells)],
+        "foo3D_V3.vtk", points, [("tetra", cells)],
     )
 
 

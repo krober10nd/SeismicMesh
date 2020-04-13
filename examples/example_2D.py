@@ -36,7 +36,11 @@ def example_2D():
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0)
+    points, facets = mshgen.build(max_iter=2, nscreen=1, seed=0)
+
+    import numpy as np
+
+    np.savetxt("points.out", points, delimiter=",")
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(
