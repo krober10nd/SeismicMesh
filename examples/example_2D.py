@@ -33,7 +33,9 @@ def example_2D():
     # ef.plot()
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull") # if you have cgal installed, you can use method="cgal"
+    mshgen = SeismicMesh.MeshGenerator(
+        ef, method="qhull"
+    )  # if you have cgal installed, you can use method="cgal"
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(max_iter=2, nscreen=1, seed=0)
