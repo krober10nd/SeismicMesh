@@ -12,7 +12,7 @@ def example_2D():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        domain_ext=1,
+        domain_ext=500,
         dt=0.001,
         freq=5,
         wl=5,
@@ -33,7 +33,7 @@ def example_2D():
     # ef.plot()
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull") # if you have cgal installed, you can use method="cgal"
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(max_iter=2, nscreen=1, seed=0)
