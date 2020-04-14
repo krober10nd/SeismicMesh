@@ -108,6 +108,7 @@ class MeshSizeFunction:
         ny=None,
         nz=None,
         domain_ext=0.0,
+        padstyle="edge",
         endianness="little",
     ):
         self.bbox = bbox
@@ -133,6 +134,7 @@ class MeshSizeFunction:
         self.nz = nz
         self.domain_ext = domain_ext
         self.endianness = endianness
+        self.padstyle = padstyle
 
     ### SETTERS AND GETTERS ###
 
@@ -309,6 +311,15 @@ class MeshSizeFunction:
     def endianness(self, value):
         assert value == "big" or value == "little", "endianness must be little or big"
         self.__endianness = value
+
+    @property
+    def padstyle(self):
+        return self.__padstyle
+
+    @padstyle.setter
+    def padstyle(self, value):
+        assert value == "edge" or value == "constant" or value == "linear_ramp"
+        self.__padstyle = value
 
     # ---PUBLIC METHODS---#
 
@@ -512,10 +523,23 @@ class MeshSizeFunction:
         _nx = self.nx
         _domain_ext = self.domain_ext
         _spacing = self.spacing
+        _padstyle = self.padstyle
         nnx = int(_domain_ext / _spacing)
         # create domain extension in velocity model
         if _dim == 2:
-            _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
+            mx = np.amax(_vp)
+            if _padstyle == "edge":
+                _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
+            elif _padstyle == "constant":
+                # set to maximum value in domain
+                _vp = np.pad(
+                    _vp, ((nnx, 0), (nnx, nnx)), "constant", constant_values=(mx, mx)
+                )
+            elif _padstyle == "linear_ramp":
+                # linearly ramp to maximum value in domain
+                _vp = np.pad(
+                    _vp, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
+                )
         if _dim == 3:
             _vp = np.pad(_vp, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
 
@@ -557,6 +581,7 @@ class MeshSizeFunction:
                 f.attrs["ny"] = self.ny
             f.attrs["nz"] = self.nz
             f.attrs["domain_ext"] = self.domain_ext
+            f.attrs["padstyle"] = self.padstyle
 
     # ---PRIVATE METHODS---#
 
@@ -654,16 +679,33 @@ class MeshSizeFunction:
         _dim = self.dim
         _hmax = self.hmax
         _spacing = self.spacing
+        _padstyle = self.padstyle
 
         nnx = int(_domain_ext / _spacing)
 
         print("Including a " + str(_domain_ext) + " meter domain extension...")
+        print("Using the padstyle " + _padstyle + " to extend mesh resolution.")
         if _dim == 2:
-            hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
+            mx = np.amax(hh_m)
+            if _padstyle == "edge":
+                hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
+            elif _padstyle == "constant":
+                # set to maximum value in domain
+                hh_m = np.pad(
+                    hh_m, ((nnx, 0), (nnx, nnx)), "constant", constant_values=(mx, mx)
+                )
+            elif _padstyle == "linear_ramp":
+                # linearly ramp to maximum value in domain
+                hh_m = np.pad(
+                    hh_m, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
+                )
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
         if _dim == 3:
-            hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+            if _padstyle == "edge":
+                hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+            else:
+                print("3D pad style currently not supported yet")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
 
