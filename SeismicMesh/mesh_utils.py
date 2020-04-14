@@ -3,6 +3,17 @@ import numpy as np
 """ Utilities for meshes """
 
 
+def get_edges_of_mesh2(faces):
+    """
+    Get the edges of 2D triangular mesh in no order.
+    """
+    faces = np.array(faces)
+    edges = faces[:, [0, 1]]
+    edges = np.append(edges, faces[:, [0, 2]], axis=0)
+    edges = np.append(edges, faces[:, [1, 2]], axis=0)
+    return edges
+
+
 def get_boundary_edges_of_mesh2(faces):
     """
     Get the boundary edges of the mesh
@@ -13,12 +24,30 @@ def get_boundary_edges_of_mesh2(faces):
     return boundary_edges
 
 
-def get_edges_of_mesh2(faces):
+def get_winded_boundary_edges_of_mesh2(faces):
     """
-    Get the edges of 2D triangular mesh in no order.
+    Order the boundary edges of the mesh in a winding order.
     """
-    faces = np.array(faces)
-    edges = faces[:, [0, 1]]
-    edges = np.append(edges, faces[:, [0, 2]], axis=0)
-    edges = np.append(edges, faces[:, [1, 2]], axis=0)
-    return edges
+    boundary_edges = get_boundary_edges_of_mesh2(faces)
+    _bedges = boundary_edges.copy()
+
+    choice = 0
+    isVisited = np.zeros((len(_bedges)))
+    ordering = np.array([choice])
+    isVisited[choice] = 1
+
+    vStart, vNext = _bedges[choice, :]
+    while True:
+        locs = np.column_stack(np.where(_bedges == vNext))
+        rows = locs[:, 0]
+        choices = [row for row in rows if isVisited[row] == 0]
+        if len(choices) == 0:
+            break
+        choice = choices[0]
+        ordering = np.append(ordering, [choice])
+        isVisited[choice] = 1
+        nextEdge = _bedges[choice, :]
+        tmp = [v for v in nextEdge if v != vNext]
+        vNext = tmp[0]
+    boundary_edges = boundary_edges[ordering, :]
+    return boundary_edges

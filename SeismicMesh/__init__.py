@@ -8,12 +8,17 @@
 
 from .mesh_size_function import MeshSizeFunction
 from .mesh_generator import MeshGenerator
-from .mesh_utils import get_boundary_edges_of_mesh2, get_edges_of_mesh2
+from .mesh_utils import (
+    get_boundary_edges_of_mesh2,
+    get_edges_of_mesh2,
+    get_winded_boundary_edges_of_mesh2,
+)
 from .FastHJ import limgrad
 
 __all__ = [
     "get_edges_of_mesh2",
     "get_boundary_edges_of_mesh2",
+    "get_winded_boundary_edges_of_mesh2",
     "limgrad",
     "MeshSizeFunction",
     "MeshGenerator",
