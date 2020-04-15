@@ -26,13 +26,19 @@ Installation :
 
 This software requires, CMake >=3.0, CGAL >= 5.0 and Boost. Once these packages are installed, you can run: 
 
-1. ``pip install -r requirements.txt``
+1.  ``git submodule update --init --recursive``
+
+2. ``pip install -r requirements.txt``
+
 2. ``pip install .``
 
 If you do not have administrative rights on your system, use the flag ``--user`` 
 
-1. ``pip install --user -r requirements.txt``
-2. ``pip install --user .``
+1. ``git submodule update --init --recursive`` 
+
+2. ``pip install --user -r requirements.txt``
+
+3. ``pip install --user .``
 
 Testing:
 ==============================================
