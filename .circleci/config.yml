@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run: sudo apt install -y cmake
-      - run: git clone https://github.com/CGAL/cgal.git && tar xf CGAL-5.0.2.tar.xz && cd CGAL-5.0.2/ && mkdir build && cd build && cmake . && sudo make install
+      - run: git clone https://github.com/CGAL/cgal.git && cd CGAL-5.0.2/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
       - run: git submodule sync
