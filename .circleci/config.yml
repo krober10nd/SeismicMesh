@@ -24,8 +24,9 @@ jobs:
       - run: git submodule sync
       - run: git submodule update --init
       - run: pip3 install .[all] --user
+      - run: python setup.py install --user
       - run: pip3 install -U pytest pytest-cov --user
-      - run: pytest tests/ --cov 
+      - run: pytest tests/ --cov
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
