@@ -88,6 +88,7 @@ def unique_rows(A, return_index=False, return_inverse=False):
         else:
             return B
 
+
 def fixmesh(p, t, ptol=2e-13):
     """Remove duplicated/unused nodes
     Parameters

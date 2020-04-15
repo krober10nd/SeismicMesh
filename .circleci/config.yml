@@ -21,8 +21,8 @@ jobs:
       - run: pip3 install --user -r requirements.txt
       - run: pip3 install -U pytest pytest-cov --user
       - run:
-        command: pytest
-        working_directory: tests/
+          command: pytest
+          working_directory: tests/
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
