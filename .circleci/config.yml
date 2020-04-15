@@ -16,9 +16,14 @@ jobs:
     steps:
       - checkout
       - run: sudo apt install -y cmake
-      - run: deb-src http://debian.cgal.org buster main
-      - run: sudo apt-get update -y
-      - run: sudo apt-get install -y libcgal-dev
+      - run:
+          command: git clone https://github.com/CGAL/cgal.git
+          command: tar xf CGAL-5.0.2.tar.xz
+          command: cd CGAL-5.0.2/
+          command: mkdir build
+          command: cd build
+          command: cmake .
+          command: sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
       - run: git submodule sync
