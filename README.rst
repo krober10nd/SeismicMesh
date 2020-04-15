@@ -24,9 +24,20 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation :
 ==============================================
 
-1. ``pip install .``
+This software requires CGAL >= 5.0 and Boost. Once these packages are installed, you can run: 
 
-2. (optional) build the submodule ``/simple_cgal`` by following the instructions. cgal is faster than qhull at triangulation. 
+1. ``pip install -r requirements.txt``
+2. ``pip install .``
+
+If you do not have administrative rights on your system, use the flag ``--user`` 
+
+1. ``pip install --user -r requirements.txt``
+2. ``pip install --user .``
+
+Testing:
+==============================================
+To run tests, install ``pytest``. 
+1. ``pytest tests/``
 
 .. image:: imgs/seismic_example.png
 
