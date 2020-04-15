@@ -15,9 +15,14 @@ jobs:
       - image: circleci/python:3
     steps:
       - checkout
-      - run: pip3 install .[all] --user
+      - run: sudo apt install -y libcgal-dev
+      - run: git submodule sync
+      - run: git submodule update --init
+      - run: pip3 install --user -r requirements.txt
       - run: pip3 install -U pytest pytest-cov --user
-      - run: cd SeismicMesh && c++ -O3 -Wall -shared -std=c++11 -fPIC -Wl,-undefined,dynamic_lookup `python3 -m pybind11 --includes` FastHJ.cpp -o FastHJ`python3-config --extension-suffix` && cd .. && pytest --cov SeismicMesh
+      - run:
+        command: pytest
+        working_directory: tests/
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2

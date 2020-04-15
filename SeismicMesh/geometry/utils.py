@@ -1,7 +1,5 @@
 import numpy as np
 
-""" Utilities for meshes """
-
 
 def get_edges_of_mesh2(faces):
     """

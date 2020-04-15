@@ -7,34 +7,15 @@
 # -----------------------------------------------------------------------------
 import warnings
 
-from scipy.interpolate import RegularGridInterpolator
 import numpy as np
-import matplotlib.pyplot as plt
+from scipy.interpolate import RegularGridInterpolator
 import h5py
+import matplotlib.pyplot as plt
 
 import segyio
 
-from SeismicMesh.FastHJ import limgrad
-
-
-def drectangle(p, x1, x2, y1, y2):
-    min = np.minimum
-    """Signed distance function for rectangle with corners (x1,y1), (x2,y1),
-    (x1,y2), (x2,y2).
-    This has an incorrect distance to the four corners but that isn't a big deal
-    """
-    return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
-
-
-def dblock(p, x1, x2, y1, y2, z1, z2):
-    min = np.minimum
-    return -min(
-        min(
-            min(min(min(-z1 + p[:, 2], z2 - p[:, 2]), -y1 + p[:, 1]), y2 - p[:, 1]),
-            -x1 + p[:, 0],
-        ),
-        x2 - p[:, 0],
-    )
+from ..geometry import signed_distance_functions as sdf
+from .cpp import limgrad
 
 
 class MeshSizeFunction:
@@ -418,10 +399,12 @@ class MeshSizeFunction:
         _bbox = self.bbox
 
         def fdd(p):
-            return drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
+            return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
 
         def fdd2(p):
-            return dblock(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5])
+            return sdf.dblock(
+                p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5]
+            )
 
         # create a signed distance function
         if _dim == 2:

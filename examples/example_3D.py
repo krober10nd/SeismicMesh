@@ -29,7 +29,7 @@ def example_3D():
     ef.SaveMeshSizeFunctionOptions("EGAGE_Salt")
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")  # or cgal if installed
 
     # Build the mesh
     points, cells = mshgen.build(nscreen=1, max_iter=30, seed=0)

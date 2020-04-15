@@ -30,7 +30,7 @@ def example_2D():
     ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
 
     # Visualize mesh size function
-    # ef.plot()
+    ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(
@@ -38,13 +38,16 @@ def example_2D():
     )  # if you have cgal installed, you can use method="cgal"
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=2, nscreen=1, seed=0)
+    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0)
 
     import numpy as np
 
-    np.savetxt("points.out", points, delimiter=",")
-
     # Write to disk (see meshio for more details)
+    # Write as a vtk format for visualization in Paraview
+    meshio.write_points_cells(
+        "BP2004.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
+    )
+    # Write to gmsh22 format
     meshio.write_points_cells(
         "BP2004.msh",
         points / 1000,

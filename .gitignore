@@ -12,3 +12,4 @@ build/
 *.segy
 *.vtk
 *.hdf5
+*.msh
