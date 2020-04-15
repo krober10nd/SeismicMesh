@@ -25,7 +25,7 @@ def test_3dmesher():
         hmin=hmin,
     )
     ef = ef.build()
-    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")
+    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
     points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
     # 16459 vertices and 102868 cells
     assert len(points) == 16459
