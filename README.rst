@@ -43,7 +43,10 @@ If you do not have administrative rights on your system, use the flag ``--user``
 Testing:
 ==============================================
 To run tests, install ``pytest``. 
+
 1. ``pytest tests/``
 
+Gallery:
+==============================================
 .. image:: imgs/seismic_example.png
 
