@@ -78,7 +78,15 @@ setup(
     description="2D/3D serial and parallel triangular mesh generation for seismology",
     long_description="",
     setup_requires=["pybind11"],
-    install_requires=["numpy", "segyio", "scipy", "meshio", "h5py", "pybind11"],
+    install_requires=[
+        "numpy",
+        "segyio",
+        "scipy",
+        "meshio",
+        "h5py",
+        "pybind11",
+        "matplotlib",
+    ],
     extras_require={"all": ["matplotlib"], "plot": ["matplotlib"]},
     ext_modules=[
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
