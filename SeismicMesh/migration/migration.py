@@ -7,7 +7,7 @@ except ImportError:
     print("cpp utils not compiled, quitting")
 
 
-import utils
+from . import utils
 
 """
 Migration routines for moving points during parallel Delaunay
