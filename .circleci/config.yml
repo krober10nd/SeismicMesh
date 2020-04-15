@@ -15,8 +15,9 @@ jobs:
       - image: circleci/python:3
     steps:
       - checkout
-      - run: sudo apt-get update -y
       - run: sudo apt install -y cmake
+      - run: sudo apt-add-repository "deb http://debian.cgal.org jessie main"
+      - run: sudo apt-get update -y
       - run: sudo apt-get install -y libcgal-dev
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
