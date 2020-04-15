@@ -13,3 +13,4 @@ build/
 *.vtk
 *.hdf5
 *.msh
+*.so
