@@ -86,8 +86,8 @@ setup(
         "h5py",
         "pybind11",
         "matplotlib",
+        "mpi4py",
     ],
-    extras_require={"all": ["matplotlib"], "plot": ["matplotlib"]},
     ext_modules=[
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay"),
