@@ -16,7 +16,7 @@ jobs:
     steps:
       - checkout
       - run: sudo apt install -y cmake
-      - run: sudo apt-add-repository "deb http://debian.cgal.org jessie main"
+      - run: deb-src http://debian.cgal.org buster main
       - run: sudo apt-get update -y
       - run: sudo apt-get install -y libcgal-dev
       - run: sudo apt install -y libhdf5-dev
