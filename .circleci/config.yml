@@ -23,9 +23,11 @@ jobs:
       - run: sudo apt install -y mpich
       - run: git submodule sync
       - run: git submodule update --init
-      - run: sudo python setup.py develop
+      - run: pip install . --user
       - run: pip3 install -U pytest pytest-cov --user
-      - run: pytest tests/ --cov
+      - run:
+          command: pytest --cov
+          working_directory: tests/
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
