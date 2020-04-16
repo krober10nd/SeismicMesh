@@ -7,9 +7,12 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 import scipy.spatial as spspatial
+from mpi4py import MPI
 import time
 
 from . import utils as mutils
+from .. import decomp
+from .. import migration
 
 try:
     from .cpp import c_cgal
@@ -75,7 +78,7 @@ class MeshGenerator:  # noqa: C901
 
     ### PUBLIC METHODS ###
     def build(  # noqa: ignore=C901
-        self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None
+        self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None, COMM=None
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -83,7 +86,7 @@ class MeshGenerator:  # noqa: C901
 
         Usage
         -----
-        >>> p, t = build(self, pfix=None, max_iter=20, plot=False, seed=None)
+        >>> p, t = build(self, max_iter=20)
 
         Parameters
         ----------
@@ -91,7 +94,8 @@ class MeshGenerator:  # noqa: C901
         max_iter: maximum number of iterations (default==20)
         nscreen: output to screen nscreen (default==5)
         plot: Visualize incremental meshes (default==False)
-        seed: Random seed to ensure results are deterministic
+        seed: Random seed to ensure results are deterministic (default=None)
+        COMM: MPI4py communicator (default=None)
 
         Returns
         -------
@@ -105,10 +109,21 @@ class MeshGenerator:  # noqa: C901
         h0 = _ef.hmin
         bbox = _ef.bbox
         _method = self.method
+        comm = COMM
+
+        if comm is not None:
+            PARALLEL = True
+            rank = comm.Get_rank()
+            size = comm.Get_size()
+        else:
+            PARALLEL = False
+            rank = 0
+            size = 1
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
-            print("Setting psuedo-random number seed to " + str(seed))
+            if rank == 0:
+                print("Setting psuedo-random number seed to " + str(seed), flush=True)
             np.random.seed(seed)
 
         if plot:
@@ -141,12 +156,25 @@ class MeshGenerator:  # noqa: C901
         p = np.vstack(
             (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
         )
-        N = p.shape[0]
 
-        count = 0
-        pold = float("inf")  # For first iteration
+        # call block decomposition
+        if PARALLEL:
+            p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, bbox=bbox)
+            N = p.shape[0]
 
-        print("Commencing mesh generation with %d vertices." % N, flush=True)
+            count = 0
+            pold = float("inf")  # For first iteration
+
+            print(
+                "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
+                flush=True,
+            )
+        else:
+            N = p.shape[0]
+
+            count = 0
+            pold = float("inf")  # For first iteration
+            print("Commencing mesh generation with %d vertices." % N, flush=True)
 
         while True:
 
@@ -156,11 +184,32 @@ class MeshGenerator:  # noqa: C901
 
             start = time.time()
             if (dist(p, pold) / h0).max() > ttol:  # Any large movement?
+                if PARALLEL:
+                    if count > 0:
+                        p, extents = decomp.blocker(
+                            points=gpoints, rank=rank, nblocks=size, bbox=bbox
+                        )
+
                 # Make sure all points are unique
                 p = np.unique(p, axis=0)
                 pold = p.copy()  # Save current positions
                 if _method == "qhull":
-                    t = spspatial.Delaunay(p).vertices  # List of triangles
+                    if PARALLEL:
+                        tria = spspatial.Delaunay(p, incremental=True)
+                        exports = migration.enqueue(
+                            extents, p, tria.vertices, rank, size
+                        )
+                        new_points = migration.exchange(comm, rank, size, exports)
+                        tria.add_points(new_points, restart=True)
+                        p, t = migration.utils.remove_external_faces(
+                            tria.points, tria.vertices, extents[rank]
+                        )
+                        p, t = migration.utils.fixmesh(p, t)
+                        pold = (
+                            p.copy()
+                        )  # Save current positions (reorded by parallel algo)
+                    else:
+                        t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
                     if dim == 2:
                         t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
@@ -190,7 +239,7 @@ class MeshGenerator:  # noqa: C901
                 bars = mutils.unique_rows(bars)  # Bars as node pairs
 
                 # 5. Graphical output of the current mesh
-                if plot:
+                if plot and not PARALLEL:
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
@@ -216,6 +265,14 @@ class MeshGenerator:  # noqa: C901
             Fvec = (
                 F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
             )  # Bar forces (x,y components)
+
+            # DO I = 1,NUMBARS
+            #    POINTS(BARS(I,1),1) = POINTS(BARS(I,1),1) + DELTAT * FVEC(I,1)
+            #    POINTS(BARS(I,1),2) = POINTS(BARS(I,1),2) + DELTAT * FVEC(I,2)
+
+            #    POINTS(BARS(I,2),1) = POINTS(BARS(I,2),1) - DELTAT * FVEC(I,1)
+            #    POINTS(BARS(I,2),2) = POINTS(BARS(I,2),2) - DELTAT * FVEC(I,2)
+            # ENDDO
             Ftot = mutils.dense(
                 bars[:, [0] * dim + [1] * dim],
                 np.repeat([list(range(dim)) * 2], len(F), axis=0),

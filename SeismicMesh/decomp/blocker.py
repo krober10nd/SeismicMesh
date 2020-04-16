@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def blocker(points, rank, nblocks):
+def blocker(points, rank, nblocks, bbox):
     """ Decompose point coordinates into # of blocks
         Blocks are orientated parallel to x-axis and have a neighbor
         above and below +-y the block.
@@ -11,8 +11,8 @@ def blocker(points, rank, nblocks):
     assert dim > 2 or dim < 3, "dimensions of points are wrong"
     assert num_points // nblocks > 1, "too few points for chosen nblocks"
 
-    xlims = points[:, 0].min(), points[:, 0].max()
-    ylims = points[:, 1].min(), points[:, 1].max()
+    xlims = bbox[0], bbox[2]  # points[:, 0].min(), points[:, 0].max()
+    ylims = bbox[1], bbox[3]  # points[:, 1].min(), points[:, 1].max()
     xx, yy = np.meshgrid(
         np.linspace(*xlims, 1, endpoint=False),
         np.linspace(*ylims, nblocks, endpoint=False),
@@ -37,6 +37,11 @@ def blocker(points, rank, nblocks):
     for block in blocks:
         tmpm = np.amin(block, axis=0)
         tmpp = np.amax(block, axis=0)
-        block_extents.append([tmpm[0], tmpm[1], tmpp[0], tmpp[1]])
+        # min x min y max x max y
+        block_extents.append([bbox[0], tmpm[1], bbox[3], tmpp[1]])
+
+    # correcting block extents so bbox is respected
+    block_extents[0][1] = bbox[1]  # min y
+    block_extents[-1][3] = bbox[3]  # max y
 
     return blocks[rank], block_extents

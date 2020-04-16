@@ -304,7 +304,7 @@ class MeshSizeFunction:
 
     # ---PUBLIC METHODS---#
 
-    def build(self):
+    def build(self, rank=0):
         """Builds the isotropic mesh size function according
             to the user arguments that were passed.
 
@@ -351,33 +351,39 @@ class MeshSizeFunction:
         if _dim == 3:
             hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
         if _wl > 0:
-            print(
-                "Mesh sizes will be built to resolve an estimate of wavelength with "
-                + str(_wl)
-                + " vertices..."
-            )
+            if rank == 0:
+                print(
+                    "Mesh sizes will be built to resolve an estimate of wavelength with "
+                    + str(_wl)
+                    + " vertices...",
+                    flush=True,
+                )
             hh_m = _vp / (_freq * _wl)
         # enforce min (and optionally max) sizes
         hh_m = np.where(hh_m < _hmin, _hmin, hh_m)
         if _hmax < np.inf:
-            print("Enforcing maximum mesh resolution...")
+            if rank == 0:
+                print("Enforcing maximum mesh resolution...", flush=True)
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
         # grade the mesh sizes
         if _grade > 0:
-            print("Enforcing mesh gradation in sizing function...")
+            if rank == 0:
+                print("Enforcing mesh gradation in sizing function...", flush=True)
             hh_m = self.hj(hh_m, _width / _nx, 10000)
         # adjust mesh res. based on the CFL limit so cr < cr_max
         if _dt > 0:
-            print("Enforcing timestep of " + str(_dt) + " seconds...")
+            if rank == 0:
+                print("Enforcing timestep of " + str(_dt) + " seconds...", flush=True)
             cr_old = (_vp * _dt) / hh_m
             dxn = (_vp * _dt) / _cr_max
             hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
         # edit the bbox to reflect the new domain size
         if _domain_ext > 0:
             self = self.__CreateDomainExtension()
-            hh_m = self.__EditMeshSizeFunction(hh_m)
+            hh_m = self.__EditMeshSizeFunction(hh_m, rank)
         # construct a interpolator object to be queried during mesh generation
-        print("Building a gridded interpolant...")
+        if rank == 0:
+            print("Building a gridded interpolant...", flush=True)
         if _dim == 2:
             z_vec, x_vec = self.__CreateDomainVectors()
         if _dim == 3:
@@ -534,7 +540,7 @@ class MeshSizeFunction:
 
         model_fname = self.model
         ofname += ".hdf5"
-        print("Writing velocity model " + ofname)
+        print("Writing velocity model " + ofname, flush=True)
         with h5py.File(ofname, "w") as f:
             f.create_dataset("velocity_model", data=_vp, dtype="f")
             if _dim == 2:
@@ -656,7 +662,7 @@ class MeshSizeFunction:
             )
             return zg, xg, yg
 
-    def __EditMeshSizeFunction(self, hh_m):
+    def __EditMeshSizeFunction(self, hh_m, rank):
         """ Edits sizing function to support domain extension of variable width """
         _domain_ext = self.domain_ext
         _dim = self.dim
@@ -666,8 +672,15 @@ class MeshSizeFunction:
 
         nnx = int(_domain_ext / _spacing)
 
-        print("Including a " + str(_domain_ext) + " meter domain extension...")
-        print("Using the padstyle " + _padstyle + " to extend mesh resolution.")
+        if rank == 0:
+            print(
+                "Including a " + str(_domain_ext) + " meter domain extension...",
+                flush=True,
+            )
+            print(
+                "Using the padstyle " + _padstyle + " to extend mesh resolution.",
+                flush=True,
+            )
         if _dim == 2:
             mx = np.amax(hh_m)
             if _padstyle == "edge":

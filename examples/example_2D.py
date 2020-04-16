@@ -26,9 +26,6 @@ def example_2D():
 
     ef.WriteVelocityModel("BP2004")
 
-    # Save your mesh size function options.
-    ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
-
     # Visualize mesh size function
     ef.plot()
 
