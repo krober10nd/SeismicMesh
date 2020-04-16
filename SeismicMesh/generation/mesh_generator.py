@@ -7,23 +7,14 @@
 # -----------------------------------------------------------------------------
 import numpy as np
 import scipy.spatial as spspatial
-from mpi4py import MPI
+import matplotlib.pyplot as plt
 import time
 
 from . import utils as mutils
 from .. import decomp
 from .. import migration
 
-try:
-    from .cpp import c_cgal
-except ImportError:
-    print(
-        "CGAL-based mesh generation utilities not found, you want to install"
-        " CGAL for enhanced performance and parallel capabilities"
-        " Using qhull instead...",
-        flush=True,
-    )
-    method = "qhull"
+from .cpp import c_cgal
 
 
 class MeshGenerator:  # noqa: C901
@@ -126,9 +117,6 @@ class MeshGenerator:  # noqa: C901
                 print("Setting psuedo-random number seed to " + str(seed), flush=True)
             np.random.seed(seed)
 
-        if plot:
-            import matplotlib.pyplot as plt
-
         dim = int(len(bbox) / 2)
         bbox = np.array(bbox).reshape(-1, 2)
 
@@ -184,11 +172,6 @@ class MeshGenerator:  # noqa: C901
 
             start = time.time()
             if (dist(p, pold) / h0).max() > ttol:  # Any large movement?
-                if PARALLEL:
-                    if count > 0:
-                        p, extents = decomp.blocker(
-                            points=gpoints, rank=rank, nblocks=size, bbox=bbox
-                        )
 
                 # Make sure all points are unique
                 p = np.unique(p, axis=0)
@@ -200,14 +183,11 @@ class MeshGenerator:  # noqa: C901
                             extents, p, tria.vertices, rank, size
                         )
                         new_points = migration.exchange(comm, rank, size, exports)
+                        nfix = len(new_points)  # we do not allow new points to move
                         tria.add_points(new_points, restart=True)
-                        p, t = migration.utils.remove_external_faces(
+                        p, t, inv = migration.utils.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
-                        p, t = migration.utils.fixmesh(p, t)
-                        pold = (
-                            p.copy()
-                        )  # Save current positions (reorded by parallel algo)
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -266,21 +246,23 @@ class MeshGenerator:  # noqa: C901
                 F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
             )  # Bar forces (x,y components)
 
-            # DO I = 1,NUMBARS
-            #    POINTS(BARS(I,1),1) = POINTS(BARS(I,1),1) + DELTAT * FVEC(I,1)
-            #    POINTS(BARS(I,1),2) = POINTS(BARS(I,1),2) + DELTAT * FVEC(I,2)
-
-            #    POINTS(BARS(I,2),1) = POINTS(BARS(I,2),1) - DELTAT * FVEC(I,1)
-            #    POINTS(BARS(I,2),2) = POINTS(BARS(I,2),2) - DELTAT * FVEC(I,2)
-            # ENDDO
             Ftot = mutils.dense(
                 bars[:, [0] * dim + [1] * dim],
                 np.repeat([list(range(dim)) * 2], len(F), axis=0),
                 np.hstack((Fvec, -Fvec)),
                 shape=(N, dim),
             )
-            Ftot[:nfix] = 0  # Force = 0 at fixed points
+            if PARALLEL:
+                idx = inv[-nfix::]
+                F[idx] = 0  # migrated points don't move
+            else:
+                Ftot[:nfix] = 0  # Force = 0 at fixed points
+
             p += deltat * Ftot  # Update node positions
+
+            if PARALLEL:
+                # remove "newly" added points, they will be readded next round.
+                p = np.delete(p, idx, axis=0)
 
             # 7. Bring outside points back to the boundary
             d = fd(p)

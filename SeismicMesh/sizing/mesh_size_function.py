@@ -304,7 +304,8 @@ class MeshSizeFunction:
 
     # ---PUBLIC METHODS---#
 
-    def build(self, rank=0):
+    def build(self, rank=0):  # noqa: C901
+
         """Builds the isotropic mesh size function according
             to the user arguments that were passed.
 

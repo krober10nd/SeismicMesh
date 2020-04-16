@@ -17,8 +17,8 @@ def remove_external_faces(points, faces, extents):
     )
     isOut = np.reshape(signed_distance > -1e-13, (-1, 3))
     faces_new = faces[np.sum(isOut, axis=1) != 3, :]
-    points_new, faces_new = fixmesh(points, faces_new)
-    return points_new, faces_new
+    points_new, faces_new, jx = fixmesh(points, faces_new)
+    return points_new, faces_new, jx
 
 
 def vertex_to_elements(faces):
@@ -105,4 +105,4 @@ def fixmesh(p, t, ptol=2e-13):
     p = p[ix]
     t = jx[t]
 
-    return p, t
+    return p, t, jx
