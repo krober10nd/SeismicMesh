@@ -21,6 +21,12 @@ def test_2dmesher():
     assert np.abs((len(points) == 7690))
     assert len(facets) == 15045
 
+    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    points, facets = mshgen.build(max_iter=100, seed=0)
+    # should have: 7690 vertices and 15045 cells
+    assert np.abs((len(points) == 7690))
+    assert len(facets) == 15045
+
 
 if __name__ == "__main__":
     test_2dmesher()

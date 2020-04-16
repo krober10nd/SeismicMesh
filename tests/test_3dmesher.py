@@ -31,6 +31,12 @@ def test_3dmesher():
     assert len(points) == 16459
     assert np.abs(len(cells) - 102868) < 150
 
+    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")
+    points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
+    # 16459 vertices and 102868 cells
+    assert len(points) == 16459
+    assert np.abs(len(cells) - 102868) < 150
+
 
 if __name__ == "__main__":
     test_3dmesher()
