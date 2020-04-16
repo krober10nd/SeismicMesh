@@ -1,7 +1,7 @@
-.. image:: https://circleci.com/gh/krober10nd/SeismicMesh/tree/master.svg?style=shield
-        :target: https://circleci.com/gh/krober10nd/SeismicMesh/tree/master 
+.. image:: https://circleci.com/gh/krober10nd/SeismicMesh/tree/parallel.svg?style=shield
+        :target: https://circleci.com/gh/krober10nd/SeismicMesh/tree/parallel 
 
-.. image:: https://codecov.io/gh/krober10nd/SeismicMesh/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/krober10nd/SeismicMesh/branch/parallel/graph/badge.svg
   	:target: https://codecov.io/gh/krober10nd/SeismicMesh
     
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
