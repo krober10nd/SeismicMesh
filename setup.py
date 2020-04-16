@@ -4,9 +4,11 @@ import sys
 import platform
 import subprocess
 
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
+
+files = ["*.so*"]
 
 
 class CMakeExtension(Extension):
@@ -88,6 +90,9 @@ setup(
         "matplotlib",
         "mpi4py",
     ],
+    packages=find_packages(),
+    package_data={"SeismicMesh": files},
+    include_package_data=True,
     ext_modules=[
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay"),
