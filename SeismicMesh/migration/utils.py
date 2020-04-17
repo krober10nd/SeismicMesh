@@ -15,7 +15,7 @@ def remove_external_faces(points, faces, extents):
         y1=extents[1],
         y2=extents[3],
     )
-    isOut = np.reshape(signed_distance > -1e-13, (-1, 3))
+    isOut = np.reshape(signed_distance > 0, (-1, 3))
     faces_new = faces[np.sum(isOut, axis=1) != 3, :]
     points_new, faces_new, jx = fixmesh(points, faces_new)
     return points_new, faces_new, jx

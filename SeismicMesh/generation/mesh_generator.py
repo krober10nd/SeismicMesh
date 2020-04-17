@@ -147,7 +147,9 @@ class MeshGenerator:  # noqa: C901
 
         # call block decomposition
         if PARALLEL:
-            p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, bbox=bbox)
+            p, extents = decomp.blocker(
+                points=p, rank=rank, nblocks=size, bbox=bbox.flatten()
+            )
             N = p.shape[0]
 
             count = 0
@@ -162,6 +164,7 @@ class MeshGenerator:  # noqa: C901
 
             count = 0
             pold = float("inf")  # For first iteration
+
             print("Commencing mesh generation with %d vertices." % N, flush=True)
 
         while True:
@@ -188,6 +191,7 @@ class MeshGenerator:  # noqa: C901
                         p, t, inv = migration.utils.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
+                        N = p.shape[0]
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -219,10 +223,12 @@ class MeshGenerator:  # noqa: C901
                 bars = mutils.unique_rows(bars)  # Bars as node pairs
 
                 # 5. Graphical output of the current mesh
-                if plot and not PARALLEL:
+                if plot:  # and not PARALLEL:
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
+                            idx = inv[-nfix::]
+                            plt.plot(p[idx, 0], p[idx, 1], "r.")
                             plt.title("Retriangulation %d" % count)
                             plt.axis("equal")
                             plt.show()
@@ -260,10 +266,6 @@ class MeshGenerator:  # noqa: C901
 
             p += deltat * Ftot  # Update node positions
 
-            if PARALLEL:
-                # remove "newly" added points, they will be readded next round.
-                p = np.delete(p, idx, axis=0)
-
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
@@ -279,7 +281,6 @@ class MeshGenerator:  # noqa: C901
                 dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
-            # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
             maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
             if count % nscreen == 0:
                 print(
@@ -287,6 +288,8 @@ class MeshGenerator:  # noqa: C901
                     % (count + 1, maxdp, len(p), len(t)),
                     flush=True,
                 )
+
+            # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
             if maxdp < ptol * h0:
                 print(
                     "Termination reached...all interior nodes move less than dptol.",
@@ -300,6 +303,11 @@ class MeshGenerator:  # noqa: C901
                     flush=True,
                 )
                 break
+
+            if PARALLEL:
+                # remove "newly" added points, they will be readded next iteration.
+                p = np.delete(p, idx, axis=0)
+
             count += 1
             end = time.time()
             print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
