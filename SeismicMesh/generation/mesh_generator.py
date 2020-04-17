@@ -223,7 +223,7 @@ class MeshGenerator:  # noqa: C901
                 bars = mutils.unique_rows(bars)  # Bars as node pairs
 
                 # 5. Graphical output of the current mesh
-                if plot:  # and not PARALLEL:
+                if plot and not PARALLEL:
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
@@ -295,13 +295,22 @@ class MeshGenerator:  # noqa: C901
                     "Termination reached...all interior nodes move less than dptol.",
                     flush=True,
                 )
+
+                if PARALLEL:
+                    p, t = migration.aggregate(p, t, comm, size, rank)
+
                 break
+
             # 8b. Number of iterations reached.
             if count == max_iter - 1:
                 print(
                     "Termination reached...maximum number of iterations reached.",
                     flush=True,
                 )
+
+                if PARALLEL:
+                    p, t = migration.aggregate(p, t, comm, size, rank)
+
                 break
 
             if PARALLEL:

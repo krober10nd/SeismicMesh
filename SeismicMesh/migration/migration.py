@@ -46,7 +46,7 @@ def aggregate(points, faces, comm, size, rank):
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces = utils.fixmesh(gpoints, gfaces)
+        upoints, ufaces, ix = utils.fixmesh(gpoints, gfaces)
         return upoints, ufaces
     else:
         return True, True

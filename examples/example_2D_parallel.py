@@ -19,15 +19,7 @@ def example_2D_parallel():
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox,
-        model=fname,
-        domain_ext=500,
-        dt=0.001,
-        freq=5,
-        wl=5,
-        hmax=1e3,
-        hmin=50.0,
-        grade=0.05,
+        bbox=bbox, model=fname, dt=0.001, freq=5, wl=5, hmax=1e3, hmin=50.0, grade=0.05,
     )
 
     # Build mesh size function
@@ -42,7 +34,7 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm)
+    points, facets = mshgen.build(max_iter=50, nscreen=5, seed=0, COMM=comm, plot=True)
 
     # Write to disk (see meshio for more details)
     # Write as a vtk format for visualization in Paraview
