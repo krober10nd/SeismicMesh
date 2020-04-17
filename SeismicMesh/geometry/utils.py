@@ -17,6 +17,7 @@ def get_boundary_edges_of_mesh2(faces):
     Get the boundary edges of the mesh
     """
     edges = get_edges_of_mesh2(faces)
+    edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
     return boundary_edges
