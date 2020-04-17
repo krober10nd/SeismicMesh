@@ -42,9 +42,10 @@ If you do not have administrative rights on your system, use the flag ``--user``
 
 Testing:
 ==============================================
-To run tests, install ``pytest``. 
+To run tests, install ``pytest``i.e., ``pip install pytest
 
-1. ``pytest tests/``
+1. ``cd tests/``
+2. ``pytest .``
 
 Gallery:
 ==============================================
