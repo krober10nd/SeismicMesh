@@ -127,7 +127,7 @@ class MeshGenerator:  # noqa: C901
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
 
-        if pfix is not None:
+        if pfix is not None and not PARALLEL:
             pfix = np.array(pfix, dtype="d")
             nfix = len(pfix)
         else:
@@ -145,11 +145,18 @@ class MeshGenerator:  # noqa: C901
             (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
         )
 
-        # call block decomposition
+        # we add jitter to avoid precision issues with qhull
         if PARALLEL:
+            jitter = np.random.uniform(size=(len(p), dim), low=-h0 / 10, high=h0 / 10)
+            p += jitter
+
+        # call domain decomposition
+        if PARALLEL:
+
             p, extents = decomp.blocker(
                 points=p, rank=rank, nblocks=size, bbox=bbox.flatten()
             )
+
             N = p.shape[0]
 
             count = 0
@@ -185,13 +192,15 @@ class MeshGenerator:  # noqa: C901
                         exports = migration.enqueue(
                             extents, p, tria.vertices, rank, size
                         )
-                        new_points = migration.exchange(comm, rank, size, exports)
+                        new_points, sent = migration.exchange(comm, rank, size, exports)
                         nfix = len(new_points)  # we do not allow new points to move
                         tria.add_points(new_points, restart=True)
                         p, t, inv = migration.utils.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
                         N = p.shape[0]
+                        # slow build kdtree TO BE REMOVED
+                        tree = spspatial.KDTree(p)
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -227,8 +236,8 @@ class MeshGenerator:  # noqa: C901
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
-                            idx = inv[-nfix::]
-                            plt.plot(p[idx, 0], p[idx, 1], "r.")
+                            # idx = inv[-nfix::]
+                            # plt.plot(p[idx, 0], p[idx, 1], "r.")
                             plt.title("Retriangulation %d" % count)
                             plt.axis("equal")
                             plt.show()
@@ -260,7 +269,9 @@ class MeshGenerator:  # noqa: C901
             )
             if PARALLEL:
                 idx = inv[-nfix::]
-                F[idx] = 0  # migrated points don't move
+                Ftot[idx] = 0  # migrated points don't move
+                _, idx2 = tree.query(sent)  # slow: sent points don't move TO BE REMOVED
+                Ftot[idx2] = 0  # TO BE REMOVED
             else:
                 Ftot[:nfix] = 0  # Force = 0 at fixed points
 
@@ -314,7 +325,7 @@ class MeshGenerator:  # noqa: C901
                 break
 
             if PARALLEL:
-                # remove "newly" added points, they will be readded next iteration.
+                # remove "newly" added points, they will be added back next iteration.
                 p = np.delete(p, idx, axis=0)
 
             count += 1

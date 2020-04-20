@@ -34,7 +34,7 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=3, nscreen=1, seed=0, COMM=comm, plot=True)
+    points, facets = mshgen.build(max_iter=10, nscreen=10, seed=0, COMM=comm, plot=True)
 
     # Write to disk (see meshio for more details)
     # Write as a vtk format for visualization in Paraview

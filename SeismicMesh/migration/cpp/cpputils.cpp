@@ -148,6 +148,7 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     }
     pointsToMigrate[0] = kount_below;
     pointsToMigrate[1] = kount_above;
+
     return pointsToMigrate;
 }
 
