@@ -1,11 +1,7 @@
 import numpy as np
 from mpi4py import MPI
 
-try:
-    from .cpp import cpputils
-except ImportError:
-    print("cpp utils not compiled, quitting")
-
+from .cpp import cpputils
 
 from . import utils
 
@@ -69,12 +65,12 @@ def enqueue(extents, points, faces, rank, size):
 
     # add dummy box above if rank==0 or under if rank=size-1
     if rank == size - 1:
-        le = np.append(le, [-9999, -9999])
-        re = np.append(re, [-9998, -9998])
+        le = np.append(le, [-999999, -999999])
+        re = np.append(re, [-999998, -999998])
 
     if rank == 0:
-        le = np.insert(le, 0, [-9999, -9999])
-        re = np.insert(re, 0, [-9998, -9998])
+        le = np.insert(le, 0, [-999999, -999999])
+        re = np.insert(re, 0, [-999998, -999998])
 
     exports = cpputils.where_to2(points, faces, le, re, rank)
 

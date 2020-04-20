@@ -111,18 +111,14 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
             double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3);
             Circle circ = Circle(cc, sqr_radius, CGAL::CLOCKWISE);
             // Does this circumball intersect with box above or box below?
-            bool intersects;
             for(std::size_t bx=0; bx< 2; ++bx ){
                 Rectangle rect = Rectangle(Point(llc[bx*2], llc[bx*2 +1]),
                         Point(urc[bx*2], urc[bx*2+1]));
-                intersects = CGAL::do_intersect(circ, rect);
+                bool intersects = CGAL::do_intersect(circ, rect);
                 if(intersects){
                     exports[iv] = bx;
                 }
             }
-            // skip to next cell if intersection was detected
-            if(intersects)
-                continue;
         }
     }
 

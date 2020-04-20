@@ -28,7 +28,7 @@ def blocker(points, rank, nblocks, bbox):
             (points[:, 0] >= low_x)
             & (points[:, 0] <= low_x + dx)
             & (points[:, 1] > low_y)
-            & (points[:, 1] < low_y + dy)
+            & (points[:, 1] <= low_y + dy)
         ]
         if block.shape[0]:
             blocks.append(block)

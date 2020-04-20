@@ -105,4 +105,7 @@ def fixmesh(p, t, ptol=2e-13):
     p = p[ix]
     t = jx[t]
 
+    t = np.sort(t, axis=1)
+    t = unique_rows(t)
+
     return p, t, jx
