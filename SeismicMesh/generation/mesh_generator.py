@@ -69,7 +69,15 @@ class MeshGenerator:  # noqa: C901
 
     ### PUBLIC METHODS ###
     def build(  # noqa: ignore=C901
-        self, pfix=None, max_iter=10, nscreen=5, plot=False, seed=None, COMM=None
+        self,
+        pfix=None,
+        max_iter=10,
+        nscreen=5,
+        plot=False,
+        seed=None,
+        COMM=None,
+        axis=0,
+        points=None,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -85,8 +93,10 @@ class MeshGenerator:  # noqa: C901
         max_iter: maximum number of iterations (default==20)
         nscreen: output to screen nscreen (default==5)
         plot: Visualize incremental meshes (default==False)
-        seed: Random seed to ensure results are deterministic (default=None)
-        COMM: MPI4py communicator (default=None)
+        seed: Random seed to ensure results are deterministic (default==None)
+        COMM: MPI4py communicator (default==None)
+        axis: axis to decomp the domain wrt (default==0)
+        points: initial point distribution (default==None)
 
         Returns
         -------
@@ -101,6 +111,8 @@ class MeshGenerator:  # noqa: C901
         bbox = _ef.bbox
         _method = self.method
         comm = COMM
+        _axis = axis
+        _points = points
 
         if comm is not None:
             PARALLEL = True
@@ -134,16 +146,20 @@ class MeshGenerator:  # noqa: C901
             pfix = np.empty((0, dim))
             nfix = 0
 
-        # 1. Create initial distribution in bounding box (equilateral triangles)
-        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
-        p = p.reshape(dim, -1).T
+        if points is None:
+            # 1. Create initial distribution in bounding box (equilateral triangles)
+            p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
+            p = p.reshape(dim, -1).T
 
-        # 2. Remove points outside the region, apply the rejection method
-        p = p[fd(p) < geps]  # Keep only d<0 points
-        r0 = fh(p)
-        p = np.vstack(
-            (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
-        )
+            # 2. Remove points outside the region, apply the rejection method
+            p = p[fd(p) < geps]  # Keep only d<0 points
+            r0 = fh(p)
+            p = np.vstack(
+                (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
+            )
+        else:
+            # user has supplied initial points
+            p = _points
 
         # we add jitter to avoid co-spherical points
         if PARALLEL:
@@ -153,9 +169,7 @@ class MeshGenerator:  # noqa: C901
         # call domain decomposition
         if PARALLEL:
 
-            p, extents = decomp.blocker(
-                points=p, rank=rank, nblocks=size, bbox=bbox.flatten()
-            )
+            p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, axis=_axis)
 
             N = p.shape[0]
 
@@ -234,7 +248,6 @@ class MeshGenerator:  # noqa: C901
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
-                            # plt.plot(p[inv[sent], 0], p[inv[sent], 1], "r.")
                             plt.title("Retriangulation %d" % count)
                             plt.axis("equal")
                             plt.show()
@@ -290,7 +303,9 @@ class MeshGenerator:  # noqa: C901
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
-            if count % nscreen == 0:
+            if count % nscreen == 0 and rank == 0:
+                if PARALLEL:
+                    print("On rank 0: ",flush=True)
                 print(
                     "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                     % (count + 1, maxdp, len(p), len(t)),
@@ -298,7 +313,7 @@ class MeshGenerator:  # noqa: C901
                 )
 
             # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
-            if maxdp < ptol * h0:
+            if maxdp < ptol * h0 and not PARALLEL:
                 print(
                     "Termination reached...all interior nodes move less than dptol.",
                     flush=True,
@@ -311,10 +326,11 @@ class MeshGenerator:  # noqa: C901
 
             # 8b. Number of iterations reached.
             if count == max_iter - 1:
-                print(
-                    "Termination reached...maximum number of iterations reached.",
-                    flush=True,
-                )
+                if rank == 0:
+                    print(
+                        "Termination reached...maximum number of iterations reached.",
+                        flush=True,
+                    )
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
@@ -327,5 +343,6 @@ class MeshGenerator:  # noqa: C901
 
             count += 1
             end = time.time()
-            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+            if rank == 0:
+                print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
         return p, t
