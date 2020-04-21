@@ -84,8 +84,7 @@ def exchange(comm, rank, size, exports):  # points):
     NSB = int(exports[0, 0])
     NSA = int(exports[0, 1])
 
-    # TO BE REMOVED
-    pointsToSend = exports[1 : NSB + 1 + NSA, 0:2]
+    pointsToSend = exports[1 : NSB + 1 + NSA, 2].astype(int)
 
     tmp = []
     # send points below

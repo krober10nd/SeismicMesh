@@ -123,15 +123,16 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     }
 
     std::vector<double> pointsToMigrate;
-    pointsToMigrate.resize(num_points*2,-1);
+    pointsToMigrate.resize(num_points*3,-1);
 
     double kount_below = 0.0;
     for(std::size_t iv=0; iv < num_points; ++iv)
     {
         if(exports[iv]==0)
         {
-            pointsToMigrate[kount_below*2+2]=points[iv*2];
-            pointsToMigrate[kount_below*2+1+2]=points[iv*2+1];
+            pointsToMigrate[kount_below*3+0+3]=points[iv*2];
+            pointsToMigrate[kount_below*3+1+3]=points[iv*2+1];
+            pointsToMigrate[kount_below*3+2+3]=(double)iv;
             kount_below += 1.0;
         }
     }
@@ -141,13 +142,15 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     {
         if(exports[iv]==1)
         {
-            pointsToMigrate[kount_below*2 + kount_above*2+2]=points[iv*2];
-            pointsToMigrate[kount_below*2 + kount_above*2+1+2]=points[iv*2+1];
+            pointsToMigrate[kount_below*3 + kount_above*3+0+3]=points[iv*2];
+            pointsToMigrate[kount_below*3 + kount_above*3+1+3]=points[iv*2+1];
+            pointsToMigrate[kount_below*3 + kount_above*3+2+3]=(double)iv;
             kount_above += 1.0;
         }
     }
     pointsToMigrate[0] = kount_below;
     pointsToMigrate[1] = kount_above;
+    pointsToMigrate[2] = 0.0;
 
     return pointsToMigrate;
 }
@@ -182,8 +185,8 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;
-  std::vector<ssize_t> shape     = {num_points, 2};
-  std::vector<ssize_t> strides   = {sodble*2, sodble};
+  std::vector<ssize_t> shape     = {num_points+1, 3};
+  std::vector<ssize_t> strides   = {sodble*3, sodble};
 
   // return 2-D NumPy array
   return py::array(py::buffer_info(

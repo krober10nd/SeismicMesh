@@ -145,7 +145,7 @@ class MeshGenerator:  # noqa: C901
             (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
         )
 
-        # we add jitter to avoid precision issues with qhull
+        # we add jitter to avoid co-spherical points
         if PARALLEL:
             jitter = np.random.uniform(size=(len(p), dim), low=-h0 / 10, high=h0 / 10)
             p += jitter
@@ -193,14 +193,12 @@ class MeshGenerator:  # noqa: C901
                             extents, p, tria.vertices, rank, size
                         )
                         new_points, sent = migration.exchange(comm, rank, size, exports)
-                        nfix = len(new_points)  # we do not allow new points to move
                         tria.add_points(new_points, restart=True)
                         p, t, inv = migration.utils.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
                         N = p.shape[0]
-                        # slow build kdtree TO BE REMOVED
-                        tree = spspatial.KDTree(p)
+                        nfix = len(new_points)  # we do not allow new points to move
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -236,8 +234,7 @@ class MeshGenerator:  # noqa: C901
                     if count % nscreen == 0:
                         if dim == 2:
                             plt.triplot(p[:, 0], p[:, 1], t)
-                            # idx = inv[-nfix::]
-                            # plt.plot(p[idx, 0], p[idx, 1], "r.")
+                            # plt.plot(p[inv[sent], 0], p[inv[sent], 1], "r.")
                             plt.title("Retriangulation %d" % count)
                             plt.axis("equal")
                             plt.show()
@@ -269,9 +266,9 @@ class MeshGenerator:  # noqa: C901
             )
             if PARALLEL:
                 idx = inv[-nfix::]
+                idx2 = inv[sent]
                 Ftot[idx] = 0  # migrated points don't move
-                _, idx2 = tree.query(sent)  # slow: sent points don't move TO BE REMOVED
-                Ftot[idx2] = 0  # TO BE REMOVED
+                Ftot[idx2] = 0  # points that were sent to adj. subdomains don't move
             else:
                 Ftot[:nfix] = 0  # Force = 0 at fixed points
 
