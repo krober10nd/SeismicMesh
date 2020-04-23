@@ -1,7 +1,6 @@
 import numpy as np
 
 from ..geometry import signed_distance_functions as sdf
-from .cpp import cpputils
 
 
 def remove_external_faces(points, faces, extents):
@@ -22,41 +21,25 @@ def remove_external_faces(points, faces, extents):
     return points_new, faces_new, jx
 
 
-def vertex_to_elements(faces):
+def vertex_to_elements(points, faces):
     """
-    Returns the elements incident to a vertex in the
-    Delaunay graph. Calls a pybind11 CPP subroutine in src/cpputils.cpp
-
-    faces: an ndarray of int, `(ndarray of ints, shape (nsimplex, ndim+1)`.
-            Indices of the points forming the simplices in the triangulation.
+    determine which elements connected to vertices
     """
-    num_points = np.amax(faces) + 1
     num_faces = len(faces)
-    vtoe = cpputils.vertex_to_elements(faces, num_points, num_faces)
-    nne = np.count_nonzero(vtoe > -1, axis=1)
-    return vtoe, nne
 
+    ve = np.empty((0, 2), int)
+    for e, f in enumerate(faces):
+        for v in f:
+            ve = np.append(ve, np.array([[v, e]]), axis=0)
 
-def calc_circumballs(points, faces):
-    """
-    Returns the balls that inscribe the triangles defined by points.
-    Calls a pybind11 CPP subroutine in src/delaunay.cpp
+    ve = ve[ve[:, 0].argsort(), :]
 
-    points: an ndarray of double,`shape(npoints,ndim)`. Coordinates of the
-            input points.
-    faces: an ndarray of int, `(ndarray of ints, shape (nsimplex, ndim+1)`.
-            Indices of the points forming the simplices in the triangulation.
-            For, 2D the points should be counterclockwise
-    """
-    num_points, ndim = points.shape
+    vtoe_pointer = np.argwhere(np.diff([ve[:, 0]]))
+    vtoe_pointer = np.append(vtoe_pointer, num_faces * 3)
 
-    assert num_points > 3, "too few points"
-    assert ndim > 1 or ndim < 4, "ndim is wrong"
+    vtoe = ve[:, 1]
 
-    tmp = cpputils.circumballs2(points[faces, :].flatten())
-    circumcenters = tmp[:, 0:2]
-    radii = np.sqrt(tmp[:, 2])
-    return circumcenters, radii
+    return vtoe, vtoe_pointer
 
 
 def unique_rows(A, return_index=False, return_inverse=False):

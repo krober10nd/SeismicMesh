@@ -241,6 +241,7 @@ py::array delaunay3(py::array_t<double, py::array::c_style | py::array::forcecas
 
 
 PYBIND11_MODULE(c_cgal, m) {
+    m.def("circumballs2", &circumballs2);
     m.def("delaunay2", &delaunay2);
     m.def("delaunay3", &delaunay3);
 }
