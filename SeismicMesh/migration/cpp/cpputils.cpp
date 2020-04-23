@@ -22,35 +22,24 @@ namespace py = pybind11;
 
 // determine which rank points need to be exported to
 std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &faces,
+                             std::vector<int> &vtoe, std::vector<int> &ptr,
                              std::vector<double> &llc, std::vector<double> &urc, int rank)
 {
     int num_faces = faces.size()/3;
     int num_points = points.size()/2;
 
-    // Step 1. Determine all elements connected to each point in points.
-    std::vector<int> vtoe;
-    std::vector<int> nne;
-    // assume each vertex has a max. of 20 elements neigh.
-    vtoe.resize(num_points*20, -1);
-    nne.resize(num_points, 0);
-    for(std::size_t ie = 0; ie < num_faces; ++ie ) {
-        for(std::size_t iv =0; iv < 3; ++iv ) {
-            int nm1 = faces[ie*3+iv];
-            vtoe[nm1*20 + nne[nm1]] = ie;
-            nne[nm1] += 1;
-            }
-        }
-    // Step 2. Determine which rank to send the vertex (exports)
+    // Determine which rank to send the vertex (exports)
     // exports[iv] is either 0 or 1 (0 for block owned by rank-1 and 1 for block owned by rank+1)
     std::vector<int> exports;
     exports.resize(num_points,-1);
     // For each point in points
     for(std::size_t iv=0; iv < num_points; ++iv)
     {
+        int nneis = ptr[iv+1]-ptr[iv] + 1;
         // For all connected elements to point iv
-        for(std::size_t ic=0; ic < nne[iv]; ++ic)
+        for(std::size_t ic=0; ic < nneis; ++ic)
         {
-            int nei_ele = vtoe[iv*20 + ic];
+            int nei_ele = vtoe[ptr[iv]+ic];
             // Indices of element into points
             int nm1 = faces[nei_ele*3];
             int nm2 = faces[nei_ele*3+1];
@@ -113,6 +102,8 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
 // ----------------
 py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecast> points,
                     py::array_t<int, py::array::c_style | py::array::forcecast> faces,
+                    py::array_t<int, py::array::c_style | py::array::forcecast> vtoe,
+                    py::array_t<int, py::array::c_style | py::array::forcecast> ptr,
                     py::array_t<double, py::array::c_style | py::array::forcecast> llc,
                     py::array_t<double, py::array::c_style | py::array::forcecast> urc,
                     int rank
@@ -124,17 +115,21 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
   // allocate std::vector (to pass to the C++ function)
   std::vector<double> cpppoints(num_points*2);
   std::vector<int> cppfaces(num_faces*3);
+  std::vector<int> cppvtoe(num_faces*3);
+  std::vector<int> cppptr(num_points+1);
   std::vector<double> cppllc(4);
   std::vector<double> cppurc(4);
 
   // copy py::array -> std::vector
   std::memcpy(cpppoints.data(),points.data(),num_points*2*sizeof(double));
   std::memcpy(cppfaces.data(),faces.data(),num_faces*3*sizeof(int));
+  std::memcpy(cppvtoe.data(),vtoe.data(),num_faces*3*sizeof(int));
+  std::memcpy(cppptr.data(),ptr.data(),(num_points+1)*sizeof(int));
   std::memcpy(cppllc.data(), llc.data(),4*sizeof(double));
   std::memcpy(cppurc.data(), urc.data(),4*sizeof(double));
 
   // call cpp code
-  std::vector<double> pointsToMigrate = c_where_to2(cpppoints, cppfaces, cppllc, cppurc, rank);
+  std::vector<double> pointsToMigrate = c_where_to2(cpppoints, cppfaces, cppvtoe, cppptr, cppllc, cppurc, rank);
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;

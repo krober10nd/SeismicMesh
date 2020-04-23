@@ -19,7 +19,7 @@ def example_2D_parallel():
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, dt=0.001, freq=5, wl=5, hmax=1e3, hmin=50.0, grade=0.05,
+        bbox=bbox, model=fname, dt=0.001, freq=5, wl=5, hmax=1e3, hmin=30.0, grade=0.05,
     )
 
     # Build mesh size function

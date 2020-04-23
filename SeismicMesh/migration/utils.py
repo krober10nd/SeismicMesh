@@ -6,6 +6,7 @@ from ..geometry import signed_distance_functions as sdf
 def remove_external_faces(points, faces, extents):
     """
     Remove faces with all three vertices outside block (external)
+    and points that are very far from local domain
     """
     signed_distance = sdf.drectangle(
         points[faces.flatten(), :],
@@ -15,7 +16,9 @@ def remove_external_faces(points, faces, extents):
         y2=extents[3],
     )
     isOut = np.reshape(signed_distance > 0, (-1, 3))
-    faces_new = faces[np.sum(isOut, axis=1) != 3, :]
+    isFar = np.reshape(signed_distance > 1000, (-1, 3))
+    faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
+
     points_new, faces_new, jx = fixmesh(points, faces_new)
 
     return points_new, faces_new, jx
@@ -27,15 +30,14 @@ def vertex_to_elements(points, faces):
     """
     num_faces = len(faces)
 
-    ve = np.empty((0, 2), int)
-    for e, f in enumerate(faces):
-        for v in f:
-            ve = np.append(ve, np.array([[v, e]]), axis=0)
-
+    ext = np.tile(np.arange(0, num_faces), (3, 1)).reshape(-1, order="F")
+    ve = np.reshape(faces, (-1,))
+    ve = np.vstack((ve, ext)).T
     ve = ve[ve[:, 0].argsort(), :]
 
-    vtoe_pointer = np.argwhere(np.diff([ve[:, 0]]))
+    vtoe_pointer = np.argwhere(np.diff(ve[:, 0]))
     vtoe_pointer = np.append(vtoe_pointer, num_faces * 3)
+    vtoe_pointer = np.insert(vtoe_pointer, 0, 0)
 
     vtoe = ve[:, 1]
 

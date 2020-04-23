@@ -104,6 +104,8 @@ class MeshGenerator:  # noqa: C901
         t:         Triangle indices (nt, dim+1)
         """
 
+        _DEBUG = False
+
         _ef = self.SizingFunction
         fd = _ef.fd
         fh = _ef.fh
@@ -213,6 +215,18 @@ class MeshGenerator:  # noqa: C901
                         )
                         N = p.shape[0]
                         nfix = len(new_points)  # we do not allow new points to move
+
+                        # if _DEBUG:
+                        #    p.savetxt(
+                        #       "lp_" + str(rank) + "_it_" + str(count) + ".txt",
+                        #       p,
+                        #       delimiter=",",
+
+                        #    p.savetxt(
+                        #       "lf_" + str(rank) + "_it_" + str(count) + ".txt",
+                        #       t,
+                        #       delimiter=",",
+
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -305,7 +319,7 @@ class MeshGenerator:  # noqa: C901
             maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
             if count % nscreen == 0 and rank == 0:
                 if PARALLEL:
-                    print("On rank 0: ",flush=True)
+                    print("On rank 0: ", flush=True)
                 print(
                     "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                     % (count + 1, maxdp, len(p), len(t)),

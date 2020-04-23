@@ -72,7 +72,8 @@ def enqueue(extents, points, faces, rank, size):
         le = np.insert(le, 0, [-999999, -999999])
         re = np.insert(re, 0, [-999998, -999998])
 
-    exports = cpputils.where_to2(points, faces, le, re, rank)
+    vtoe, ptr = utils.vertex_to_elements(points, faces)
+    exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
 
     return exports
 
