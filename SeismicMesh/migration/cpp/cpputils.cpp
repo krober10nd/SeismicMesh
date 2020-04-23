@@ -48,6 +48,12 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
             Point pnm1 = Point(points[nm1*2], points[nm1*2+1]);
             Point pnm2 = Point(points[nm2*2], points[nm2*2+1]);
             Point pnm3 = Point(points[nm3*2], points[nm3*2+1]);
+            bool isCollinear = CGAL::collinear (pnm1, pnm2, pnm3);
+            // if this happens we cannot test accurately
+            if(isCollinear){
+                //std::cout<<"point is collinear" << std::endl;
+                continue;
+            }
             // Calculate circumball of element
             Point cc = CGAL::circumcenter(pnm1, pnm2, pnm3);
             double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3);
@@ -116,7 +122,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
   std::vector<double> cpppoints(num_points*2);
   std::vector<int> cppfaces(num_faces*3);
   std::vector<int> cppvtoe(num_faces*3);
-  std::vector<int> cppptr(num_points+1);
+  std::vector<int> cppptr(num_points+2);
   std::vector<double> cppllc(4);
   std::vector<double> cppurc(4);
 
@@ -124,7 +130,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
   std::memcpy(cpppoints.data(),points.data(),num_points*2*sizeof(double));
   std::memcpy(cppfaces.data(),faces.data(),num_faces*3*sizeof(int));
   std::memcpy(cppvtoe.data(),vtoe.data(),num_faces*3*sizeof(int));
-  std::memcpy(cppptr.data(),ptr.data(),(num_points+1)*sizeof(int));
+  std::memcpy(cppptr.data(),ptr.data(),(num_points+2)*sizeof(int));
   std::memcpy(cppllc.data(), llc.data(),4*sizeof(double));
   std::memcpy(cppurc.data(), urc.data(),4*sizeof(double));
 
@@ -133,7 +139,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;
-  std::vector<ssize_t> shape     = {num_points+1, 3};
+  std::vector<ssize_t> shape     = {num_points, 3};
   std::vector<ssize_t> strides   = {sodble*3, sodble};
 
   // return 2-D NumPy array
