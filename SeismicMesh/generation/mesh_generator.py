@@ -104,8 +104,6 @@ class MeshGenerator:  # noqa: C901
         t:         Triangle indices (nt, dim+1)
         """
 
-        _DEBUG = False
-
         _ef = self.SizingFunction
         fd = _ef.fd
         fh = _ef.fh
