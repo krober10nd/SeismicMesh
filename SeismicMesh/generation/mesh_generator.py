@@ -103,7 +103,6 @@ class MeshGenerator:  # noqa: C901
         p:         Point positions (np, dim)
         t:         Triangle indices (nt, dim+1)
         """
-
         _ef = self.SizingFunction
         fd = _ef.fd
         fh = _ef.fh
@@ -206,25 +205,13 @@ class MeshGenerator:  # noqa: C901
                         exports = migration.enqueue(
                             extents, p, tria.vertices, rank, size
                         )
-                        new_points, sent = migration.exchange(comm, rank, size, exports)
-                        tria.add_points(new_points, restart=True)
+                        recv = migration.exchange(comm, rank, size, exports)
+                        tria.add_points(recv, restart=True)
                         p, t, inv = migration.utils.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
                         N = p.shape[0]
-                        nfix = len(new_points)  # we do not allow new points to move
-
-                        # if _DEBUG:
-                        #    p.savetxt(
-                        #       "lp_" + str(rank) + "_it_" + str(count) + ".txt",
-                        #       p,
-                        #       delimiter=",",
-
-                        #    p.savetxt(
-                        #       "lf_" + str(rank) + "_it_" + str(count) + ".txt",
-                        #       t,
-                        #       delimiter=",",
-
+                        recv_ix = len(recv)  # we do not allow new points to move
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":
@@ -264,9 +251,7 @@ class MeshGenerator:  # noqa: C901
                             plt.axis("equal")
                             plt.show()
                         elif dim == 3:
-                            # TODO ALL 3D VIZ
                             plt.title("Retriangulation %d" % count)
-                            plt.axis("equal")
 
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -289,11 +274,9 @@ class MeshGenerator:  # noqa: C901
                 np.hstack((Fvec, -Fvec)),
                 shape=(N, dim),
             )
+
             if PARALLEL:
-                idx = inv[-nfix::]
-                idx2 = inv[sent]
-                Ftot[idx] = 0  # migrated points don't move
-                Ftot[idx2] = 0  # points that were sent to adj. subdomains don't move
+                Ftot = migration.exchange_forces(exports, Ftot, inv, comm, rank, size)
             else:
                 Ftot[:nfix] = 0  # Force = 0 at fixed points
 
@@ -350,10 +333,12 @@ class MeshGenerator:  # noqa: C901
                 break
 
             if PARALLEL:
-                # remove "newly" added points, they will be added back next iteration.
-                p = np.delete(p, idx, axis=0)
+                p = np.delete(p, inv[-recv_ix::], axis=0)
+
+                comm.barrier()
 
             count += 1
+
             end = time.time()
             if rank == 0:
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)

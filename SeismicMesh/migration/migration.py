@@ -78,33 +78,73 @@ def enqueue(extents, points, faces, rank, size):
     return exports
 
 
-def exchange(comm, rank, size, exports):  # points):
+def exchange(comm, rank, size, exports):
     """
     Exchange data via MPI using P2P comm
     """
     NSB = int(exports[0, 0])
     NSA = int(exports[0, 1])
 
-    pointsToSend = exports[1 : NSB + 1 + NSA, 2].astype(int)
-
     tmp = []
     # send points below
     if NSB != 0:
-        # all but zero send to their neighbor below
         comm.send(exports[1 : NSB + 1, 0:2], dest=rank - 1, tag=11)
 
-    # all but the top receive (no neighbor)
+    # send points above
     if rank != size - 1:
         tmp = np.append(tmp, comm.recv(source=rank + 1, tag=11))
 
-    # send points above
+    # receive points from above
     if NSA != 0:
-        # all put the top enter
+        # all put the top receive from above
         comm.send(exports[NSB + 1 : NSB + 1 + NSA, 0:2], dest=rank + 1, tag=11)
 
-    # all but the bottom receive
+    # receive points from below
     if rank != 0:
+        # all but the bottom receive from below
         tmp = np.append(tmp, comm.recv(source=rank - 1, tag=11))
 
     new_points = np.reshape(tmp, (int(len(tmp) / 2), 2))
-    return new_points, pointsToSend
+
+    return new_points
+
+
+def exchange_forces(exports, Ftot, inv, comm, rank, size):
+    """
+    Ensure consensus between domains of force vector before updating point locations
+    """
+    NSB = int(exports[0, 0])
+    NSA = int(exports[0, 1])
+
+    ToBelow = inv[exports[1 : NSB + 1, 2].astype(int)]
+    ToAbove = inv[exports[NSB + 1 : NSB + 1 + NSA, 2].astype(int)]
+
+    # for points sent to rank below, get their calculated force and trasmit it to the processor below.
+    # The processor below receives this information and updates it in the correct locations in the
+    # the local force vector ensuring the force is the same across ghost zones.
+    ForcesFromAbove = np.array([])
+    if rank != 0:
+        comm.send(Ftot[ToBelow, :], dest=rank - 1, tag=11)
+    if rank != size - 1:
+        ForcesFromAbove = comm.recv(source=rank + 1, tag=11)
+        ForcesFromAbove = np.reshape(ForcesFromAbove, (-1, 2))
+
+    ForcesFromBelow = np.array([])
+    if rank != size - 1:
+        comm.send(Ftot[ToAbove, :], dest=rank + 1, tag=11)
+    if rank != 0:
+        ForcesFromBelow = comm.recv(source=rank - 1, tag=11)
+        ForcesFromBelow = np.reshape(ForcesFromBelow, (-1, 2))
+
+    if ForcesFromAbove.size != 0 and ForcesFromBelow.size != 0:
+        NewForces = np.concatenate((ForcesFromAbove, ForcesFromBelow), axis=0)
+    elif ForcesFromAbove.size != 0:
+        NewForces = ForcesFromAbove
+    elif ForcesFromBelow.size != 0:
+        NewForces = ForcesFromBelow
+
+    nup = len(NewForces)
+
+    Ftot[inv[-nup::], :] = NewForces
+
+    return Ftot
