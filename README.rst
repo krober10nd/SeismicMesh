@@ -36,7 +36,16 @@ If you do not have administrative rights on your system, use the flag ``--user``
 
 2. ``pip install --user .``
 
-Notice the file ``Requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, make a directory called ``build`` in the root of the project (i.e., `SeismicMesh/``) and from within the build directory type ``ccmake ..`` and then specify the absolute paths of Boost, CGAL, MPFR, and GMP. Also, make sure that your compiler is not set to the default on the Linux system (i.e., an old version of GNU), which is typically much older than what is required for this program. 
+Notice the file ``Requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list ``cmake_args`` to include:
+
+
+``-DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER,``
+
+``-DBoost_INCLUDE_DIR=+/PATH/TO/BOOST/``
+
+``-DMPFR_LIBRARIES=+/PATH/TO/libmpfr.a``
+
+``-DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include,``
 
 Testing:
 ==============================================
