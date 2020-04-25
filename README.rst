@@ -24,11 +24,9 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation :
 ==============================================
 
-This software requires, CMake >=3.0, CGAL >= 5.0 and Boost. Once these packages are installed, you can run: 
+This software requires, a C++ compiler (GNU or Intel) with support for std++14, CMake >=3.0, CGAL >= 5.0 and Boost > 1.4.8. Once these packages are installed, you can run: 
 
 1.  ``git submodule update --init --recursive``
-
-2. ``pip install -r requirements.txt``
 
 2. ``pip install .``
 
@@ -36,9 +34,9 @@ If you do not have administrative rights on your system, use the flag ``--user``
 
 1. ``git submodule update --init --recursive`` 
 
-2. ``pip install --user -r requirements.txt``
+2. ``pip install --user .``
 
-3. ``pip install --user .``
+Notice the file ``Requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, make a directory called ``build`` in the root of the project (i.e., `SeismicMesh/``) and from within the build directory type ``ccmake ..`` and then specify the absolute paths of Boost, CGAL, MPFR, and GMP. Also, make sure that your compiler is not set to the default on the Linux system (i.e., an old version of GNU), which is typically much older than what is required for this program. 
 
 Testing:
 ==============================================
