@@ -35,9 +35,10 @@ def vertex_to_elements(points, faces):
     ve = np.vstack((ve, ext)).T
     ve = ve[ve[:, 0].argsort(), :]
 
-    vtoe_pointer = np.argwhere(np.diff(ve[:, 0]))
-    vtoe_pointer = np.append(vtoe_pointer, num_faces * 3)
+    idx = np.insert(np.diff(ve[:, 0]), 0, 0)
+    vtoe_pointer = np.argwhere(idx)
     vtoe_pointer = np.insert(vtoe_pointer, 0, 0)
+    vtoe_pointer = np.append(vtoe_pointer, num_faces * 3)
 
     vtoe = ve[:, 1]
 
