@@ -35,7 +35,7 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     // For each point in points
     for(std::size_t iv=0; iv < num_points; ++iv)
     {
-        int nneis = ptr[iv+1]-ptr[iv] + 1;
+        int nneis = ptr[iv+1]-ptr[iv];
         // For all connected elements to point iv
         for(std::size_t ic=0; ic < nneis; ++ic)
         {
@@ -71,7 +71,7 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     }
 
     std::vector<double> pointsToMigrate;
-    pointsToMigrate.resize(num_points*3,-1);
+    pointsToMigrate.resize(3+num_points*3,-1);
 
     double kount_below = 0.0;
     for(std::size_t iv=0; iv < num_points; ++iv)
@@ -122,7 +122,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
   std::vector<double> cpppoints(num_points*2);
   std::vector<int> cppfaces(num_faces*3);
   std::vector<int> cppvtoe(num_faces*3);
-  std::vector<int> cppptr(num_points+2);
+  std::vector<int> cppptr(num_points+1);
   std::vector<double> cppllc(4);
   std::vector<double> cppurc(4);
 
@@ -130,7 +130,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
   std::memcpy(cpppoints.data(),points.data(),num_points*2*sizeof(double));
   std::memcpy(cppfaces.data(),faces.data(),num_faces*3*sizeof(int));
   std::memcpy(cppvtoe.data(),vtoe.data(),num_faces*3*sizeof(int));
-  std::memcpy(cppptr.data(),ptr.data(),(num_points+2)*sizeof(int));
+  std::memcpy(cppptr.data(),ptr.data(),(num_points+1)*sizeof(int));
   std::memcpy(cppllc.data(), llc.data(),4*sizeof(double));
   std::memcpy(cppurc.data(), urc.data(),4*sizeof(double));
 
@@ -139,7 +139,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;
-  std::vector<ssize_t> shape     = {num_points, 3};
+  std::vector<ssize_t> shape     = {3 + num_points, 3};
   std::vector<ssize_t> strides   = {sodble*3, sodble};
 
   // return 2-D NumPy array

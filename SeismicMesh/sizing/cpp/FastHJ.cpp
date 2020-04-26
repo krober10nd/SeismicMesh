@@ -83,7 +83,7 @@ std::vector<double> limgrad(const std::vector<int> &dims, const double &elen,
 
     //------------------------- convergence
     if (aidx.empty()) {
-      std::cout << "INFO: Converged in " << iter << " iterations." << std::endl;
+      //std::cout << "INFO: Converged in " << iter << " iterations." << std::endl;
       break;
     }
 

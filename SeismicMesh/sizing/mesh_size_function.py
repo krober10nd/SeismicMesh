@@ -582,7 +582,7 @@ class MeshSizeFunction:
         isSegy = _fname.lower().endswith((".segy"))
         isBin = _fname.lower().endswith((".bin"))
         if isSegy:
-            print("Found SEG-Y file: " + _fname)
+            #print("Found SEG-Y file: " + _fname)
             with segyio.open(_fname, ignore_geometry=True) as f:
                 # determine dimensions of velocity model from trace length
                 self.nz = len(f.samples)
@@ -597,7 +597,7 @@ class MeshSizeFunction:
                     index += 1
                 _vp = np.flipud(_vp)
         elif isBin:
-            print("Found binary file: " + _fname)
+            #print("Found binary file: " + _fname)
             _nx = self.nx
             _ny = self.ny
             _nz = self.nz
