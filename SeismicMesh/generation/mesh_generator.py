@@ -187,7 +187,6 @@ class MeshGenerator:  # noqa: C901
 
             print("Commencing mesh generation with %d vertices." % N, flush=True)
 
-
         while True:
 
             # 3. Retriangulation by the Delaunay algorithm
