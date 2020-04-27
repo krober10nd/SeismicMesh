@@ -109,7 +109,7 @@ def exchange(comm, rank, size, exports):
     return new_points
 
 
-def exchange_forces(exports, Ftot, inv, comm, rank, size):
+def exchange_forces(points, faces, exports, Ftot, inv, comm, rank, size):
     """
     Ensure consensus between domains of force vector before updating point locations
     """
@@ -119,9 +119,6 @@ def exchange_forces(exports, Ftot, inv, comm, rank, size):
     ToBelow = inv[exports[1 : NSB + 1, 2].astype(int)]
     ToAbove = inv[exports[NSB + 1 : NSB + 1 + NSA, 2].astype(int)]
 
-    # for points sent to rank below, get their calculated force and trasmit it to the processor below.
-    # The processor below receives this information and updates it in the correct locations in the
-    # the local force vector ensuring the force is the same across ghost zones.
     ForcesFromAbove = np.array([])
     if rank != 0:
         comm.send(Ftot[ToBelow, :], dest=rank - 1, tag=11)
@@ -145,6 +142,7 @@ def exchange_forces(exports, Ftot, inv, comm, rank, size):
 
     nup = len(NewForces)
 
+    # indices of received points in the current array
     Ftot[inv[-nup::], :] = NewForces
 
     return Ftot

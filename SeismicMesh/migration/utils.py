@@ -18,6 +18,7 @@ def remove_external_faces(points, faces, extents):
     isOut = np.reshape(signed_distance > 0, (-1, 3))
     isFar = np.reshape(signed_distance > 1000, (-1, 3))
     faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
+    # remove faces with extremeley poor quality, these where not caught before.
 
     points_new, faces_new, jx = fixmesh(points, faces_new)
 

@@ -115,6 +115,7 @@ class MeshGenerator:  # noqa: C901
 
         if comm is not None:
             PARALLEL = True
+            LOCK_IT = int(max_iter) / 2
             rank = comm.Get_rank()
             size = comm.Get_size()
         else:
@@ -205,6 +206,7 @@ class MeshGenerator:  # noqa: C901
                         exports = migration.enqueue(
                             extents, p, tria.vertices, rank, size
                         )
+
                         recv = migration.exchange(comm, rank, size, exports)
                         tria.add_points(recv, restart=True)
                         p, t, inv = migration.utils.remove_external_faces(
@@ -276,7 +278,14 @@ class MeshGenerator:  # noqa: C901
             )
 
             if PARALLEL:
-                Ftot = migration.exchange_forces(exports, Ftot, inv, comm, rank, size)
+
+                if count > LOCK_IT:
+                    # ensures forces are identical across jump
+                    Ftot = migration.exchange_forces(
+                        p, t, exports, Ftot, inv, comm, rank, size
+                    )
+                else:
+                    Ftot[inv[-recv_ix:]] = 0.0
             else:
                 Ftot[:nfix] = 0  # Force = 0 at fixed points
 
