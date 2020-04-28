@@ -3,7 +3,7 @@ from mpi4py import MPI
 
 from .cpp import cpputils
 
-from . import utils
+from .. import geometry
 
 """
 Migration routines for moving points during parallel Delaunay
@@ -42,7 +42,7 @@ def aggregate(points, faces, comm, size, rank):
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces, ix = utils.fixmesh(gpoints, gfaces)
+        upoints, ufaces, ix = geometry.fixmesh(gpoints, gfaces)
         return upoints, ufaces
     else:
         return True, True
@@ -72,7 +72,7 @@ def enqueue(extents, points, faces, rank, size):
         le = np.insert(le, 0, [-999999, -999999])
         re = np.insert(re, 0, [-999998, -999998])
 
-    vtoe, ptr = utils.vertex_to_elements(points, faces)
+    vtoe, ptr = geometry.vertex_to_elements(points, faces)
     exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
 
     return exports

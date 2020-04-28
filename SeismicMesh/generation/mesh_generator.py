@@ -13,6 +13,7 @@ import time
 from . import utils as mutils
 from .. import decomp
 from .. import migration
+from .. import geometry
 
 from .cpp import c_cgal
 
@@ -205,10 +206,9 @@ class MeshGenerator:  # noqa: C901
                         exports = migration.enqueue(
                             extents, p, tria.vertices, rank, size
                         )
-
                         recv = migration.exchange(comm, rank, size, exports)
                         tria.add_points(recv, restart=True)
-                        p, t, inv = migration.utils.remove_external_faces(
+                        p, t, inv = geometry.remove_external_faces(
                             tria.points, tria.vertices, extents[rank]
                         )
                         N = p.shape[0]
