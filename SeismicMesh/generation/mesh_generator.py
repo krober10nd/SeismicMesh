@@ -276,16 +276,10 @@ class MeshGenerator:  # noqa: C901
                 shape=(N, dim),
             )
 
-            # if PARALLEL:
-
-            #    Ftot = migration.exchange_forces(
-            #        p, t, exports, Ftot, inv, comm, rank, size
-            #    )
-            # else:
             Ftot[:nfix] = 0  # Force = 0 at fixed points
 
             if PARALLEL:
-                if count < max_iter - 2:
+                if count < max_iter - 1:
                     p += deltat * Ftot
             else:
                 p += deltat * Ftot  # Update node positions
@@ -327,7 +321,7 @@ class MeshGenerator:  # noqa: C901
 
                 break
 
-            # 8b. Number of iterations reached.
+            # 8b. Number of iterations reached (only PARALLEL CAN EXIT THROUGH HERE)
             if count == max_iter - 1:
                 if rank == 0:
                     print(
@@ -340,6 +334,7 @@ class MeshGenerator:  # noqa: C901
 
                 break
 
+            # Delete new points
             if PARALLEL:
                 p = np.delete(p, inv[-recv_ix::], axis=0)
 
