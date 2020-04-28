@@ -115,7 +115,6 @@ class MeshGenerator:  # noqa: C901
 
         if comm is not None:
             PARALLEL = True
-            LOCK_IT = int(max_iter) / 2
             rank = comm.Get_rank()
             size = comm.Get_size()
         else:
@@ -277,19 +276,19 @@ class MeshGenerator:  # noqa: C901
                 shape=(N, dim),
             )
 
+            # if PARALLEL:
+
+            #    Ftot = migration.exchange_forces(
+            #        p, t, exports, Ftot, inv, comm, rank, size
+            #    )
+            # else:
+            Ftot[:nfix] = 0  # Force = 0 at fixed points
+
             if PARALLEL:
-
-                if count > LOCK_IT:
-                    # ensures forces are identical across jump
-                    Ftot = migration.exchange_forces(
-                        p, t, exports, Ftot, inv, comm, rank, size
-                    )
-                else:
-                    Ftot[inv[-recv_ix:]] = 0.0
+                if count < max_iter - 2:
+                    p += deltat * Ftot
             else:
-                Ftot[:nfix] = 0  # Force = 0 at fixed points
-
-            p += deltat * Ftot  # Update node positions
+                p += deltat * Ftot  # Update node positions
 
             # 7. Bring outside points back to the boundary
             d = fd(p)

@@ -5,6 +5,8 @@ from .cpp import cpputils
 
 from . import utils
 
+from .. import geometry
+
 """
 Migration routines for moving points during parallel Delaunay
 """
@@ -119,6 +121,8 @@ def exchange_forces(points, faces, exports, Ftot, inv, comm, rank, size):
     ToBelow = inv[exports[1 : NSB + 1, 2].astype(int)]
     ToAbove = inv[exports[NSB + 1 : NSB + 1 + NSA, 2].astype(int)]
 
+    isBou = geometry.are_boundary_vertices2(points, faces)
+
     ForcesFromAbove = np.array([])
     if rank != 0:
         comm.send(Ftot[ToBelow, :], dest=rank - 1, tag=11)
@@ -143,6 +147,12 @@ def exchange_forces(points, faces, exports, Ftot, inv, comm, rank, size):
     nup = len(NewForces)
 
     # indices of received points in the current array
-    Ftot[inv[-nup::], :] = NewForces
+    idx = inv[-nup::]
+    # status of vertices that were received
+    isBouLoc = isBou[idx, 0]
+    # find index within idx map that are boundary vertices locally
+    isBouIx = np.argwhere(isBouLoc == 1)
+    # if vertex is a boundary node locally: replace force
+    Ftot[idx[isBouIx[:, 0]], :] = NewForces[isBouIx[:, 0], 0:2]
 
     return Ftot
