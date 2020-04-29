@@ -34,11 +34,16 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=100, nscreen=1, seed=0, COMM=comm, axis=0)
+    points, facets = mshgen.build(max_iter=30, nscreen=1, seed=0, COMM=comm, axis=0)
 
-    # Write to disk (see meshio for more details)
     # Write as a vtk format for visualization in Paraview
     if rank == 0:
+        # Perform simple serial mesh improvement and checks
+        points, facets, minqual = SeismicMesh.geometry.linter(
+            points, facets, minqual=0.10
+        )
+        print("The minimum simplex quality is " + str(minqual), flush=True)
+
         meshio.write_points_cells(
             "BP2004.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
         )

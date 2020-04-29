@@ -3,9 +3,10 @@ import numpy as np
 from . import signed_distance_functions as sdf
 
 """
-Routines to perform geometrical operations on mesh
+Routines to perform geometrical operations on meshes
 
 """
+
 
 def remove_external_faces(points, faces, extents):
     """
@@ -22,15 +23,13 @@ def remove_external_faces(points, faces, extents):
     isOut = np.reshape(signed_distance > 0, (-1, 3))
     isFar = np.reshape(signed_distance > 1000, (-1, 3))
     faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
-
     points_new, faces_new, jx = fixmesh(points, faces_new)
-
     return points_new, faces_new, jx
 
 
 def vertex_to_elements(points, faces):
     """
-    determine which elements connected to vertices
+    Determine which elements connected to vertices
     """
     num_faces = len(faces)
 
@@ -93,9 +92,11 @@ def simpvol(p, t):
     else:
         raise NotImplementedError
 
+
 def fixmesh(p, t, ptol=2e-13):
-    """Remove duplicated/unused nodes and
-       ensure orientation of elements is CCW
+    """
+    Remove duplicated/unused nodes and
+    ensure orientation of elements is CCW
     Parameters
     ----------
     p : array, shape (np, dim)
@@ -113,10 +114,11 @@ def fixmesh(p, t, ptol=2e-13):
     t = np.sort(t, axis=1)
     t = unique_rows(t)
 
-    flip = simpvol(p,t)<0
+    flip = simpvol(p, t) < 0
     t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
+
 
 def simpqual(p, t):
     """Simplex quality.
@@ -160,7 +162,7 @@ def get_edges_of_mesh2(faces):
 
 def get_boundary_edges_of_mesh2(faces):
     """
-    Get the boundary edges of the mesh
+    Get the boundary edges of the mesh.
     """
     edges = get_edges_of_mesh2(faces)
     edges = np.sort(edges, axis=1)
@@ -171,7 +173,7 @@ def get_boundary_edges_of_mesh2(faces):
 
 def get_winded_boundary_edges_of_mesh2(faces):
     """
-    Order the boundary edges of the mesh in a winding order.
+    Order the boundary edges of the mesh in a winding fashion.
     """
     boundary_edges = get_boundary_edges_of_mesh2(faces)
     _bedges = boundary_edges.copy()
@@ -200,7 +202,7 @@ def get_winded_boundary_edges_of_mesh2(faces):
 
 def get_boundary_vertices2(faces):
     """
-    Get the unique boundary indices of the mesh
+    Get the indices of the mesh representing boundary vertices.
     """
     bedges = get_boundary_edges_of_mesh2(faces)
     indices = np.unique(bedges.reshape(-1))
@@ -212,6 +214,99 @@ def are_boundary_vertices2(points, faces):
     Return array of 1 or 0 if vertex is boundary vertex or not
     """
     ix = get_boundary_vertices2(faces)
-    result = np.zeros((len(points), 1), dtype=int)
-    result[ix] = 1
-    return result
+    areBoundaryVertices = np.zeros((len(points), 1), dtype=int)
+    areBoundaryVertices[ix] = 1
+    return areBoundaryVertices
+
+
+def get_boundary_elements2(points, faces):
+    """
+    Determine the boundary elements of the mesh.
+    """
+    boundary_vertices = get_boundary_vertices2(faces)
+    vtoe, ptr = vertex_to_elements(points, faces)
+    bele = np.array([], dtype=int)
+    for vertex in boundary_vertices:
+        for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
+            bele = np.append(bele, ele)
+    bele = np.unique(bele)
+    return bele
+
+
+def delete_boundary_elements(points, faces, minqual=0.10):
+    """
+    Delete boundary elements with poor quality (i.e., < minqual)
+    """
+    qual = simpqual(points, faces)
+    bele = get_boundary_elements2(points, faces)
+    qualBou = qual[bele]
+    delete = qualBou < minqual
+    print(
+        "Deleting " + str(np.sum(delete)) + " poor quality boundary elements...",
+        flush=True,
+    )
+    print(faces.shape, flush=True)
+    faces = np.delete(faces, delete == 1, axis=0)
+    print(faces.shape, flush=True)
+    points, faces, _ = fixmesh(points, faces)
+    return points, faces
+
+
+def collapse_edges(points, faces, minqual=0.10):
+    """
+    Collapse triangles that are exceedingly thin incrementally modifying the
+    connectivity.
+    Thin triangles are identified by containing highly actue angles.
+    The shortest edge of the identified triangle is collapsed to a point.
+    and the triangle table and point matrix are updated accordingly.
+    """
+    qual = simpqual(points, faces)
+    kount = 0
+    while np.any(qual < minqual):
+        ixx = np.argwhere(qual < minqual)
+        ix = ixx[0]
+        tmpf = faces[ix, :]
+        ee = np.array([tmpf[0, [0, 1]], tmpf[0, [0, 2]], tmpf[0, [1, 2]]])
+        evec = points[ee[:, 0], :] - points[ee[:, 1], :]
+        meid = np.argmin(np.sum(evec ** 2, axis=1))
+        PIDToRemove = ee[meid, 0]  # remove this id for ReplaceID
+        PIDToReplace = ee[meid, 1]  # replace remove ID with this id
+        #  Delete triangle that has the thin edge
+        ofaces = faces
+        faces = np.delete(faces, ix, axis=0)
+        faces = np.where(faces == PIDToRemove, PIDToReplace, faces)
+        isOk = (
+            ((faces[:, 0] - faces[:, 2]) == 0)
+            + ((faces[:, 1] - faces[:, 2]) == 0)
+            + ((faces[:, 0] - faces[:, 1]) == 0)
+        )
+        if np.any(isOk) > 0:
+            # cannot delete this element, make the quality "good".
+            faces = ofaces
+            qual[ix] = 1
+            continue
+        # recompute qualities for elements with collapsed edges.
+        qual = np.delete(qual, ix)
+        # recompute qualities that were affected by collapse
+        sel = np.argwhere(
+            (faces[:, 0] == PIDToReplace)
+            | (faces[:, 1] == PIDToReplace)
+            | (faces[:, 2] == PIDToReplace)
+        )
+        qual[sel] = simpqual(points, faces[sel, :])
+        kount += 1
+    points, faces, _ = fixmesh(points, faces)
+    print("There were " + str(kount) + " thin triangles collapsed...", flush=True)
+    return points, faces
+
+
+def linter(points, faces, minqual=0.10):
+    """
+    Remove and check mesh for defects running a sequence of mesh improvement
+    strategies.
+    """
+    points, faces = delete_boundary_elements(points, faces, minqual=minqual)
+    points, faces = collapse_edges(points, faces, minqual=minqual)
+    qual = simpqual(points, faces)
+    minimum_quality = np.amin(qual)
+    return points, faces, minimum_quality

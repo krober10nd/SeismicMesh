@@ -204,12 +204,12 @@ class MeshGenerator:  # noqa: C901
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
                         exports = migration.enqueue(
-                            extents, p, tria.vertices, rank, size
+                            extents, p, tria.simplices, rank, size
                         )
                         recv = migration.exchange(comm, rank, size, exports)
                         tria.add_points(recv, restart=True)
                         p, t, inv = geometry.remove_external_faces(
-                            tria.points, tria.vertices, extents[rank]
+                            tria.points, tria.simplices, extents[rank]
                         )
                         N = p.shape[0]
                         recv_ix = len(recv)  # we do not allow new points to move
