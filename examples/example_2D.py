@@ -13,7 +13,7 @@ def example_2D():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        domain_ext=500,
+        domain_ext=1e3,
         dt=0.001,
         grade=0.15,
         freq=5,
@@ -52,7 +52,15 @@ def example_2D():
 
     # Write to gmsh22 format with boundary conditions
     meshio.write_points_cells(
-        "BP2004.msh",
+        "BP2004_w1KM_EXT.msh",
+        points / 1000,
+        cells=[("triangle", facets)],
+        file_format="gmsh22",
+        binary=False,
+    )
+    quit()
+    meshio.write_points_cells(
+        "BP2004_w1KM_EXT.msh",
         points / 1000,
         cells=[
             ("triangle", facets),

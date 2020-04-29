@@ -1,10 +1,10 @@
+import scipy.sparse as spsparse
 import numpy as np
 
 from . import signed_distance_functions as sdf
 
 """
 Routines to perform geometrical operations on meshes
-
 """
 
 
@@ -300,13 +300,93 @@ def collapse_edges(points, faces, minqual=0.10):
     return points, faces
 
 
+def sparse(I, J, S, shape=None, dtype=None):
+    """
+    Similar to MATLAB's SPARSE(I, J, S, ...)
+
+    Usage
+    -----
+    >>> shape = (m, n)
+    >>> A = sparse(I, J, S, shape, dtype)
+    """
+
+    # Advanced usage: allow J and S to be scalars.
+    if np.isscalar(J):
+        x = J
+        J = np.empty(I.shape, dtype=int)
+        J.fill(x)
+    if np.isscalar(S):
+        x = S
+        S = np.empty(I.shape)
+        S.fill(x)
+
+    # Turn these into 1-d arrays for processing.
+    S = S.flat
+    II = I.flat
+    J = J.flat
+    return spsparse.coo_matrix((S, (II, J)), shape, dtype)
+
+
+def laplacian2(points, faces, max_iter=20, tol=0.01):
+    """
+    Move points to the average position of their connected neighbors
+    to hopefully improve triangular element quality
+    """
+    eps = np.finfo(float).eps
+
+    n = len(points)
+
+    S = sparse(
+        faces[:, [0, 0, 1, 1, 2, 2]], faces[:, [1, 2, 0, 2, 0, 1]], 1, shape=(n, n)
+    )
+    bnd = get_boundary_vertices2(faces)
+    edge = get_edges_of_mesh2(faces)
+    W = np.sum(S, 1)
+    if np.any(W == 0):
+        print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
+        return points, faces
+
+    L = np.sqrt(
+        np.sum(np.square(points[edge[:, 0], :] - points[edge[:, 1], :]), axis=1)
+    )
+    L[L < eps] = eps
+    L = L[:, None]
+    for it in range(max_iter):
+        pnew = np.divide(S * np.matrix(points), np.hstack((W, W)))
+        pnew[bnd, :] = points[bnd, :]
+        points = pnew
+        Lnew = np.sqrt(
+            np.sum(np.square(points[edge[:, 0], :] - points[edge[:, 1], :]), axis=1)
+        )
+        Lnew[Lnew < eps] = eps
+        move = np.amax(np.divide((Lnew - L), Lnew))
+        if move < tol:
+            print(
+                "Movement tolerance reached after " + str(it) + " iterations..exiting",
+                flush=True,
+            )
+            break
+        L = Lnew
+    points = np.array(points)
+    return points, faces
+
+
 def linter(points, faces, minqual=0.10):
     """
     Remove and check mesh for defects running a sequence of mesh improvement
     strategies.
     """
+    # smooth mesh
+    points, faces = laplacian2(points, faces, max_iter=30, tol=0.01)
+    # delete low quality boundary elements
     points, faces = delete_boundary_elements(points, faces, minqual=minqual)
-    points, faces = collapse_edges(points, faces, minqual=minqual)
+    # check for non-manifold boundaries
+    bedges = get_boundary_edges_of_mesh2(faces)
+    if bedges.size != points[np.unique(bedges), :].size:
+        print("mesh has a non-manifold boundary...")
+    # collapse thin interior triangles
+    # points, faces = collapse_edges(points, faces, minqual=minqual)
+    # calculate final minimum simplex quality
     qual = simpqual(points, faces)
     minimum_quality = np.amin(qual)
     return points, faces, minimum_quality

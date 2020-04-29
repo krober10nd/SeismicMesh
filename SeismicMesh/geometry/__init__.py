@@ -1,6 +1,7 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
     linter,
+    laplacian2,
     delete_boundary_elements,
     collapse_edges,
     vertex_to_elements,
@@ -21,6 +22,7 @@ __all__ = [
     "dblock",
     "drectangle",
     "linter",
+    "laplacian2",
     "delete_boundary_elements",
     "collapse_edges",
     "vertex_to_elements",
