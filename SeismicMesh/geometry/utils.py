@@ -93,7 +93,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13):
+def fixmesh(p, t, ptol=2e-13, deldup=False):
     """
     Remove duplicated/unused nodes and
     ensure orientation of elements is CCW
@@ -105,15 +105,25 @@ def fixmesh(p, t, ptol=2e-13):
     -----
     p, t = fixmesh(p, t, ptol)
     """
+    # duplicate vertices
     snap = (p.max(0) - p.min(0)).max() * ptol
     _, ix, jx = unique_rows(np.round(p / snap) * snap, True, True)
 
     p = p[ix]
     t = jx[t]
 
+    # duplicate elements
     t = np.sort(t, axis=1)
     t = unique_rows(t)
 
+    # delete unused vertices
+    if deldup:
+        pix,_,jx = np.unique(t,return_index=True, return_inverse=True)
+        t=np.reshape(jx,(t.shape))
+        p=p[pix,:]
+        pix=ix[pix]
+
+    # element orientation
     flip = simpvol(p, t) < 0
     t[flip, :2] = t[flip, 1::-1]
 
@@ -293,7 +303,7 @@ def collapse_edges(points, faces, minqual=0.10):
             | (faces[:, 1] == PIDToReplace)
             | (faces[:, 2] == PIDToReplace)
         )
-        qual[sel] = simpqual(points, faces[sel, :])
+        qual = simpqual(points, faces)
         kount += 1
     points, faces, _ = fixmesh(points, faces)
     print("There were " + str(kount) + " thin triangles collapsed...", flush=True)
@@ -334,6 +344,9 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     """
     eps = np.finfo(float).eps
 
+    # unused vertices
+    #points = points[np.unique(faces.reshape(-1)),:]
+
     n = len(points)
 
     S = sparse(
@@ -344,6 +357,7 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
+        print(np.argwhere(W==0),flush=True)
         return points, faces
 
     L = np.sqrt(
@@ -385,7 +399,7 @@ def linter(points, faces, minqual=0.10):
     if bedges.size != points[np.unique(bedges), :].size:
         print("mesh has a non-manifold boundary...")
     # collapse thin interior triangles
-    # points, faces = collapse_edges(points, faces, minqual=minqual)
+    points, faces = collapse_edges(points, faces, minqual=minqual)
     # calculate final minimum simplex quality
     qual = simpqual(points, faces)
     minimum_quality = np.amin(qual)
