@@ -52,7 +52,7 @@ Testing:
 To run tests, install ``pytest``i.e., ``pip install pytest
 
 1. ``cd tests/``
-2. ``pytest .``
+2. ``mpiexec -n 2 pytest .``
 
 Gallery:
 ==============================================
