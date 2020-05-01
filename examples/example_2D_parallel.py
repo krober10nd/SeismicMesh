@@ -19,7 +19,15 @@ def example_2D_parallel():
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, freq=5, wl=5, hmax=1e3, hmin=50.0, grade=0.05
+        bbox=bbox,
+        model=fname,
+        freq=5,
+        wl=5,
+        hmax=1e3,
+        hmin=50.0,
+        grade=0.05,
+        domain_ext=1000,
+        padstyle="linear_ramp",
     )
 
     # Build mesh size function
@@ -36,24 +44,24 @@ def example_2D_parallel():
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0)
 
-    # Write as a vtk format for visualization in Paraview
     if rank == 0:
 
         # Perform simple serial mesh improvement and checks
-        points, facets = SeismicMesh.geometry.laplacian2(
+        points, facets = SeismicMesh.geometry.linter(
             points, facets, max_iter=30, tol=0.0001
         )
+        # Write as a vtk format for visualization in Paraview
         meshio.write_points_cells(
             "BP2004.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
         )
         ## Write to gmsh22 format (quite slow)
-        # meshio.write_points_cells(
-        #    "BP2004.msh",
-        #    points / 1000,
-        #    [("triangle", facets)],
-        #    file_format="gmsh22",
-        #    binary=False,
-        # )
+        meshio.write_points_cells(
+            "BP2004.msh",
+            points / 1000,
+            [("triangle", facets)],
+            file_format="gmsh22",
+            binary=False,
+        )
 
 
 if __name__ == "__main__":

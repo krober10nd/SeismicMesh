@@ -279,9 +279,9 @@ class MeshGenerator:  # noqa: C901
             Ftot[:nfix] = 0  # Force = 0 at fixed points
 
             if PARALLEL:
-                if count%2 == 0 or count == max_iter - 1:
+                if count % 2 == 0 or count == max_iter - 1:
                     bidx = geometry.get_boundary_vertices2(t)
-                    Ftot[bidx]=0.0
+                    Ftot[bidx] = 0.0
                 if count < max_iter - 1:
                     p += deltat * Ftot
             else:

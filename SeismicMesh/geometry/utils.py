@@ -21,6 +21,7 @@ def remove_external_faces(points, faces, extents):
         y2=extents[3],
     )
     isOut = np.reshape(signed_distance > 0, (-1, 3))
+    # todo: this needs to be more objective
     isFar = np.reshape(signed_distance > 1000, (-1, 3))
     faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
     points_new, faces_new, jx = fixmesh(points, faces_new)
@@ -93,7 +94,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, deldup=False):
+def fixmesh(p, t, ptol=2e-13, delunused=False):
     """
     Remove duplicated/unused nodes and
     ensure orientation of elements is CCW
@@ -117,13 +118,13 @@ def fixmesh(p, t, ptol=2e-13, deldup=False):
     t = unique_rows(t)
 
     # delete unused vertices
-    if deldup:
-        pix,_,jx = np.unique(t,return_index=True, return_inverse=True)
-        t=np.reshape(jx,(t.shape))
-        p=p[pix,:]
-        pix=ix[pix]
+    if delunused:
+        pix, _, jx = np.unique(t, return_index=True, return_inverse=True)
+        t = np.reshape(jx, (t.shape))
+        p = p[pix, :]
+        pix = ix[pix]
 
-    # element orientation
+    # element orientation is CCW
     flip = simpvol(p, t) < 0
     t[flip, :2] = t[flip, 1::-1]
 
@@ -161,12 +162,13 @@ def simpqual(p, t):
 
 def get_edges_of_mesh2(faces):
     """
-    Get the edges of 2D triangular mesh in no order.
+    Get the edges of 2D triangular mesh in no order
+    and are repeated.
     """
+    num_faces = len(faces)
     faces = np.array(faces)
-    edges = faces[:, [0, 1]]
-    edges = np.append(edges, faces[:, [0, 2]], axis=0)
-    edges = np.append(edges, faces[:, [1, 2]], axis=0)
+    edges = faces[:, [[0, 1], [0, 2], [1, 2]]]
+    edges = edges.reshape((num_faces * 3, 2))
     return edges
 
 
@@ -255,58 +257,8 @@ def delete_boundary_elements(points, faces, minqual=0.10):
         "Deleting " + str(np.sum(delete)) + " poor quality boundary elements...",
         flush=True,
     )
-    print(faces.shape, flush=True)
     faces = np.delete(faces, delete == 1, axis=0)
-    print(faces.shape, flush=True)
     points, faces, _ = fixmesh(points, faces)
-    return points, faces
-
-
-def collapse_edges(points, faces, minqual=0.10):
-    """
-    Collapse triangles that are exceedingly thin incrementally modifying the
-    connectivity.
-    Thin triangles are identified by containing highly actue angles.
-    The shortest edge of the identified triangle is collapsed to a point.
-    and the triangle table and point matrix are updated accordingly.
-    """
-    qual = simpqual(points, faces)
-    kount = 0
-    while np.any(qual < minqual):
-        ixx = np.argwhere(qual < minqual)
-        ix = ixx[0]
-        tmpf = faces[ix, :]
-        ee = np.array([tmpf[0, [0, 1]], tmpf[0, [0, 2]], tmpf[0, [1, 2]]])
-        evec = points[ee[:, 0], :] - points[ee[:, 1], :]
-        meid = np.argmin(np.sum(evec ** 2, axis=1))
-        PIDToRemove = ee[meid, 0]  # remove this id for ReplaceID
-        PIDToReplace = ee[meid, 1]  # replace remove ID with this id
-        #  Delete triangle that has the thin edge
-        ofaces = faces
-        faces = np.delete(faces, ix, axis=0)
-        faces = np.where(faces == PIDToRemove, PIDToReplace, faces)
-        isOk = (
-            ((faces[:, 0] - faces[:, 2]) == 0)
-            + ((faces[:, 1] - faces[:, 2]) == 0)
-            + ((faces[:, 0] - faces[:, 1]) == 0)
-        )
-        if np.any(isOk) > 0:
-            # cannot delete this element, make the quality "good".
-            faces = ofaces
-            qual[ix] = 1
-            continue
-        # recompute qualities for elements with collapsed edges.
-        qual = np.delete(qual, ix)
-        # recompute qualities that were affected by collapse
-        sel = np.argwhere(
-            (faces[:, 0] == PIDToReplace)
-            | (faces[:, 1] == PIDToReplace)
-            | (faces[:, 2] == PIDToReplace)
-        )
-        qual = simpqual(points, faces)
-        kount += 1
-    points, faces, _ = fixmesh(points, faces)
-    print("There were " + str(kount) + " thin triangles collapsed...", flush=True)
     return points, faces
 
 
@@ -344,9 +296,6 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     """
     eps = np.finfo(float).eps
 
-    # unused vertices
-    #points = points[np.unique(faces.reshape(-1)),:]
-
     n = len(points)
 
     S = sparse(
@@ -357,7 +306,7 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
-        print(np.argwhere(W==0),flush=True)
+        print(np.argwhere(W == 0), flush=True)
         return points, faces
 
     L = np.sqrt(
@@ -385,22 +334,41 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     return points, faces
 
 
-def linter(points, faces, minqual=0.10):
+def isManifold(points, faces):
+    """
+    Determine if mesh is manifold.
+    1. A boundary edge should have one element
+    2. A non-boundary edge should have two elements
+    3. The number of boundary vertices == number of boundary edges
+    """
+    bedges = get_boundary_edges_of_mesh2(faces)
+    if bedges.size != points[np.unique(bedges), :].size:
+        print("Mesh has a non-manifold boundary...", flush=True)
+        return False
+    return True
+
+
+def linter(points, faces, minqual=0.10, max_iter=30, tol=0.01):
     """
     Remove and check mesh for defects running a sequence of mesh improvement
     strategies.
     """
     # smooth mesh
-    points, faces = laplacian2(points, faces, max_iter=30, tol=0.01)
+    points, faces = laplacian2(points, faces, max_iter=max_iter, tol=tol)
     # delete low quality boundary elements
     points, faces = delete_boundary_elements(points, faces, minqual=minqual)
     # check for non-manifold boundaries
-    bedges = get_boundary_edges_of_mesh2(faces)
-    if bedges.size != points[np.unique(bedges), :].size:
-        print("mesh has a non-manifold boundary...")
-    # collapse thin interior triangles
-    points, faces = collapse_edges(points, faces, minqual=minqual)
+    _ = isManifold(points, faces)
     # calculate final minimum simplex quality
     qual = simpqual(points, faces)
     minimum_quality = np.amin(qual)
-    return points, faces, minimum_quality
+    print(
+        "There are "
+        + str(len(points))
+        + " and "
+        + str(len(faces))
+        + " elements in the mesh",
+        flush=True,
+    )
+    print("The minimum element quality is " + str(minimum_quality), flush=True)
+    return points, faces
