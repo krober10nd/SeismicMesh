@@ -257,7 +257,8 @@ def delete_boundary_elements(points, faces, minqual=0.10):
         "Deleting " + str(np.sum(delete)) + " poor quality boundary elements...",
         flush=True,
     )
-    faces = np.delete(faces, delete == 1, axis=0)
+    delete = np.argwhere(delete == 1)
+    faces = np.delete(faces, delete, axis=0)
     points, faces, _ = fixmesh(points, faces)
     return points, faces
 

@@ -146,17 +146,35 @@ class MeshGenerator:  # noqa: C901
             pfix = np.empty((0, dim))
             nfix = 0
 
-        if points is None:
-            # 1. Create initial distribution in bounding box (equilateral triangles)
-            p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
-            p = p.reshape(dim, -1).T
+        if _points is None:
+            if PARALLEL:
+                p = None
+                if rank == 0:
+                    # 1. Create initial distribution in bounding box (equilateral triangles)
+                    p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
+                    p = p.reshape(dim, -1).T
 
-            # 2. Remove points outside the region, apply the rejection method
-            p = p[fd(p) < geps]  # Keep only d<0 points
-            r0 = fh(p)
-            p = np.vstack(
-                (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
-            )
+                    # 2. Remove points outside the region, apply the rejection method
+                    p = p[fd(p) < geps]  # Keep only d<0 points
+                    r0 = fh(p)
+                    p = np.vstack(
+                        (
+                            pfix,
+                            p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],
+                        )
+                    )
+                p = comm.bcast(p, root=0)
+            else:
+                # 1. Create initial distribution in bounding box (equilateral triangles)
+                p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
+                p = p.reshape(dim, -1).T
+
+                # 2. Remove points outside the region, apply the rejection method
+                p = p[fd(p) < geps]  # Keep only d<0 points
+                r0 = fh(p)
+                p = np.vstack(
+                    (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
+                )
         else:
             # user has supplied initial points
             p = _points
