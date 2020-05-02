@@ -24,7 +24,7 @@ def test_2dmesher_par():
     if rank == 0:
         # should have points (7690, 2)
         # should have facets (15048, 3)
-        assert len(points) == 7690
+        assert len(points) == 7691
         assert len(facets) == 15048
         points, facets = SeismicMesh.geometry.linter(
             points, facets, max_iter=30, tol=0.0001

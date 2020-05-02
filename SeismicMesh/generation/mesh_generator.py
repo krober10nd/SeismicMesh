@@ -176,8 +176,14 @@ class MeshGenerator:  # noqa: C901
                     (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
                 )
         else:
-            # user has supplied initial points
-            p = _points
+            if PARALLEL:
+                p = None
+                if rank == 0:
+                    # user has supplied initial points
+                    p = _points
+                p = comm.bcast(p, root=0)
+            else:
+                p = _points
 
         # we add jitter to avoid co-spherical points
         if PARALLEL:
