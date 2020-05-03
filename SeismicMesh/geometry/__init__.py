@@ -1,5 +1,6 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
+    doAnyFacesOverlap,
     linter,
     laplacian2,
     delete_boundary_elements,
@@ -20,6 +21,7 @@ from .utils import (
 __all__ = [
     "dblock",
     "drectangle",
+    "doAnyFacesOverlap",
     "linter",
     "laplacian2",
     "delete_boundary_elements",

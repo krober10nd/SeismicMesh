@@ -23,6 +23,9 @@ def remove_external_faces(points, faces, extents):
     isOut = np.reshape(signed_distance > 0, (-1, 3))
     # todo: this needs to be more objective
     isFar = np.reshape(signed_distance > 1000, (-1, 3))
+    # keep faces that don't have all their nodes "out" of the local domain
+    # and
+    # faces that have all their nodes in the "close" to interior of the local block
     faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
     points_new, faces_new, jx = fixmesh(points, faces_new)
     return points_new, faces_new, jx
@@ -349,16 +352,98 @@ def isManifold(points, faces):
     return True
 
 
-def linter(points, faces, minqual=0.10, max_iter=30, tol=0.01):
+def ptInFace2(point, face):
     """
-    Remove and check mesh for defects running a sequence of mesh improvement
-    strategies.
+    Does the 2D point lie in the face with vertices (x1,y1,x2,y2,x3,y3)
+    2D face?
     """
-    # smooth mesh
-    points, faces = laplacian2(points, faces, max_iter=max_iter, tol=tol)
-    # delete low quality boundary elements
+    (x, y) = point
+    (x1, y1, x2, y2, x3, y3) = face
+    a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / (
+        (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+    )
+    b = ((y3 - y1) * (x - x3) + (x1 - x3) * (y - y3)) / (
+        (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
+    )
+    c = 1 - a - b
+    # pt lies in T if and only if 0 <= a <= 1 and 0 <= b <= 1 and 0 <= c <= 1
+    return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
+
+
+def getCentroids2(points, faces):
+    """
+    Calculate the centroids of all the faces
+    """
+    return points[faces].sum(1) / (3)
+
+
+def doAnyFacesOverlap(points, faces):
+    """
+    Check if any faces connected to boundary of the mesh overlap
+    with another face connected to the boundary ignoring self-intersections.
+    Checks only the 1-ring around each boundary element for potential intersections
+    """
+    vtoe, ptr = vertex_to_elements(points, faces)
+    # all elements that have a boundary vertex
+    beles = get_boundary_elements2(points, faces)
+    # centroids of these elements beles
+    bcents = getCentroids2(points, faces[beles, :])
+    # store intersection pairs
+    intersections = []
+    # for all boundary triangles
+    for ie, cent in enumerate(bcents):
+        # collect all elements neis around boundary element ie
+        neis = np.array([], dtype=int)
+        for vertex in faces[beles[ie], :]:
+            for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
+                neis = np.append(neis, ele)
+        # for all neighboring elements  to boundary element ie
+        for iee, bele in enumerate(neis):
+            # centroid ie should be in face ie by definition!
+            if beles[ie] == bele:
+                continue
+            # does a centroid live inside another face?
+            x1, x2, x3 = points[faces[bele, :], 0]
+            y1, y2, y3 = points[faces[bele, :], 1]
+            if ptInFace2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
+                # centroid ie is inside face iee
+                print(
+                    "Alert: face "
+                    + str(beles[ie])
+                    + " intersects with face "
+                    + str(bele)
+                    + ". These will be adjusted.",
+                    flush=True,
+                )
+                # record all intersection pairs
+                intersections.append((beles[ie], bele))
+    return intersections
+
+
+def linter(points, faces, minqual=0.10):
+    """
+    Remove and check mesh for defects
+    """
+    qual = simpqual(points, faces)
+    # determine if there's degenerate overlapping elements
+    intersections = doAnyFacesOverlap(points, faces)
+    # delete the lower quality in the pair
+    delete = []
+    for intersect in intersections:
+        ix = [i for i in intersect]
+        sel = np.argmin(qual[ix])
+        delete = np.append(delete, intersect[sel])
+    print(delete, flush=True)
+    np.savetxt("points.txt", points, delimiter=",")
+    np.savetxt("faces.txt", faces, delimiter=",")
+    quit()
+    print("Deleting " + str(len(delete)) + " overlapped faces")
+    faces = np.delete(faces, delete, axis=0)
+    # clean up
+    points, faces, _ = fixmesh(points, faces, delunused=True)
+    # delete remaining low quality boundary elements
     points, faces = delete_boundary_elements(points, faces, minqual=minqual)
-    # check for non-manifold boundaries
+    # check for non-manifold boundaries and alert
     _ = isManifold(points, faces)
     # calculate final minimum simplex quality
     qual = simpqual(points, faces)
