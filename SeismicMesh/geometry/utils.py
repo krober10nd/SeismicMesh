@@ -4,7 +4,7 @@ import numpy as np
 from . import signed_distance_functions as sdf
 
 """
-Routines to perform geometrical operations on meshes
+Routines to perform geometrical/topological operations on meshes
 """
 
 
@@ -20,12 +20,12 @@ def remove_external_faces(points, faces, extents):
         y1=extents[1],
         y2=extents[3],
     )
-    isOut = np.reshape(signed_distance > 0, (-1, 3))
-    # todo: this needs to be more objective
-    isFar = np.reshape(signed_distance > 1000, (-1, 3))
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
+    isOut = np.reshape(signed_distance > 0, (-1, 3))
+    # todo: this needs to be more objective
+    isFar = np.reshape(signed_distance > 1000, (-1, 3))
     faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
     points_new, faces_new, jx = fixmesh(points, faces_new)
     return points_new, faces_new, jx
@@ -434,17 +434,10 @@ def linter(points, faces, minqual=0.10):
         sel = np.argmin(qual[ix])
         delete = np.append(delete, intersect[sel])
     delete = np.unique(delete)
-    print("Deleting " + str(len(delete)) + " overlapped faces")
+    print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
     faces = np.delete(faces, delete, axis=0)
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
-
-    # DEBUG
-    # np.savetxt("points.txt", points, delimiter=",")
-    # np.savetxt("faces.txt", faces, delimiter=",")
-    # quit()
-    # END DEBUG
-
     # delete remaining low quality boundary elements
     points, faces = delete_boundary_elements(points, faces, minqual=minqual)
     # check for non-manifold boundaries and alert

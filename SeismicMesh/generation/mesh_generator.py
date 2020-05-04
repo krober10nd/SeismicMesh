@@ -93,7 +93,7 @@ class MeshGenerator:  # noqa: C901
         ----------
         pfix: points that you wish you constrain (default==None)
         max_iter: maximum number of iterations (default==20)
-        nscreen: output to screen nscreen (default==5)
+        nscreen: output to screen every nscreen iterations (default==5)
         plot: Visualize incremental meshes (default==False)
         seed: Random seed to ensure results are deterministic (default==None)
         COMM: MPI4py communicator (default==None)
@@ -397,7 +397,7 @@ class MeshGenerator:  # noqa: C901
     ):
         """
         Thin wrapper for build to simplify user interaction when building in parallel
-        See build for inputs
+        See MeshGenerator.build for inputs
         """
         p, t = self.build(
             pfix=pfix,
@@ -410,6 +410,7 @@ class MeshGenerator:  # noqa: C901
             points=None,
             perform_checks=False,
         )
+        # alternate the decomposed axis
         if axis == 1:
             axis == 0
         elif axis == 0:
