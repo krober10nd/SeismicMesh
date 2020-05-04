@@ -433,16 +433,13 @@ def linter(points, faces, minqual=0.10):
         ix = [i for i in intersect]
         sel = np.argmin(qual[ix])
         delete = np.append(delete, intersect[sel])
-    print(delete, flush=True)
-    np.savetxt("points.txt", points, delimiter=",")
-    np.savetxt("faces.txt", faces, delimiter=",")
-    quit()
+    delete = np.unique(delete)
     print("Deleting " + str(len(delete)) + " overlapped faces")
     faces = np.delete(faces, delete, axis=0)
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
     # delete remaining low quality boundary elements
-    points, faces = delete_boundary_elements(points, faces, minqual=minqual)
+    # points, faces = delete_boundary_elements(points, faces, minqual=minqual)
     # check for non-manifold boundaries and alert
     _ = isManifold(points, faces)
     # calculate final minimum simplex quality
@@ -451,7 +448,7 @@ def linter(points, faces, minqual=0.10):
     print(
         "There are "
         + str(len(points))
-        + " and "
+        + " vertices and "
         + str(len(faces))
         + " elements in the mesh",
         flush=True,

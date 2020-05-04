@@ -345,10 +345,13 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
+                    if rank == 0:
+                        # perform essential checks
+                        p, t = geometry.linter(p, t)
 
                 break
 
-            # 8b. Number of iterations reached (only PARALLEL CAN EXIT THROUGH HERE)
+            # 8b. Number of iterations reached
             if count == max_iter - 1:
                 if rank == 0:
                     print(
@@ -358,7 +361,9 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
-
+                    if rank == 0:
+                        # perform essential checks
+                        p, t = geometry.linter(p, t)
                 break
 
             # Delete new points
