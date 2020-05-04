@@ -261,8 +261,8 @@ def delete_boundary_elements(points, faces, minqual=0.10):
         flush=True,
     )
     delete = np.argwhere(delete == 1)
-    faces = np.delete(faces, delete, axis=0)
-    points, faces, _ = fixmesh(points, faces)
+    faces = np.delete(faces, bele[delete], axis=0)
+    points, faces, _ = fixmesh(points, faces, delunused=True)
     return points, faces
 
 
@@ -438,8 +438,15 @@ def linter(points, faces, minqual=0.10):
     faces = np.delete(faces, delete, axis=0)
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
+
+    # DEBUG
+    # np.savetxt("points.txt", points, delimiter=",")
+    # np.savetxt("faces.txt", faces, delimiter=",")
+    # quit()
+    # END DEBUG
+
     # delete remaining low quality boundary elements
-    # points, faces = delete_boundary_elements(points, faces, minqual=minqual)
+    points, faces = delete_boundary_elements(points, faces, minqual=minqual)
     # check for non-manifold boundaries and alert
     _ = isManifold(points, faces)
     # calculate final minimum simplex quality
