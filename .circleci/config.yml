@@ -26,8 +26,7 @@ jobs:
       - run: pip install . --user
       - run: pip3 install -U pytest pytest-cov --user
       - run:
-          command: mpirun -np 2 pytest --cov
-          working_directory: tests/
+          command: cd tests && mpirun -np 2 pytest --cov .
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
