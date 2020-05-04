@@ -42,10 +42,8 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=100, nscreen=1, seed=0, COMM=comm, axis=0)
-    # switch decomp to other axis to improve quality near seams
-    points, facets = mshgen.build(
-        points=points, max_iter=10, nscreen=1, seed=0, COMM=comm, axis=1
+    points, facets = mshgen.parallel_build(
+        max_iter=100, nscreen=1, seed=0, COMM=comm, axis=1
     )
 
     if rank == 0:

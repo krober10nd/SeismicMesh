@@ -79,6 +79,7 @@ class MeshGenerator:  # noqa: C901
         COMM=None,
         axis=0,
         points=None,
+        perform_checks=False,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -98,6 +99,7 @@ class MeshGenerator:  # noqa: C901
         COMM: MPI4py communicator (default==None)
         axis: axis to decomp the domain wrt (default==0)
         points: initial point distribution (default==None)
+        perform_checks: run serial linting (slow)
 
         Returns
         -------
@@ -113,6 +115,7 @@ class MeshGenerator:  # noqa: C901
         comm = COMM
         _axis = axis
         _points = points
+        _perform_checks = perform_checks
 
         if comm is not None:
             PARALLEL = True
@@ -345,7 +348,8 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
-                    if rank == 0:
+
+                    if rank == 0 and _perform_checks:
                         # perform essential checks
                         p, t = geometry.linter(p, t)
 
@@ -361,7 +365,7 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
-                    if rank == 0:
+                    if rank == 0 and _perform_checks:
                         # perform essential checks
                         p, t = geometry.linter(p, t)
                 break
@@ -377,4 +381,50 @@ class MeshGenerator:  # noqa: C901
             end = time.time()
             if rank == 0:
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+        return p, t
+
+    def parallel_build(  # noqa: ignore=C901
+        self,
+        pfix=None,
+        max_iter=10,
+        nscreen=5,
+        plot=False,
+        seed=None,
+        COMM=None,
+        axis=0,
+        points=None,
+        perform_checks=False,
+    ):
+        """
+        Thin wrapper for build to simplify user interaction when building in parallel
+        See build for inputs
+        """
+        p, t = self.build(
+            pfix=pfix,
+            max_iter=max_iter - 10,
+            nscreen=nscreen,
+            plot=plot,
+            seed=seed,
+            COMM=COMM,
+            axis=axis,
+            points=None,
+            perform_checks=False,
+        )
+        if axis == 1:
+            axis == 0
+        elif axis == 0:
+            axis = 1
+        # finalize mesh (switch decomposition axis and perform serial linting)
+        # improves mesh quality near decomp boundaries
+        p, t = self.build(
+            pfix=pfix,
+            max_iter=10,
+            nscreen=nscreen,
+            plot=plot,
+            seed=seed,
+            COMM=COMM,
+            axis=axis,
+            points=p,
+            perform_checks=True,
+        )
         return p, t
