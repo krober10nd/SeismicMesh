@@ -1,15 +1,16 @@
 import numpy as np
 
 
-def blocker(points, rank, nblocks, axis=0):
+def blocker(points, rank, nblocks, axis=0):  # noqa: C901
     """ Decompose point coordinates into # of blocks
         Blocks are orientated parallel to axis and have two neighbors
         above and below/left and right to the block depending on axis.
     """
     num_points, dim = points.shape
 
-    assert dim > 2 or dim < 3, "dimensions of points are wrong"
-    assert num_points // nblocks > 1, "too few points for chosen nblocks"
+    assert dim > 2 or dim < 3, "dimensions of points are incorrect"
+    assert num_points // nblocks > 1, "too few points for nblocks"
+    assert axis > 0 or axis < 2, " axis is incorrect"
 
     x_sorted = np.argsort(points[:, 0])
     y_sorted = np.argsort(points[:, 1])
@@ -21,60 +22,101 @@ def blocker(points, rank, nblocks, axis=0):
     step = num_points // nblocks
     blocks = []
     if dim == 2:
+        # decompose x-axis
         if axis == 0:
             ixx, iyy = np.meshgrid(
                 np.arange(num_points, step=step), np.arange(num_points, step=num_points)
             )
-            if (num_points % nblocks) != 0:
-                ixx[0][-1] = num_points
+            k = 0
+            ma = np.amax(ixx.shape)
             for idx, idy in zip(ixx.ravel(), iyy.ravel()):
+                # if last entry and odd number of points, add remainder to last block
+                # and skip last grid
+                if k == (ma - 2):
+                    step += num_points % nblocks
+                if k == (ma - 1) and (num_points % nblocks) != 0:
+                    continue
+                k += 1
                 common = set(x_sorted[idx : idx + step]).intersection(y_sorted)
                 blocks.append(points.take(list(common), axis=0))
+        # decompose y-axis
         elif axis == 1:
             ixx, iyy = np.meshgrid(
                 np.arange(num_points, step=num_points), np.arange(num_points, step=step)
             )
-            if (num_points % nblocks) != 0:
-                iyy[-1][0] = num_points
+            k = 0
+            ma = np.amax(ixx.shape)
             for idx, idy in zip(ixx.ravel(), iyy.ravel()):
+                # if last entry and odd number of points, add remainder to last block
+                # and skip last grid
+                if k == (ma - 2):
+                    step += num_points % nblocks
+                if k == (ma - 1) and (num_points % nblocks) != 0:
+                    continue
+                k += 1
+
                 common = set(x_sorted).intersection(y_sorted[idy : idy + step])
                 blocks.append(points.take(list(common), axis=0))
     elif dim == 3:
+        # decompose x axis
         if axis == 0:
             ixx, iyy, izz = np.meshgrid(
                 np.arange(num_points, step=step),
                 np.arange(num_points, step=num_points),
                 np.arange(num_points, step=num_points),
             )
-            if (num_points % nblocks) != 0:
-                ixx[-1][0][0] = num_points
+            ma = np.amax(ixx.shape)
+            k = 0
             for idx, idy, idz in zip(ixx.ravel(), iyy.ravel(), izz.ravel()):
+                # if last entry and odd number of points, add remainder to last block
+                # and skip last grid
+                if k == (ma - 2):
+                    step += num_points % nblocks
+                if k == (ma - 1) and (num_points % nblocks) != 0:
+                    continue
+                k += 1
                 common = set(
                     set(x_sorted[idx : idx + step]).intersection(y_sorted)
                 ).intersection(z_sorted)
                 blocks.append(points.take(list(common), axis=0))
+        # decompose y axis
         elif axis == 1:
             ixx, iyy, izz = np.meshgrid(
                 np.arange(num_points, step=num_points),
                 np.arange(num_points, step=step),
                 np.arange(num_points, step=num_points),
             )
-            if (num_points % nblocks) != 0:
-                iyy[0][-1][0] = num_points
+            ma = np.amax(ixx.shape)
+            k = 0
             for idx, idy, idz in zip(ixx.ravel(), iyy.ravel(), izz.ravel()):
+                # if last entry and odd number of points, add remainder to last block
+                # and skip last grid
+                if k == (ma - 2):
+                    step += num_points % nblocks
+                if k == (ma - 1) and (num_points % nblocks) != 0:
+                    continue
+                k += 1
                 common = set(
                     set(x_sorted).intersection(y_sorted[idx : idx + step])
                 ).intersection(z_sorted)
                 blocks.append(points.take(list(common), axis=0))
+        # decompose z axis
         elif axis == 2:
             ixx, iyy, izz = np.meshgrid(
                 np.arange(num_points, step=num_points),
                 np.arange(num_points, step=num_points),
                 np.arange(num_points, step=step),
             )
-            if (num_points % nblocks) != 0:
-                iyy[0][0][-1] = num_points
+            ma = np.amax(ixx.shape)
+            k = 0
             for idx, idy, idz in zip(ixx.ravel(), iyy.ravel(), izz.ravel()):
+                # if last entry and odd number of points, add remainder to last block
+                # and skip last grid
+                if k == (ma - 2):
+                    step += num_points % nblocks
+                if k == (ma - 1) and (num_points % nblocks) != 0:
+                    continue
+                k += 1
                 common = set(set(x_sorted).intersection(y_sorted)).intersection(
                     z_sorted[idx : idx + step]
                 )
