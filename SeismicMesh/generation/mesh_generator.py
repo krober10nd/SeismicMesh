@@ -193,6 +193,15 @@ class MeshGenerator:  # noqa: C901
             jitter = np.random.uniform(size=(len(p), dim), low=-h0 / 10, high=h0 / 10)
             p += jitter
 
+            # enforce bounds
+            for d in range(dim):
+                p[:, d] = [
+                    bbox[d, 0] if coord < bbox[d, 0] else coord for coord in p[:, d]
+                ]
+                p[:, d] = [
+                    bbox[d, 1] if coord > bbox[d, 1] else coord for coord in p[:, d]
+                ]
+
         # call domain decomposition
         if PARALLEL:
 
@@ -229,17 +238,38 @@ class MeshGenerator:  # noqa: C901
                 pold = p.copy()  # Save current positions
                 if _method == "qhull":
                     if PARALLEL:
-                        tria = spspatial.Delaunay(p, incremental=True)
-                        exports = migration.enqueue(
-                            extents, p, tria.simplices, rank, size
-                        )
-                        recv = migration.exchange(comm, rank, size, exports)
-                        tria.add_points(recv, restart=True)
-                        p, t, inv = geometry.remove_external_faces(
-                            tria.points, tria.simplices, extents[rank]
-                        )
-                        N = p.shape[0]
-                        recv_ix = len(recv)  # we do not allow new points to move
+                        if dim == 2:
+                            tria = spspatial.Delaunay(p, incremental=True)
+                            exports = migration.enqueue(
+                                extents, p, tria.simplices, rank, size
+                            )
+                            recv = migration.exchange(comm, rank, size, exports)
+                            tria.add_points(recv, restart=True)
+                            p, t, inv = geometry.remove_external_faces(
+                                tria.points, tria.simplices, extents[rank]
+                            )
+                            N = p.shape[0]
+                            recv_ix = len(recv)  # we do not allow new points to move
+                        elif dim == 3:
+                            tria = spspatial.Delaunay(p, incremental=True)
+                            exports = migration.enqueue3(
+                                extents, p, tria.simplices, rank, size
+                            )
+                            ## DEBUG
+                            # import meshio
+
+                            # if rank == 1:
+                            #    # Write to disk (see meshio for more details)
+                            #    meshio.write_points_cells(
+                            #        "rank0.vtk", p, [("tetra", tria.simplices)],
+                            #    )
+
+                            #    np.savetxt("points.txt", p, delimiter=",")
+                            #    np.savetxt("cells.txt", tria.simplices, delimiter=",")
+                            #    np.savetxt("exports.txt", exports, delimiter=",")
+                            ## END DEBUG
+                            quit()
+
                     else:
                         t = spspatial.Delaunay(p).vertices  # List of triangles
                 elif _method == "cgal":

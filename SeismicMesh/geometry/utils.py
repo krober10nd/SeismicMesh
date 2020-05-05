@@ -31,13 +31,13 @@ def remove_external_faces(points, faces, extents):
     return points_new, faces_new, jx
 
 
-def vertex_to_elements(points, faces):
+def vertex_to_elements(points, faces, dim=2):
     """
     Determine which elements connected to vertices
     """
     num_faces = len(faces)
 
-    ext = np.tile(np.arange(0, num_faces), (3, 1)).reshape(-1, order="F")
+    ext = np.tile(np.arange(0, num_faces), (dim + 1, 1)).reshape(-1, order="F")
     ve = np.reshape(faces, (-1,))
     ve = np.vstack((ve, ext)).T
     ve = ve[ve[:, 0].argsort(), :]
@@ -45,7 +45,7 @@ def vertex_to_elements(points, faces):
     idx = np.insert(np.diff(ve[:, 0]), 0, 0)
     vtoe_pointer = np.argwhere(idx)
     vtoe_pointer = np.insert(vtoe_pointer, 0, 0)
-    vtoe_pointer = np.append(vtoe_pointer, num_faces * 3)
+    vtoe_pointer = np.append(vtoe_pointer, num_faces * (dim + 1))
 
     vtoe = ve[:, 1]
 
