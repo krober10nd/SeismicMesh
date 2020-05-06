@@ -256,17 +256,17 @@ class MeshGenerator:  # noqa: C901
                                 extents, p, tria.simplices, rank, size
                             )
                             ## DEBUG
-                            # import meshio
+                            import meshio
 
-                            # if rank == 1:
-                            #    # Write to disk (see meshio for more details)
-                            #    meshio.write_points_cells(
-                            #        "rank0.vtk", p, [("tetra", tria.simplices)],
-                            #    )
+                            # Write to disk (see meshio for more details)
+                            meshio.write_points_cells(
+                                "rank" + str(rank) + ".vtk",
+                                p,
+                                [("tetra", tria.simplices)],
+                            )
 
-                            #    np.savetxt("points.txt", p, delimiter=",")
-                            #    np.savetxt("cells.txt", tria.simplices, delimiter=",")
-                            #    np.savetxt("exports.txt", exports, delimiter=",")
+                            np.savetxt("points" + str(rank) + ".txt", p, delimiter=",")
+                            np.savetxt("exports.txt", exports, delimiter=",")
                             ## END DEBUG
                             quit()
 

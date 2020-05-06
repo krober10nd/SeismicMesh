@@ -55,7 +55,7 @@ def blocker(points, rank, nblocks, axis=0):  # noqa: C901
                     continue
                 k += 1
 
-                common = set(x_sorted).intersection(y_sorted[idy : idy + step])
+                common = set(y_sorted[idy : idy + step]).intersection(x_sorted)
                 blocks.append(points.take(list(common), axis=0))
     elif dim == 3:
         # decompose x axis
@@ -97,7 +97,7 @@ def blocker(points, rank, nblocks, axis=0):  # noqa: C901
                     continue
                 k += 1
                 common = set(
-                    set(x_sorted).intersection(y_sorted[idx : idx + step])
+                    set(y_sorted[idy : idy + step]).intersection(x_sorted)
                 ).intersection(z_sorted)
                 blocks.append(points.take(list(common), axis=0))
         # decompose z axis
@@ -117,9 +117,9 @@ def blocker(points, rank, nblocks, axis=0):  # noqa: C901
                 if k == (ma - 1) and (num_points % nblocks) != 0:
                     continue
                 k += 1
-                common = set(set(x_sorted).intersection(y_sorted)).intersection(
-                    z_sorted[idx : idx + step]
-                )
+                common = set(
+                    set(z_sorted[idz : idz + step]).intersection(x_sorted)
+                ).intersection(y_sorted)
                 blocks.append(points.take(list(common), axis=0))
 
     # delete zero length partitions
