@@ -154,7 +154,9 @@ class MeshGenerator:  # noqa: C901
                 p = None
                 if rank == 0:
                     # 1. Create initial distribution in bounding box (equilateral triangles)
-                    p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
+                    p = np.mgrid[
+                        tuple(slice(min, max + h0, h0) for min, max in bbox)
+                    ].astype(float)
                     p = p.reshape(dim, -1).T
 
                     # 2. Remove points outside the region, apply the rejection method
@@ -169,9 +171,10 @@ class MeshGenerator:  # noqa: C901
                 p = comm.bcast(p, root=0)
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
-                p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)]
+                p = np.mgrid[
+                    tuple(slice(min, max + h0, h0) for min, max in bbox)
+                ].astype(float)
                 p = p.reshape(dim, -1).T
-
                 # 2. Remove points outside the region, apply the rejection method
                 p = p[fd(p) < geps]  # Keep only d<0 points
                 r0 = fh(p)
@@ -179,32 +182,17 @@ class MeshGenerator:  # noqa: C901
                     (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
                 )
         else:
+            # user has supplied initial points
             if PARALLEL:
                 p = None
                 if rank == 0:
-                    # user has supplied initial points
                     p = _points
                 p = comm.bcast(p, root=0)
             else:
                 p = _points
 
-        # we add jitter to avoid co-spherical points
-        if PARALLEL:
-            jitter = np.random.uniform(size=(len(p), dim), low=-h0 / 10, high=h0 / 10)
-            p += jitter
-
-            # enforce bounds
-            for d in range(dim):
-                p[:, d] = [
-                    bbox[d, 0] if coord < bbox[d, 0] else coord for coord in p[:, d]
-                ]
-                p[:, d] = [
-                    bbox[d, 1] if coord > bbox[d, 1] else coord for coord in p[:, d]
-                ]
-
         # call domain decomposition
         if PARALLEL:
-
             p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, axis=_axis)
 
             N = p.shape[0]
@@ -252,8 +240,12 @@ class MeshGenerator:  # noqa: C901
                             recv_ix = len(recv)  # we do not allow new points to move
                         elif dim == 3:
                             tria = spspatial.Delaunay(p, incremental=True)
-                            exports = migration.enqueue3(
-                                extents, p, tria.simplices, rank, size
+                            # DEBUG
+                            np.savetxt("points" + str(rank) + ".txt", p, delimiter=",")
+                            np.savetxt(
+                                "faces" + str(rank) + ".txt",
+                                tria.simplices + 1,
+                                delimiter=",",
                             )
                             ## DEBUG
                             import meshio
@@ -264,8 +256,10 @@ class MeshGenerator:  # noqa: C901
                                 p,
                                 [("tetra", tria.simplices)],
                             )
-
-                            np.savetxt("points" + str(rank) + ".txt", p, delimiter=",")
+                            # DEBUG
+                            exports = migration.enqueue3(
+                                extents, p, tria.simplices, rank, size
+                            )
                             np.savetxt("exports.txt", exports, delimiter=",")
                             ## END DEBUG
                             quit()

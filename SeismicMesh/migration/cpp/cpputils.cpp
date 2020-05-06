@@ -183,16 +183,23 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
             int nm2 = faces[nei_ele*4+1];
             int nm3 = faces[nei_ele*4+2];
             int nm4 = faces[nei_ele*4+3];
+
             // Coordinates of each vertex of element
             Point3 pnm1 = Point3(points[nm1*3], points[nm1*3+1], points[nm1*3+2]);
             Point3 pnm2 = Point3(points[nm2*3], points[nm2*3+1], points[nm2*3+2]);
             Point3 pnm3 = Point3(points[nm3*3], points[nm3*3+1], points[nm3*3+2]);
             Point3 pnm4 = Point3(points[nm4*3], points[nm4*3+1], points[nm4*3+2]);
-            // TODO: in 3D must do two collinear tests
-            bool isCollinear = CGAL::collinear (pnm1, pnm2, pnm3);
-            // if this happens we cannot test accurately
-            if(isCollinear){
-                //std::cout<<"point is collinear" << std::endl;
+            //
+            //     0     1     2
+            //     0     1     3
+            //     0     2     3
+            //     1     2     3
+            bool isCollinear0 = CGAL::collinear (pnm1, pnm2, pnm3);
+            bool isCollinear1 = CGAL::collinear (pnm1, pnm2, pnm4);
+            bool isCollinear2 = CGAL::collinear (pnm1, pnm3, pnm4);
+            bool isCollinear3 = CGAL::collinear (pnm2, pnm3, pnm4);
+
+            if(isCollinear0 | isCollinear1 | isCollinear2 | isCollinear3){
                 continue;
             }
             // Calculate circumball of element
