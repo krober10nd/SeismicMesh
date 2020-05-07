@@ -207,6 +207,12 @@ class MeshGenerator:  # noqa: C901
                 if _method == "qhull":
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
+                        meshio.write_points_cells(
+                            "foo3D" + str(count) + str(rank) + ".vtk",
+                            p,
+                            [("tetra", tria.simplices)],
+                        )
+                        comm.barrier()
                         exports = migration.enqueue(
                             extents, p, tria.simplices, rank, size, dim=dim
                         )
@@ -217,11 +223,6 @@ class MeshGenerator:  # noqa: C901
                         )
                         N = p.shape[0]
                         recv_ix = len(recv)  # we do not allow new points to move
-
-                        meshio.write_points_cells(
-                            "foo3D" + str(rank) + ".vtk", p, [("tetra", t)],
-                        )
-
                     else:
                         # SERIAL
                         t = spspatial.Delaunay(p).vertices  # List of triangles
@@ -299,7 +300,7 @@ class MeshGenerator:  # noqa: C901
 
             if PARALLEL:
                 if count % 2 == 0 or count == max_iter - 1:
-                    bidx = geometry.get_boundary_vertices(t)
+                    bidx = geometry.get_boundary_vertices(t, dim=dim)
                     Ftot[bidx] = 0.0
                 if count < max_iter - 1:
                     p += deltat * Ftot

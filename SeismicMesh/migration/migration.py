@@ -90,23 +90,24 @@ def exchange(comm, rank, size, exports, dim=2):
     NSB = int(exports[0, 0])
     NSA = int(exports[0, 1])
 
+    print(NSB, NSA, rank, flush=True)
     tmp = []
     # send points below
     if NSB != 0:
         comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
-    # send points above
+    # recv  points from above
     if rank != size - 1:
         tmp = np.append(tmp, comm.recv(source=rank + 1, tag=11))
 
-    # receive points from above
+    # send points above
     if NSA != 0:
-        # all put the top receive from above
+        # all put the topmost rank receive from above
         comm.send(exports[NSB + 1 : NSB + 1 + NSA, 0:dim], dest=rank + 1, tag=11)
 
     # receive points from below
     if rank != 0:
-        # all but the bottom receive from below
+        # all but the bottommost rank receive from below
         tmp = np.append(tmp, comm.recv(source=rank - 1, tag=11))
 
     new_points = np.reshape(tmp, (int(len(tmp) / dim), dim))

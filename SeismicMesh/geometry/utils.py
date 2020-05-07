@@ -106,6 +106,11 @@ def simpvol(p, t):
         d01 = p[t[:, 1]] - p[t[:, 0]]
         d02 = p[t[:, 2]] - p[t[:, 0]]
         return (d01[:, 0] * d02[:, 1] - d01[:, 1] * d02[:, 0]) / 2
+    elif dim == 3:
+        d01 = p[t[:, 1], :] - p[t[:, 0], :]
+        d02 = p[t[:, 2], :] - p[t[:, 0], :]
+        d03 = p[t[:, 3], :] - p[t[:, 0], :]
+        return np.einsum("ij,ij->i", np.cross(d01, d02), d03) / 6
     else:
         raise NotImplementedError
 
@@ -141,9 +146,8 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
         pix = ix[pix]
 
     # element orientation is CCW
-    if dim == 2:
-        flip = simpvol(p, t) < 0
-        t[flip, :2] = t[flip, 1::-1]
+    flip = simpvol(p, t) < 0
+    t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
@@ -177,23 +181,27 @@ def simpqual(p, t):
     return 2 * r / R
 
 
-def get_edges_of_mesh(faces):
+def get_edges_of_mesh(faces, dim=2):
     """
-    Get the edges of 2D triangular mesh in no order
+    Get the edges of mesh in no order
     and are repeated.
     """
     num_faces = len(faces)
     faces = np.array(faces)
-    edges = faces[:, [[0, 1], [0, 2], [1, 2]]]
-    edges = edges.reshape((num_faces * 3, 2))
+    if dim == 2:
+        edges = faces[:, [[0, 1], [0, 2], [1, 2]]]
+        edges = edges.reshape((num_faces * 3, 2))
+    elif dim == 3:
+        edges = faces[:, [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]]
+        edges = edges.reshape((num_faces * 6, 2))
     return edges
 
 
-def get_boundary_edges_of_mesh(faces):
+def get_boundary_edges_of_mesh(faces, dim=2):
     """
     Get the boundary edges of the mesh.
     """
-    edges = get_edges_of_mesh(faces)
+    edges = get_edges_of_mesh(faces, dim=dim)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
@@ -203,6 +211,7 @@ def get_boundary_edges_of_mesh(faces):
 def get_winded_boundary_edges_of_mesh2(faces):
     """
     Order the boundary edges of the mesh in a winding fashion.
+    only works in 2D
     """
     boundary_edges = get_boundary_edges_of_mesh(faces)
     _bedges = boundary_edges.copy()
@@ -229,32 +238,32 @@ def get_winded_boundary_edges_of_mesh2(faces):
     return boundary_edges
 
 
-def get_boundary_vertices(faces):
+def get_boundary_vertices(faces, dim=2):
     """
     Get the indices of the mesh representing boundary vertices.
     works in 2d and 3d
     """
-    bedges = get_boundary_edges_of_mesh(faces)
+    bedges = get_boundary_edges_of_mesh(faces, dim=dim)
     indices = np.unique(bedges.reshape(-1))
     return indices
 
 
-def are_boundary_vertices(points, faces):
+def are_boundary_vertices(points, faces, dim=2):
     """
     Return array of 1 or 0 if vertex is boundary vertex or not
     """
-    ix = get_boundary_vertices(faces)
+    ix = get_boundary_vertices(faces, dim=dim)
     areBoundaryVertices = np.zeros((len(points), 1), dtype=int)
     areBoundaryVertices[ix] = 1
     return areBoundaryVertices
 
 
-def get_boundary_elements(points, faces):
+def get_boundary_elements(points, faces, dim=2):
     """
     Determine the boundary elements of the mesh.
     """
-    boundary_vertices = get_boundary_vertices(faces)
-    vtoe, ptr = vertex_to_elements(points, faces)
+    boundary_vertices = get_boundary_vertices(faces, dim=dim)
+    vtoe, ptr = vertex_to_elements(points, faces, dim=dim)
     bele = np.array([], dtype=int)
     for vertex in boundary_vertices:
         for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
@@ -263,12 +272,12 @@ def get_boundary_elements(points, faces):
     return bele
 
 
-def delete_boundary_elements(points, faces, minqual=0.10):
+def delete_boundary_elements(points, faces, minqual=0.10, dim=2):
     """
     Delete boundary elements with poor quality (i.e., < minqual)
     """
     qual = simpqual(points, faces)
-    bele = get_boundary_elements(points, faces)
+    bele = get_boundary_elements(points, faces, dim=dim)
     qualBou = qual[bele]
     delete = qualBou < minqual
     print(
@@ -277,7 +286,7 @@ def delete_boundary_elements(points, faces, minqual=0.10):
     )
     delete = np.argwhere(delete == 1)
     faces = np.delete(faces, bele[delete], axis=0)
-    points, faces, _ = fixmesh(points, faces, delunused=True)
+    points, faces, _ = fixmesh(points, faces, delunused=True, dim=dim)
     return points, faces
 
 
@@ -353,14 +362,14 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     return points, faces
 
 
-def isManifold(points, faces):
+def isManifold(points, faces, dim=2):
     """
     Determine if mesh is manifold.
     1. A boundary edge should have one element
     2. A non-boundary edge should have two elements
     3. The number of boundary vertices == number of boundary edges
     """
-    bedges = get_boundary_edges_of_mesh(faces)
+    bedges = get_boundary_edges_of_mesh(faces, dim=dim)
     if bedges.size != points[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False
@@ -400,7 +409,7 @@ def doAnyFacesOverlap(points, faces):
     """
     vtoe, ptr = vertex_to_elements(points, faces)
     # all elements that have a boundary vertex
-    beles = get_boundary_elements2(points, faces)
+    beles = get_boundary_elements(points, faces)
     # centroids of these elements beles
     bcents = getCentroids2(points, faces[beles, :])
     # store intersection pairs

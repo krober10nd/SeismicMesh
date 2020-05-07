@@ -132,7 +132,7 @@ def blocker(points, rank, nblocks, axis=0):  # noqa: C901
         # min x min y max x max y
         if dim == 2:
             block_extents.append([tmpm[0], tmpm[1], tmpp[0], tmpp[1]])
-        # min x min y max x max y min z max z
+        # min x min y min z max x max y max z
         elif dim == 3:
             block_extents.append([tmpm[0], tmpm[1], tmpm[2], tmpp[0], tmpp[1], tmpp[2]])
 
