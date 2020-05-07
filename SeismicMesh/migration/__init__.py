@@ -1,4 +1,4 @@
-from .migration import enqueue, enqueue3, aggregate, exchange
+from .migration import enqueue, aggregate, exchange
 
 
-__all__ = ["enqueue", "enqueue3", "aggregate", "exchange"]
+__all__ = ["enqueue", "aggregate", "exchange"]

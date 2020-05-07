@@ -48,68 +48,41 @@ def aggregate(points, faces, comm, size, rank):
         return True, True
 
 
-def enqueue(extents, points, faces, rank, size):
+def enqueue(extents, points, faces, rank, size, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent
     """
     # determine llc (lower left corner) and urc (upper right corner)
     if rank == 0:
-        le = [extents[rank + 1][0:2]]
-        re = [extents[rank + 1][2:4]]
+        le = [extents[rank + 1][0:dim]]
+        re = [extents[rank + 1][dim : dim * 2]]
     elif rank == size - 1:
-        le = [extents[rank - 1][0:2]]
-        re = [extents[rank - 1][2:4]]
+        le = [extents[rank - 1][0:dim]]
+        re = [extents[rank - 1][dim : dim * 2]]
     else:
-        le = [extents[rank - 1][0:2], extents[rank + 1][0:2]]
-        re = [extents[rank - 1][2:4], extents[rank + 1][2:4]]
+        le = [extents[rank - 1][0:dim], extents[rank + 1][0:dim]]
+        re = [extents[rank - 1][dim : dim * 2], extents[rank + 1][dim : dim * 2]]
 
     # add dummy box above if rank==0 or under if rank=size-1
     if rank == size - 1:
-        le = np.append(le, [-999999, -999999])
-        re = np.append(re, [-999998, -999998])
+        le = np.append(le, [-999999] * dim)
+        re = np.append(re, [-999998] * dim)
 
     if rank == 0:
-        le = np.insert(le, 0, [-999999, -999999])
-        re = np.insert(re, 0, [-999998, -999998])
+        le = np.insert(le, 0, [-999999] * dim)
+        re = np.insert(re, 0, [-999998] * dim)
 
-    vtoe, ptr = geometry.vertex_to_elements(points, faces)
-    exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
+    vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
+
+    if dim == 2:
+        exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
+    elif dim == 3:
+        exports = cpputils.where_to3(points, faces, vtoe, ptr, le, re, rank)
 
     return exports
 
 
-def enqueue3(extents, points, faces, rank, size):
-    """
-    Return ranks that cell sites (vertices of triangulation) need to be sent
-    """
-
-    # determine llc (lower left corner) and urc (upper right corner)
-    if rank == 0:
-        le = [extents[rank + 1][0:3]]
-        re = [extents[rank + 1][3:6]]
-    elif rank == size - 1:
-        le = [extents[rank - 1][0:3]]
-        re = [extents[rank - 1][3:6]]
-    else:
-        le = [extents[rank - 1][0:3], extents[rank + 1][0:3]]
-        re = [extents[rank - 1][3:6], extents[rank + 1][3:6]]
-
-    # add dummy box above if rank==0 or under if rank=size-1
-    if rank == size - 1:
-        le = np.append(le, [-999999, -999999, -999999])
-        re = np.append(re, [-999998, -999998, -999998])
-
-    if rank == 0:
-        le = np.insert(le, 0, [-999999, -999999, -999999])
-        re = np.insert(re, 0, [-999998, -999998, -999998])
-
-    vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=3)
-    exports = cpputils.where_to3(points, faces, vtoe, ptr, le, re, rank)
-
-    return exports
-
-
-def exchange(comm, rank, size, exports):
+def exchange(comm, rank, size, exports, dim=2):
     """
     Exchange data via MPI using P2P comm
     """
@@ -119,7 +92,7 @@ def exchange(comm, rank, size, exports):
     tmp = []
     # send points below
     if NSB != 0:
-        comm.send(exports[1 : NSB + 1, 0:2], dest=rank - 1, tag=11)
+        comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
     # send points above
     if rank != size - 1:
@@ -128,13 +101,13 @@ def exchange(comm, rank, size, exports):
     # receive points from above
     if NSA != 0:
         # all put the top receive from above
-        comm.send(exports[NSB + 1 : NSB + 1 + NSA, 0:2], dest=rank + 1, tag=11)
+        comm.send(exports[NSB + 1 : NSB + 1 + NSA, 0:dim], dest=rank + 1, tag=11)
 
     # receive points from below
     if rank != 0:
         # all but the bottom receive from below
         tmp = np.append(tmp, comm.recv(source=rank - 1, tag=11))
 
-    new_points = np.reshape(tmp, (int(len(tmp) / 2), 2))
+    new_points = np.reshape(tmp, (int(len(tmp) / dim), dim))
 
     return new_points

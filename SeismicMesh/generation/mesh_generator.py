@@ -150,39 +150,24 @@ class MeshGenerator:  # noqa: C901
             nfix = 0
 
         if _points is None:
-            if PARALLEL:
-                p = None
-                if rank == 0:
-                    # 1. Create initial distribution in bounding box (equilateral triangles)
-                    p = np.mgrid[
-                        tuple(slice(min, max + h0, h0) for min, max in bbox)
-                    ].astype(float)
-                    p = p.reshape(dim, -1).T
-
-                    # 2. Remove points outside the region, apply the rejection method
-                    p = p[fd(p) < geps]  # Keep only d<0 points
-                    r0 = fh(p)
-                    p = np.vstack(
-                        (
-                            pfix,
-                            p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],
-                        )
-                    )
-                p = comm.bcast(p, root=0)
-            else:
+            p = None
+            if rank == 0:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
                     tuple(slice(min, max + h0, h0) for min, max in bbox)
                 ].astype(float)
                 p = p.reshape(dim, -1).T
+
                 # 2. Remove points outside the region, apply the rejection method
                 p = p[fd(p) < geps]  # Keep only d<0 points
                 r0 = fh(p)
                 p = np.vstack(
-                    (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim])
+                    (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
                 )
+            if PARALLEL:
+                p = comm.bcast(p, root=0)
         else:
-            # user has supplied initial points
+            # If the user has supplied initial points
             if PARALLEL:
                 p = None
                 if rank == 0:
@@ -191,27 +176,19 @@ class MeshGenerator:  # noqa: C901
             else:
                 p = _points
 
-        # call domain decomposition
+        # 2b. Call domain decomposition
         if PARALLEL:
             p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, axis=_axis)
 
-            N = p.shape[0]
+        N = p.shape[0]
 
-            count = 0
-            pold = float("inf")  # For first iteration
+        count = 0
+        pold = float("inf")  # For first iteration
 
-            print(
-                "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
-                flush=True,
-            )
-        else:
-            N = p.shape[0]
-
-            count = 0
-            pold = float("inf")  # For first iteration
-
-            print("Commencing mesh generation with %d vertices." % N, flush=True)
-
+        print(
+            "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
+            flush=True,
+        )
         while True:
 
             # 3. Retriangulation by the Delaunay algorithm
@@ -224,55 +201,40 @@ class MeshGenerator:  # noqa: C901
                 # Make sure all points are unique
                 p = np.unique(p, axis=0)
                 pold = p.copy()  # Save current positions
+
+                # Using the SciPy qhull wrapper for Delaunay triangulation.
                 if _method == "qhull":
                     if PARALLEL:
-                        if dim == 2:
-                            tria = spspatial.Delaunay(p, incremental=True)
-                            exports = migration.enqueue(
-                                extents, p, tria.simplices, rank, size
-                            )
-                            recv = migration.exchange(comm, rank, size, exports)
-                            tria.add_points(recv, restart=True)
-                            p, t, inv = geometry.remove_external_faces(
-                                tria.points, tria.simplices, extents[rank]
-                            )
-                            N = p.shape[0]
-                            recv_ix = len(recv)  # we do not allow new points to move
-                        elif dim == 3:
-                            tria = spspatial.Delaunay(p, incremental=True)
-                            # DEBUG
-                            np.savetxt("points" + str(rank) + ".txt", p, delimiter=",")
-                            np.savetxt(
-                                "faces" + str(rank) + ".txt",
-                                tria.simplices + 1,
-                                delimiter=",",
-                            )
-                            ## DEBUG
-                            import meshio
-
-                            # Write to disk (see meshio for more details)
-                            meshio.write_points_cells(
-                                "rank" + str(rank) + ".vtk",
-                                p,
-                                [("tetra", tria.simplices)],
-                            )
-                            # DEBUG
-                            exports = migration.enqueue3(
-                                extents, p, tria.simplices, rank, size
-                            )
-                            np.savetxt("exports.txt", exports, delimiter=",")
-                            ## END DEBUG
-                            quit()
-
+                        tria = spspatial.Delaunay(p, incremental=True)
+                        exports = migration.enqueue(
+                            extents, p, tria.simplices, rank, size, dim=dim
+                        )
+                        recv = migration.exchange(comm, rank, size, exports, dim=dim)
+                        tria.add_points(recv, restart=True)
+                        p, t, inv = geometry.remove_external_faces(
+                            tria.points, tria.simplices, extents[rank], dim=dim
+                        )
+                        N = p.shape[0]
+                        recv_ix = len(recv)  # we do not allow new points to move
                     else:
+                        # SERIAL
                         t = spspatial.Delaunay(p).vertices  # List of triangles
+                # Using CGAL's Delaunay triangulation algorithm
                 elif _method == "cgal":
-                    if dim == 2:
-                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
-                    elif dim == 3:
-                        t = c_cgal.delaunay3(
-                            p[:, 0], p[:, 1], p[:, 2]
-                        )  # List of triangles
+                    if PARALLEL:
+                        print(
+                            "Parallel mesh generation with CGAL not yet supported!",
+                            flush=True,
+                        )
+                        quit()
+                    else:
+                        # SERIAL
+                        if dim == 2:
+                            t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                        elif dim == 3:
+                            t = c_cgal.delaunay3(
+                                p[:, 0], p[:, 1], p[:, 2]
+                            )  # List of triangles
 
                 pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
                 t = t[fd(pmid) < -geps]  # Keep interior triangles
@@ -331,7 +293,7 @@ class MeshGenerator:  # noqa: C901
 
             if PARALLEL:
                 if count % 2 == 0 or count == max_iter - 1:
-                    bidx = geometry.get_boundary_vertices2(t)
+                    bidx = geometry.get_boundary_vertices(t)
                     Ftot[bidx] = 0.0
                 if count < max_iter - 1:
                     p += deltat * Ftot
@@ -373,7 +335,8 @@ class MeshGenerator:  # noqa: C901
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
 
-                    if rank == 0 and _perform_checks:
+                    # TODO perform linting in 3d
+                    if rank == 0 and _perform_checks and dim == 2:
                         # perform essential checks
                         p, t = geometry.linter(p, t)
 
@@ -389,7 +352,8 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank)
-                    if rank == 0 and _perform_checks:
+                    # TODO perform linting in 3d
+                    if rank == 0 and _perform_checks and dim == 2:
                         # perform essential checks
                         p, t = geometry.linter(p, t)
                 break

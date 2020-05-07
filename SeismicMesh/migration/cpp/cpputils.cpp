@@ -189,29 +189,18 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
             Point3 pnm2 = Point3(points[nm2*3], points[nm2*3+1], points[nm2*3+2]);
             Point3 pnm3 = Point3(points[nm3*3], points[nm3*3+1], points[nm3*3+2]);
             Point3 pnm4 = Point3(points[nm4*3], points[nm4*3+1], points[nm4*3+2]);
-            //
-            //     0     1     2
-            //     0     1     3
-            //     0     2     3
-            //     1     2     3
-            bool isCollinear0 = CGAL::collinear (pnm1, pnm2, pnm3);
-            bool isCollinear1 = CGAL::collinear (pnm1, pnm2, pnm4);
-            bool isCollinear2 = CGAL::collinear (pnm1, pnm3, pnm4);
-            bool isCollinear3 = CGAL::collinear (pnm2, pnm3, pnm4);
 
-            if(isCollinear0 | isCollinear1 | isCollinear2 | isCollinear3){
+            bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
+
+            if(isCoplanar){
                 continue;
             }
-            // Calculate circumball of element
+            //// Calculate circumball of element
             Point3 cc = CGAL::circumcenter(pnm1, pnm2, pnm3, pnm4);
             double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3, pnm4);
             Sphere sphere = Sphere(cc, sqr_radius, CGAL::CLOCKWISE);
             // Does this circumball intersect with box above or box below?
             for(std::size_t bx=0; bx< 2; ++bx ){
-                //if(rank==0){
-                //    std::cout << " llc is " << llc[bx*3] << " " << llc[bx*3+1] << " "<< llc[bx*3+1] << std::endl;
-                //    std::cout << " urc is " << urc[bx*3] << " " << urc[bx*3+1] << " "<< urc[bx*3+1] << std::endl;
-                //}
                 Cuboid cube = Cuboid(Point3(llc[bx*3], llc[bx*3 +1], llc[bx*3 +2]),
                         Point3(urc[bx*3], urc[bx*3+1], urc[bx*3+2]));
                 bool intersects = CGAL::do_intersect(sphere, cube);

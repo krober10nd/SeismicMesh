@@ -8,26 +8,39 @@ Routines to perform geometrical/topological operations on meshes
 """
 
 
-def remove_external_faces(points, faces, extents):
+def remove_external_faces(points, faces, extents, dim=2):
     """
     Remove faces with all three vertices outside block (external)
     and points that are very far from local domain
     """
-    signed_distance = sdf.drectangle(
-        points[faces.flatten(), :],
-        x1=extents[0],
-        x2=extents[2],
-        y1=extents[1],
-        y2=extents[3],
-    )
+    if dim == 2:
+        signed_distance = sdf.drectangle(
+            points[faces.flatten(), :],
+            x1=extents[0],
+            x2=extents[2],
+            y1=extents[1],
+            y2=extents[3],
+        )
+    elif dim == 3:
+        signed_distance = sdf.dblock(
+            points[faces.flatten(), :],
+            x1=extents[0],
+            x2=extents[2],
+            y1=extents[1],
+            y2=extents[3],
+            z1=extents[4],
+            z2=extents[5],
+        )
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
-    isOut = np.reshape(signed_distance > 0, (-1, 3))
+    isOut = np.reshape(signed_distance > 0, (-1, dim + 1))
     # todo: this needs to be more objective
-    isFar = np.reshape(signed_distance > 1000, (-1, 3))
-    faces_new = faces[(np.sum(isOut, axis=1) != 3) & (np.any(isFar, axis=1) != 1), :]
-    points_new, faces_new, jx = fixmesh(points, faces_new)
+    isFar = np.reshape(signed_distance > 1000, (-1, dim + 1))
+    faces_new = faces[
+        (np.sum(isOut, axis=1) != dim + 1) & (np.any(isFar, axis=1) != 1), :
+    ]
+    points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
     return points_new, faces_new, jx
 
 
@@ -97,7 +110,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, delunused=False):
+def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
     """
     Remove duplicated/unused nodes and
     ensure orientation of elements is CCW
@@ -128,8 +141,9 @@ def fixmesh(p, t, ptol=2e-13, delunused=False):
         pix = ix[pix]
 
     # element orientation is CCW
-    flip = simpvol(p, t) < 0
-    t[flip, :2] = t[flip, 1::-1]
+    if dim == 2:
+        flip = simpvol(p, t) < 0
+        t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
@@ -215,9 +229,10 @@ def get_winded_boundary_edges_of_mesh2(faces):
     return boundary_edges
 
 
-def get_boundary_vertices2(faces):
+def get_boundary_vertices(faces):
     """
     Get the indices of the mesh representing boundary vertices.
+    works in 2d and 3d
     """
     bedges = get_boundary_edges_of_mesh2(faces)
     indices = np.unique(bedges.reshape(-1))
@@ -228,7 +243,7 @@ def are_boundary_vertices2(points, faces):
     """
     Return array of 1 or 0 if vertex is boundary vertex or not
     """
-    ix = get_boundary_vertices2(faces)
+    ix = get_boundary_vertices(faces)
     areBoundaryVertices = np.zeros((len(points), 1), dtype=int)
     areBoundaryVertices[ix] = 1
     return areBoundaryVertices
@@ -238,7 +253,7 @@ def get_boundary_elements2(points, faces):
     """
     Determine the boundary elements of the mesh.
     """
-    boundary_vertices = get_boundary_vertices2(faces)
+    boundary_vertices = get_boundary_vertices(faces)
     vtoe, ptr = vertex_to_elements(points, faces)
     bele = np.array([], dtype=int)
     for vertex in boundary_vertices:
@@ -305,7 +320,7 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
     S = sparse(
         faces[:, [0, 0, 1, 1, 2, 2]], faces[:, [1, 2, 0, 2, 0, 1]], 1, shape=(n, n)
     )
-    bnd = get_boundary_vertices2(faces)
+    bnd = get_boundary_vertices(faces)
     edge = get_edges_of_mesh2(faces)
     W = np.sum(S, 1)
     if np.any(W == 0):

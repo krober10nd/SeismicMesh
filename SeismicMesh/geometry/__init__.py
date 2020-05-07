@@ -13,7 +13,7 @@ from .utils import (
     are_boundary_vertices2,
     get_edges_of_mesh2,
     get_boundary_elements2,
-    get_boundary_vertices2,
+    get_boundary_vertices,
     get_boundary_edges_of_mesh2,
     get_winded_boundary_edges_of_mesh2,
 )
@@ -31,7 +31,7 @@ __all__ = [
     "fixmesh",
     "simpvol",
     "simpqual",
-    "get_boundary_vertices2",
+    "get_boundary_vertices",
     "get_boundary_elements2",
     "are_boundary_vertices2",
     "get_edges_of_mesh2",
