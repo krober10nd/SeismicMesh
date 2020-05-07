@@ -25,20 +25,20 @@ def remove_external_faces(points, faces, extents, dim=2):
         signed_distance = sdf.dblock(
             points[faces.flatten(), :],
             x1=extents[0],
-            x2=extents[2],
+            x2=extents[3],
             y1=extents[1],
-            y2=extents[3],
-            z1=extents[4],
+            y2=extents[4],
+            z1=extents[2],
             z2=extents[5],
         )
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
-    isOut = np.reshape(signed_distance > 0, (-1, dim + 1))
+    isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
     # todo: this needs to be more objective
-    isFar = np.reshape(signed_distance > 1000, (-1, dim + 1))
+    isFar = np.reshape(signed_distance > 1000, (-1, (dim + 1)))
     faces_new = faces[
-        (np.sum(isOut, axis=1) != dim + 1) & (np.any(isFar, axis=1) != 1), :
+        (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
     ]
     points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
     return points_new, faces_new, jx
@@ -177,7 +177,7 @@ def simpqual(p, t):
     return 2 * r / R
 
 
-def get_edges_of_mesh2(faces):
+def get_edges_of_mesh(faces):
     """
     Get the edges of 2D triangular mesh in no order
     and are repeated.
@@ -189,11 +189,11 @@ def get_edges_of_mesh2(faces):
     return edges
 
 
-def get_boundary_edges_of_mesh2(faces):
+def get_boundary_edges_of_mesh(faces):
     """
     Get the boundary edges of the mesh.
     """
-    edges = get_edges_of_mesh2(faces)
+    edges = get_edges_of_mesh(faces)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
@@ -204,7 +204,7 @@ def get_winded_boundary_edges_of_mesh2(faces):
     """
     Order the boundary edges of the mesh in a winding fashion.
     """
-    boundary_edges = get_boundary_edges_of_mesh2(faces)
+    boundary_edges = get_boundary_edges_of_mesh(faces)
     _bedges = boundary_edges.copy()
 
     choice = 0
@@ -234,12 +234,12 @@ def get_boundary_vertices(faces):
     Get the indices of the mesh representing boundary vertices.
     works in 2d and 3d
     """
-    bedges = get_boundary_edges_of_mesh2(faces)
+    bedges = get_boundary_edges_of_mesh(faces)
     indices = np.unique(bedges.reshape(-1))
     return indices
 
 
-def are_boundary_vertices2(points, faces):
+def are_boundary_vertices(points, faces):
     """
     Return array of 1 or 0 if vertex is boundary vertex or not
     """
@@ -249,7 +249,7 @@ def are_boundary_vertices2(points, faces):
     return areBoundaryVertices
 
 
-def get_boundary_elements2(points, faces):
+def get_boundary_elements(points, faces):
     """
     Determine the boundary elements of the mesh.
     """
@@ -268,7 +268,7 @@ def delete_boundary_elements(points, faces, minqual=0.10):
     Delete boundary elements with poor quality (i.e., < minqual)
     """
     qual = simpqual(points, faces)
-    bele = get_boundary_elements2(points, faces)
+    bele = get_boundary_elements(points, faces)
     qualBou = qual[bele]
     delete = qualBou < minqual
     print(
@@ -321,7 +321,7 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
         faces[:, [0, 0, 1, 1, 2, 2]], faces[:, [1, 2, 0, 2, 0, 1]], 1, shape=(n, n)
     )
     bnd = get_boundary_vertices(faces)
-    edge = get_edges_of_mesh2(faces)
+    edge = get_edges_of_mesh(faces)
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
@@ -360,7 +360,7 @@ def isManifold(points, faces):
     2. A non-boundary edge should have two elements
     3. The number of boundary vertices == number of boundary edges
     """
-    bedges = get_boundary_edges_of_mesh2(faces)
+    bedges = get_boundary_edges_of_mesh(faces)
     if bedges.size != points[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False

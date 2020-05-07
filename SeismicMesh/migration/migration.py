@@ -10,7 +10,7 @@ Migration routines for moving points during parallel Delaunay
 """
 
 
-def aggregate(points, faces, comm, size, rank):
+def aggregate(points, faces, comm, size, rank, dim=2):
     """
     Collect global triangulation onto rank 0
     """
@@ -35,14 +35,15 @@ def aggregate(points, faces, comm, size, rank):
             comm.send(points, dest=0, tag=12)
             comm.send(faces, dest=0, tag=13)
         if rank == 0:
-            tmp = np.reshape(comm.recv(source=r, tag=12), (off_p[r], 2))
+            tmp = np.reshape(comm.recv(source=r, tag=12), (off_p[r], dim))
             tmp2 = (
-                np.reshape(comm.recv(source=r, tag=13), (off_t[r], 3)) + csum_p[r - 1]
+                np.reshape(comm.recv(source=r, tag=13), (off_t[r], dim + 1))
+                + csum_p[r - 1]
             )
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces, ix = geometry.fixmesh(gpoints, gfaces, delunused=True)
+        upoints, ufaces, ix = geometry.fixmesh(gpoints, gfaces, delunused=True, dim=dim)
         return upoints, ufaces
     else:
         return True, True

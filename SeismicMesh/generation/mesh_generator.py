@@ -5,6 +5,7 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
+import meshio
 import numpy as np
 import scipy.spatial as spspatial
 import matplotlib.pyplot as plt
@@ -216,6 +217,11 @@ class MeshGenerator:  # noqa: C901
                         )
                         N = p.shape[0]
                         recv_ix = len(recv)  # we do not allow new points to move
+
+                        meshio.write_points_cells(
+                            "foo3D" + str(rank) + ".vtk", p, [("tetra", t)],
+                        )
+
                     else:
                         # SERIAL
                         t = spspatial.Delaunay(p).vertices  # List of triangles
@@ -333,7 +339,7 @@ class MeshGenerator:  # noqa: C901
                 )
 
                 if PARALLEL:
-                    p, t = migration.aggregate(p, t, comm, size, rank)
+                    p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
 
                     # TODO perform linting in 3d
                     if rank == 0 and _perform_checks and dim == 2:
@@ -351,7 +357,7 @@ class MeshGenerator:  # noqa: C901
                     )
 
                 if PARALLEL:
-                    p, t = migration.aggregate(p, t, comm, size, rank)
+                    p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                     # TODO perform linting in 3d
                     if rank == 0 and _perform_checks and dim == 2:
                         # perform essential checks

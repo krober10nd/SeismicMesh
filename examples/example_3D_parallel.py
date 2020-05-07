@@ -22,7 +22,7 @@ def example_3D_parallel():
         dt=0.001,
         freq=2,
         wl=10,
-        hmin=100,
+        hmin=125,
     )
 
     # Build mesh size function (in parallel)
@@ -38,9 +38,7 @@ def example_3D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.parallel_build(
-        max_iter=100, nscreen=1, seed=0, COMM=comm, axis=1
-    )
+    points, cells = mshgen.build(max_iter=3, nscreen=1, seed=0, COMM=comm, axis=0)
 
     if rank == 0:
         # Write to disk (see meshio for more details)
