@@ -92,7 +92,7 @@ def exchange(comm, rank, size, exports, dim=2):
 
     tmp = []
     # send points below
-    if NSB != 0 and (rank == 0):  # rank 0 can't send below
+    if NSB != 0 and (rank != 0):  # rank 0 can't send below
         comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
     # recv  points from above
