@@ -11,5 +11,13 @@ from .generation import MeshGenerator
 from . import decomp
 from . import geometry
 from . import migration
+from . import plots
 
-__all__ = ["geometry", "MeshSizeFunction", "MeshGenerator", "decomp", "migration"]
+__all__ = [
+    "geometry",
+    "MeshSizeFunction",
+    "MeshGenerator",
+    "decomp",
+    "migration",
+    "plots",
+]

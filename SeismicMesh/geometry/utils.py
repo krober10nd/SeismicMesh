@@ -8,6 +8,15 @@ Routines to perform geometrical/topological operations on meshes
 """
 
 
+def remove_duplicates(data):
+    """
+    removes duplicate rows for int data
+    such as the face table
+    """
+    data = np.sort(data, axis=1)
+    return np.unique(data, axis=1)
+
+
 def remove_external_faces(points, faces, extents, dim=2):
     """
     Remove faces with all three vertices outside block (external)

@@ -22,7 +22,7 @@ def example_3D_parallel():
         dt=0.001,
         freq=2,
         wl=10,
-        hmin=125,
+        hmin=300,
     )
 
     # Build mesh size function (in parallel)

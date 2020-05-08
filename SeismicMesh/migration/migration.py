@@ -66,12 +66,12 @@ def enqueue(extents, points, faces, rank, size, dim=2):
 
     # add dummy box above if rank==0 or under if rank=size-1
     if rank == size - 1:
-        le = np.append(le, [-999999] * dim)
-        re = np.append(re, [-999998] * dim)
+        le = np.append(le, [-99999999] * dim)
+        re = np.append(re, [-99999998] * dim)
 
     if rank == 0:
-        le = np.insert(le, 0, [-999999] * dim)
-        re = np.insert(re, 0, [-999998] * dim)
+        le = np.insert(le, 0, [-99999999] * dim)
+        re = np.insert(re, 0, [-99999998] * dim)
 
     vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
 

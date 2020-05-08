@@ -214,6 +214,7 @@ class MeshGenerator:  # noqa: C901
                         p, t, inv = geometry.remove_external_faces(
                             tria.points, tria.simplices, extents[rank], dim=dim
                         )
+
                         N = p.shape[0]
                         recv_ix = len(recv)  # we do not allow new points to move
                     else:
