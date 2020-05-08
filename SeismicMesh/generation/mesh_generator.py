@@ -206,8 +206,10 @@ class MeshGenerator:  # noqa: C901
                 if _method == "qhull":
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
-                        if count==0:
-                            jitter = np.random.uniform(size=(len(p), dim), low=-h0 / 10, high=h0 / 10)
+                        if count == 0:
+                            jitter = np.random.uniform(
+                                size=(len(p), dim), low=-h0 / 10, high=h0 / 10
+                            )
                             p += jitter
                         exports = migration.enqueue(
                             extents, p, tria.simplices, rank, size, dim=dim

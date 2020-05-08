@@ -1,7 +1,5 @@
 import numpy as np
 from SeismicMesh import geometry as geo
-from SeismicMesh.plots import simpplot as smp
-from SeismicMesh.plots import points as pts
 
 
 def test_geometry3D():

@@ -351,7 +351,7 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
         faces[:, [0, 0, 1, 1, 2, 2]], faces[:, [1, 2, 0, 2, 0, 1]], 1, shape=(n, n)
     )
     bnd = get_boundary_vertices(faces)
-    edge = get_edges_of_mesh(faces)
+    edge = get_edges(faces)
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
@@ -390,7 +390,7 @@ def isManifold(points, faces, dim=2):
     2. A non-boundary edge should have two elements
     3. The number of boundary vertices == number of boundary edges
     """
-    bedges = get_boundary_edges_of_mesh(faces, dim=dim)
+    bedges = get_boundary_edges(faces, dim=dim)
     if bedges.size != points[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False
