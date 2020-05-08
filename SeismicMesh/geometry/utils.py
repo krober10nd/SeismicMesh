@@ -390,7 +390,7 @@ def isManifold(points, faces, dim=2):
     2. A non-boundary edge should have two elements
     3. The number of boundary vertices == number of boundary edges
     """
-    bedges = get_boundary_edges(faces, dim=dim)
+    bedges = get_boundary_edges(faces)
     if bedges.size != points[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False
