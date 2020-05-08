@@ -66,12 +66,12 @@ def enqueue(extents, points, faces, rank, size, dim=2):
 
     # add dummy box above if rank==0 or under if rank=size-1
     if rank == size - 1:
-        le = np.append(le, [-99999999] * dim)
-        re = np.append(re, [-99999998] * dim)
+        le = np.append(le, [-999999999] * dim)
+        re = np.append(re, [-999999998] * dim)
 
     if rank == 0:
-        le = np.insert(le, 0, [-99999999] * dim)
-        re = np.insert(re, 0, [-99999998] * dim)
+        le = np.insert(le, 0, [-999999999] * dim)
+        re = np.insert(re, 0, [-999999998] * dim)
 
     vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
 
@@ -92,7 +92,7 @@ def exchange(comm, rank, size, exports, dim=2):
 
     tmp = []
     # send points below
-    if NSB != 0:
+    if NSB != 0 and (rank == 0):  # rank 0 can't send below
         comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
     # recv  points from above
@@ -100,7 +100,7 @@ def exchange(comm, rank, size, exports, dim=2):
         tmp = np.append(tmp, comm.recv(source=rank + 1, tag=11))
 
     # send points above
-    if NSA != 0:
+    if NSA != 0 and rank != (size - 1):  # topmost rank can't send to above
         # all put the topmost rank receive from above
         comm.send(exports[NSB + 1 : NSB + 1 + NSA, 0:dim], dest=rank + 1, tag=11)
 
