@@ -181,7 +181,7 @@ def simpqual(p, t):
     return 2 * r / R
 
 
-def get_edges_of_mesh(faces, dim=2):
+def get_edges(faces, dim=2):
     """
     Get the edges of mesh in no order
     and are repeated.
@@ -197,23 +197,23 @@ def get_edges_of_mesh(faces, dim=2):
     return edges
 
 
-def get_boundary_edges_of_mesh(faces, dim=2):
+def get_boundary_edges(faces):
     """
     Get the boundary edges of the mesh.
     """
-    edges = get_edges_of_mesh(faces, dim=dim)
+    edges = get_edges(faces)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
     return boundary_edges
 
 
-def get_winded_boundary_edges_of_mesh2(faces):
+def get_winded_boundary_edges(faces):
     """
     Order the boundary edges of the mesh in a winding fashion.
     only works in 2D
     """
-    boundary_edges = get_boundary_edges_of_mesh(faces)
+    boundary_edges = get_boundary_edges(faces)
     _bedges = boundary_edges.copy()
 
     choice = 0
@@ -243,27 +243,20 @@ def get_boundary_vertices(faces, dim=2):
     Get the indices of the mesh representing boundary vertices.
     works in 2d and 3d
     """
-    bedges = get_boundary_edges_of_mesh(faces, dim=dim)
-    indices = np.unique(bedges.reshape(-1))
+    if dim == 2:
+        b = get_boundary_edges(faces)
+    elif dim == 3:
+        b = get_boundary_facets(faces)
+    indices = np.unique(b.reshape(-1))
     return indices
 
 
-def are_boundary_vertices(points, faces, dim=2):
-    """
-    Return array of 1 or 0 if vertex is boundary vertex or not
-    """
-    ix = get_boundary_vertices(faces, dim=dim)
-    areBoundaryVertices = np.zeros((len(points), 1), dtype=int)
-    areBoundaryVertices[ix] = 1
-    return areBoundaryVertices
-
-
-def get_boundary_elements(points, faces, dim=2):
+def get_boundary_elements(points, faces):
     """
     Determine the boundary elements of the mesh.
     """
-    boundary_vertices = get_boundary_vertices(faces, dim=dim)
-    vtoe, ptr = vertex_to_elements(points, faces, dim=dim)
+    boundary_vertices = get_boundary_vertices(faces)
+    vtoe, ptr = vertex_to_elements(points, faces)
     bele = np.array([], dtype=int)
     for vertex in boundary_vertices:
         for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
@@ -272,12 +265,31 @@ def get_boundary_elements(points, faces, dim=2):
     return bele
 
 
+def get_facets(cells):
+    """
+    Gets the 4 facets of each cell in no order
+    """
+    ix = [[0, 1, 3], [1, 2, 3], [2, 0, 3], [1, 2, 0]]
+    return np.array(cells[:, ix]).reshape((len(cells) * 4, 3))
+
+
+def get_boundary_facets(cells):
+    """
+    Get the facets shared by owned 1 cell
+    """
+    facets = get_facets(cells)
+    facets = np.sort(facets, axis=1)
+    unq, cnt = np.unique(facets, axis=0, return_counts=True)
+    boundary_facets = np.array([e for e, c in zip(unq, cnt) if c == 1])
+    return boundary_facets
+
+
 def delete_boundary_elements(points, faces, minqual=0.10, dim=2):
     """
     Delete boundary elements with poor quality (i.e., < minqual)
     """
     qual = simpqual(points, faces)
-    bele = get_boundary_elements(points, faces, dim=dim)
+    bele = get_boundary_elements(points, faces)
     qualBou = qual[bele]
     delete = qualBou < minqual
     print(
@@ -394,11 +406,11 @@ def ptInFace2(point, face):
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
-def getCentroids2(points, faces):
+def getCentroids(points, faces, dim=2):
     """
     Calculate the centroids of all the faces
     """
-    return points[faces].sum(1) / (3)
+    return points[faces].sum(1) / (dim + 1)
 
 
 def doAnyFacesOverlap(points, faces):
@@ -411,7 +423,7 @@ def doAnyFacesOverlap(points, faces):
     # all elements that have a boundary vertex
     beles = get_boundary_elements(points, faces)
     # centroids of these elements beles
-    bcents = getCentroids2(points, faces[beles, :])
+    bcents = getCentroids(points, faces[beles, :])
     # store intersection pairs
     intersections = []
     # for all boundary triangles

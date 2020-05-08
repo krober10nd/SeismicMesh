@@ -5,7 +5,6 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
-import meshio
 import numpy as np
 import scipy.spatial as spspatial
 import matplotlib.pyplot as plt
@@ -207,12 +206,6 @@ class MeshGenerator:  # noqa: C901
                 if _method == "qhull":
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
-                        meshio.write_points_cells(
-                            "foo3D" + str(count) + str(rank) + ".vtk",
-                            p,
-                            [("tetra", tria.simplices)],
-                        )
-                        comm.barrier()
                         exports = migration.enqueue(
                             extents, p, tria.simplices, rank, size, dim=dim
                         )

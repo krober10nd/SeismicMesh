@@ -41,7 +41,7 @@ def example_2D():
     # Apply boundary conditions
     # 1) top of domain is labeled 11
     # 2) the three sides are labeled 10
-    ordered_bnde = SeismicMesh.geometry.get_winded_boundary_edges_of_mesh2(facets)
+    ordered_bnde = SeismicMesh.geometry.get_winded_boundary_edges(facets)
     ordered_bpts = points[ordered_bnde.flatten(), :]
     tmp = np.argwhere(ordered_bpts[:, 0] > -50)
     ix1, ix2 = int(tmp[0] / 2), int(tmp[-1] / 2)

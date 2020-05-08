@@ -90,7 +90,6 @@ def exchange(comm, rank, size, exports, dim=2):
     NSB = int(exports[0, 0])
     NSA = int(exports[0, 1])
 
-    print(NSB, NSA, rank, flush=True)
     tmp = []
     # send points below
     if NSB != 0:
