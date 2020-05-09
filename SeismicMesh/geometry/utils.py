@@ -55,7 +55,7 @@ def remove_external_faces(points, faces, extents, dim=2):
 
 def vertex_to_elements(points, faces, dim=2):
     """
-    Determine which elements connected to vertices
+    Determine which elements are connected to vertices
     """
     num_faces = len(faces)
 

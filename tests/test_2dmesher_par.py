@@ -1,6 +1,7 @@
 import os
 
 from mpi4py import MPI
+import numpy as np
 
 import SeismicMesh
 
@@ -24,8 +25,8 @@ def test_2dmesher_par():
     if rank == 0:
         # should have points (7690, 2)
         # should have facets (15047, 3)
-        assert len(points) == 7690
-        assert len(facets) == 15047
+        assert np.abs(7690 - len(points)) < 5
+        assert np.abs(15047 - len(facets)) < 5
 
 
 if __name__ == "__main__":

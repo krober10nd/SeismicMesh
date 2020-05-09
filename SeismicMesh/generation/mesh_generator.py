@@ -206,6 +206,7 @@ class MeshGenerator:  # noqa: C901
                 if _method == "qhull":
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
+                        # This greatly avoids coplanar and colinear points
                         if count == 0:
                             jitter = np.random.uniform(
                                 size=(len(p), dim), low=-h0 / 10, high=h0 / 10
@@ -261,6 +262,7 @@ class MeshGenerator:  # noqa: C901
                     )
                 bars = np.sort(bars, axis=1)
                 bars = mutils.unique_rows(bars)  # Bars as node pairs
+                bars = bars[0]
 
                 # 5. Graphical output of the current mesh
                 if plot and not PARALLEL:
@@ -298,9 +300,6 @@ class MeshGenerator:  # noqa: C901
             Ftot[:nfix] = 0  # Force = 0 at fixed points
 
             if PARALLEL:
-                if count % 2 == 0 or count == max_iter - 1:
-                    bidx = geometry.get_boundary_vertices(t, dim=dim)
-                    Ftot[bidx] = 0.0
                 if count < max_iter - 1:
                     p += deltat * Ftot
             else:
@@ -408,6 +407,8 @@ class MeshGenerator:  # noqa: C901
         if axis == 1:
             axis == 0
         elif axis == 0:
+            axis = 1
+        elif axis == 2:
             axis = 1
         # finalize mesh (switch decomposition axis and perform serial linting)
         # improves mesh quality near decomp boundaries

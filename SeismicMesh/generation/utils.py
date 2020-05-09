@@ -35,35 +35,13 @@ def __setdiff_rows(A, B, return_index=False):
         return C
 
 
-def unique_rows(A, return_index=False, return_inverse=False):
-    """
-    Similar to MATLAB's unique(A, 'rows'), this returns B, I, J
-    where B is the unique rows of A and I and J satisfy
-    A = B[J,:] and B = A[I,:]
-    Returns I if return_index is True
-    Returns J if return_inverse is True
-    """
-    A = np.require(A, requirements="C")
-    assert A.ndim == 2, "array must be 2-dim'l"
-
-    orig_dtype = A.dtype
-    ncolumns = A.shape[1]
-    dtype = np.dtype((np.character, orig_dtype.itemsize * ncolumns))
-    B, I, J = np.unique(A.view(dtype), return_index=True, return_inverse=True)
-
-    B = B.view(orig_dtype).reshape((-1, ncolumns), order="C")
-
-    # There must be a better way to do this:
-    if return_index:
-        if return_inverse:
-            return B, I, J
-        else:
-            return B, I
-    else:
-        if return_inverse:
-            return B, J
-        else:
-            return B
+def unique_rows(a):
+    # The cleaner alternative `numpy.unique(a, axis=0)` is slow; cf.
+    # <https://github.com/numpy/numpy/issues/11136>.
+    b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
+    a_unique, inv, cts = np.unique(b, return_inverse=True, return_counts=True)
+    a_unique = a_unique.view(a.dtype).reshape(-1, a.shape[1])
+    return a_unique, inv, cts
 
 
 def dense(I, J, S, shape=None, dtype=None):

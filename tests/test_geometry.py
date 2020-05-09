@@ -15,7 +15,7 @@ def test_geometry3D():
             [1, -1, 1],
             [1, 1, 1],
             [-1, 1, 1],
-            [0, 0, 0],
+            [0, 0, 0],  # point in the center of it
         ],
         dtype=np.float,
     )
