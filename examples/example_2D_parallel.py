@@ -31,7 +31,7 @@ def example_2D_parallel():
     )
 
     # Build mesh size function
-    ef = ef.build(rank=rank)
+    ef = ef.build(comm=comm)
 
     if rank == 0:
         ef.WriteVelocityModel("BP2004")

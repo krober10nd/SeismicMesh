@@ -116,8 +116,17 @@ class MeshSizeFunction:
         self.domain_ext = domain_ext
         self.endianness = endianness
         self.padstyle = padstyle
+        self.interpolant = None
 
     ### SETTERS AND GETTERS ###
+
+    @property
+    def interpolant(self):
+        return self.__interpolant
+
+    @interpolant.setter
+    def interpolant(self, value):
+        self.__interpolant = value
 
     @property
     def fh(self):
@@ -304,7 +313,7 @@ class MeshSizeFunction:
 
     # ---PUBLIC METHODS---#
 
-    def build(self, rank=0):  # noqa: C901
+    def build(self, comm=None):  # noqa: C901
 
         """Builds the isotropic mesh size function according
             to the user arguments that were passed.
@@ -325,85 +334,123 @@ class MeshSizeFunction:
                 self.fd: lambda function representing the signed distance function of domain
 
         """
-        self.__ReadVelocityModel()
-        _vp = self.vp
+        if comm is not None:
+            rank = comm.Get_rank()
+            size = comm.Get_size()
+        else:
+            rank = 0
+            size = 1
 
-        _bbox = self.bbox
-        _dim = self.dim
-        _width = self.width
-        _nz = self.nz
-        _nx = self.nx
-        if _dim == 3:
-            _ny = self.ny
-        _domain_ext = self.domain_ext
-
-        _hmax = self.hmax
-        _hmin = self.hmin
-        _grade = self.grade
-
-        _wl = self.wl
-        _freq = self.freq
-
-        _dt = self.dt
-        _cr_max = self.cr_max
-
-        if _dim == 2:
-            hh_m = np.zeros(shape=(_nz, _nx), dtype=np.float32) + _hmin
-        if _dim == 3:
-            hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
-        if _wl > 0:
-            if rank == 0:
-                print(
-                    "Mesh sizes will be built to resolve an estimate of wavelength with "
-                    + str(_wl)
-                    + " vertices...",
-                    flush=True,
-                )
-            hh_m = _vp / (_freq * _wl)
-        # enforce min (and optionally max) sizes
-        hh_m = np.where(hh_m < _hmin, _hmin, hh_m)
-        if _hmax < np.inf:
-            if rank == 0:
-                print("Enforcing maximum mesh resolution...", flush=True)
-            hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
-        # grade the mesh sizes
-        if _grade > 0:
-            if rank == 0:
-                print("Enforcing mesh gradation in sizing function...", flush=True)
-            hh_m = self.hj(hh_m, _width / _nx, 10000)
-        # adjust mesh res. based on the CFL limit so cr < cr_max
-        if _dt > 0:
-            if rank == 0:
-                print("Enforcing timestep of " + str(_dt) + " seconds...", flush=True)
-            cr_old = (_vp * _dt) / hh_m
-            dxn = (_vp * _dt) / _cr_max
-            hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
-        # edit the bbox to reflect the new domain size
-        if _domain_ext > 0:
-            self = self.__CreateDomainExtension()
-            hh_m = self.__EditMeshSizeFunction(hh_m, rank)
-        # construct a interpolator object to be queried during mesh generation
         if rank == 0:
-            print("Building a gridded interpolant...", flush=True)
-        if _dim == 2:
-            z_vec, x_vec = self.__CreateDomainVectors()
-        if _dim == 3:
-            z_vec, x_vec, y_vec = self.__CreateDomainVectors()
-        assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
-        if _dim == 2:
-            interpolant = RegularGridInterpolator(
-                (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
-            )
-        if _dim == 3:
-            # x,y,z -> z,x,y
-            hh_m = hh_m.transpose((2, 0, 1))
-            interpolant = RegularGridInterpolator(
-                (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
-            )
-        # create a mesh size function interpolant
-        self.fh = lambda p: interpolant(p)
+            self.__ReadVelocityModel()
+            _vp = self.vp
 
+            _bbox = self.bbox
+            _dim = self.dim
+            _width = self.width
+            _nz = self.nz
+            _nx = self.nx
+            if _dim == 3:
+                _ny = self.ny
+            _domain_ext = self.domain_ext
+
+            _hmax = self.hmax
+            _hmin = self.hmin
+            _grade = self.grade
+
+            _wl = self.wl
+            _freq = self.freq
+
+            _dt = self.dt
+            _cr_max = self.cr_max
+
+            if _dim == 2:
+                hh_m = np.zeros(shape=(_nz, _nx), dtype=np.float32) + _hmin
+            if _dim == 3:
+                hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
+            if _wl > 0:
+                if rank == 0:
+                    print(
+                        "Mesh sizes will be built to resolve an estimate of wavelength with "
+                        + str(_wl)
+                        + " vertices...",
+                        flush=True,
+                    )
+                hh_m = _vp / (_freq * _wl)
+            # enforce min (and optionally max) sizes
+            hh_m = np.where(hh_m < _hmin, _hmin, hh_m)
+            if _hmax < np.inf:
+                if rank == 0:
+                    print("Enforcing maximum mesh resolution...", flush=True)
+                hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
+            # grade the mesh sizes
+            if _grade > 0:
+                if rank == 0:
+                    print("Enforcing mesh gradation in sizing function...", flush=True)
+                    hh_m = self.hj(hh_m, _width / _nx, 10000)
+            # adjust mesh res. based on the CFL limit so cr < cr_max
+            if _dt > 0:
+                if rank == 0:
+                    print(
+                        "Enforcing timestep of " + str(_dt) + " seconds...", flush=True
+                    )
+                cr_old = (_vp * _dt) / hh_m
+                dxn = (_vp * _dt) / _cr_max
+                hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
+            # edit the bbox to reflect the new domain size
+            if _domain_ext > 0:
+                self = self.__CreateDomainExtension()
+                hh_m = self.__EditMeshSizeFunction(hh_m, rank)
+            # construct a interpolator object to be queried during mesh generation
+            if rank == 0:
+                print("Building a gridded interpolant...", flush=True)
+            if _dim == 2:
+                z_vec, x_vec = self.__CreateDomainVectors()
+            if _dim == 3:
+                z_vec, x_vec, y_vec = self.__CreateDomainVectors()
+            assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
+            if _dim == 2:
+                self.interpolant = RegularGridInterpolator(
+                    (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
+                )
+            if _dim == 3:
+                # x,y,z -> z,x,y
+                hh_m = hh_m.transpose((2, 0, 1))
+                self.interpolant = RegularGridInterpolator(
+                    (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
+                )
+            # python can't bcast pickles so this is done after in parallel
+            if size == 1:
+                # create a mesh size function interpolant
+                self.fh = lambda p: self.interpolant(p)
+
+                _bbox = self.bbox
+
+                def fdd(p):
+                    return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
+
+                def fdd2(p):
+                    return sdf.dblock(
+                        p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5]
+                    )
+
+                # create a signed distance function
+                if _dim == 2:
+                    self.fd = lambda p: fdd(p)
+                if _dim == 3:
+                    self.fd = lambda p: fdd2(p)
+        return self
+
+    def construct_lambdas(self):
+        """
+        Build lambda fields (for parallel only) for
+        SDF and mesh size function
+        """
+        _dim = self.dim
         _bbox = self.bbox
+
+        # create a mesh size function interpolant
+        self.fh = lambda p: self.interpolant(p)
 
         def fdd(p):
             return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
