@@ -312,7 +312,7 @@ def delete_boundary_elements(points, faces, minqual=0.10, dim=2):
     return points, faces
 
 
-def sparse(I, J, S, shape=None, dtype=None):
+def sparse(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...)
 
@@ -325,16 +325,16 @@ def sparse(I, J, S, shape=None, dtype=None):
     # Advanced usage: allow J and S to be scalars.
     if np.isscalar(J):
         x = J
-        J = np.empty(I.shape, dtype=int)
+        J = np.empty(Ix.shape, dtype=int)
         J.fill(x)
     if np.isscalar(S):
         x = S
-        S = np.empty(I.shape)
+        S = np.empty(Ix.shape)
         S.fill(x)
 
     # Turn these into 1-d arrays for processing.
     S = S.flat
-    II = I.flat
+    II = Ix.flat
     J = J.flat
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
 

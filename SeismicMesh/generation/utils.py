@@ -44,7 +44,7 @@ def unique_rows(a):
     return a_unique, inv, cts
 
 
-def dense(I, J, S, shape=None, dtype=None):
+def dense(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...), but instead returning a
     dense array.
@@ -58,15 +58,15 @@ def dense(I, J, S, shape=None, dtype=None):
     # Advanced usage: allow J and S to be scalars.
     if np.isscalar(J):
         x = J
-        J = np.empty(I.shape, dtype=int)
+        J = np.empty(Ix.shape, dtype=int)
         J.fill(x)
     if np.isscalar(S):
         x = S
-        S = np.empty(I.shape)
+        S = np.empty(Ix.shape)
         S.fill(x)
 
     # Turn these into 1-d arrays for processing.
     S = S.flat
-    II = I.flat
+    II = Ix.flat
     J = J.flat
     return spsparse.coo_matrix((S, (II, J)), shape, dtype).toarray()
