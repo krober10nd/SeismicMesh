@@ -509,13 +509,13 @@ def doAnyOverlap(points, entities, dim=2):
     return intersections
 
 
-def linter(points, faces, minqual=0.10):
+def linter(points, faces, minqual=0.10, dim=2):
     """
     Remove and check mesh for defects
     """
     qual = simpqual(points, faces)
     # determine if there's degenerate overlapping elements
-    intersections = doAnyOverlap(points, faces, dim=2)
+    intersections = doAnyOverlap(points, faces, dim=dim)
     # delete the lower quality in the pair
     delete = []
     for intersect in intersections:
@@ -528,7 +528,8 @@ def linter(points, faces, minqual=0.10):
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
     # delete remaining low quality boundary elements
-    points, faces = delete_boundary_elements(points, faces, minqual=minqual)
+    if dim == 2:
+        points, faces = delete_boundary_elements(points, faces, minqual=minqual)
     # check for non-manifold boundaries and alert
     _ = isManifold(points, faces)
     # calculate final minimum simplex quality

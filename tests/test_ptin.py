@@ -13,7 +13,7 @@ def test_ptin():
 
     # test point if in tetraheadral
     queryIn = (0.5, 0.5, 1.0)  # should be in
-    queryOut = (0., 0., 1.0)  # should be out
+    queryOut = (0.0, 0.0, 1.0)  # should be out
 
     isIn = SeismicMesh.geometry.utils.ptInCell3(
         queryIn,

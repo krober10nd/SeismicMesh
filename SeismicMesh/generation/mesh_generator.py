@@ -341,9 +341,9 @@ class MeshGenerator:  # noqa: C901
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
 
                     # TODO perform linting in 3d
-                    if rank == 0 and _perform_checks and dim == 2:
+                    if rank == 0 and _perform_checks:
                         # perform essential checks
-                        p, t = geometry.linter(p, t)
+                        p, t = geometry.linter(p, t, dim=dim)
 
                 break
 
@@ -358,9 +358,9 @@ class MeshGenerator:  # noqa: C901
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                     # TODO perform linting in 3d
-                    if rank == 0 and _perform_checks and dim == 2:
+                    if rank == 0 and _perform_checks:
                         # perform essential checks
-                        p, t = geometry.linter(p, t)
+                        p, t = geometry.linter(p, t, dim=dim)
                 break
 
             # Delete new points

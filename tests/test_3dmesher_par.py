@@ -42,7 +42,9 @@ def test_3dpar_mesher():
     )  # parallel currently only works in qhull
 
     # Build the mesh with all axis combinations
-    points, cells = mshgen.build(max_iter=30, nscreen=1, seed=0, COMM=comm, axis=0)
+    points, cells = mshgen.build(
+        max_iter=30, nscreen=1, seed=0, COMM=comm, axis=0, perform_checks=True
+    )
 
     if rank == 0:
         vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
