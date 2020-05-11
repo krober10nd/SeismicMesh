@@ -513,7 +513,7 @@ def linter(points, faces, minqual=0.10, dim=2):
     """
     Remove and check mesh for defects
     """
-    print('Performing mesh linting...',flush=True)
+    print("Performing mesh linting...", flush=True)
     qual = simpqual(points, faces)
     # determine if there's degenerate overlapping elements
     intersections = doAnyOverlap(points, faces, dim=dim)
