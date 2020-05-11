@@ -163,6 +163,7 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
 
 def simpqual(p, t):
     """Simplex quality.
+    radius-to-edge ratio
     Usage
     -----
     q = simpqual(p, t)
@@ -260,12 +261,12 @@ def get_boundary_vertices(faces, dim=2):
     return indices
 
 
-def get_boundary_elements(points, faces):
+def get_boundary_elements(points, faces, dim=2):
     """
     Determine the boundary elements of the mesh.
     """
-    boundary_vertices = get_boundary_vertices(faces)
-    vtoe, ptr = vertex_to_elements(points, faces)
+    boundary_vertices = get_boundary_vertices(faces, dim=dim)
+    vtoe, ptr = vertex_to_elements(points, faces, dim=dim)
     bele = np.array([], dtype=int)
     for vertex in boundary_vertices:
         for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
@@ -284,7 +285,7 @@ def get_facets(cells):
 
 def get_boundary_facets(cells):
     """
-    Get the facets shared by owned 1 cell
+    Get the facets shared by only 1 cell
     """
     facets = get_facets(cells)
     facets = np.sort(facets, axis=1)
@@ -413,6 +414,53 @@ def ptInFace2(point, face):
     c = 1 - a - b
     # pt lies in T if and only if 0 <= a <= 1 and 0 <= b <= 1 and 0 <= c <= 1
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
+
+
+def ptInCell3(point, cell):
+    """
+    Does the 3D point lie in the face with vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)
+    3D cell?
+    """
+
+    def check(status):
+        return np.all(status)
+
+    (x, y, z) = point
+    (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = cell
+    A = np.array(
+        [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4], [1.0, 1.0, 1.0, 1.0]]
+    ).T
+    B, C, D, E = np.copy(A), np.copy(A), np.copy(A), np.copy(A)
+    B[0, :] = x, y, z, 1.0
+    C[1, :] = x, y, z, 1.0
+    D[2, :] = x, y, z, 1.0
+    E[3, :] = x, y, z, 1.0
+    status = np.array([], dtype=int)
+    # calculate only all determinants if necessary
+    D0 = np.sign(np.linalg.det(A))
+    status = np.append(status, D0)
+
+    D1 = np.sign(np.linalg.det(B))
+    status = np.append(status, D1)
+    if check(status) is False:
+        return False
+
+    D2 = np.sign(np.linalg.det(C))
+    status = np.append(status, D2)
+    if check(status) is False:
+        return False
+
+    D3 = np.sign(np.linalg.det(D))
+    status = np.append(status, D3)
+    if check(status) is False:
+        return False
+
+    D4 = np.sign(np.linalg.det(E))
+    status = np.append(status, D4)
+    if check(status):
+        return False
+    # pt lies in T if and only if all signs are the same
+    return True
 
 
 def getCentroids(points, faces, dim=2):
