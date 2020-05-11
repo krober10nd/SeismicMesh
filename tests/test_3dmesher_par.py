@@ -50,8 +50,8 @@ def test_3dpar_mesher():
         vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
 
-        assert np.abs(3965 - len(points)) < 10
-        assert np.abs(21017 - len(cells)) < 10
+        assert np.abs(3965 - len(points)) < 20
+        assert np.abs(21017 - len(cells)) < 20
 
         # intersections = SeismicMesh.geometry.doAnyOverlap(points, cells, dim=3)
 
