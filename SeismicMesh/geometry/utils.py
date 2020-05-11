@@ -207,11 +207,11 @@ def get_edges(faces, dim=2):
     return edges
 
 
-def get_boundary_edges(faces):
+def get_boundary_edges(faces, dim=2):
     """
     Get the boundary edges of the mesh.
     """
-    edges = get_edges(faces)
+    edges = get_edges(faces, dim=2)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
@@ -391,7 +391,7 @@ def isManifold(points, faces, dim=2):
     2. A non-boundary edge should have two elements
     3. The number of boundary vertices == number of boundary edges
     """
-    bedges = get_boundary_edges(faces)
+    bedges = get_boundary_edges(faces, dim=dim)
     if bedges.size != points[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False
@@ -421,73 +421,47 @@ def ptInCell3(point, cell):
     Does the 3D point lie in the face with vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)
     3D cell?
     """
-
-    def check(status):
-        return np.all(status)
-
     (x, y, z) = point
     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = cell
+    # could be faster by just writing the determinant expression expanded...
     A = np.array(
-        [[x1, x2, x3, x4], [y1, y2, y3, y4], [z1, z2, z3, z4], [1.0, 1.0, 1.0, 1.0]]
-    ).T
-    B, C, D, E = np.copy(A), np.copy(A), np.copy(A), np.copy(A)
-    B[0, :] = x, y, z, 1.0
-    C[1, :] = x, y, z, 1.0
-    D[2, :] = x, y, z, 1.0
-    E[3, :] = x, y, z, 1.0
-    status = np.array([], dtype=int)
-    # calculate only all determinants if necessary
-    D0 = np.sign(np.linalg.det(A))
-    status = np.append(status, D0)
-
-    D1 = np.sign(np.linalg.det(B))
-    status = np.append(status, D1)
-    if check(status) is False:
-        return False
-
-    D2 = np.sign(np.linalg.det(C))
-    status = np.append(status, D2)
-    if check(status) is False:
-        return False
-
-    D3 = np.sign(np.linalg.det(D))
-    status = np.append(status, D3)
-    if check(status) is False:
-        return False
-
-    D4 = np.sign(np.linalg.det(E))
-    status = np.append(status, D4)
-    if check(status):
-        return False
+        [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]]
+    )
+    sign = []
+    for row in range(4):
+        tmp = A.copy()
+        tmp[row, :] = x, y, z, 1.0
+        sign = np.append(sign, np.sign(np.linalg.det(tmp)))
     # pt lies in T if and only if all signs are the same
-    return True
+    return (sign == -1).all() or (sign == 1).all()
 
 
-def getCentroids(points, faces, dim=2):
+def get_centroids(points, entities, dim=2):
     """
     Calculate the centroids of all the faces
     """
-    return points[faces].sum(1) / (dim + 1)
+    return points[entities].sum(1) / (dim + 1)
 
 
-def doAnyFacesOverlap(points, faces):
+def doAnyOverlap(points, entities, dim=2):
     """
-    Check if any faces connected to boundary of the mesh overlap
-    with another face connected to the boundary ignoring self-intersections.
-    Checks only the 1-ring around each boundary element for potential intersections
+    Check if any entities of dim D connected to boundary of the mesh overlap
+    with another entity D connected to the boundary ignoring self-intersections.
+    Checks only the 1-ring around each boundary entity for potential intersections
+    using barycentric coordinates.
     """
-    vtoe, ptr = vertex_to_elements(points, faces)
+    vtoe, ptr = vertex_to_elements(points, entities, dim=dim)
     # all elements that have a boundary vertex
-    beles = get_boundary_elements(points, faces)
+    beles = get_boundary_elements(points, entities, dim=dim)
     # centroids of these elements beles
-    bcents = getCentroids(points, faces[beles, :])
+    bcents = get_centroids(points, entities[beles, :], dim=dim)
     # store intersection pairs
     intersections = []
     # for all boundary triangles
     for ie, cent in enumerate(bcents):
         # collect all elements neis around boundary element ie
         neis = np.array([], dtype=int)
-        for vertex in faces[beles[ie], :]:
+        for vertex in entities[beles[ie], :]:
             for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
                 neis = np.append(neis, ele)
         # for all neighboring elements  to boundary element ie
@@ -495,21 +469,43 @@ def doAnyFacesOverlap(points, faces):
             # centroid ie should be in face ie by definition!
             if beles[ie] == bele:
                 continue
-            # does a centroid live inside another face?
-            x1, x2, x3 = points[faces[bele, :], 0]
-            y1, y2, y3 = points[faces[bele, :], 1]
-            if ptInFace2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
-                # centroid ie is inside face iee
-                print(
-                    "Alert: face "
-                    + str(beles[ie])
-                    + " intersects with face "
-                    + str(bele)
-                    + ". These will be adjusted.",
-                    flush=True,
-                )
-                # record all intersection pairs
-                intersections.append((beles[ie], bele))
+            if dim == 2:
+                # does a centroid live inside another face?
+                x1, x2, x3 = points[entities[bele, :], 0]
+                y1, y2, y3 = points[entities[bele, :], 1]
+                if ptInFace2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
+                    # centroid ie is inside face iee
+                    print(
+                        "Alert: face "
+                        + str(beles[ie])
+                        + " intersects with face "
+                        + str(bele)
+                        + ". These will be adjusted.",
+                        flush=True,
+                    )
+                    # record all intersection pairs
+                    intersections.append((beles[ie], bele))
+            elif dim == 3:
+                # does a centroid live inside another nei cell?
+                x1, x2, x3, x4 = points[entities[bele, :], 0]
+                y1, y2, y3, y4 = points[entities[bele, :], 1]
+                z1, z2, z3, z4 = points[entities[bele, :], 2]
+                if ptInCell3(
+                    (cent[0], cent[1], cent[2]),
+                    (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4),
+                ):
+                    # centroid ie is inside cell iee
+                    print(
+                        "Alert: cell "
+                        + str(beles[ie])
+                        + " intersects with cell "
+                        + str(bele)
+                        + ". These will be adjusted.",
+                        flush=True,
+                    )
+                    # record all intersection pairs
+                    intersections.append((beles[ie], bele))
+
     return intersections
 
 
@@ -519,7 +515,7 @@ def linter(points, faces, minqual=0.10):
     """
     qual = simpqual(points, faces)
     # determine if there's degenerate overlapping elements
-    intersections = doAnyFacesOverlap(points, faces)
+    intersections = doAnyOverlap(points, faces, dim=2)
     # delete the lower quality in the pair
     delete = []
     for intersect in intersections:

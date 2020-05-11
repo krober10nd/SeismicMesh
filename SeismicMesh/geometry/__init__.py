@@ -1,6 +1,6 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
-    doAnyFacesOverlap,
+    doAnyOverlap,
     linter,
     laplacian2,
     vertex_to_elements,
@@ -10,6 +10,7 @@ from .utils import (
     fixmesh,
     simpvol,
     simpqual,
+    get_centroids,
     get_edges,
     get_facets,
     get_boundary_elements,
@@ -18,12 +19,13 @@ from .utils import (
     get_winded_boundary_edges,
     get_boundary_facets,
     delete_boundary_elements,
+    ptInCell3,
 )
 
 __all__ = [
     "dblock",
     "drectangle",
-    "doAnyFacesOverlap",
+    "doAnyOverlap",
     "linter",
     "laplacian2",
     "vertex_to_elements",
@@ -33,6 +35,7 @@ __all__ = [
     "fixmesh",
     "simpvol",
     "simpqual",
+    "get_centroids",
     "get_edges",
     "get_facets",
     "get_boundary_vertices",
@@ -41,4 +44,5 @@ __all__ = [
     "get_boundary_edges",
     "get_boundary_facets",
     "get_winded_boundary_edges",
+    "ptInCell3"
 ]

@@ -414,7 +414,7 @@ class MeshGenerator:  # noqa: C901
         # improves mesh quality near decomp boundaries
         p, t = self.build(
             pfix=pfix,
-            max_iter=10,
+            max_iter=20,
             nscreen=nscreen,
             plot=plot,
             seed=seed,
