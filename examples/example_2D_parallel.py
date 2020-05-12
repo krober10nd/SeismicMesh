@@ -30,8 +30,12 @@ def example_2D_parallel():
         padstyle="linear_ramp",
     )
 
-    # Build mesh size function
+    # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
+    # All processors get same information
+    ef = comm.bcast(ef, 0)
+    # Build lambda functions
+    ef = ef.construct_lambdas()
 
     if rank == 0:
         ef.WriteVelocityModel("BP2004")

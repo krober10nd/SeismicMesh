@@ -394,7 +394,7 @@ class MeshGenerator:  # noqa: C901
         """
         p, t = self.build(
             pfix=pfix,
-            max_iter=max_iter - 10,
+            max_iter=max_iter,
             nscreen=nscreen,
             plot=plot,
             seed=seed,
@@ -414,7 +414,7 @@ class MeshGenerator:  # noqa: C901
         # improves mesh quality near decomp boundaries
         p, t = self.build(
             pfix=pfix,
-            max_iter=20,
+            max_iter=30,
             nscreen=nscreen,
             plot=plot,
             seed=seed,

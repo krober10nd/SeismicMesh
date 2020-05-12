@@ -427,11 +427,11 @@ def ptInCell3(point, cell):
     A = np.array(
         [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]]
     )
-    sign = []
-    for row in range(4):
+    sign = np.zeros(4)
+    for row in (0, 3):
         tmp = A.copy()
         tmp[row, :] = x, y, z, 1.0
-        sign = np.append(sign, np.sign(np.linalg.det(tmp)))
+        sign[row] = np.sign(np.linalg.det(tmp))
     # pt lies in T if and only if all signs are the same
     return (sign == -1).all() or (sign == 1).all()
 
