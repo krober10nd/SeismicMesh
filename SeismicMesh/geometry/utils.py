@@ -552,8 +552,8 @@ def calc_dihedral_angles(points, cells):
     """
     edges = np.array([[2, 3], [1, 3], [1, 2], [0, 3], [0, 2], [0, 1]], dtype=int)
 
-    d_ang_min = np.zeros((len(cells),1), dtype=float)
-    d_ang_max = np.zeros((len(cells),1), dtype=float)
+    d_ang_min = np.zeros((len(cells), 1), dtype=float)
+    d_ang_max = np.zeros((len(cells), 1), dtype=float)
 
     for ie, cell in enumerate(cells):
         _dh_angles = np.zeros(6, dtype=float)

@@ -421,6 +421,6 @@ class MeshGenerator:  # noqa: C901
             COMM=COMM,
             axis=axis,
             points=p,
-            perform_checks=True,
+            perform_checks=False,
         )
         return p, t
