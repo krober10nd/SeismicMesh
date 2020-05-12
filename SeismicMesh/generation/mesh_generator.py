@@ -206,7 +206,7 @@ class MeshGenerator:  # noqa: C901
                 if _method == "qhull":
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
-                        # This greatly avoids coplanar and colinear points
+                        # This greatly avoids coplanar and colinear points (just done once)
                         if count == 0:
                             jitter = np.random.uniform(
                                 size=(len(p), dim), low=-h0 / 10, high=h0 / 10

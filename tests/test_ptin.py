@@ -35,7 +35,6 @@ def test_ptin():
             *points[cells[0][3], 0:3],
         ),
     )
-    print(isIn)
     assert isIn != 1
 
 

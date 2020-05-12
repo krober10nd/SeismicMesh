@@ -47,7 +47,7 @@ def example_2D_parallel():
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.parallel_build(
-        max_iter=100, nscreen=1, seed=0, COMM=comm, axis=1
+        max_iter=100, nscreen=1, seed=0, COMM=comm, axis=0
     )
 
     if rank == 0:

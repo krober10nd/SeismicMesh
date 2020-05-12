@@ -17,7 +17,7 @@ def remove_duplicates(data):
     return np.unique(data, axis=1)
 
 
-def remove_external_faces(points, faces, extents, dim=2):
+def remove_external_faces(points, faces, extent, dim=2):
     """
     Remove faces with all three vertices outside block (external)
     and points that are very far from local domain
@@ -25,27 +25,33 @@ def remove_external_faces(points, faces, extents, dim=2):
     if dim == 2:
         signed_distance = sdf.drectangle(
             points[faces.flatten(), :],
-            x1=extents[0],
-            x2=extents[2],
-            y1=extents[1],
-            y2=extents[3],
+            x1=extent[0],
+            x2=extent[2],
+            y1=extent[1],
+            y2=extent[3],
         )
     elif dim == 3:
         signed_distance = sdf.dblock(
             points[faces.flatten(), :],
-            x1=extents[0],
-            x2=extents[3],
-            y1=extents[1],
-            y2=extents[4],
-            z1=extents[2],
-            z2=extents[5],
+            x1=extent[0],
+            x2=extent[3],
+            y1=extent[1],
+            y2=extent[4],
+            z1=extent[2],
+            z2=extent[5],
         )
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
     isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
-    # todo: this needs to be more objective
-    isFar = np.reshape(signed_distance > 1000, (-1, (dim + 1)))
+    # determine minimum extent
+    mIext = 99999999.0
+    for ix in range(0, dim):
+        mIext = np.amin(
+            [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
+        )
+    # if greater than 2 times the minimum lengthscale of the subdomain
+    isFar = np.reshape(signed_distance > 2 * mIext, (-1, (dim + 1)))
     faces_new = faces[
         (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
     ]
@@ -416,6 +422,11 @@ def ptInFace2(point, face):
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
+# @jit(nopython=True)
+def dete(A):
+    return np.linalg.det(A)
+
+
 def ptInCell3(point, cell):
     """
     Does the 3D point lie in the face with vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)
@@ -423,17 +434,42 @@ def ptInCell3(point, cell):
     """
     (x, y, z) = point
     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = cell
-    # could be faster by just writing the determinant expression expanded...
+    signs = np.zeros(5, dtype=int)
     A = np.array(
-        [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]]
+        [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
+        dtype=np.float32,
     )
-    sign = np.zeros(4)
-    for row in (0, 3):
-        tmp = A.copy()
-        tmp[row, :] = x, y, z, 1.0
-        sign[row] = np.sign(np.linalg.det(tmp))
-    # pt lies in T if and only if all signs are the same
-    return (sign == -1).all() or (sign == 1).all()
+    signs[0] = np.sign(dete(A))
+    B = np.array(
+        [[x, y, z, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
+        dtype=np.float32,
+    )
+    signs[1] = np.sign(dete(B))
+    if signs[1] != signs[0]:
+        return False
+    C = np.array(
+        [[x1, y1, z1, 1.0], [x, y, z, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
+        dtype=np.float32,
+    )
+    signs[2] = np.sign(dete(C))
+    if signs[2] != signs[1]:
+        return False
+    D = np.array(
+        [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x, y, z, 1.0], [x4, y4, z4, 1.0]],
+        dtype=np.float32,
+    )
+    signs[3] = np.sign(dete(D))
+    if signs[3] != signs[2]:
+        return False
+    E = np.array(
+        [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x, y, z, 1.0]],
+        dtype=np.float32,
+    )
+    signs[4] = np.sign(dete(E))
+    if signs[4] != signs[3]:
+        return False
+    # point lies in cell if and only if all signs are the same
+    return (signs == -1).all() or (signs == 1).all()
 
 
 def get_centroids(points, entities, dim=2):
@@ -450,6 +486,8 @@ def doAnyOverlap(points, entities, dim=2):
     Checks only the 1-ring around each boundary entity for potential intersections
     using barycentric coordinates.
     """
+    import time
+
     vtoe, ptr = vertex_to_elements(points, entities, dim=dim)
     # all elements that have a boundary vertex
     beles = get_boundary_elements(points, entities, dim=dim)
@@ -461,6 +499,7 @@ def doAnyOverlap(points, entities, dim=2):
     for ie, cent in enumerate(bcents):
         # collect all elements neis around boundary element ie
         neis = np.array([], dtype=int)
+        # TODO this is very slow
         for vertex in entities[beles[ie], :]:
             for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
                 neis = np.append(neis, ele)
@@ -516,6 +555,9 @@ def linter(points, faces, minqual=0.10, dim=2):
     print("Performing mesh linting...", flush=True)
     qual = simpqual(points, faces)
     # determine if there's degenerate overlapping elements
+    import time
+
+    t1 = time.time()
     intersections = doAnyOverlap(points, faces, dim=dim)
     # delete the lower quality in the pair
     delete = []
@@ -526,6 +568,7 @@ def linter(points, faces, minqual=0.10, dim=2):
     delete = np.unique(delete)
     print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
     faces = np.delete(faces, delete, axis=0)
+    print(time.time() - t1)
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
     # delete remaining low quality boundary elements

@@ -43,17 +43,23 @@ def test_3dpar_mesher():
 
     # Build the mesh with all axis combinations
     points, cells = mshgen.build(
-        max_iter=30, nscreen=1, seed=0, COMM=comm, axis=0, perform_checks=True
+        max_iter=10, nscreen=1, seed=0, COMM=comm, axis=0, perform_checks=True
     )
 
     if rank == 0:
+
+        np.savetxt("points.txt", points, delimiter=",")
+        np.savetxt("cells.txt", cells, delimiter=",")
+
+        import meshio
+
+        meshio.write_points_cells(
+            "test2.vtk", points, [("tetra", cells)],
+        )
         vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
-
         assert np.abs(3965 - len(points)) < 20
         assert np.abs(21017 - len(cells)) < 20
-
-        # intersections = SeismicMesh.geometry.doAnyOverlap(points, cells, dim=3)
 
 
 if __name__ == "__main__":
