@@ -1,6 +1,7 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
     doAnyOverlap,
+    calc_dihedral_angles,
     linter,
     laplacian2,
     vertex_to_elements,
@@ -25,6 +26,7 @@ from .utils import (
 __all__ = [
     "dblock",
     "drectangle",
+    "calc_dihedral_angles",
     "doAnyOverlap",
     "linter",
     "laplacian2",

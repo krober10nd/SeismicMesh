@@ -422,7 +422,6 @@ def ptInFace2(point, face):
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
-# @jit(nopython=True)
 def dete(A):
     return np.linalg.det(A)
 
@@ -486,7 +485,6 @@ def doAnyOverlap(points, entities, dim=2):
     Checks only the 1-ring around each boundary entity for potential intersections
     using barycentric coordinates.
     """
-    import time
 
     vtoe, ptr = vertex_to_elements(points, entities, dim=dim)
     # all elements that have a boundary vertex
@@ -499,7 +497,6 @@ def doAnyOverlap(points, entities, dim=2):
     for ie, cent in enumerate(bcents):
         # collect all elements neis around boundary element ie
         neis = np.array([], dtype=int)
-        # TODO this is very slow
         for vertex in entities[beles[ie], :]:
             for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
                 neis = np.append(neis, ele)
@@ -548,6 +545,40 @@ def doAnyOverlap(points, entities, dim=2):
     return intersections
 
 
+def calc_dihedral_angles(points, cells):
+    """
+    Calculate the dihedral angles of each tetrahedron
+    defined by points and connectivity in cells
+    """
+    edges = np.array([[2, 3], [1, 3], [1, 2], [0, 3], [0, 2], [0, 1]], dtype=int)
+
+    d_ang_min = np.zeros((len(cells),1), dtype=float)
+    d_ang_max = np.zeros((len(cells),1), dtype=float)
+
+    for ie, cell in enumerate(cells):
+        _dh_angles = np.zeros(6, dtype=float)
+        for i in range(6):
+            i0 = cell[edges[i][0]]
+            i1 = cell[edges[i][1]]
+            i2 = cell[edges[5 - i][0]]
+            i3 = cell[edges[5 - i][1]]
+            p0 = points[i0]
+            v1 = points[i1] - p0
+            v2 = points[i2] - p0
+            v3 = points[i3] - p0
+            v1 /= np.linalg.norm(v1)
+            v2 /= np.linalg.norm(v2)
+            v3 /= np.linalg.norm(v3)
+            cphi = (np.dot(v2, v3) - np.dot(v1, v2) * np.dot(v1, v3)) / (
+                np.linalg.norm(np.cross(v1, v2)) * np.linalg.norm(np.cross(v1, v3))
+            )
+            _dh_angles[i] = np.rad2deg(np.arccos(cphi))
+        d_ang_min[ie] = np.amin(_dh_angles)
+        d_ang_max[ie] = np.amax(_dh_angles)
+    d_ang_rng = np.hstack((d_ang_min, d_ang_max))
+    return d_ang_rng
+
+
 def linter(points, faces, minqual=0.10, dim=2):
     """
     Remove and check mesh for defects
@@ -569,6 +600,12 @@ def linter(points, faces, minqual=0.10, dim=2):
     print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
     faces = np.delete(faces, delete, axis=0)
     print(time.time() - t1)
+
+    # calculate range of dihedral angles for each tetra
+    if dim == 3:
+        dh_range = calc_dihedral_angles(points, faces)
+        print(dh_range, flush=True)
+
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
     # delete remaining low quality boundary elements
