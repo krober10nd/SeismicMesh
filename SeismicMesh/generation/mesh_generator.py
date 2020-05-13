@@ -264,7 +264,7 @@ class MeshGenerator:  # noqa: C901
                 bars = mutils.unique_rows(bars)  # Bars as node pairs
                 bars = bars[0]
 
-                # 5. Graphical output of the current mesh
+                # 5a. Graphical output of the current mesh
                 if plot and not PARALLEL:
                     if count % nscreen == 0:
                         if dim == 2:
@@ -421,6 +421,6 @@ class MeshGenerator:  # noqa: C901
             COMM=COMM,
             axis=axis,
             points=p,
-            perform_checks=False,
+            perform_checks=True,
         )
         return p, t

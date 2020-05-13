@@ -33,10 +33,12 @@ include( ${CGAL_USE_FILE})
 set (MIGRATION_SRCE "SeismicMesh/migration/cpp")
 set (GENERATION_SRCE "SeismicMesh/generation/cpp")
 set (SIZING_SRCE "SeismicMesh/sizing/cpp")
+set (GEOMETRY_SRCE "SeismicMesh/geometry/cpp")
 
-include_directories (${MIGRATION_SRCE} ${GENERATION_SRCE} ${SIZING_SRC})
+include_directories (${MIGRATION_SRCE} ${GENERATION_SRCE} ${SIZING_SRC} ${GEOMETRY_SRCE})
 
 add_subdirectory(pybind11)
 pybind11_add_module(cpputils ${SOURCES}  "${MIGRATION_SRCE}/cpputils.cpp")
 pybind11_add_module(FastHJ ${SOURCES} "${SIZING_SRCE}/FastHJ.cpp")
 pybind11_add_module(c_cgal ${SOURCES} "${GENERATION_SRCE}/delaunay.cpp")
+pybind11_add_module(fast_geometry ${SOURCES} "${GEOMETRY_SRCE}/fast_geometry.cpp")

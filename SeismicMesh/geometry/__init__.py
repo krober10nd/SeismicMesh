@@ -1,7 +1,6 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
     doAnyOverlap,
-    calc_dihedral_angles,
     linter,
     laplacian2,
     vertex_to_elements,
@@ -20,12 +19,16 @@ from .utils import (
     get_winded_boundary_edges,
     get_boundary_facets,
     delete_boundary_elements,
+    calc_dihedral_angles_slow,
     ptInCell3,
 )
+from .cpp.fast_geometry import calc_4x4determinant, calc_dihedral_angles
 
 __all__ = [
+    "calc_4x4determinant",
     "dblock",
     "drectangle",
+    "calc_dihedral_angles_slow",
     "calc_dihedral_angles",
     "doAnyOverlap",
     "linter",

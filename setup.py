@@ -97,6 +97,7 @@ setup(
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay"),
         CMakeExtension("SeismicMesh/migration/cpp/cpputils"),
+        CMakeExtension("SeismicMesh/geometry/cpp/fast_geometry"),
     ],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,

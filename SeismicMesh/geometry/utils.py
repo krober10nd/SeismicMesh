@@ -3,9 +3,14 @@ import numpy as np
 
 from . import signed_distance_functions as sdf
 
+from .cpp import fast_geometry as gutils
+
 """
 Routines to perform geometrical/topological operations on meshes
 """
+
+# cpp implementation of 4x4 determinant calc
+dete = gutils.calc_4x4determinant
 
 
 def remove_duplicates(data):
@@ -422,47 +427,40 @@ def ptInFace2(point, face):
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
-def dete(A):
-    return np.linalg.det(A)
-
-
 def ptInCell3(point, cell):
     """
     Does the 3D point lie in the face with vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)
     3D cell?
     """
+    # utilize the fixed size determinant in cpp
+
     (x, y, z) = point
     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = cell
     signs = np.zeros(5, dtype=int)
     A = np.array(
         [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
-        dtype=np.float32,
     )
     signs[0] = np.sign(dete(A))
     B = np.array(
         [[x, y, z, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
-        dtype=np.float32,
     )
     signs[1] = np.sign(dete(B))
     if signs[1] != signs[0]:
         return False
     C = np.array(
         [[x1, y1, z1, 1.0], [x, y, z, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
-        dtype=np.float32,
     )
     signs[2] = np.sign(dete(C))
     if signs[2] != signs[1]:
         return False
     D = np.array(
         [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x, y, z, 1.0], [x4, y4, z4, 1.0]],
-        dtype=np.float32,
     )
     signs[3] = np.sign(dete(D))
     if signs[3] != signs[2]:
         return False
     E = np.array(
         [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x, y, z, 1.0]],
-        dtype=np.float32,
     )
     signs[4] = np.sign(dete(E))
     if signs[4] != signs[3]:
@@ -545,7 +543,7 @@ def doAnyOverlap(points, entities, dim=2):
     return intersections
 
 
-def calc_dihedral_angles(points, cells):
+def calc_dihedral_angles_slow(points, cells):
     """
     Calculate the dihedral angles of each tetrahedron
     defined by points and connectivity in cells
@@ -601,10 +599,10 @@ def linter(points, faces, minqual=0.10, dim=2):
     faces = np.delete(faces, delete, axis=0)
     print(time.time() - t1)
 
-    # calculate range of dihedral angles for each tetra
-    if dim == 3:
-        dh_range = calc_dihedral_angles(points, faces)
-        print(dh_range, flush=True)
+    ## calculate range of dihedral angles for each tetra
+    # if dim == 3:
+    #    dh_range = calc_dihedral_angles(points, faces)
+    #    print(dh_range, flush=True)
 
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
