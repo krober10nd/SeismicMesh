@@ -6,6 +6,7 @@
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 import numpy as np
+from mpi4py import MPI
 import scipy.spatial as spspatial
 import matplotlib.pyplot as plt
 import time
@@ -80,6 +81,7 @@ class MeshGenerator:  # noqa: C901
         axis=0,
         points=None,
         perform_checks=False,
+        mesh_improvement=False,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -115,7 +117,6 @@ class MeshGenerator:  # noqa: C901
         comm = COMM
         _axis = axis
         _points = points
-        _perform_checks = perform_checks
 
         if comm is not None:
             PARALLEL = True
@@ -141,6 +142,10 @@ class MeshGenerator:  # noqa: C901
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
+        if mesh_improvement:
+            SLIVERS = True  # flag will go to false if no slivers
+        else:
+            SLIVERS = False
 
         if pfix is not None and not PARALLEL:
             pfix = np.array(pfix, dtype="d")
@@ -179,6 +184,8 @@ class MeshGenerator:  # noqa: C901
         # 2b. Call domain decomposition
         if PARALLEL:
             p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, axis=_axis)
+
+        num_moves = np.array([], dtype=int)
 
         N = p.shape[0]
 
@@ -275,6 +282,62 @@ class MeshGenerator:  # noqa: C901
                         elif dim == 3:
                             plt.title("Retriangulation %d" % count)
 
+            # Slow the movement of points periodically as things converge
+            if mesh_improvement and count % 50 == 0 and dim == 3:
+                deltat /= 2.0
+
+            # Periodic sliver removal
+            if mesh_improvement and count != (max_iter - 1) and dim == 3:
+                # find indices for edges of sliver cells that have large dihedral angles
+                dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
+                edgeNums = np.mod(np.arange(0, 6 * len(t)), 6)
+                isLarge = np.argwhere(dh_angles[:, 0] > 160)
+                edgeNums = edgeNums[isLarge]
+                eleNums = np.floor(isLarge / 6).astype("int")
+                eleNums, ix = np.unique(eleNums, return_index=True)
+                edgeNums = edgeNums[ix]
+                if count % nscreen == 0:
+                    print(
+                        "On rank: "
+                        + str(rank)
+                        + " There are "
+                        + str(len(eleNums))
+                        + " slivers...",
+                        flush=True,
+                    )
+                # dh_angles were calculated for the edges in each cell in the following order
+                edge_template = np.array(
+                    [[2, 3], [1, 3], [1, 2], [0, 3], [0, 2], [0, 1]], dtype=int
+                )
+                move = np.array([], dtype=int)
+                for eleNum, edgeNum in zip(eleNums, edgeNums):
+                    move = np.append(move, t[eleNum, edge_template[edgeNum]])
+
+                num_move = move.size
+                if PARALLEL:
+                    if comm.allreduce(num_move, op=MPI.SUM) == 0:
+                        if rank == 0:
+                            print(
+                                "Terimation reached...No slivers detected!", flush=True
+                            )
+                        p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
+                        return p, t
+                else:
+                    num_moves = np.append(num_moves, num_move)
+                    if num_move == 0:
+                        print("Terimation reached...No slivers detected!", flush=True)
+                        np.savetxt("num_moves.txt", num_moves, delimiter=",")
+                        return p, t
+                # perturb the points associated with the large dihedral angle
+                jitter = np.random.uniform(
+                    size=(len(move), dim), low=-h0 / 10, high=h0 / 10
+                )
+                if PARALLEL:
+                    if count < max_iter - 1:
+                        p[move] += jitter
+                else:
+                    p[move] += jitter
+
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
             L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
@@ -331,7 +394,7 @@ class MeshGenerator:  # noqa: C901
                 )
 
             # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
-            if maxdp < ptol * h0 and not PARALLEL:
+            if maxdp < ptol * h0 and not SLIVERS and not PARALLEL:
                 print(
                     "Termination reached...all interior nodes move less than dptol.",
                     flush=True,
@@ -340,8 +403,7 @@ class MeshGenerator:  # noqa: C901
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
 
-                    # TODO perform linting in 3d
-                    if rank == 0 and _perform_checks:
+                    if rank == 0 and perform_checks:
                         # perform essential checks
                         p, t = geometry.linter(p, t, dim=dim)
 
@@ -357,8 +419,7 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-                    # TODO perform linting in 3d
-                    if rank == 0 and _perform_checks:
+                    if rank == 0 and perform_checks:
                         # perform essential checks
                         p, t = geometry.linter(p, t, dim=dim)
                 break
