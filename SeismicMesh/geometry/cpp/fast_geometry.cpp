@@ -126,8 +126,44 @@ py::array calc_dihedral_angles(py::array_t<double, py::array::c_style | py::arra
   ));
 }
 
+// calcuate the gradient of the circumsphere radius wrt to a point
+//std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p0, std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3)
+//{
+//
+//    return 0;
+//}
 
-// fixed size calculation of 4x4 determinant
+// fixed size calculation for 3x3 determinant
+double c_calc_3x3determinant(std::vector<double> &m){
+    // | (0,0) 0  (0,1) 1 (0,2) 2|
+    // | (1,0) 3  (1,1) 4 (1,2) 5|
+    // | (2,0) 6  (2,1) 7 (2,2) 8|
+    return m[0]*(m[4]*m[8] - m[7]*m[5]) -
+           m[1]*(m[3]*m[8] - m[6]*m[5]) +
+           m[2]*(m[3]*m[7] - m[6]*m[4]);
+}
+
+// ----------------
+// Python interface for c_calc_3x3determinant
+// ----------------
+double calc_3x3determinant(py::array_t<double, py::array::c_style | py::array::forcecast> matrix)
+{
+  // allocate std::vector (to pass to the C++ function)
+  std::vector<double> cppMatrix(9);
+
+  // copy py::array -> std::vector
+  std::memcpy(cppMatrix.data(),matrix.data(),9*sizeof(double));
+
+  // call cpp code
+  double result= c_calc_3x3determinant(cppMatrix);
+
+  return result;
+}
+
+
+
+
+// fixed size calculation for 4x4 determinant
 double c_calc_4x4determinant(std::vector<double> &m) {
     return
          m[12] * m[9]  * m[6]  * m[3]   -  m[8] * m[13] * m[6]  * m[3]   -
@@ -164,4 +200,5 @@ double calc_4x4determinant(py::array_t<double, py::array::c_style | py::array::f
 PYBIND11_MODULE(fast_geometry, m) {
     m.def("calc_dihedral_angles", &calc_dihedral_angles);
     m.def("calc_4x4determinant", &calc_4x4determinant);
+    m.def("calc_3x3determinant", &calc_3x3determinant);
 }

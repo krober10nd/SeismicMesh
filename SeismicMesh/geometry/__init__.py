@@ -22,9 +22,14 @@ from .utils import (
     calc_dihedral_angles_slow,
     ptInCell3,
 )
-from .cpp.fast_geometry import calc_4x4determinant, calc_dihedral_angles
+from .cpp.fast_geometry import (
+    calc_3x3determinant,
+    calc_4x4determinant,
+    calc_dihedral_angles,
+)
 
 __all__ = [
+    "calc_3x3determinant",
     "calc_4x4determinant",
     "dblock",
     "drectangle",

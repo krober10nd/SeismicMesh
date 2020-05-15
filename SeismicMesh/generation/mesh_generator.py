@@ -82,6 +82,7 @@ class MeshGenerator:  # noqa: C901
         points=None,
         perform_checks=False,
         mesh_improvement=False,
+        angthres=20,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -102,6 +103,8 @@ class MeshGenerator:  # noqa: C901
         axis: axis to decomp the domain wrt (default==0)
         points: initial point distribution (default==None)
         perform_checks: run serial linting (slow)
+        mesh_improvement: run mesh improvement (default=False)
+        angthres: desired minimum dihedral angle (default 20 degrees)
 
         Returns
         -------
@@ -144,6 +147,7 @@ class MeshGenerator:  # noqa: C901
         deps = np.sqrt(np.finfo(np.double).eps) * h0
         if mesh_improvement:
             SLIVERS = True  # flag will go to false if no slivers
+            angthres = 180 - angthres
         else:
             SLIVERS = False
 
@@ -291,7 +295,7 @@ class MeshGenerator:  # noqa: C901
                 # find indices for edges of sliver cells that have large dihedral angles
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 edgeNums = np.mod(np.arange(0, 6 * len(t)), 6)
-                isLarge = np.argwhere(dh_angles[:, 0] > 160)
+                isLarge = np.argwhere(dh_angles[:, 0] > angthres)
                 edgeNums = edgeNums[isLarge]
                 eleNums = np.floor(isLarge / 6).astype("int")
                 eleNums, ix = np.unique(eleNums, return_index=True)
@@ -330,7 +334,7 @@ class MeshGenerator:  # noqa: C901
                         return p, t
                 # perturb the points associated with the large dihedral angle
                 jitter = np.random.uniform(
-                    size=(len(move), dim), low=-h0 / 10, high=h0 / 10
+                    size=(len(move), dim), low=-h0 / 20, high=h0 / 20
                 )
                 if PARALLEL:
                     if count < max_iter - 1:
