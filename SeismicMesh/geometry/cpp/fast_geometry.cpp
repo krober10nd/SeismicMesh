@@ -272,28 +272,33 @@ py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::ar
 {
 
   int num_points = p0.size()/3;
-  // allocate std::vector (to pass to the C++ function)
+
+  std::vector<double> circumsphere_grad;
+
   std::vector<double> cppP0(3*num_points);
   std::vector<double> cppP1(3*num_points);
   std::vector<double> cppP2(3*num_points);
   std::vector<double> cppP3(3*num_points);
 
-  // copy py::array -> std::vector
+  std::vector<double> tmpP1(3);
+  std::vector<double> tmpP2(3);
+  std::vector<double> tmpP3(3);
+
+  circumsphere_grad.resize(num_points*3);
+
   std::memcpy(cppP0.data(),p0.data(),3*num_points*sizeof(double));
   std::memcpy(cppP1.data(),p1.data(),3*num_points*sizeof(double));
   std::memcpy(cppP2.data(),p2.data(),3*num_points*sizeof(double));
   std::memcpy(cppP3.data(),p3.data(),3*num_points*sizeof(double));
 
-  std::vector<double> circumsphere_grad;
-  circumsphere_grad.resize(num_points*3);
   for(int i=0; i < num_points; ++i){
       // translate points so that P0 is at (0.0,0.0,0.0)
       for(int j=0; j < 3; ++j){
-          cppP1[i*3+j]-=cppP0[i*3+j];
-          cppP2[i*3+j]-=cppP0[i*3+j];
-          cppP3[i*3+j]-=cppP0[i*3+j];
+          tmpP1[j]=cppP1[i*3+j]-cppP0[i*3+j];
+          tmpP2[j]=cppP2[i*3+j]-cppP0[i*3+j];
+          tmpP3[j]=cppP3[i*3+j]-cppP0[i*3+j];
       }
-      std::vector<double> tmp = c_calc_circumsphere_grad(cppP1, cppP2, cppP3);
+      std::vector<double> tmp = c_calc_circumsphere_grad(tmpP1, tmpP2, tmpP3);
       // unack gradient for each sliver
       for(int j=0; j<3; ++j){
         circumsphere_grad[i*3+j] =tmp[j];
@@ -301,8 +306,8 @@ py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::ar
   }
 
   ssize_t              sodble    = sizeof(double);
-  std::vector<ssize_t> shape     = {num_points, 1};
-  std::vector<ssize_t> strides   = {sodble, sodble};
+  std::vector<ssize_t> shape     = {num_points, 3};
+  std::vector<ssize_t> strides   = {sodble*3, sodble};
 
   // return 2-D NumPy array
   return py::array(py::buffer_info(
