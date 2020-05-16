@@ -82,7 +82,7 @@ class MeshGenerator:  # noqa: C901
         points=None,
         perform_checks=False,
         mesh_improvement=False,
-        angthres=20,
+        max_dh_angle=160,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -147,7 +147,6 @@ class MeshGenerator:  # noqa: C901
         deps = np.sqrt(np.finfo(np.double).eps) * h0
         if mesh_improvement:
             SLIVERS = True  # flag will go to false if no slivers
-            angthres = 180 - angthres
         else:
             SLIVERS = False
 
@@ -295,7 +294,7 @@ class MeshGenerator:  # noqa: C901
                 # find indices for edges of sliver cells that have large dihedral angles
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 edgeNums = np.mod(np.arange(0, 6 * len(t)), 6)
-                isLarge = np.argwhere(dh_angles[:, 0] > angthres)
+                isLarge = np.argwhere(dh_angles[:, 0] > max_dh_angle)
                 edgeNums = edgeNums[isLarge]
                 eleNums = np.floor(isLarge / 6).astype("int")
                 eleNums, ix = np.unique(eleNums, return_index=True)

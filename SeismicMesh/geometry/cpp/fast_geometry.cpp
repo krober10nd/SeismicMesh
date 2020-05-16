@@ -126,12 +126,6 @@ py::array calc_dihedral_angles(py::array_t<double, py::array::c_style | py::arra
   ));
 }
 
-// calcuate the gradient of the circumsphere radius wrt to a point
-//std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p0, std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3)
-//{
-//
-//    return 0;
-//}
 
 // fixed size calculation for 3x3 determinant
 double c_calc_3x3determinant(std::vector<double> &m){
@@ -159,9 +153,6 @@ double calc_3x3determinant(py::array_t<double, py::array::c_style | py::array::f
 
   return result;
 }
-
-
-
 
 // fixed size calculation for 4x4 determinant
 double c_calc_4x4determinant(std::vector<double> &m) {
@@ -197,7 +188,136 @@ double calc_4x4determinant(py::array_t<double, py::array::c_style | py::array::f
   return result;
 }
 
+
+// Calcuate the gradient of the circumsphere radius wrt to point0
+// used to guide the pertubation to the point
+// !!!Assumes p0 is translated to (0,0,0)!!!
+std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3)
+{
+    // coordinates of cell (p0 is assumed fixed)
+    double x1, x2, x3;
+    double y1, y2, y3;
+    double z1, z2, z3;
+    // the square of the point coordinates
+    double p1sq;
+    double p2sq;
+    double p3sq;
+    // some determinants
+    double a;
+    double Dx;
+    double Dy;
+    double Dz;
+    // gradients of determinants
+    std::vector<double> gradient_a;
+    std::vector<double> gradient_Dx;
+    std::vector<double> gradient_Dy;
+    std::vector<double> gradient_Dz;
+    // gradient of the cirumsphere radius
+    std::vector<double> gradient_cradius;
+    // components of the gradient of the circumsphere radius
+    double gradient_cradius_x;
+    double gradient_cradius_y;
+    double gradient_cradius_z;
+    // used for getting the determinants
+    std::vector<double> tmp;
+    // unpack coordinates
+    x1 = p1[0];
+    y1 = p1[1];
+    z1 = p1[2];
+    x2 = p2[0];
+    y2 = p2[1];
+    z2 = p2[2];
+    x3 = p3[0];
+    y3 = p3[1];
+    z3 = p3[2];
+    // Calculate squared coordinates for p1,p2,p3
+    p1sq = p1[0]*p1[0]+p1[1]*p1[1]+p1[2]*p1[2];
+    p2sq = p2[0]*p2[0]+p2[1]*p2[1]+p2[2]*p2[2];
+    p3sq = p3[0]*p3[0]+p3[1]*p3[1]+p3[2]*p3[2];
+    // Determinant of "a"
+    tmp = {x1,y1,z1,x2,y2,z3,x3,y3,z3};
+    a = c_calc_3x3determinant(tmp);
+    // Determinant of "Dx"
+    tmp = {p1sq, y1, z1, p2sq, y2, z2, p3sq, y3, z3};
+    Dx = c_calc_3x3determinant(tmp);
+    Dx *= -1;
+    // Determinant of "Dy"
+    tmp = {p1sq, x1, z1, p2sq, x2, z2, p3sq, x3, z3};
+    Dy = c_calc_3x3determinant(tmp);
+    // Determinant of "Dz"
+    tmp = {p1sq, x1, y1, p2sq, x2, y2, p3sq, x3, y3};
+    Dz = c_calc_3x3determinant(tmp);
+    Dz *= -1;
+    // Gradient of "a"
+    gradient_a = {y2*z3-y3*z2, -(x2*z3-x3*z2), x2*y3-x3*y2};
+    // Gradient of "Dx"
+    gradient_Dx = {-2*x1*gradient_a[0], -2*y1*gradient_a[0]+p2sq*z3-p3sq*z2, -2*z1*gradient_a[0]-p2sq*y3+p3sq*y2};
+    // Gradient of "Dy"
+    gradient_Dy = {-2*x1*gradient_a[1]-p2sq*z3+p3sq*z2, -2*y1*gradient_a[1], -2*z1*gradient_a[1]+p2sq*x3-p3sq*x2};
+    // Gradient of "Dz"
+    gradient_Dz = {-2*x1*gradient_a[2]+p2sq*y3-p3sq*y2, -2*y1*gradient_a[2]-p2sq*x3+p3sq*x2, -2*z1*gradient_a[2]};
+    // The gradient of the circumradius
+    gradient_cradius_x = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[0]+Dy*gradient_Dy[0]+Dz*gradient_Dz[0])-gradient_a[0]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius_y = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[1]+Dy*gradient_Dy[1]+Dz*gradient_Dz[1])-gradient_a[1]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius_z = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[2]+Dy*gradient_Dy[2]+Dz*gradient_Dz[2])-gradient_a[2]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius = {gradient_cradius_x, gradient_cradius_y, gradient_cradius_z};
+    return gradient_cradius;
+}
+
+// Python wrapper accepts the coordinates of the slivers' vertices
+py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::array::forcecast> p0,
+                                 py::array_t<double, py::array::c_style | py::array::forcecast> p1,
+                                 py::array_t<double, py::array::c_style | py::array::forcecast> p2,
+                                 py::array_t<double, py::array::c_style | py::array::forcecast> p3)
+{
+
+  int num_points = p0.size()/3;
+  // allocate std::vector (to pass to the C++ function)
+  std::vector<double> cppP0(3*num_points);
+  std::vector<double> cppP1(3*num_points);
+  std::vector<double> cppP2(3*num_points);
+  std::vector<double> cppP3(3*num_points);
+
+  // copy py::array -> std::vector
+  std::memcpy(cppP0.data(),p0.data(),3*num_points*sizeof(double));
+  std::memcpy(cppP1.data(),p1.data(),3*num_points*sizeof(double));
+  std::memcpy(cppP2.data(),p2.data(),3*num_points*sizeof(double));
+  std::memcpy(cppP3.data(),p3.data(),3*num_points*sizeof(double));
+
+  std::vector<double> circumsphere_grad;
+  circumsphere_grad.resize(num_points*3);
+  for(int i=0; i < num_points; ++i){
+      // translate points so that P0 is at (0.0,0.0,0.0)
+      for(int j=0; j < 3; ++j){
+          cppP1[i*3+j]-=cppP0[i*3+j];
+          cppP2[i*3+j]-=cppP0[i*3+j];
+          cppP3[i*3+j]-=cppP0[i*3+j];
+      }
+      std::vector<double> tmp = c_calc_circumsphere_grad(cppP1, cppP2, cppP3);
+      // unack gradient for each sliver
+      for(int j=0; j<3; ++j){
+        circumsphere_grad[i*3+j] =tmp[j];
+      }
+  }
+
+  ssize_t              sodble    = sizeof(double);
+  std::vector<ssize_t> shape     = {num_points, 1};
+  std::vector<ssize_t> strides   = {sodble, sodble};
+
+  // return 2-D NumPy array
+  return py::array(py::buffer_info(
+    circumsphere_grad.data(),                           /* data as contiguous array  */
+    sizeof(double),                          /* size of one scalar        */
+    py::format_descriptor<double>::format(), /* data type                 */
+    2,                                    /* number of dimensions      */
+    shape,                                   /* shape of the matrix       */
+    strides                                  /* strides for each axis     */
+  ));
+}
+
+
 PYBIND11_MODULE(fast_geometry, m) {
+    m.def("calc_circumsphere_grad", &calc_circumsphere_grad);
     m.def("calc_dihedral_angles", &calc_dihedral_angles);
     m.def("calc_4x4determinant", &calc_4x4determinant);
     m.def("calc_3x3determinant", &calc_3x3determinant);

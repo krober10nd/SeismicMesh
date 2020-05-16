@@ -23,12 +23,14 @@ from .utils import (
     ptInCell3,
 )
 from .cpp.fast_geometry import (
+    calc_circumsphere_grad,
     calc_3x3determinant,
     calc_4x4determinant,
     calc_dihedral_angles,
 )
 
 __all__ = [
+    "calc_circumsphere_grad",
     "calc_3x3determinant",
     "calc_4x4determinant",
     "dblock",
