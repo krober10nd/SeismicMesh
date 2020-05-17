@@ -82,7 +82,8 @@ class MeshGenerator:  # noqa: C901
         points=None,
         perform_checks=False,
         mesh_improvement=False,
-        max_dh_angle=160,
+        max_dh_angle=170,
+        min_dh_angle=10,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -145,6 +146,7 @@ class MeshGenerator:  # noqa: C901
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
+        eps = np.finfo(np.double).eps
         if mesh_improvement:
             SLIVERS = True  # flag will go to false if no slivers
         else:
@@ -291,14 +293,12 @@ class MeshGenerator:  # noqa: C901
 
             # Periodic sliver removal
             if mesh_improvement and count != (max_iter - 1) and dim == 3:
-                # find indices for edges of sliver cells that have large dihedral angles
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
-                edgeNums = np.mod(np.arange(0, 6 * len(t)), 6)
-                isLarge = np.argwhere(dh_angles[:, 0] > max_dh_angle)
-                edgeNums = edgeNums[isLarge]
-                eleNums = np.floor(isLarge / 6).astype("int")
+                outOfBounds = np.argwhere(
+                    (dh_angles[:, 0] < min_dh_angle) | (dh_angles[:, 0] > max_dh_angle)
+                )
+                eleNums = np.floor(outOfBounds / 6).astype("int")
                 eleNums, ix = np.unique(eleNums, return_index=True)
-                edgeNums = edgeNums[ix]
                 if count % nscreen == 0:
                     print(
                         "On rank: "
@@ -308,14 +308,7 @@ class MeshGenerator:  # noqa: C901
                         + " slivers...",
                         flush=True,
                     )
-                # dh_angles were calculated for the edges in each cell in the following order
-                edge_template = np.array(
-                    [[2, 3], [1, 3], [1, 2], [0, 3], [0, 2], [0, 1]], dtype=int
-                )
-                move = np.array([], dtype=int)
-                for eleNum, edgeNum in zip(eleNums, edgeNums):
-                    move = np.append(move, t[eleNum, edge_template[edgeNum]])
-
+                move = t[eleNums, 1]
                 num_move = move.size
                 if PARALLEL:
                     if comm.allreduce(num_move, op=MPI.SUM) == 0:
@@ -331,15 +324,31 @@ class MeshGenerator:  # noqa: C901
                         print("Terimation reached...No slivers detected!", flush=True)
                         np.savetxt("num_moves.txt", num_moves, delimiter=",")
                         return p, t
-                # perturb the points associated with the large dihedral angle
-                jitter = np.random.uniform(
-                    size=(len(move), dim), low=-h0 / 20, high=h0 / 20
-                )
+
+                # perturb the points associated with the out-of-bound dihedral angle
+                # pertubation vector is random
+                perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
+                perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+                perturb /= perturb_norm[:, None]
+
+                # perturb vector is based on circumradius expansion
+                #p0, p1, p2, p3 = (
+                #    p[t[eleNums, 0], :],
+                #    p[t[eleNums, 1], :],
+                #    p[t[eleNums, 2], :],
+                #    p[t[eleNums, 3], :],
+                #)
+                #perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+                #perturb[np.isinf(perturb)] = 1.0
+                #perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+                #perturb /= perturb_norm[:, None]
+
+                # perturb % of minimum mesh size
                 if PARALLEL:
                     if count < max_iter - 1:
-                        p[move] += jitter
+                        p[move] += 0.10 * h0 * perturb
                 else:
-                    p[move] += jitter
+                    p[move] += 0.10 * h0 * perturb
 
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -419,6 +428,8 @@ class MeshGenerator:  # noqa: C901
                         "Termination reached...maximum number of iterations reached.",
                         flush=True,
                     )
+                if mesh_improvement:
+                    print("Unable to bound dihedral angle in max_iter", flush=True)
 
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)

@@ -58,7 +58,32 @@ std::vector<double> c_circumballs2(std::vector<double> &vertices)
     return circumcenters;
 }
 
-
+std::vector<double> c_circumballs3(std::vector<double> &vertices)
+{
+    int num_faces = vertices.size()/12;
+    std::vector<double> circumcenters;
+    for(std::size_t i=0; i < num_faces; ++i)
+    {
+        Point3 tmp_cc =
+                CGAL::circumcenter(
+                Point3(vertices[i*12],vertices[i*12+1],vertices[i*12+2]),
+                Point3(vertices[i*12+3],vertices[i*12+4],vertices[i*12+5]),
+                Point3(vertices[i*12+6],vertices[i*12+7],vertices[i*12+8]),
+                Point3(vertices[i*12+9], vertices[i*12+10],vertices[i*12+11])
+                );
+        circumcenters.push_back(tmp_cc.x());
+        circumcenters.push_back(tmp_cc.y());
+        circumcenters.push_back(tmp_cc.z());
+        circumcenters.push_back(
+                CGAL::squared_radius(
+                Point3(vertices[i*12],vertices[i*12+1],vertices[i*12+2]),
+                Point3(vertices[i*12+3],vertices[i*12+4],vertices[i*12+5]),
+                Point3(vertices[i*12+6],vertices[i*12+7],vertices[i*12+8]),
+                Point3(vertices[i*12+9], vertices[i*12+10],vertices[i*12+11]))
+                );
+    }
+    return circumcenters;
+}
 std::vector<int> c_delaunay2(std::vector<double> &x, std::vector<double> &y)
 {
   int num_points = x.size();
@@ -156,6 +181,30 @@ py::array circumballs2(py::array_t<double, py::array::c_style | py::array::force
   ));
 }
 
+py::array circumballs3(py::array_t<double, py::array::c_style | py::array::forcecast> vertices)
+{
+    // each triangle has 4 vertices with 3 coordinates each
+    int sz = vertices.shape()[0];
+    std::vector<double> cppvertices(sz);
+    std::memcpy(cppvertices.data(),vertices.data(),sz*sizeof(double));
+    std::vector<double> circumcenters = c_circumballs3(cppvertices);
+    ssize_t              soreal      = sizeof(double);
+    ssize_t              num_points = circumcenters.size()/4;
+    ssize_t              ndim      = 2;
+    std::vector<ssize_t> shape     = {num_points, 4};
+    std::vector<ssize_t> strides   = {soreal*4, soreal};
+    // return 2-D NumPy array
+    return py::array(py::buffer_info(
+        circumcenters.data(),                    /* data as contiguous array  */
+        sizeof(double),                          /* size of one scalar        */
+        py::format_descriptor<double>::format(), /* data type                 */
+        2,                                       /* number of dimensions      */
+        shape,                                   /* shape of the matrix       */
+        strides                                  /* strides for each axis     */
+  ));
+}
+
+
 py::array delaunay2(py::array_t<double, py::array::c_style | py::array::forcecast> x,
                     py::array_t<double, py::array::c_style | py::array::forcecast> y)
 {
@@ -241,6 +290,7 @@ py::array delaunay3(py::array_t<double, py::array::c_style | py::array::forcecas
 
 
 PYBIND11_MODULE(c_cgal, m) {
+    m.def("circumballs3", &circumballs3);
     m.def("circumballs2", &circumballs2);
     m.def("delaunay2", &delaunay2);
     m.def("delaunay3", &delaunay3);
