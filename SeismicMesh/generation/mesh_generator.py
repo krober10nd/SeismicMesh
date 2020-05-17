@@ -311,6 +311,9 @@ class MeshGenerator:  # noqa: C901
                 move = t[eleNums, 1]
                 num_move = move.size
                 if PARALLEL:
+                    if num_move == 0:
+                        print("Rank " + str(rank) + " is locked.")
+                        nfix = N
                     if comm.allreduce(num_move, op=MPI.SUM) == 0:
                         if rank == 0:
                             print(
@@ -332,16 +335,16 @@ class MeshGenerator:  # noqa: C901
                 perturb /= perturb_norm[:, None]
 
                 # perturb vector is based on circumradius expansion
-                #p0, p1, p2, p3 = (
+                # p0, p1, p2, p3 = (
                 #    p[t[eleNums, 0], :],
                 #    p[t[eleNums, 1], :],
                 #    p[t[eleNums, 2], :],
                 #    p[t[eleNums, 3], :],
-                #)
-                #perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-                #perturb[np.isinf(perturb)] = 1.0
-                #perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
-                #perturb /= perturb_norm[:, None]
+                # )
+                # perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+                # perturb[np.isinf(perturb)] = 1.0
+                # perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+                # perturb /= perturb_norm[:, None]
 
                 # perturb % of minimum mesh size
                 if PARALLEL:
