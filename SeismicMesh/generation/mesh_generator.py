@@ -82,8 +82,8 @@ class MeshGenerator:  # noqa: C901
         points=None,
         perform_checks=False,
         mesh_improvement=False,
-        max_dh_angle=170,
-        min_dh_angle=10,
+        max_dh_bound=170,
+        min_dh_bound=10,
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -146,7 +146,6 @@ class MeshGenerator:  # noqa: C901
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
-        eps = np.finfo(np.double).eps
         if mesh_improvement:
             SLIVERS = True  # flag will go to false if no slivers
         else:
@@ -176,6 +175,7 @@ class MeshGenerator:  # noqa: C901
                 )
             if PARALLEL:
                 p = comm.bcast(p, root=0)
+            USER_DEFINED_POINTS = False
         else:
             # If the user has supplied initial points
             if PARALLEL:
@@ -183,7 +183,9 @@ class MeshGenerator:  # noqa: C901
                 if rank == 0:
                     p = _points
                 p = comm.bcast(p, root=0)
+                USER_DEFINED_POINTS = True
             else:
+                USER_DEFINED_POINTS = True
                 p = _points
 
         # 2b. Call domain decomposition
@@ -219,7 +221,7 @@ class MeshGenerator:  # noqa: C901
                     if PARALLEL:
                         tria = spspatial.Delaunay(p, incremental=True)
                         # This greatly avoids coplanar and colinear points (just done once)
-                        if count == 0:
+                        if count == 0 and not USER_DEFINED_POINTS:
                             jitter = np.random.uniform(
                                 size=(len(p), dim), low=-h0 / 10, high=h0 / 10
                             )
@@ -292,10 +294,11 @@ class MeshGenerator:  # noqa: C901
                 deltat /= 2.0
 
             # Periodic sliver removal
+            num_move = 0
             if mesh_improvement and count != (max_iter - 1) and dim == 3:
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 outOfBounds = np.argwhere(
-                    (dh_angles[:, 0] < min_dh_angle) | (dh_angles[:, 0] > max_dh_angle)
+                    (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
                 )
                 eleNums = np.floor(outOfBounds / 6).astype("int")
                 eleNums, ix = np.unique(eleNums, return_index=True)
@@ -308,11 +311,11 @@ class MeshGenerator:  # noqa: C901
                         + " slivers...",
                         flush=True,
                     )
-                move = t[eleNums, 1]
+                move = t[eleNums, 0]
                 num_move = move.size
                 if PARALLEL:
                     if num_move == 0:
-                        print("Rank " + str(rank) + " is locked.")
+                        print("Rank " + str(rank) + " is locked.", flush=True)
                         nfix = N
                     if comm.allreduce(num_move, op=MPI.SUM) == 0:
                         if rank == 0:
@@ -325,33 +328,43 @@ class MeshGenerator:  # noqa: C901
                     num_moves = np.append(num_moves, num_move)
                     if num_move == 0:
                         print("Terimation reached...No slivers detected!", flush=True)
-                        np.savetxt("num_moves.txt", num_moves, delimiter=",")
                         return p, t
 
                 # perturb the points associated with the out-of-bound dihedral angle
                 # pertubation vector is random
-                perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
+                # perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
+
+                p0, p1, p2, p3 = (
+                    p[t[eleNums, 0], :],
+                    p[t[eleNums, 1], :],
+                    p[t[eleNums, 2], :],
+                    p[t[eleNums, 3], :],
+                )
+                # perturb vector is based on REDUCING slivers volume
+                perturb = geometry.calc_volume_grad(p1, p2, p3)
+
+                # perturb vector is based on INCREASING circumsphere's radius
+                # perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+                # perturb[np.isinf(perturb)] = 1.0
+
+                # normalize
                 perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 perturb /= perturb_norm[:, None]
 
-                # perturb vector is based on circumradius expansion
-                # p0, p1, p2, p3 = (
-                #    p[t[eleNums, 0], :],
-                #    p[t[eleNums, 1], :],
-                #    p[t[eleNums, 2], :],
-                #    p[t[eleNums, 3], :],
-                # )
-                # perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-                # perturb[np.isinf(perturb)] = 1.0
+                # pertubation vector is the one of the facets normal
+                # e1 = p[t[eleNums, 0], :] - p[t[eleNums, 1], :]
+                # e2 = p[t[eleNums, 0], :] - p[t[eleNums, 2], :]
+                # perturb = np.cross(e1, e2)
                 # perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 # perturb /= perturb_norm[:, None]
 
                 # perturb % of minimum mesh size
+                mesh_size = fh(p[move])
                 if PARALLEL:
                     if count < max_iter - 1:
-                        p[move] += 0.10 * h0 * perturb
+                        p[move] -= 0.10 * mesh_size[:, None] * perturb
                 else:
-                    p[move] += 0.10 * h0 * perturb
+                    p[move] -= 0.10 * mesh_size[:, None] * perturb
 
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -376,6 +389,9 @@ class MeshGenerator:  # noqa: C901
             )
 
             Ftot[:nfix] = 0  # Force = 0 at fixed points
+
+            if num_move > 0:
+                Ftot[move] = 0.0
 
             if PARALLEL:
                 if count < max_iter - 1:
@@ -431,9 +447,6 @@ class MeshGenerator:  # noqa: C901
                         "Termination reached...maximum number of iterations reached.",
                         flush=True,
                     )
-                if mesh_improvement:
-                    print("Unable to bound dihedral angle in max_iter", flush=True)
-
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                     if rank == 0 and perform_checks:
@@ -450,7 +463,7 @@ class MeshGenerator:  # noqa: C901
             count += 1
 
             end = time.time()
-            if rank == 0:
+            if rank == 0 and count % nscreen == 0:
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
         return p, t
 
@@ -502,3 +515,72 @@ class MeshGenerator:  # noqa: C901
             perform_checks=True,
         )
         return p, t
+
+    def improvement(
+        self,
+        points,
+        cells,
+        nscreen=5,
+        COMM=None,
+        min_dh_bound=1,
+        max_dh_bound=170,
+        max_iter=100,
+    ):
+        """
+        Bounds the minimum dihedral angle of a 3d tetrahedral mesh in a hill-climbing fashion
+        """
+        if COMM is not None:
+            rank = COMM.Get_rank()
+            size = COMM.Get_size()
+        else:
+            rank = 0
+            size = 1
+
+        num_steps = min_dh_bound // 5
+        min_dh_bound = 5
+
+        dh_angles = np.rad2deg(geometry.calc_dihedral_angles(points, cells))
+        past_min = np.amin(dh_angles)
+
+        # save the old points in case it fails
+        points_old, cells_old = points, cells
+        for step in range(num_steps):
+            if rank == 0:
+                print(
+                    "BOUNDING MESH TO A MINIMUM DIHEDRAL ANGLE OF " + str(min_dh_bound),
+                    flush=True,
+                )
+            # given a set of iterations, attempt to bound
+            points, cells = self.build(
+                points=points_old,
+                nscreen=nscreen,
+                max_iter=max_iter,
+                seed=0,
+                min_dh_bound=min_dh_bound,
+                max_dh_bound=max_dh_bound,
+                mesh_improvement=True,
+                COMM=COMM,
+            )
+            if size > 1:
+                points = COMM.bcast(points, 0)
+                cells = COMM.bcast(cells, 0)
+            # check if it improved or not!
+            dh_angles = np.rad2deg(geometry.calc_dihedral_angles(points, cells))
+            current_min = np.amin(dh_angles)
+            # failure, return the last steps points
+            if current_min < past_min:
+                print(
+                    "Could not bound minimum dihedral angle to " + str(min_dh_bound),
+                    flush=True,
+                )
+                print("The minimum dihedral angle is " + str(current_min), flush=True)
+                return points_old, cells_old
+            else:
+                print("Bound minimum dihedral angle to " + str(current_min), flush=True)
+                # success...increase the minimum bound and move on to the next iteration
+                min_dh_bound += 5
+                # swap
+                past_min = current_min
+                points_old, cells_old = points, cells
+
+        return points, cells

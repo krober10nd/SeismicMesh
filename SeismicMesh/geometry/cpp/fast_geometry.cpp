@@ -188,6 +188,65 @@ double calc_4x4determinant(py::array_t<double, py::array::c_style | py::array::f
   return result;
 }
 
+//Calculate the gradient of the tetrahedral's volume wrt to point0
+std::vector<double> c_calc_volume_grad(std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3){
+    int num_points = p1.size()/3;
+    double x1, x2, x3;
+    double y1, y2, y3;
+    double z1, z2, z3;
+    std::vector<double> gradient;
+    gradient.resize(3*num_points);
+    for(int i=0; i < num_points; ++i){
+        // unpack coordinates
+        x1 = p1[3*i];
+        y1 = p1[3*i+1];
+        z1 = p1[3*i+2];
+        x2 = p2[3*i];
+        y2 = p2[3*i+1];
+        z2 = p2[3*i+2];
+        x3 = p3[3*i];
+        y3 = p3[3*i+1];
+        z3 = p3[3*i+2];
+        //
+        gradient[3*i]=(1.0/6.0)*(y2*z3+y1*(z2-z3)-y3*z2-z1*(y2-y3));
+        gradient[3*i+1]=(1.0/6.0)*(-x2*z3-x1*(z2-z3)+x3*z2+z1*(x2-x3));
+        gradient[3*i+2]=(1.0/6.0)*(x2*y3+x1*(y2-y3)-x3*y2-y1*(x2-x3));
+    }
+    return gradient;
+}
+
+// Python wrapper accepts the coordinates of the slivers' vertices
+py::array calc_volume_grad(py::array_t<double, py::array::c_style | py::array::forcecast> p1,
+                           py::array_t<double, py::array::c_style | py::array::forcecast> p2,
+                           py::array_t<double, py::array::c_style | py::array::forcecast> p3)
+{
+
+  int num_points = p1.size()/3;
+
+  std::vector<double> cppP1(3*num_points);
+  std::vector<double> cppP2(3*num_points);
+  std::vector<double> cppP3(3*num_points);
+
+  std::memcpy(cppP1.data(),p1.data(),3*num_points*sizeof(double));
+  std::memcpy(cppP2.data(),p2.data(),3*num_points*sizeof(double));
+  std::memcpy(cppP3.data(),p3.data(),3*num_points*sizeof(double));
+
+  std::vector<double> volume_grad = c_calc_volume_grad(cppP1,cppP2,cppP3);
+
+  ssize_t              sodble    = sizeof(double);
+  std::vector<ssize_t> shape     = {num_points, 3};
+  std::vector<ssize_t> strides   = {sodble*3, sodble};
+
+  // return 2-D NumPy array
+  return py::array(py::buffer_info(
+    volume_grad.data(),                           /* data as contiguous array  */
+    sizeof(double),                          /* size of one scalar        */
+    py::format_descriptor<double>::format(), /* data type                 */
+    2,                                    /* number of dimensions      */
+    shape,                                   /* shape of the matrix       */
+    strides                                  /* strides for each axis     */
+  ));
+}
 
 // Calcuate the gradient of the circumsphere radius wrt to point0
 // used to guide the pertubation to the point
@@ -240,26 +299,26 @@ std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p1, std::vecto
     // Determinant of "Dx"
     tmp = {p1sq, y1, z1, p2sq, y2, z2, p3sq, y3, z3};
     Dx = c_calc_3x3determinant(tmp);
-    Dx *= -1;
+    Dx *= -1.0;
     // Determinant of "Dy"
     tmp = {p1sq, x1, z1, p2sq, x2, z2, p3sq, x3, z3};
     Dy = c_calc_3x3determinant(tmp);
     // Determinant of "Dz"
     tmp = {p1sq, x1, y1, p2sq, x2, y2, p3sq, x3, y3};
     Dz = c_calc_3x3determinant(tmp);
-    Dz *= -1;
+    Dz *= -1.0;
     // Gradient of "a"
     gradient_a = {y2*z3-y3*z2, -(x2*z3-x3*z2), x2*y3-x3*y2};
     // Gradient of "Dx"
-    gradient_Dx = {-2*x1*gradient_a[0], -2*y1*gradient_a[0]+p2sq*z3-p3sq*z2, -2*z1*gradient_a[0]-p2sq*y3+p3sq*y2};
+    gradient_Dx = {-2.0*x1*gradient_a[0], -2.0*y1*gradient_a[0]+p2sq*z3-p3sq*z2, -2.0*z1*gradient_a[0]-p2sq*y3+p3sq*y2};
     // Gradient of "Dy"
-    gradient_Dy = {-2*x1*gradient_a[1]-p2sq*z3+p3sq*z2, -2*y1*gradient_a[1], -2*z1*gradient_a[1]+p2sq*x3-p3sq*x2};
+    gradient_Dy = {-2.0*x1*gradient_a[1]-p2sq*z3+p3sq*z2, -2.0*y1*gradient_a[1], -2.0*z1*gradient_a[1]+p2sq*x3-p3sq*x2};
     // Gradient of "Dz"
-    gradient_Dz = {-2*x1*gradient_a[2]+p2sq*y3-p3sq*y2, -2*y1*gradient_a[2]-p2sq*x3+p3sq*x2, -2*z1*gradient_a[2]};
+    gradient_Dz = {-2.0*x1*gradient_a[2]+p2sq*y3-p3sq*y2, -2.0*y1*gradient_a[2]-p2sq*x3+p3sq*x2, -2.0*z1*gradient_a[2]};
     // The gradient of the circumradius
-    gradient_cradius_x = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[0]+Dy*gradient_Dy[0]+Dz*gradient_Dz[0])-gradient_a[0]*(Dx*Dx+Dy*Dy+Dz*Dz));
-    gradient_cradius_y = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[1]+Dy*gradient_Dy[1]+Dz*gradient_Dz[1])-gradient_a[1]*(Dx*Dx+Dy*Dy+Dz*Dz));
-    gradient_cradius_z = 1/(2*a*a*a)*(a*(Dx*gradient_Dx[2]+Dy*gradient_Dy[2]+Dz*gradient_Dz[2])-gradient_a[2]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius_x = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[0]+Dy*gradient_Dy[0]+Dz*gradient_Dz[0])-gradient_a[0]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius_y = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[1]+Dy*gradient_Dy[1]+Dz*gradient_Dz[1])-gradient_a[1]*(Dx*Dx+Dy*Dy+Dz*Dz));
+    gradient_cradius_z = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[2]+Dy*gradient_Dy[2]+Dz*gradient_Dz[2])-gradient_a[2]*(Dx*Dx+Dy*Dy+Dz*Dz));
     gradient_cradius = {gradient_cradius_x, gradient_cradius_y, gradient_cradius_z};
     return gradient_cradius;
 }
@@ -322,6 +381,7 @@ py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::ar
 
 
 PYBIND11_MODULE(fast_geometry, m) {
+    m.def("calc_volume_grad", &calc_volume_grad);
     m.def("calc_circumsphere_grad", &calc_circumsphere_grad);
     m.def("calc_dihedral_angles", &calc_dihedral_angles);
     m.def("calc_4x4determinant", &calc_4x4determinant);
