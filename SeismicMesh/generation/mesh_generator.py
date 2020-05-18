@@ -314,10 +314,11 @@ class MeshGenerator:  # noqa: C901
                 move = t[eleNums, 0]
                 num_move = move.size
                 if PARALLEL:
-                    if num_move == 0:
+                    g_num_move = comm.allreduce(num_move, op=MPI.SUM)
+                    if num_move == 0 and g_num_move != 1:
                         print("Rank " + str(rank) + " is locked.", flush=True)
                         nfix = N
-                    if comm.allreduce(num_move, op=MPI.SUM) == 0:
+                    if g_num_move == 0:
                         if rank == 0:
                             print(
                                 "Terimation reached...No slivers detected!", flush=True
