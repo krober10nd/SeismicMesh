@@ -248,78 +248,84 @@ py::array calc_volume_grad(py::array_t<double, py::array::c_style | py::array::f
   ));
 }
 
-// Calcuate the gradient of the circumsphere radius wrt to point0
 // used to guide the pertubation to the point
-// !!!Assumes p0 is translated to (0,0,0)!!!
-std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3)
+std::vector<double> c_calc_circumsphere_grad(std::vector<double> &p0, std::vector<double> &p1, std::vector<double> &p2, std::vector<double> &p3)
 {
-    // coordinates of cell (p0 is assumed fixed)
-    double x1, x2, x3;
-    double y1, y2, y3;
-    double z1, z2, z3;
+    const int num_points = p0.size()/3;
+
+    // coordinates of cell
+    double x1;
+    double y1;
+    double z1;
+
+    double x2;
+    double y2;
+    double z2;
+
+    double x3;
+    double y3;
+    double z3;
+
+    std::vector<double>gradient_cradius;
+    gradient_cradius.resize(num_points*3);
+
+    for(int i=0; i < num_points; ++i){
+        // translate the tet so that fourth point is the origin
+        x1 = p0[3*i] - p3[3*i];
+        y1 = p0[3*i+1] - p3[3*i+1];
+        z1 = p0[3*i+2] - p3[3*i+2];
+
+        x2 = p1[3*i] - p3[3*i];
+        y2 = p1[3*i+1] - p3[3*i+1];
+        z2 = p1[3*i+2] - p3[3*i+2];
+
+        x3 = p2[3*i] - p3[3*i];
+        y3 = p2[3*i+1] - p3[3*i+1];
+        z3 = p2[3*i+2] - p3[3*i+2];
+
+        // pre-compute everything
+        double sq_p1 = x1*x1 + y1*y1 + z1*z1;
+        double sq_p2 = x2*x2 + y2*y2 + z2*z2;
+        double sq_p3 = x3*x3 + y3*y3 + z3*z3;
+
+        // every derivative is computed w.r.t p1 (x1, y1, z1)
+        double da_dx = y2*z3 - y3*z2;
+        double da_dy = z2*x3 - x2*z3;
+        double da_dz = x2*y3 - x3*y2;
+
+        double dDx_dx = -2.0*x1*da_dx;
+        double dDx_dy = -2.0*y1*da_dx + sq_p2*z3 - sq_p3*z2;
+        double dDx_dz = -2.0*z1*da_dx - sq_p2*y3 + sq_p3*y2;
+
+        double dDy_dx = -2.0*x1*da_dy - sq_p2*z3 + sq_p3*z2;
+        double dDy_dy = -2.0*y1*da_dy;
+        double dDy_dz = -2.0*z1*da_dy + sq_p2*x3 - sq_p3*x2;
+
+        double dDz_dx = -2.0*x1*da_dz + sq_p2*y3 - sq_p3*y2;
+        double dDz_dy = -2.0*y1*da_dz - sq_p2*x3 + sq_p3*x2;
+        double dDz_dz = -2.0*z1*da_dz;
+
+        double a  = x1*da_dx + y1*da_dy + z1*da_dz;
+        //std::cout<<a<<std::endl;
+        //if ( CGAL_NTS is_zero(a) )
+        //  return CGAL::NULL_VECTOR;
+
+        double Dx = -sq_p1*da_dx + y1*(sq_p2*z3 - sq_p3*z2) - z1*(sq_p2*y3 - sq_p3*y2);
+        double Dy = -sq_p1*da_dy - x1*(sq_p2*z3 - sq_p3*z2) + z1*(sq_p2*x3 - sq_p3*x2);
+        double Dz = -sq_p1*da_dz + x1*(sq_p2*y3 - sq_p3*y2) - y1*(sq_p2*x3 - sq_p3*x2);
+
+         // compute gradient vector
+        double sum_sqD = Dx*Dx + Dy*Dy + Dz*Dz;
+        double gx = (Dx*dDx_dx + Dy*dDy_dx + Dz*dDz_dx) / (2.0*a*a) - (da_dx * sum_sqD) / (2.0*a*a*a);
+        double gy = (Dx*dDx_dy + Dy*dDy_dy + Dz*dDz_dy) / (2.0*a*a) - (da_dy * sum_sqD) / (2.0*a*a*a);
+        double gz = (Dx*dDx_dz + Dy*dDy_dz + Dz*dDz_dz) / (2.0*a*a) - (da_dz * sum_sqD) / (2.0*a*a*a);
+
+        gradient_cradius[3*i]=gx;
+        gradient_cradius[3*i+1]=gy;
+        gradient_cradius[3*i+2]=gz;
+    }
+
     // the square of the point coordinates
-    double p1sq;
-    double p2sq;
-    double p3sq;
-    // some determinants
-    double a;
-    double Dx;
-    double Dy;
-    double Dz;
-    // gradients of determinants
-    std::vector<double> gradient_a;
-    std::vector<double> gradient_Dx;
-    std::vector<double> gradient_Dy;
-    std::vector<double> gradient_Dz;
-    // gradient of the cirumsphere radius
-    std::vector<double> gradient_cradius;
-    // components of the gradient of the circumsphere radius
-    double gradient_cradius_x;
-    double gradient_cradius_y;
-    double gradient_cradius_z;
-    // used for getting the determinants
-    std::vector<double> tmp;
-    // unpack coordinates
-    x1 = p1[0];
-    y1 = p1[1];
-    z1 = p1[2];
-    x2 = p2[0];
-    y2 = p2[1];
-    z2 = p2[2];
-    x3 = p3[0];
-    y3 = p3[1];
-    z3 = p3[2];
-    // Calculate squared coordinates for p1,p2,p3
-    p1sq = p1[0]*p1[0]+p1[1]*p1[1]+p1[2]*p1[2];
-    p2sq = p2[0]*p2[0]+p2[1]*p2[1]+p2[2]*p2[2];
-    p3sq = p3[0]*p3[0]+p3[1]*p3[1]+p3[2]*p3[2];
-    // Determinant of "a"
-    tmp = {x1,y1,z1,x2,y2,z3,x3,y3,z3};
-    a = c_calc_3x3determinant(tmp);
-    // Determinant of "Dx"
-    tmp = {p1sq, y1, z1, p2sq, y2, z2, p3sq, y3, z3};
-    Dx = c_calc_3x3determinant(tmp);
-    Dx *= -1.0;
-    // Determinant of "Dy"
-    tmp = {p1sq, x1, z1, p2sq, x2, z2, p3sq, x3, z3};
-    Dy = c_calc_3x3determinant(tmp);
-    // Determinant of "Dz"
-    tmp = {p1sq, x1, y1, p2sq, x2, y2, p3sq, x3, y3};
-    Dz = c_calc_3x3determinant(tmp);
-    Dz *= -1.0;
-    // Gradient of "a"
-    gradient_a = {y2*z3-y3*z2, -(x2*z3-x3*z2), x2*y3-x3*y2};
-    // Gradient of "Dx"
-    gradient_Dx = {-2.0*x1*gradient_a[0], -2.0*y1*gradient_a[0]+p2sq*z3-p3sq*z2, -2.0*z1*gradient_a[0]-p2sq*y3+p3sq*y2};
-    // Gradient of "Dy"
-    gradient_Dy = {-2.0*x1*gradient_a[1]-p2sq*z3+p3sq*z2, -2.0*y1*gradient_a[1], -2.0*z1*gradient_a[1]+p2sq*x3-p3sq*x2};
-    // Gradient of "Dz"
-    gradient_Dz = {-2.0*x1*gradient_a[2]+p2sq*y3-p3sq*y2, -2.0*y1*gradient_a[2]-p2sq*x3+p3sq*x2, -2.0*z1*gradient_a[2]};
-    // The gradient of the circumradius
-    gradient_cradius_x = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[0]+Dy*gradient_Dy[0]+Dz*gradient_Dz[0])-gradient_a[0]*(Dx*Dx+Dy*Dy+Dz*Dz));
-    gradient_cradius_y = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[1]+Dy*gradient_Dy[1]+Dz*gradient_Dz[1])-gradient_a[1]*(Dx*Dx+Dy*Dy+Dz*Dz));
-    gradient_cradius_z = 1.0/(2.0*a*a*a)*(a*(Dx*gradient_Dx[2]+Dy*gradient_Dy[2]+Dz*gradient_Dz[2])-gradient_a[2]*(Dx*Dx+Dy*Dy+Dz*Dz));
-    gradient_cradius = {gradient_cradius_x, gradient_cradius_y, gradient_cradius_z};
     return gradient_cradius;
 }
 
@@ -332,37 +338,17 @@ py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::ar
 
   int num_points = p0.size()/3;
 
-  std::vector<double> circumsphere_grad;
-
   std::vector<double> cppP0(3*num_points);
   std::vector<double> cppP1(3*num_points);
   std::vector<double> cppP2(3*num_points);
   std::vector<double> cppP3(3*num_points);
-
-  std::vector<double> tmpP1(3);
-  std::vector<double> tmpP2(3);
-  std::vector<double> tmpP3(3);
-
-  circumsphere_grad.resize(num_points*3);
 
   std::memcpy(cppP0.data(),p0.data(),3*num_points*sizeof(double));
   std::memcpy(cppP1.data(),p1.data(),3*num_points*sizeof(double));
   std::memcpy(cppP2.data(),p2.data(),3*num_points*sizeof(double));
   std::memcpy(cppP3.data(),p3.data(),3*num_points*sizeof(double));
 
-  for(int i=0; i < num_points; ++i){
-      // translate points so that P0 is at (0.0,0.0,0.0)
-      for(int j=0; j < 3; ++j){
-          tmpP1[j]=cppP1[i*3+j]-cppP0[i*3+j];
-          tmpP2[j]=cppP2[i*3+j]-cppP0[i*3+j];
-          tmpP3[j]=cppP3[i*3+j]-cppP0[i*3+j];
-      }
-      std::vector<double> tmp = c_calc_circumsphere_grad(tmpP1, tmpP2, tmpP3);
-      // unack gradient for each sliver
-      for(int j=0; j<3; ++j){
-        circumsphere_grad[i*3+j] =tmp[j];
-      }
-  }
+  std::vector<double> circumsphere_grad= c_calc_circumsphere_grad(cppP0, cppP1, cppP2, cppP3);
 
   ssize_t              sodble    = sizeof(double);
   std::vector<ssize_t> shape     = {num_points, 3};
