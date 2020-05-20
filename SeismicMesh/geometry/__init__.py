@@ -1,5 +1,6 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
+    dump_mesh,
     doAnyOverlap,
     linter,
     laplacian2,
@@ -19,7 +20,6 @@ from .utils import (
     get_winded_boundary_edges,
     get_boundary_facets,
     delete_boundary_elements,
-    calc_dihedral_angles_slow,
     ptInCell3,
 )
 from .cpp.fast_geometry import (
@@ -31,13 +31,13 @@ from .cpp.fast_geometry import (
 )
 
 __all__ = [
+    "dump_mesh",
     "calc_volume_grad",
     "calc_circumsphere_grad",
     "calc_3x3determinant",
     "calc_4x4determinant",
     "dblock",
     "drectangle",
-    "calc_dihedral_angles_slow",
     "calc_dihedral_angles",
     "doAnyOverlap",
     "linter",

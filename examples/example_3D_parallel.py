@@ -43,9 +43,15 @@ def example_3D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=30, nscreen=1, seed=0, COMM=comm, axis=2)
+    points, cells = mshgen.build(max_iter=100, nscreen=1, seed=0, COMM=comm, axis=2)
 
     if rank == 0:
+        # Do mesh improvement in serial to bound lower dihedral angle
+        mshgen.method = "cgal"
+        points, cells = mshgen.build(
+            max_iter=30, min_dh_bound=10, nscreen=1, mesh_improvement=True
+        )
+
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
             "foo3D_V3.vtk", points, [("tetra", cells)],

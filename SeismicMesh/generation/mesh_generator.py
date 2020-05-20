@@ -84,6 +84,7 @@ class MeshGenerator:  # noqa: C901
         mesh_improvement=False,
         max_dh_bound=170,
         min_dh_bound=10,
+        improvement_method="circumsphere",  # also volume or random
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -105,7 +106,8 @@ class MeshGenerator:  # noqa: C901
         points: initial point distribution (default==None)
         perform_checks: run serial linting (slow)
         mesh_improvement: run mesh improvement (default=False)
-        angthres: desired minimum dihedral angle (default 20 degrees)
+        min_dh_bound: minimum dihedral angle allowed (default=5)
+        improvement_method: method to perturb slivers (default=circumsphere)
 
         Returns
         -------
@@ -147,7 +149,7 @@ class MeshGenerator:  # noqa: C901
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
         if mesh_improvement:
-            SLIVERS = True  # flag will go to false if no slivers
+            SLIVERS = True
         else:
             SLIVERS = False
 
@@ -290,7 +292,7 @@ class MeshGenerator:  # noqa: C901
                             plt.title("Retriangulation %d" % count)
 
             # Slow the movement of points periodically as things converge
-            if mesh_improvement and count % 50 == 0 and dim == 3:
+            if mesh_improvement:
                 deltat /= 2.0
 
             # Periodic sliver removal
@@ -331,41 +333,45 @@ class MeshGenerator:  # noqa: C901
                         print("Terimation reached...No slivers detected!", flush=True)
                         return p, t
 
-                # perturb the points associated with the out-of-bound dihedral angle
-                # pertubation vector is random
-                # perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
-
                 p0, p1, p2, p3 = (
                     p[t[eleNums, 0], :],
                     p[t[eleNums, 1], :],
                     p[t[eleNums, 2], :],
                     p[t[eleNums, 3], :],
                 )
-                # perturb vector is based on REDUCING slivers volume
-                perturb = geometry.calc_volume_grad(p1, p2, p3)
 
-                # perturb vector is based on INCREASING circumsphere's radius
-                # perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-                # perturb[np.isinf(perturb)] = 1.0
+                # perturb the points associated with the out-of-bound dihedral angle
+                if improvement_method == "random":
+                    # pertubation vector is random
+                    perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
+
+                if improvement_method == "volume":
+                    # perturb vector is based on REDUCING slivers volume
+                    perturb = geometry.calc_volume_grad(p1, p2, p3)
+
+                if improvement_method == "cirucmsphere":
+                    # perturb vector is based on INCREASING circumsphere's radius
+                    perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+                    perturb[np.isinf(perturb)] = 1.0
 
                 # normalize
                 perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 perturb /= perturb_norm[:, None]
 
-                # pertubation vector is the one of the facets normal
-                # e1 = p[t[eleNums, 0], :] - p[t[eleNums, 1], :]
-                # e2 = p[t[eleNums, 0], :] - p[t[eleNums, 2], :]
-                # perturb = np.cross(e1, e2)
-                # perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
-                # perturb /= perturb_norm[:, None]
-
                 # perturb % of minimum mesh size
                 mesh_size = fh(p[move])
                 if PARALLEL:
                     if count < max_iter - 1:
-                        p[move] -= 0.10 * mesh_size[:, None] * perturb
+                        if improvement_method == "volume":
+                            p[move] -= 0.10 * mesh_size[:, None] * perturb
+                        else:
+                            p[move] += 0.10 * mesh_size[:, None] * perturb
+
                 else:
-                    p[move] -= 0.10 * mesh_size[:, None] * perturb
+                    if improvement_method == "volume":
+                        p[move] -= 0.10 * mesh_size[:, None] * perturb
+                    else:
+                        p[move] += 0.10 * mesh_size[:, None] * perturb
 
             # 6. Move mesh points based on bar lengths L and forces F
             barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -391,6 +397,7 @@ class MeshGenerator:  # noqa: C901
 
             Ftot[:nfix] = 0  # Force = 0 at fixed points
 
+            # lock the moved point
             if num_move > 0:
                 Ftot[move] = 0.0
 
@@ -516,72 +523,3 @@ class MeshGenerator:  # noqa: C901
             perform_checks=True,
         )
         return p, t
-
-    def improvement(
-        self,
-        points,
-        cells,
-        nscreen=5,
-        COMM=None,
-        min_dh_bound=1,
-        max_dh_bound=170,
-        max_iter=100,
-    ):
-        """
-        Bounds the minimum dihedral angle of a 3d tetrahedral mesh in a hill-climbing fashion
-        """
-        if COMM is not None:
-            rank = COMM.Get_rank()
-            size = COMM.Get_size()
-        else:
-            rank = 0
-            size = 1
-
-        num_steps = min_dh_bound // 5
-        min_dh_bound = 5
-
-        dh_angles = np.rad2deg(geometry.calc_dihedral_angles(points, cells))
-        past_min = np.amin(dh_angles)
-
-        # save the old points in case it fails
-        points_old, cells_old = points, cells
-        for step in range(num_steps):
-            if rank == 0:
-                print(
-                    "BOUNDING MESH TO A MINIMUM DIHEDRAL ANGLE OF " + str(min_dh_bound),
-                    flush=True,
-                )
-            # given a set of iterations, attempt to bound
-            points, cells = self.build(
-                points=points_old,
-                nscreen=nscreen,
-                max_iter=max_iter,
-                seed=0,
-                min_dh_bound=min_dh_bound,
-                max_dh_bound=max_dh_bound,
-                mesh_improvement=True,
-                COMM=COMM,
-            )
-            if size > 1:
-                points = COMM.bcast(points, 0)
-                cells = COMM.bcast(cells, 0)
-            # check if it improved or not!
-            dh_angles = np.rad2deg(geometry.calc_dihedral_angles(points, cells))
-            current_min = np.amin(dh_angles)
-            # failure, return the last steps points
-            if current_min < past_min:
-                print(
-                    "Could not bound minimum dihedral angle to " + str(min_dh_bound),
-                    flush=True,
-                )
-                print("The minimum dihedral angle is " + str(current_min), flush=True)
-                return points_old, cells_old
-            else:
-                print("Bound minimum dihedral angle to " + str(current_min), flush=True)
-                # success...increase the minimum bound and move on to the next iteration
-                min_dh_bound += 5
-                # swap
-                past_min = current_min
-                points_old, cells_old = points, cells
-
-        return points, cells

@@ -13,6 +13,11 @@ Routines to perform geometrical/topological operations on meshes
 dete = gutils.calc_4x4determinant
 
 
+def dump_mesh(points, cells):
+    np.savetxt("points.txt", points, delimiter=",")
+    np.savetxt("cells.txt", cells, delimiter=",")
+
+
 def remove_duplicates(data):
     """
     removes duplicate rows for int data
@@ -166,8 +171,9 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
         pix = ix[pix]
 
     # element orientation is CCW
-    flip = simpvol(p, t) < 0
-    t[flip, :2] = t[flip, 1::-1]
+    if p.shape[0] == 2:
+        flip = simpvol(p, t) < 0
+        t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
@@ -480,50 +486,50 @@ def doAnyOverlap(points, entities, dim=2):
     """
     Check if any entities of dim D connected to boundary of the mesh overlap
     with another entity D connected to the boundary ignoring self-intersections.
-    Checks only the 1-ring around each boundary entity for potential intersections
+    Checks only the 1-ring around each entity for potential intersections
     using barycentric coordinates.
     """
 
     vtoe, ptr = vertex_to_elements(points, entities, dim=dim)
-    # all elements that have a boundary vertex
-    beles = get_boundary_elements(points, entities, dim=dim)
     # centroids of these elements beles
-    bcents = get_centroids(points, entities[beles, :], dim=dim)
+    cents = get_centroids(points, entities, dim=dim)
     # store intersection pairs
     intersections = []
-    # for all boundary triangles
-    for ie, cent in enumerate(bcents):
-        # collect all elements neis around boundary element ie
+    # for all elements
+    for ie, cent in enumerate(cents):
+        if ie % 100 == 0:
+            print("INFO: " + str(100.0 * (ie / len(cents))) + " % done...",flush=True)
+        # collect all elements neis around element ie
         neis = np.array([], dtype=int)
-        for vertex in entities[beles[ie], :]:
+        for vertex in entities[ie, :]:
             for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
                 neis = np.append(neis, ele)
-        # for all neighboring elements  to boundary element ie
-        for iee, bele in enumerate(neis):
+        # for all neighboring elements  to element ie
+        for iee, ele in enumerate(neis):
             # centroid ie should be in face ie by definition!
-            if beles[ie] == bele:
+            if ie == ele:
                 continue
             if dim == 2:
-                # does a centroid live inside another face?
-                x1, x2, x3 = points[entities[bele, :], 0]
-                y1, y2, y3 = points[entities[bele, :], 1]
+                # does this centroid live inside another neighboring face?
+                x1, x2, x3 = points[entities[ele, :], 0]
+                y1, y2, y3 = points[entities[ele, :], 1]
                 if ptInFace2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
                     # centroid ie is inside face iee
                     print(
                         "Alert: face "
-                        + str(beles[ie])
+                        + str(ie)
                         + " intersects with face "
-                        + str(bele)
+                        + str(ele)
                         + ". These will be adjusted.",
                         flush=True,
                     )
                     # record all intersection pairs
-                    intersections.append((beles[ie], bele))
+                    intersections.append((ie, ele))
             elif dim == 3:
-                # does a centroid live inside another nei cell?
-                x1, x2, x3, x4 = points[entities[bele, :], 0]
-                y1, y2, y3, y4 = points[entities[bele, :], 1]
-                z1, z2, z3, z4 = points[entities[bele, :], 2]
+                # does this centroid live inside another nei cell?
+                x1, x2, x3, x4 = points[entities[ele], 0]
+                y1, y2, y3, y4 = points[entities[ele], 1]
+                z1, z2, z3, z4 = points[entities[ele], 2]
                 if ptInCell3(
                     (cent[0], cent[1], cent[2]),
                     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4),
@@ -531,50 +537,16 @@ def doAnyOverlap(points, entities, dim=2):
                     # centroid ie is inside cell iee
                     print(
                         "Alert: cell "
-                        + str(beles[ie])
+                        + str(ie)
                         + " intersects with cell "
-                        + str(bele)
+                        + str(ele)
                         + ". These will be adjusted.",
                         flush=True,
                     )
                     # record all intersection pairs
-                    intersections.append((beles[ie], bele))
+                    intersections.append((ie, ele))
 
     return intersections
-
-
-def calc_dihedral_angles_slow(points, cells):
-    """
-    Calculate the dihedral angles of each tetrahedron
-    defined by points and connectivity in cells
-    """
-    edges = np.array([[2, 3], [1, 3], [1, 2], [0, 3], [0, 2], [0, 1]], dtype=int)
-
-    d_ang_min = np.zeros((len(cells), 1), dtype=float)
-    d_ang_max = np.zeros((len(cells), 1), dtype=float)
-
-    for ie, cell in enumerate(cells):
-        _dh_angles = np.zeros(6, dtype=float)
-        for i in range(6):
-            i0 = cell[edges[i][0]]
-            i1 = cell[edges[i][1]]
-            i2 = cell[edges[5 - i][0]]
-            i3 = cell[edges[5 - i][1]]
-            p0 = points[i0]
-            v1 = points[i1] - p0
-            v2 = points[i2] - p0
-            v3 = points[i3] - p0
-            v1 /= np.linalg.norm(v1)
-            v2 /= np.linalg.norm(v2)
-            v3 /= np.linalg.norm(v3)
-            cphi = (np.dot(v2, v3) - np.dot(v1, v2) * np.dot(v1, v3)) / (
-                np.linalg.norm(np.cross(v1, v2)) * np.linalg.norm(np.cross(v1, v3))
-            )
-            _dh_angles[i] = np.rad2deg(np.arccos(cphi))
-        d_ang_min[ie] = np.amin(_dh_angles)
-        d_ang_max[ie] = np.amax(_dh_angles)
-    d_ang_rng = np.hstack((d_ang_min, d_ang_max))
-    return d_ang_rng
 
 
 def linter(points, faces, minqual=0.10, dim=2):
@@ -599,18 +571,13 @@ def linter(points, faces, minqual=0.10, dim=2):
     faces = np.delete(faces, delete, axis=0)
     print(time.time() - t1)
 
-    ## calculate range of dihedral angles for each tetra
-    # if dim == 3:
-    #    dh_range = calc_dihedral_angles(points, faces)
-    #    print(dh_range, flush=True)
-
     # clean up
     points, faces, _ = fixmesh(points, faces, delunused=True)
     # delete remaining low quality boundary elements
     if dim == 2:
         points, faces = delete_boundary_elements(points, faces, minqual=minqual)
-    # check for non-manifold boundaries and alert
-    _ = isManifold(points, faces)
+        # check for non-manifold boundaries and alert
+        _ = isManifold(points, faces)
     # calculate final minimum simplex quality
     qual = simpqual(points, faces)
     minimum_quality = np.amin(qual)
