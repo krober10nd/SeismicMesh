@@ -10,6 +10,23 @@ Migration routines for moving points during parallel Delaunay
 """
 
 
+def localize(blocks, extents, comm, dim):
+    """ Distribute points to local subdomains """
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    for local in range(1, size):
+        if rank == 0:
+            comm.send(blocks[local], dest=local, tag=12)
+        elif rank == local:
+            points = np.reshape(comm.recv(source=0, tag=12), (-1, dim))
+        if rank == 0:
+            points = blocks[0]
+        if rank != 0:
+            extents = None
+        extents = comm.bcast(extents, 0)
+    return points, extents
+
+
 def aggregate(points, faces, comm, size, rank, dim=2):
     """
     Collect global triangulation onto rank 0

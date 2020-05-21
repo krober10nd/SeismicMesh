@@ -148,10 +148,6 @@ class MeshGenerator:  # noqa: C901
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
-        if mesh_improvement:
-            SLIVERS = True
-        else:
-            SLIVERS = False
 
         if pfix is not None and not PARALLEL:
             pfix = np.array(pfix, dtype="d")
@@ -175,8 +171,6 @@ class MeshGenerator:  # noqa: C901
                 p = np.vstack(
                     (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
                 )
-            if PARALLEL:
-                p = comm.bcast(p, root=0)
             USER_DEFINED_POINTS = False
         else:
             # If the user has supplied initial points
@@ -184,17 +178,22 @@ class MeshGenerator:  # noqa: C901
                 p = None
                 if rank == 0:
                     p = _points
-                p = comm.bcast(p, root=0)
                 USER_DEFINED_POINTS = True
             else:
                 USER_DEFINED_POINTS = True
                 p = _points
 
-        # 2b. Call domain decomposition
+        # 2b. Call domain decomposition and localize points
         if PARALLEL:
-            p, extents = decomp.blocker(points=p, rank=rank, nblocks=size, axis=_axis)
-
-        num_moves = np.array([], dtype=int)
+            if rank == 0:
+                blocks, extents = decomp.blocker(
+                    points=p, rank=rank, nblocks=size, axis=_axis
+                )
+            else:
+                blocks = None
+                extents = None
+            # send points to each subdomain
+            p, extents = migration.localize(blocks, extents, comm, dim)
 
         N = p.shape[0]
 
@@ -318,7 +317,8 @@ class MeshGenerator:  # noqa: C901
                 if PARALLEL:
                     g_num_move = comm.allreduce(num_move, op=MPI.SUM)
                     if num_move == 0 and g_num_move != 1:
-                        print("Rank " + str(rank) + " is locked.", flush=True)
+                        if count % nscreen == 0:
+                            print("Rank " + str(rank) + " is locked...", flush=True)
                         nfix = N
                     if g_num_move == 0:
                         if rank == 0:
@@ -328,7 +328,6 @@ class MeshGenerator:  # noqa: C901
                         p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                         return p, t
                 else:
-                    num_moves = np.append(num_moves, num_move)
                     if num_move == 0:
                         print("Terimation reached...No slivers detected!", flush=True)
                         return p, t
@@ -433,7 +432,7 @@ class MeshGenerator:  # noqa: C901
                 )
 
             # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
-            if maxdp < ptol * h0 and not SLIVERS and not PARALLEL:
+            if maxdp < ptol * h0 and not mesh_improvement and not PARALLEL:
                 print(
                     "Termination reached...all interior nodes move less than dptol.",
                     flush=True,
@@ -458,7 +457,6 @@ class MeshGenerator:  # noqa: C901
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                     if rank == 0 and perform_checks:
-                        # perform essential checks
                         p, t = geometry.linter(p, t, dim=dim)
                 break
 
