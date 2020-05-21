@@ -349,7 +349,7 @@ class MeshGenerator:  # noqa: C901
                     # perturb vector is based on REDUCING slivers volume
                     perturb = geometry.calc_volume_grad(p1, p2, p3)
 
-                if improvement_method == "cirucmsphere":
+                if improvement_method == "circumsphere":
                     # perturb vector is based on INCREASING circumsphere's radius
                     perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
                     perturb[np.isinf(perturb)] = 1.0
