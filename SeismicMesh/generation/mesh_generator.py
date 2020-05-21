@@ -142,8 +142,6 @@ class MeshGenerator:  # noqa: C901
         dim = int(len(bbox) / 2)
         bbox = np.array(bbox).reshape(-1, 2)
 
-        ptol = 0.001
-        ttol = 0.1
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
         deltat = 0.1
         geps = 1e-1 * h0
@@ -199,8 +197,6 @@ class MeshGenerator:  # noqa: C901
         N = p.shape[0]
 
         count = 0
-        pold = float("inf")  # For first iteration
-
         print(
             "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
             flush=True,
@@ -208,88 +204,79 @@ class MeshGenerator:  # noqa: C901
         while True:
 
             # 3. Retriangulation by the Delaunay algorithm
-            def dist(p1, p2):
-                return np.sqrt(((p1 - p2) ** 2).sum(1))
-
             start = time.time()
-            if (dist(p, pold) / h0).max() > ttol:  # Any large movement?
 
-                # Make sure all points are unique
-                p = np.unique(p, axis=0)
-                pold = p.copy()  # Save current positions
-
-                # Using the SciPy qhull wrapper for Delaunay triangulation.
-                if _method == "qhull":
-                    if PARALLEL:
-                        tria = spspatial.Delaunay(p, incremental=True)
-                        # This greatly avoids coplanar and colinear points (just done once)
-                        if count == 0 and not USER_DEFINED_POINTS:
-                            jitter = np.random.uniform(
-                                size=(len(p), dim), low=-h0 / 10, high=h0 / 10
-                            )
-                            p += jitter
-                        exports = migration.enqueue(
-                            extents, p, tria.simplices, rank, size, dim=dim
+            # Using the SciPy qhull wrapper for Delaunay triangulation.
+            if _method == "qhull":
+                if PARALLEL:
+                    tria = spspatial.Delaunay(p, incremental=True)
+                    # This greatly avoids coplanar and colinear points (just done once)
+                    if count == 0 and not USER_DEFINED_POINTS:
+                        jitter = np.random.uniform(
+                            size=(len(p), dim), low=-h0 / 10, high=h0 / 10
                         )
-                        recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                        tria.add_points(recv, restart=True)
-                        p, t, inv = geometry.remove_external_faces(
-                            tria.points, tria.simplices, extents[rank], dim=dim
-                        )
-
-                        N = p.shape[0]
-                        recv_ix = len(recv)  # we do not allow new points to move
-                    else:
-                        # SERIAL
-                        t = spspatial.Delaunay(p).vertices  # List of triangles
-                # Using CGAL's Delaunay triangulation algorithm
-                elif _method == "cgal":
-                    if PARALLEL:
-                        print(
-                            "Parallel mesh generation with CGAL not yet supported!",
-                            flush=True,
-                        )
-                        quit()
-                    else:
-                        # SERIAL
-                        if dim == 2:
-                            t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
-                        elif dim == 3:
-                            t = c_cgal.delaunay3(
-                                p[:, 0], p[:, 1], p[:, 2]
-                            )  # List of triangles
-
-                pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
-                t = t[fd(pmid) < -geps]  # Keep interior triangles
-
-                # 4. Describe each bar by a unique pair of nodes
-                if dim == 2:
-                    bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
-                elif dim == 3:
-                    bars = np.concatenate(
-                        [
-                            t[:, [0, 1]],
-                            t[:, [1, 2]],
-                            t[:, [2, 0]],
-                            t[:, [0, 3]],
-                            t[:, [1, 3]],
-                            t[:, [2, 3]],
-                        ]
+                        p += jitter
+                    exports = migration.enqueue(
+                        extents, p, tria.simplices, rank, size, dim=dim
                     )
-                bars = np.sort(bars, axis=1)
-                bars = mutils.unique_rows(bars)  # Bars as node pairs
-                bars = bars[0]
+                    recv = migration.exchange(comm, rank, size, exports, dim=dim)
+                    tria.add_points(recv, restart=True)
+                    p, t, inv = geometry.remove_external_faces(
+                        tria.points, tria.simplices, extents[rank], dim=dim
+                    )
+                    N = p.shape[0]
+                    recv_ix = len(recv)  # we do not allow new points to move
+                else:
+                    # SERIAL
+                    t = spspatial.Delaunay(p).vertices  # List of triangles
+            # Using CGAL's Delaunay triangulation algorithm
+            elif _method == "cgal":
+                if PARALLEL:
+                    print(
+                        "Parallel mesh generation with CGAL not yet supported!",
+                        flush=True,
+                    )
+                    quit()
+                else:
+                    # SERIAL
+                    if dim == 2:
+                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                    elif dim == 3:
+                        t = c_cgal.delaunay3(
+                            p[:, 0], p[:, 1], p[:, 2]
+                        )  # List of triangles
 
-                # 5a. Graphical output of the current mesh
-                if plot and not PARALLEL:
-                    if count % nscreen == 0:
-                        if dim == 2:
-                            plt.triplot(p[:, 0], p[:, 1], t)
-                            plt.title("Retriangulation %d" % count)
-                            plt.axis("equal")
-                            plt.show()
-                        elif dim == 3:
-                            plt.title("Retriangulation %d" % count)
+            pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
+            t = t[fd(pmid) < -geps]  # Keep interior triangles
+
+            # 4. Describe each bar by a unique pair of nodes
+            if dim == 2:
+                bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+            elif dim == 3:
+                bars = np.concatenate(
+                    [
+                        t[:, [0, 1]],
+                        t[:, [1, 2]],
+                        t[:, [2, 0]],
+                        t[:, [0, 3]],
+                        t[:, [1, 3]],
+                        t[:, [2, 3]],
+                    ]
+                )
+            bars = np.sort(bars, axis=1)
+            bars = mutils.unique_rows(bars)  # Bars as node pairs
+            bars = bars[0]
+
+            # 5a. Graphical output of the current mesh
+            if plot and not PARALLEL:
+                if count % nscreen == 0:
+                    if dim == 2:
+                        plt.triplot(p[:, 0], p[:, 1], t)
+                        plt.title("Retriangulation %d" % count)
+                        plt.axis("equal")
+                        plt.show()
+                    elif dim == 3:
+                        plt.title("Retriangulation %d" % count)
 
             # Slow the movement of points periodically as things converge
             if mesh_improvement:
@@ -432,23 +419,7 @@ class MeshGenerator:  # noqa: C901
                     flush=True,
                 )
 
-            # 8a. Termination criterion: All interior nodes move less than dptol (scaled)
-            if maxdp < ptol * h0 and not mesh_improvement and not PARALLEL:
-                print(
-                    "Termination reached...all interior nodes move less than dptol.",
-                    flush=True,
-                )
-
-                if PARALLEL:
-                    p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-
-                    if rank == 0 and perform_checks:
-                        # perform essential checks
-                        p, t = geometry.linter(p, t, dim=dim)
-
-                break
-
-            # 8b. Number of iterations reached
+            # 8. Number of iterations reached
             if count == max_iter - 1:
                 if rank == 0:
                     print(
@@ -505,8 +476,6 @@ class MeshGenerator:  # noqa: C901
         if axis == 1:
             axis == 0
         elif axis == 0:
-            axis = 1
-        elif axis == 2:
             axis = 1
         # finalize mesh (switch decomposition axis and perform serial linting)
         # improves mesh quality near decomp boundaries
