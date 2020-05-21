@@ -5,12 +5,39 @@ from . import signed_distance_functions as sdf
 
 from .cpp import fast_geometry as gutils
 
+from ..generation.cpp import c_cgal
+
 """
 Routines to perform geometrical/topological operations on meshes
 """
 
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant
+
+
+def calc_re_ratios(points, cells):
+    """
+    Calculate radius edge ratios--mesh quality metric
+    """
+    # circumradius/shortest edge length
+    bars = np.concatenate(
+        [
+            cells[:, [0, 1]],
+            cells[:, [1, 2]],
+            cells[:, [2, 0]],
+            cells[:, [0, 3]],
+            cells[:, [1, 3]],
+            cells[:, [2, 3]],
+        ]
+    )
+    barvec = points[bars[:, 0]] - points[bars[:, 1]]
+    L = np.sqrt((barvec ** 2).sum(1))
+    L = np.reshape(L, (6, len(cells)))
+    # min edge length i every tetra
+    minL = np.amin(L, axis=0)
+    cc = c_cgal.circumballs3(points[cells.flatten()])
+    r = cc[:, -1]
+    return np.sqrt(r) / minL
 
 
 def dump_mesh(points, cells):
@@ -498,7 +525,7 @@ def doAnyOverlap(points, entities, dim=2):
     # for all elements
     for ie, cent in enumerate(cents):
         if ie % 100 == 0:
-            print("INFO: " + str(100.0 * (ie / len(cents))) + " % done...",flush=True)
+            print("INFO: " + str(100.0 * (ie / len(cents))) + " % done...", flush=True)
         # collect all elements neis around element ie
         neis = np.array([], dtype=int)
         for vertex in entities[ie, :]:

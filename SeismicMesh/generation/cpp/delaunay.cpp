@@ -60,9 +60,9 @@ std::vector<double> c_circumballs2(std::vector<double> &vertices)
 
 std::vector<double> c_circumballs3(std::vector<double> &vertices)
 {
-    int num_faces = vertices.size()/12;
+    int num_cells = vertices.size()/12;
     std::vector<double> circumcenters;
-    for(std::size_t i=0; i < num_faces; ++i)
+    for(std::size_t i=0; i < num_cells; ++i)
     {
         Point3 tmp_cc =
                 CGAL::circumcenter(
@@ -184,7 +184,7 @@ py::array circumballs2(py::array_t<double, py::array::c_style | py::array::force
 py::array circumballs3(py::array_t<double, py::array::c_style | py::array::forcecast> vertices)
 {
     // each triangle has 4 vertices with 3 coordinates each
-    int sz = vertices.shape()[0];
+    int sz = vertices.size();
     std::vector<double> cppvertices(sz);
     std::memcpy(cppvertices.data(),vertices.data(),sz*sizeof(double));
     std::vector<double> circumcenters = c_circumballs3(cppvertices);

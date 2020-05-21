@@ -1,5 +1,6 @@
 from .signed_distance_functions import dblock, drectangle
 from .utils import (
+    calc_re_ratios,
     dump_mesh,
     doAnyOverlap,
     linter,
@@ -31,6 +32,7 @@ from .cpp.fast_geometry import (
 )
 
 __all__ = [
+    "calc_re_ratios",
     "dump_mesh",
     "calc_volume_grad",
     "calc_circumsphere_grad",
