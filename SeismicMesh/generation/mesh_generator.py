@@ -147,9 +147,13 @@ class MeshGenerator:  # noqa: C901
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
 
-        if pfix is not None and not PARALLEL:
+        if pfix is not None:
             pfix = np.array(pfix, dtype="d")
             nfix = len(pfix)
+            if rank == 0:
+                print(
+                    "INFO: Constraining " + str(nfix) + " fixed points..", flush=True,
+                )
         else:
             pfix = np.empty((0, dim))
             nfix = 0
@@ -158,7 +162,6 @@ class MeshGenerator:  # noqa: C901
             p = None
             if rank == 0:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
-
                 p = np.mgrid[
                     tuple(slice(min, max + h0, h0) for min, max in bbox)
                 ].astype(float)
@@ -194,7 +197,7 @@ class MeshGenerator:  # noqa: C901
             # send points to each subdomain
             p, extents = migration.localize(blocks, extents, comm, dim)
 
-        N = p.shape[0]
+        N = len(p)
 
         count = 0
         print(
@@ -263,7 +266,6 @@ class MeshGenerator:  # noqa: C901
                         t[:, [2, 3]],
                     ]
                 )
-            bars = np.sort(bars, axis=1)
             bars = mutils.unique_rows(bars)  # Bars as node pairs
             bars = bars[0]
 
@@ -410,14 +412,6 @@ class MeshGenerator:  # noqa: C901
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
-            if count % nscreen == 0 and rank == 0:
-                if PARALLEL:
-                    print("On rank 0: ", flush=True)
-                print(
-                    "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
-                    % (count + 1, maxdp, len(p), len(t)),
-                    flush=True,
-                )
 
             # 8. Number of iterations reached
             if count == max_iter - 1:
@@ -437,6 +431,15 @@ class MeshGenerator:  # noqa: C901
                 p = np.delete(p, inv[-recv_ix::], axis=0)
 
                 comm.barrier()
+
+            if count % nscreen == 0 and rank == 0:
+                if PARALLEL:
+                    print("On rank 0: ", flush=True)
+                print(
+                    "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
+                    % (count + 1, maxdp, len(p), len(t)),
+                    flush=True,
+                )
 
             count += 1
 

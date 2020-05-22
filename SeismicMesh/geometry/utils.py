@@ -88,7 +88,7 @@ def remove_external_faces(points, faces, extent, dim=2):
             [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
         )
     # if greater than 2 times the minimum lengthscale of the subdomain
-    isFar = np.reshape(signed_distance > 2 * mIext, (-1, (dim + 1)))
+    isFar = np.reshape(signed_distance > 1.2 * mIext, (-1, (dim + 1)))
     faces_new = faces[
         (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
     ]

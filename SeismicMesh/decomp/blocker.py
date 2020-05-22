@@ -56,6 +56,16 @@ def blocker(points, rank, nblocks, axis=0):
             dx = (xlims[1] - xlims[0]) / nblocks
             dy = (ylims[1] - ylims[0]) / 1
             dz = (zlims[1] - zlims[0]) / 1
+    elif axis == 2:
+        xx, yy, zz = np.meshgrid(
+            np.linspace(*xlims, 1, endpoint=False),
+            np.linspace(*ylims, nblocks, endpoint=False),
+            np.linspace(*zlims, nblocks, endpoint=False),
+        )
+
+        dx = (xlims[1] - xlims[0]) / 1
+        dy = (ylims[1] - ylims[0]) / 1
+        dz = (zlims[1] - zlims[0]) / nblocks
 
     blocks = []
     block_extents = []
