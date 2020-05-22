@@ -2,6 +2,47 @@ import numpy as np
 import scipy.sparse as spsparse
 
 
+def closestNumber(n, m):
+    # Find the quotient
+    q = int(n / m)
+
+    # 1st possible closest number
+    n1 = m * q
+
+    # 2nd possible closest number
+    if (n * m) > 0:
+        n2 = m * (q + 1)
+    else:
+        n2 = m * (q - 1)
+
+    # if true, then n1 is the required closest number
+    if abs(n - n1) < abs(n - n2):
+        return n1
+
+    # else n2 is the required closest number
+    return n2
+
+
+def make_init_points(bbox, rank, size, axis, h0, dim):
+    """Create a structured grid in parallel of the entire domain
+       Each processor owns a part of the domain.
+    """
+    _bbox = bbox
+
+    for i in range(dim):
+        if i == axis:
+            new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
+            _bbox[i] = new_lims[rank : rank + 2]
+            if rank != 0:
+                tmp = closestNumber(new_lims[rank - 1] + h0, h0)
+                _bbox[i, 0] = tmp + h0
+    points = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in _bbox)].astype(
+        float
+    )
+    points = points.reshape(dim, -1).T
+    return points
+
+
 def __setdiff_rows(A, B, return_index=False):
     """
     Similar to MATLAB's setdiff(A, B, 'rows'), this returns C, I

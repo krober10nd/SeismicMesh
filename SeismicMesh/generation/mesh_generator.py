@@ -73,8 +73,8 @@ class MeshGenerator:  # noqa: C901
     def build(  # noqa: ignore=C901
         self,
         pfix=None,
-        max_iter=10,
-        nscreen=5,
+        max_iter=50,
+        nscreen=1,
         plot=False,
         seed=None,
         COMM=None,
@@ -82,8 +82,8 @@ class MeshGenerator:  # noqa: C901
         points=None,
         perform_checks=False,
         mesh_improvement=False,
-        max_dh_bound=170,
         min_dh_bound=10,
+        max_dh_bound=170,
         improvement_method="circumsphere",  # also volume or random
     ):
         """
@@ -148,8 +148,12 @@ class MeshGenerator:  # noqa: C901
         deps = np.sqrt(np.finfo(np.double).eps) * h0
 
         if pfix is not None:
-            pfix = np.array(pfix, dtype="d")
-            nfix = len(pfix)
+            if PARALLEL:
+                print("Fixed points aren not supported in parallel yet", flush=True)
+                quit()
+            else:
+                pfix = np.array(pfix, dtype="d")
+                nfix = len(pfix)
             if rank == 0:
                 print(
                     "INFO: Constraining " + str(nfix) + " fixed points..", flush=True,
@@ -159,43 +163,49 @@ class MeshGenerator:  # noqa: C901
             nfix = 0
 
         if _points is None:
-            p = None
-            if rank == 0:
+            # If the user has not supplied points
+            if PARALLEL:
+                # 1. Create grid in parallel in local box owned by rank
+                p = mutils.make_init_points(bbox, rank, size, axis, h0, dim)
+                np.savetxt("local_points_" + str(rank) + ".txt", p, delimiter=",")
+                quit()
+            else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
                     tuple(slice(min, max + h0, h0) for min, max in bbox)
                 ].astype(float)
                 p = p.reshape(dim, -1).T
 
-                # 2. Remove points outside the region, apply the rejection method
-                p = p[fd(p) < geps]  # Keep only d<0 points
-                r0 = fh(p)
-                p = np.vstack(
-                    (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
-                )
+            # 2. Remove points outside the region, apply the rejection method
+            p = p[fd(p) < geps]  # Keep only d<0 points
+            r0 = fh(p)
+            p = np.vstack(
+                (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
+            )
+            if PARALLEL:
+                # create extent of local domain
+                # min x min y min z max x max y max z
+                extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
+                extents = [comm.bcast(extent, r) for r in range(size)]
             USER_DEFINED_POINTS = False
         else:
             # If the user has supplied initial points
             if PARALLEL:
                 p = None
                 if rank == 0:
-                    p = _points
+                    blocks, extents = decomp.blocker(
+                        points=_points, rank=rank, nblocks=size, axis=_axis
+                    )
+                else:
+                    blocks = None
+                    extents = None
+                # send points to each subdomain
+                p, extents = migration.localize(blocks, extents, comm, dim)
+                extent = extents[rank]
                 USER_DEFINED_POINTS = True
             else:
                 USER_DEFINED_POINTS = True
                 p = _points
-
-        # 2b. Call domain decomposition and localize points
-        if PARALLEL:
-            if rank == 0:
-                blocks, extents = decomp.blocker(
-                    points=p, rank=rank, nblocks=size, axis=_axis
-                )
-            else:
-                blocks = None
-                extents = None
-            # send points to each subdomain
-            p, extents = migration.localize(blocks, extents, comm, dim)
 
         N = len(p)
 
@@ -204,6 +214,7 @@ class MeshGenerator:  # noqa: C901
             "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
             flush=True,
         )
+
         while True:
 
             # 3. Retriangulation by the Delaunay algorithm
@@ -225,7 +236,7 @@ class MeshGenerator:  # noqa: C901
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     tria.add_points(recv, restart=True)
                     p, t, inv = geometry.remove_external_faces(
-                        tria.points, tria.simplices, extents[rank], dim=dim
+                        tria.points, tria.simplices, extent, dim=dim
                     )
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
@@ -280,13 +291,13 @@ class MeshGenerator:  # noqa: C901
                     elif dim == 3:
                         plt.title("Retriangulation %d" % count)
 
-            # Slow the movement of points periodically as things converge
-            if mesh_improvement:
-                deltat /= 2.0
-
             # Periodic sliver removal
             num_move = 0
             if mesh_improvement and count != (max_iter - 1) and dim == 3:
+
+                # Slow the movement of points periodically as things converge
+                deltat /= 2.0
+
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 outOfBounds = np.argwhere(
                     (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
@@ -411,7 +422,8 @@ class MeshGenerator:  # noqa: C901
                 dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
-            maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
+            if count % nscreen == 0 and rank == 0:
+                maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
 
             # 8. Number of iterations reached
             if count == max_iter - 1:
@@ -426,10 +438,9 @@ class MeshGenerator:  # noqa: C901
                         p, t = geometry.linter(p, t, dim=dim)
                 break
 
-            # Delete new points
+            # 9. Delete ghost points
             if PARALLEL:
                 p = np.delete(p, inv[-recv_ix::], axis=0)
-
                 comm.barrier()
 
             if count % nscreen == 0 and rank == 0:
@@ -446,6 +457,7 @@ class MeshGenerator:  # noqa: C901
             end = time.time()
             if rank == 0 and count % nscreen == 0:
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+
         return p, t
 
     def parallel_build(  # noqa: ignore=C901
