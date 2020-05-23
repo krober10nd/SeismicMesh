@@ -1,16 +1,55 @@
 import numpy as np
 from mpi4py import MPI
+from scipy.interpolate import RegularGridInterpolator
 
 from .cpp import cpputils
 
 from .. import geometry
 
 """
-Migration routines for moving points during parallel Delaunay
+Migration routines for moving things during parallel Delaunay
 """
 
 
-def localize(blocks, extents, comm, dim):
+def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
+    """
+    Localize the global sizing function into local chunks
+    that cover the span of the local point set.
+    """
+    rank = comm.Get_rank()
+    size = comm.Get_size()
+    for r in range(1, size):
+        if rank == 0:
+            # form local point set
+            _bbox = bbox
+            for i in range(dim):
+                if i == axis:
+                    new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
+                    _bbox[i, :] = new_lims[r : r + 2]
+                    if r != 0:
+                        # starting point must be lasts + h0
+                        prev_lims = new_lims[r - 1 : r - 1 + 2]
+                        tmp = np.mgrid[slice(prev_lims[0], prev_lims[1] + h0, h0)]
+                        _bbox[i, 0] = tmp[-1] + h0
+
+            grid = np.mgrid[
+                tuple(slice(min, max + h0, h0) for min, max in _bbox)
+            ].astype(float)
+            # interpolate global --> local sizing grid
+            lh = fh(grid)
+            # form local interpolant
+            lfh = RegularGridInterpolator(
+                (grid[0], grid[1]), lh, bounds_error=False, fill_value=None
+            )
+            # send local interpolant to r
+            comm.send(lfh, r, tag=11)
+        else:
+            # recv local interpolant from rank 0
+            lfh = comm.recv(lfh, 0, tag=11)
+    return lfh
+
+
+def localize_points(blocks, extents, comm, dim):
     """ Distribute points to local subdomains """
     rank = comm.Get_rank()
     size = comm.Get_size()

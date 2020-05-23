@@ -116,7 +116,6 @@ class MeshGenerator:  # noqa: C901
         """
         _ef = self.SizingFunction
         fd = _ef.fd
-        fh = _ef.fh
         h0 = _ef.hmin
         bbox = _ef.bbox
         _method = self.method
@@ -132,6 +131,10 @@ class MeshGenerator:  # noqa: C901
             PARALLEL = False
             rank = 0
             size = 1
+
+        # if PARALLEL only rank 0 owns the full field.
+        if rank == 0:
+            fh = _ef.fh
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -167,6 +170,8 @@ class MeshGenerator:  # noqa: C901
             if PARALLEL:
                 # 1. Create grid in parallel in local box owned by rank
                 p = mutils.make_init_points(bbox, rank, size, axis, h0, dim)
+                # 1a. Localize mesh size function grid.
+                fh = migration.localize_sizing_function(fh, h0, bbox, dim, axis, comm)
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
@@ -198,7 +203,7 @@ class MeshGenerator:  # noqa: C901
                     blocks = None
                     extents = None
                 # send points to each subdomain
-                p, extents = migration.localize(blocks, extents, comm, dim)
+                p, extents = migration.localize_points(blocks, extents, comm, dim)
                 extent = extents[rank]
                 USER_DEFINED_POINTS = True
             else:
