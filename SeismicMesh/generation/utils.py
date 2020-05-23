@@ -32,10 +32,13 @@ def make_init_points(bbox, rank, size, axis, h0, dim):
     for i in range(dim):
         if i == axis:
             new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
-            _bbox[i] = new_lims[rank : rank + 2]
+            _bbox[i, :] = new_lims[rank : rank + 2]
             if rank != 0:
-                tmp = closestNumber(new_lims[rank - 1] + h0, h0)
-                _bbox[i, 0] = tmp + h0
+                # starting point must be lasts + h0
+                prev_lims = new_lims[rank - 1 : rank - 1 + 2]
+                tmp = np.mgrid[slice(prev_lims[0], prev_lims[1] + h0, h0)]
+                _bbox[i, 0] = tmp[-1] + h0
+
     points = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in _bbox)].astype(
         float
     )
