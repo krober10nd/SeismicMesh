@@ -97,16 +97,16 @@ class MeshGenerator:  # noqa: C901
         Parameters
         ----------
         pfix: points that you wish you constrain (default==None)
-        max_iter: maximum number of iterations (default==20)
-        nscreen: output to screen every nscreen iterations (default==5)
-        plot: Visualize incremental meshes (default==False)
+        max_iter: maximum number of iterations (default==100)
+        nscreen: output to screen every nscreen iterations (default==1)
+        plot: Visualize incremental meshes (only valid opt in 2D )(default==False)
         seed: Random seed to ensure results are deterministic (default==None)
-        COMM: MPI4py communicator (default==None)
-        axis: axis to decomp the domain wrt (default==0)
         points: initial point distribution (default==None)
+        COMM: MPI4py communicator for parallel execution (default==None)
+        axis: axis to decomp the domain wrt for parallel execution (default==0)
         perform_checks: run serial linting (slow)
-        mesh_improvement: run mesh improvement (default=False)
         min_dh_bound: minimum dihedral angle allowed (default=5)
+        mesh_improvement: run 3D sliver perturbation mesh improvement (default=False)
         improvement_method: method to perturb slivers (default=circumsphere)
 
         Returns
@@ -156,7 +156,7 @@ class MeshGenerator:  # noqa: C901
                 nfix = len(pfix)
             if rank == 0:
                 print(
-                    "INFO: Constraining " + str(nfix) + " fixed points..", flush=True,
+                    "Constraining " + str(nfix) + " fixed points..", flush=True,
                 )
         else:
             pfix = np.empty((0, dim))
@@ -292,16 +292,14 @@ class MeshGenerator:  # noqa: C901
             # Periodic sliver removal
             num_move = 0
             if mesh_improvement and count != (max_iter - 1) and dim == 3:
-
-                # Slow the movement of points periodically as things converge
-                deltat /= 2.0
-
+                # calculate dihedral angles in mesh
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 outOfBounds = np.argwhere(
                     (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
                 )
                 eleNums = np.floor(outOfBounds / 6).astype("int")
                 eleNums, ix = np.unique(eleNums, return_index=True)
+
                 if count % nscreen == 0:
                     print(
                         "On rank: "
@@ -311,6 +309,7 @@ class MeshGenerator:  # noqa: C901
                         + " slivers...",
                         flush=True,
                     )
+
                 move = t[eleNums, 0]
                 num_move = move.size
                 if PARALLEL:
@@ -322,13 +321,13 @@ class MeshGenerator:  # noqa: C901
                     if g_num_move == 0:
                         if rank == 0:
                             print(
-                                "Terimation reached...No slivers detected!", flush=True
+                                "Termination reached...No slivers detected!", flush=True
                             )
                         p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
                         return p, t
                 else:
                     if num_move == 0:
-                        print("Terimation reached...No slivers detected!", flush=True)
+                        print("Termination reached...No slivers detected!", flush=True)
                         return p, t
 
                 p0, p1, p2, p3 = (
@@ -356,54 +355,55 @@ class MeshGenerator:  # noqa: C901
                 perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 perturb /= perturb_norm[:, None]
 
-                # perturb % of minimum mesh size
+                # perturb % of local mesh size
                 mesh_size = fh(p[move])
+                push = 0.10
                 if PARALLEL:
                     if count < max_iter - 1:
                         if improvement_method == "volume":
-                            p[move] -= 0.10 * mesh_size[:, None] * perturb
+                            p[move] -= push * mesh_size[:, None] * perturb
                         else:
-                            p[move] += 0.10 * mesh_size[:, None] * perturb
-
+                            p[move] += push * mesh_size[:, None] * perturb
                 else:
                     if improvement_method == "volume":
-                        p[move] -= 0.10 * mesh_size[:, None] * perturb
+                        p[move] -= push * mesh_size[:, None] * perturb
                     else:
-                        p[move] += 0.10 * mesh_size[:, None] * perturb
+                        p[move] += push * mesh_size[:, None] * perturb
 
-            # 6. Move mesh points based on bar lengths L and forces F
-            barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
-            L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
-            hbars = fh(p[bars].sum(1) / 2)
-            L0 = (
-                hbars
-                * L0mult
-                * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
-            )
-            F = L0 - L
-            F[F < 0] = 0  # Bar forces (scalars)
-            Fvec = (
-                F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
-            )  # Bar forces (x,y components)
+            if not mesh_improvement:
+                # 6. Move mesh points based on bar lengths L and forces F
+                barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
+                L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
+                hbars = fh(p[bars].sum(1) / 2)
+                L0 = (
+                    hbars
+                    * L0mult
+                    * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
+                )
+                F = L0 - L
+                F[F < 0] = 0  # Bar forces (scalars)
+                Fvec = (
+                    F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
+                )  # Bar forces (x,y components)
 
-            Ftot = mutils.dense(
-                bars[:, [0] * dim + [1] * dim],
-                np.repeat([list(range(dim)) * 2], len(F), axis=0),
-                np.hstack((Fvec, -Fvec)),
-                shape=(N, dim),
-            )
+                Ftot = mutils.dense(
+                    bars[:, [0] * dim + [1] * dim],
+                    np.repeat([list(range(dim)) * 2], len(F), axis=0),
+                    np.hstack((Fvec, -Fvec)),
+                    shape=(N, dim),
+                )
 
-            Ftot[:nfix] = 0  # Force = 0 at fixed points
+                Ftot[:nfix] = 0  # Force = 0 at fixed points
 
-            # lock the moved point
-            if num_move > 0:
-                Ftot[move] = 0.0
+                if PARALLEL:
+                    if count < max_iter - 1:
+                        p += deltat * Ftot
+                else:
+                    p += deltat * Ftot  # Update node positions
 
-            if PARALLEL:
-                if count < max_iter - 1:
-                    p += deltat * Ftot
             else:
-                p += deltat * Ftot  # Update node positions
+                # no movement if mesh improvement (from forces)
+                maxdp = 0.0
 
             # 7. Bring outside points back to the boundary
             d = fd(p)
@@ -420,7 +420,7 @@ class MeshGenerator:  # noqa: C901
                 dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
-            if count % nscreen == 0 and rank == 0:
+            if count % nscreen == 0 and rank == 0 and not mesh_improvement:
                 maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
 
             # 8. Number of iterations reached

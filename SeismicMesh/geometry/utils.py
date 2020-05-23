@@ -88,7 +88,7 @@ def remove_external_faces(points, faces, extent, dim=2):
             [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
         )
     # if greater than 2 times the minimum lengthscale of the subdomain
-    isFar = np.reshape(signed_distance > 1.05 * mIext, (-1, (dim + 1)))
+    isFar = np.reshape(signed_distance > 2.0 * mIext, (-1, (dim + 1)))
     faces_new = faces[
         (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
     ]
@@ -167,7 +167,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
+def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2):
     """
     Remove duplicated/unused nodes and
     ensure orientation of elements is CCW
@@ -189,6 +189,16 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, dim=2):
     # duplicate elements
     t = np.sort(t, axis=1)
     t = unique_rows(t)
+
+    # delete slivers
+    if delslivers:
+        dh_angles = np.rad2deg(gutils.calc_dihedral_angles(p, t))
+        outOfBounds = np.argwhere((dh_angles[:, 0] < 5) | (dh_angles[:, 0] > 175))
+        eleNums = np.floor(outOfBounds / 6).astype("int")
+        eleNums, ix = np.unique(eleNums, return_index=True)
+        print("Deleting " + str(len(eleNums)) + " slivers...", flush=True)
+        t = np.delete(t, eleNums, axis=0)
+        print(t.shape, flush=True)
 
     # delete unused vertices
     if delunused:
@@ -524,8 +534,8 @@ def doAnyOverlap(points, entities, dim=2):
     intersections = []
     # for all elements
     for ie, cent in enumerate(cents):
-        if ie % 100 == 0:
-            print("INFO: " + str(100.0 * (ie / len(cents))) + " % done...", flush=True)
+        if ie % 1000 == 0:
+            print("INFO: " + str(1000.0 * (ie / len(cents))) + " % done...", flush=True)
         # collect all elements neis around element ie
         neis = np.array([], dtype=int)
         for vertex in entities[ie, :]:

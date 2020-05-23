@@ -24,7 +24,7 @@ def example_2D_parallel():
         freq=5,
         wl=5,
         hmax=1e3,
-        hmin=50.0,
+        hmin=100.0,
         grade=0.05,
         domain_ext=1000,
         padstyle="linear_ramp",

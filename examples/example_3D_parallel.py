@@ -23,7 +23,7 @@ def example_3D_parallel():
         freq=2,
         wl=10,
         grade=0.25,
-        hmin=100,
+        hmin=125,
     )
 
     # Build mesh size function (in parallel)
@@ -43,7 +43,10 @@ def example_3D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=100, nscreen=1, seed=0, COMM=comm, axis=2)
+    points, cells = mshgen.build(max_iter=20, nscreen=1, seed=0, COMM=comm, axis=0)
+    points, cells = mshgen.build(
+        points=points, max_iter=20, nscreen=1, seed=0, COMM=comm, axis=1
+    )
 
     if rank == 0:
         # Do mesh improvement in serial to bound lower dihedral angle
