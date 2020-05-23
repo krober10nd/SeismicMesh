@@ -167,8 +167,6 @@ class MeshGenerator:  # noqa: C901
             if PARALLEL:
                 # 1. Create grid in parallel in local box owned by rank
                 p = mutils.make_init_points(bbox, rank, size, axis, h0, dim)
-                np.savetxt("local_points_" + str(rank) + ".txt", p, delimiter=",")
-                quit()
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
