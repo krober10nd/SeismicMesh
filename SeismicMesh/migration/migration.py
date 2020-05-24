@@ -35,12 +35,12 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
             grid = np.mgrid[
                 tuple(slice(min, max + h0, h0) for min, max in _bbox)
             ].astype(float)
+            # updated grid vectors
+            vecs = [np.arange(min, max, h0) for min, max in _bbox]
             # interpolate global --> local sizing grid
-            lh = fh(grid)
+            lh = fh(tuple(grid[d] for d in range(dim)))
             # form local interpolant
-            lfh = RegularGridInterpolator(
-                (grid[0], grid[1]), lh, bounds_error=False, fill_value=None
-            )
+            lfh = RegularGridInterpolator(vecs, lh, bounds_error=False, fill_value=None)
             # send local interpolant to r
             comm.send(lfh, r, tag=11)
         else:
