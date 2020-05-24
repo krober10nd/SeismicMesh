@@ -135,6 +135,8 @@ class MeshGenerator:  # noqa: C901
         # if PARALLEL only rank 0 owns the full field.
         if rank == 0:
             fh = _ef.fh
+        else:
+            fh = None
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -169,9 +171,9 @@ class MeshGenerator:  # noqa: C901
             # If the user has not supplied points
             if PARALLEL:
                 # 1. Create grid in parallel in local box owned by rank
-                p = mutils.make_init_points(bbox, rank, size, axis, h0, dim)
+                p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
                 # 1a. Localize mesh size function grid.
-                fh = migration.localize_sizing_function(fh, h0, bbox, dim, axis, comm)
+                fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
