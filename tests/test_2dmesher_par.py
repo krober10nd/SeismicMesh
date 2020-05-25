@@ -19,14 +19,22 @@ def test_2dmesher_par():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
     )
-    ef = ef.build()
+    ef = ef.build(comm=comm)
+    # Build lambda functions
+    ef = ef.construct_lambdas(comm)
+
     mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")
-    points, facets = mshgen.parallel_build(max_iter=100, seed=0, COMM=comm)
+    points, cells = mshgen.build(max_iter=100, seed=0, COMM=comm)
     if rank == 0:
-        # should have points (7690, 2)
-        # should have facets (15047, 3)
-        assert np.abs(7690 - len(points)) < 5
-        assert np.abs(15047 - len(facets)) < 5
+        # import meshio
+
+        # meshio.write_points_cells(
+        #    "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk",
+        # )
+        area = SeismicMesh.geometry.simpvol(points / 1000, cells)
+        assert np.abs(100 - np.sum(area)) < 0.10  # km2
+        assert np.abs(8788 - len(points)) < 20
+        assert np.abs(17203 - len(cells)) < 20
 
 
 if __name__ == "__main__":

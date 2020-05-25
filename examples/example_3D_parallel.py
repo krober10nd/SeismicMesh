@@ -28,10 +28,8 @@ def example_3D_parallel():
 
     # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
-    # All processors get same information
-    ef = comm.bcast(ef, 0)
     # Build lambda functions
-    ef = ef.construct_lambdas()
+    ef = ef.construct_lambdas(comm)
 
     # if rank == 0:
     #    # Save your options so you have a record
@@ -43,18 +41,18 @@ def example_3D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=20, nscreen=1, seed=0, COMM=comm, axis=0)
+    points, cells = mshgen.build(max_iter=20, nscreen=1, seed=0, COMM=comm, axis=1)
+    # Do mesh improvement in serial to bound lower dihedral angle
     points, cells = mshgen.build(
-        points=points, max_iter=20, nscreen=1, seed=0, COMM=comm, axis=1
+        max_iter=20,
+        min_dh_bound=10,
+        nscreen=1,
+        mesh_improvement=True,
+        COMM=comm,
+        axis=1,
     )
 
     if rank == 0:
-        # Do mesh improvement in serial to bound lower dihedral angle
-        mshgen.method = "cgal"
-        points, cells = mshgen.build(
-            max_iter=30, min_dh_bound=10, nscreen=1, mesh_improvement=True
-        )
-
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
             "foo3D_V3.vtk", points, [("tetra", cells)],

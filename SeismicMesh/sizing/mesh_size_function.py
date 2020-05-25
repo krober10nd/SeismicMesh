@@ -441,11 +441,13 @@ class MeshSizeFunction:
                     self.fd = lambda p: fdd2(p)
         return self
 
-    def construct_lambdas(self):
+    def construct_lambdas(self, comm):
         """
         Build lambda fields (for parallel only) for
         SDF and mesh size function
         """
+        self.bbox = comm.bcast(self.bbox, 0)
+
         _dim = self.dim
         _bbox = self.bbox
 

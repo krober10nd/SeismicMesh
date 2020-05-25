@@ -32,10 +32,8 @@ def example_2D_parallel():
 
     # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
-    # All processors get same information
-    ef = comm.bcast(ef, 0)
     # Build lambda functions
-    ef = ef.construct_lambdas()
+    ef = ef.construct_lambdas(comm)
 
     if rank == 0:
         ef.WriteVelocityModel("BP2004")
@@ -46,9 +44,7 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.parallel_build(
-        max_iter=100, nscreen=1, seed=0, COMM=comm, axis=0
-    )
+    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1)
 
     if rank == 0:
 

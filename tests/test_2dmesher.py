@@ -18,14 +18,14 @@ def test_2dmesher():
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, facets = mshgen.build(max_iter=100, seed=0)
     # should have: 7690 vertices and 15045 cells
-    assert np.abs((len(points) == 7690))
-    assert len(facets) == 15045
+    assert np.abs(len(points) - 7690) < 20
+    assert np.abs(len(facets) - 15045) < 20
 
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
     points, facets = mshgen.build(max_iter=100, seed=0)
     # should have: 7690 vertices and 15045 cells
-    assert np.abs((len(points) == 7690))
-    assert len(facets) == 15045
+    assert np.abs(len(points) - 7690) < 20
+    assert np.abs(len(facets) - 15045) < 20
 
 
 if __name__ == "__main__":

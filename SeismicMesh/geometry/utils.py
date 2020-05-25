@@ -40,7 +40,12 @@ def calc_re_ratios(points, cells):
     return np.sqrt(r) / minL
 
 
-def dump_mesh(points, cells):
+def dump_mesh(points, cells, rank):
+    # import meshio
+
+    # meshio.write_points_cells(
+    #    "test_" + str(rank) + ".vtk", points, [("tetra", cells)],
+    # )
     np.savetxt("points.txt", points, delimiter=",")
     np.savetxt("cells.txt", cells, delimiter=",")
 
@@ -56,8 +61,8 @@ def remove_duplicates(data):
 
 def remove_external_faces(points, faces, extent, dim=2):
     """
-    Remove faces with all three vertices outside block (external)
-    and points that are very far from local domain
+    Remove entities with all dim+1 vertices outside block (external)
+    and points that are "far" from local domain extents.
     """
     if dim == 2:
         signed_distance = sdf.drectangle(
@@ -87,11 +92,22 @@ def remove_external_faces(points, faces, extent, dim=2):
         mIext = np.amin(
             [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
         )
-    # if greater than 2 times the minimum lengthscale of the subdomain
-    isFar = np.reshape(signed_distance > 1.00 * mIext, (-1, (dim + 1)))
-    faces_new = faces[
-        (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
-    ]
+    # if greater than x times the minimum lengthscale of the subdomain
+    isFar = np.reshape(signed_distance > 0.50 * mIext, (-1, (dim + 1)))
+    # high aspect ratio tetrahedrals sometimes occur on the boundary delete these
+    if dim == 3:
+        ce = calc_re_ratios(points, faces)
+        faces_new = faces[
+            (ce < 3)
+            & (np.sum(isOut, axis=1) != (dim + 1))
+            & (np.any(isFar, axis=1) != 1),
+            :,
+        ]
+
+    else:
+        faces_new = faces[
+            (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
+        ]
     points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
     return points_new, faces_new, jx
 
@@ -198,7 +214,6 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2):
         eleNums, ix = np.unique(eleNums, return_index=True)
         print("Deleting " + str(len(eleNums)) + " slivers...", flush=True)
         t = np.delete(t, eleNums, axis=0)
-        print(t.shape, flush=True)
 
     # delete unused vertices
     if delunused:
@@ -208,9 +223,8 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2):
         pix = ix[pix]
 
     # element orientation is CCW
-    if p.shape[0] == 2:
-        flip = simpvol(p, t) < 0
-        t[flip, :2] = t[flip, 1::-1]
+    flip = simpvol(p, t) < 0
+    t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
@@ -353,7 +367,7 @@ def delete_boundary_elements(points, faces, minqual=0.10, dim=2):
     Delete boundary elements with poor quality (i.e., < minqual)
     """
     qual = simpqual(points, faces)
-    bele = get_boundary_elements(points, faces)
+    bele = get_boundary_elements(points, faces, dim=dim)
     qualBou = qual[bele]
     delete = qualBou < minqual
     print(

@@ -76,6 +76,8 @@ def aggregate(points, faces, comm, size, rank, dim=2):
     """
     Collect global triangulation onto rank 0
     """
+    geometry.dump_mesh(points, faces, rank)
+
     soff_p = np.zeros((size), dtype=int)
     soff_t = np.zeros((size), dtype=int)
 

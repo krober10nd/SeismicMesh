@@ -189,9 +189,11 @@ class MeshGenerator:  # noqa: C901
             )
 
             if PARALLEL:
-                # create extent of local domain
+                # create extent of local domain + h0 in cut axis
                 # min x min y min z max x max y max z
                 extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
+                extent[_axis] -= h0
+                extent[_axis + dim] += h0
                 extents = [comm.bcast(extent, r) for r in range(size)]
             USER_DEFINED_POINTS = False
         else:
@@ -364,19 +366,19 @@ class MeshGenerator:  # noqa: C901
                 perturb /= perturb_norm[:, None]
 
                 # perturb % of local mesh size
-                mesh_size = fh(p[move])
+                mesh_size = h0  # fh(p[move])
                 push = 0.10
                 if PARALLEL:
                     if count < max_iter - 1:
                         if improvement_method == "volume":
-                            p[move] -= push * mesh_size[:, None] * perturb
+                            p[move] -= push * mesh_size * perturb
                         else:
-                            p[move] += push * mesh_size[:, None] * perturb
+                            p[move] += push * mesh_size * perturb
                 else:
                     if improvement_method == "volume":
-                        p[move] -= push * mesh_size[:, None] * perturb
+                        p[move] -= push * mesh_size * perturb
                     else:
-                        p[move] += push * mesh_size[:, None] * perturb
+                        p[move] += push * mesh_size * perturb
 
             if not mesh_improvement:
                 # 6. Move mesh points based on bar lengths L and forces F
