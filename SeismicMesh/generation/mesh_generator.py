@@ -170,10 +170,10 @@ class MeshGenerator:  # noqa: C901
         if _points is None:
             # If the user has not supplied points
             if PARALLEL:
-                # 1. Create grid in parallel in local box owned by rank
-                p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
                 # 1a. Localize mesh size function grid.
                 fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
+                # 1. Create initial points in parallel in local box owned by rank
+                p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
                 p = np.mgrid[
@@ -187,6 +187,7 @@ class MeshGenerator:  # noqa: C901
             p = np.vstack(
                 (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
             )
+
             if PARALLEL:
                 # create extent of local domain
                 # min x min y min z max x max y max z

@@ -18,10 +18,10 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
     """
     rank = comm.Get_rank()
     size = comm.Get_size()
-    for r in range(1, size):
+    for r in range(0, size):
+        _bbox = bbox.copy()
         if rank == 0:
             # form local point set
-            _bbox = bbox
             for i in range(dim):
                 if i == axis:
                     new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
@@ -40,15 +40,18 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
             # updated grid vectors
             vecs = [np.arange(min, max + h0, h0) for min, max in _bbox]
             # form local interpolant
-            lfh = RegularGridInterpolator(vecs, lh, bounds_error=False, fill_value=None)
+            _lfh = RegularGridInterpolator(
+                vecs, lh, bounds_error=False, fill_value=None
+            )
+            if r == 0:
+                lfh = _lfh
+                continue
             # send local interpolant to r
-            comm.send(lfh, dest=r, tag=11)
+            comm.send(_lfh, dest=r, tag=11)
         else:
             if rank == r:
                 # recv local interpolant from rank 0
                 lfh = comm.recv(source=0, tag=11)
-    # form interpolant on rank 0 as well!
-
     return lfh
 
 

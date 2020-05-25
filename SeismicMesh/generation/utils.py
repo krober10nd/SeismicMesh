@@ -27,7 +27,7 @@ def make_init_points(bbox, rank, size, axis, h0, dim):
     """Create a structured grid in parallel of the entire domain
        Each processor owns a part of the domain.
     """
-    _bbox = bbox
+    _bbox = bbox.copy()
 
     for i in range(dim):
         if i == axis:
