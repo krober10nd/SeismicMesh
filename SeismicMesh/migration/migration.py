@@ -113,7 +113,7 @@ def aggregate(points, faces, comm, size, rank, dim=2):
         return True, True
 
 
-def enqueue(extents, points, faces, rank, size, dim=2):
+def enqueue(extents, points, faces, rank, size, axis, h0, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent
     """
@@ -139,6 +139,7 @@ def enqueue(extents, points, faces, rank, size, dim=2):
 
     vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
 
+    # expand to avoid intersections in ghost zones...
     if dim == 2:
         exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
     elif dim == 3:

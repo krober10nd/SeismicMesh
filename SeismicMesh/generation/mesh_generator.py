@@ -192,8 +192,8 @@ class MeshGenerator:  # noqa: C901
                 # create extent of local domain + h0 in cut axis
                 # min x min y min z max x max y max z
                 extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-                extent[_axis] -= h0
-                extent[_axis + dim] += h0
+                extent[_axis] -= 1.0 * h0
+                extent[_axis + dim] += 1.0 * h0
                 extents = [comm.bcast(extent, r) for r in range(size)]
             USER_DEFINED_POINTS = False
         else:
@@ -239,12 +239,13 @@ class MeshGenerator:  # noqa: C901
                         )
                         p += jitter
                     exports = migration.enqueue(
-                        extents, p, tria.simplices, rank, size, dim=dim
+                        extents, p, tria.simplices, rank, size, axis, h0, dim=dim
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     tria.add_points(recv, restart=True)
+                    new_idx = len(tria.points) - len(recv)
                     p, t, inv = geometry.remove_external_faces(
-                        tria.points, tria.simplices, extent, dim=dim
+                        tria.points, tria.simplices, extent, new_idx, dim=dim,
                     )
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
@@ -466,51 +467,4 @@ class MeshGenerator:  # noqa: C901
             if rank == 0 and count % nscreen == 0:
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
 
-        return p, t
-
-    def parallel_build(  # noqa: ignore=C901
-        self,
-        pfix=None,
-        max_iter=10,
-        nscreen=5,
-        plot=False,
-        seed=None,
-        COMM=None,
-        axis=0,
-        points=None,
-        perform_checks=False,
-    ):
-        """
-        Thin wrapper for build to simplify user interaction when building in parallel
-        See MeshGenerator.build for inputs
-        """
-        p, t = self.build(
-            pfix=pfix,
-            max_iter=max_iter,
-            nscreen=nscreen,
-            plot=plot,
-            seed=seed,
-            COMM=COMM,
-            axis=axis,
-            points=None,
-            perform_checks=False,
-        )
-        # alternate the decomposed axis
-        if axis == 1:
-            axis == 0
-        elif axis == 0:
-            axis = 1
-        # finalize mesh (switch decomposition axis and perform serial linting)
-        # improves mesh quality near decomp boundaries
-        p, t = self.build(
-            pfix=pfix,
-            max_iter=30,
-            nscreen=nscreen,
-            plot=plot,
-            seed=seed,
-            COMM=COMM,
-            axis=axis,
-            points=p,
-            perform_checks=True,
-        )
         return p, t

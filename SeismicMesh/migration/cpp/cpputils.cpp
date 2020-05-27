@@ -210,6 +210,7 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
             bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
 
             if(isCoplanar){
+                std::cout<<"alert"<<std::endl;
                 continue;
             }
             //// Calculate circumball of element

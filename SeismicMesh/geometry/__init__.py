@@ -1,4 +1,4 @@
-from .signed_distance_functions import dblock, drectangle
+from .signed_distance_functions import dblock, drectangle, dblock_v2
 from .utils import (
     calc_re_ratios,
     dump_mesh,
@@ -39,6 +39,7 @@ __all__ = [
     "calc_3x3determinant",
     "calc_4x4determinant",
     "dblock",
+    "dblock_v2",
     "drectangle",
     "calc_dihedral_angles",
     "doAnyOverlap",

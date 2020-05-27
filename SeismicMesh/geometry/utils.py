@@ -41,11 +41,11 @@ def calc_re_ratios(points, cells):
 
 
 def dump_mesh(points, cells, rank):
-    # import meshio
+    import meshio
 
-    # meshio.write_points_cells(
-    #    "test_" + str(rank) + ".vtk", points, [("tetra", cells)],
-    # )
+    meshio.write_points_cells(
+        "test_" + str(rank) + ".vtk", points, [("tetra", cells)],
+    )
     np.savetxt("points.txt", points, delimiter=",")
     np.savetxt("cells.txt", cells, delimiter=",")
 
@@ -59,7 +59,7 @@ def remove_duplicates(data):
     return np.unique(data, axis=1)
 
 
-def remove_external_faces(points, faces, extent, dim=2):
+def remove_external_faces(points, faces, extent, new_idx, dim=2):
     """
     Remove entities with all dim+1 vertices outside block (external)
     and points that are "far" from local domain extents.
@@ -85,29 +85,21 @@ def remove_external_faces(points, faces, extent, dim=2):
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
-    isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
+    # isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
     # determine minimum extent
     mIext = 99999999.0
     for ix in range(0, dim):
         mIext = np.amin(
             [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
         )
+    isOut = faces >= new_idx
     # if greater than x times the minimum lengthscale of the subdomain
     isFar = np.reshape(signed_distance > 0.50 * mIext, (-1, (dim + 1)))
     # high aspect ratio tetrahedrals sometimes occur on the boundary delete these
-    if dim == 3:
-        ce = calc_re_ratios(points, faces)
-        faces_new = faces[
-            (ce < 3)
-            & (np.sum(isOut, axis=1) != (dim + 1))
-            & (np.any(isFar, axis=1) != 1),
-            :,
-        ]
-
-    else:
-        faces_new = faces[
-            (np.sum(isOut, axis=1) != (dim + 1)) & (np.any(isFar, axis=1) != 1), :
-        ]
+    faces_new = faces[
+        (np.sum(isOut, axis=1) != (dim + 1)), :
+    ]  # and (np.any(isFar, axis=1) != 1), :
+    # ]
     points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
     return points_new, faces_new, jx
 
@@ -183,7 +175,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2):
+def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2, delete=None):
     """
     Remove duplicated/unused nodes and
     ensure orientation of elements is CCW
@@ -195,6 +187,9 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2):
     -----
     p, t = fixmesh(p, t, ptol)
     """
+    if delete is not None:
+        t = np.delete(t, delete, axis=0)
+
     # duplicate vertices
     snap = (p.max(0) - p.min(0)).max() * ptol
     _, ix, jx = unique_rows(np.round(p / snap) * snap, True, True)
@@ -279,7 +274,7 @@ def get_boundary_edges(faces, dim=2):
     """
     Get the boundary edges of the mesh.
     """
-    edges = get_edges(faces, dim=2)
+    edges = get_edges(faces, dim=dim)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
@@ -549,7 +544,7 @@ def doAnyOverlap(points, entities, dim=2):
     # for all elements
     for ie, cent in enumerate(cents):
         if ie % 1000 == 0:
-            print("INFO: " + str(1000.0 * (ie / len(cents))) + " % done...", flush=True)
+            print("INFO: " + str(100.0 * (ie / len(cents))) + " % done...", flush=True)
         # collect all elements neis around element ie
         neis = np.array([], dtype=int)
         for vertex in entities[ie, :]:

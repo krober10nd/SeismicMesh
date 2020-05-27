@@ -366,6 +366,7 @@ py::array calc_circumsphere_grad(py::array_t<double, py::array::c_style | py::ar
 }
 
 
+
 PYBIND11_MODULE(fast_geometry, m) {
     m.def("calc_volume_grad", &calc_volume_grad);
     m.def("calc_circumsphere_grad", &calc_circumsphere_grad);
