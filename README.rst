@@ -28,13 +28,13 @@ This software requires, a C++ compiler (GNU or Intel) with support for std++14, 
 
 1.  ``git submodule update --init --recursive``
 
-2. ``python setup.py develop .``
+2. ``python setup.py develop``
 
 If you do not have administrative rights on your system, use the flag ``--user`` 
 
 1. ``git submodule update --init --recursive`` 
 
-2. ``python setup.py develop --user .``
+2. ``python setup.py develop --user ``
 
 Notice the file ``Requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list ``cmake_args`` to include:
 
