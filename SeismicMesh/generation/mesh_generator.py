@@ -239,7 +239,7 @@ class MeshGenerator:  # noqa: C901
                         )
                         p += jitter
                     exports = migration.enqueue(
-                        extents, p, tria.simplices, rank, size, axis, h0, dim=dim
+                        extents, tria.points, tria.simplices, rank, size, dim=dim
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     tria.add_points(recv, restart=True)
@@ -468,3 +468,44 @@ class MeshGenerator:  # noqa: C901
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
 
         return p, t
+
+
+#        def sanity_mesh(points, entities, dim=dim):
+#            """check the mesh"""
+#            # check the points
+#            for point in points:
+#                for coord in point:
+#                    assert np.isnan(coord)
+#                    assert np.isinf(coord)
+#            # check edges
+#            edges = geometry.get_edges(points, entities, dim=dim)
+#
+#
+# // check if facet is valid (valid indexes, number if theoretically possible, length of edge is possible).
+# void Yamg::sanity_facet(const int *facet) const
+# {
+#    if(!debugging)
+#        return;
+#
+#    for(int i=0; i<3; i++) {
+#        assert(facet[i]>=0);
+#        assert(facet[i]<gcoords.size()/3);
+#
+#        assert(facet[i]!=facet[(i+1)%3]);
+#        assert(edge_length(Yamg::get_point(facet[i]), Yamg::get_point(facet[(i+1)%3]))>std::numeric_limits<double>::epsilon());
+#    }
+# }
+# const double *Yamg::get_point(int nid) const
+# {
+#    assert(nid>=0);
+#    assert(nid<gcoords.size()/3);
+#    return gcoords.data()+nid*3;
+# }
+#
+# // return pointer to an integer indicating the start of the tet
+# const int *Yamg::get_tet(int eid)
+# {
+#    assert(eid>=0);
+#    assert(eid<gcells.size()/4);
+#    return gcells.data()+eid*4;
+# }
