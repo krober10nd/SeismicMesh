@@ -1,7 +1,7 @@
 import scipy.sparse as spsparse
 import numpy as np
 
-from . import signed_distance_functions as sdf
+# from . import signed_distance_functions as sdf
 
 from .cpp import fast_geometry as gutils
 
@@ -64,37 +64,37 @@ def remove_external_faces(points, faces, extent, new_idx, dim=2):
     Remove entities with all dim+1 vertices outside block (external)
     and points that are "far" from local domain extents.
     """
-    if dim == 2:
-        signed_distance = sdf.drectangle(
-            points[faces.flatten(), :],
-            x1=extent[0],
-            x2=extent[2],
-            y1=extent[1],
-            y2=extent[3],
-        )
-    elif dim == 3:
-        signed_distance = sdf.dblock(
-            points[faces.flatten(), :],
-            x1=extent[0],
-            x2=extent[3],
-            y1=extent[1],
-            y2=extent[4],
-            z1=extent[2],
-            z2=extent[5],
-        )
+    # if dim == 2:
+    #    signed_distance = sdf.drectangle(
+    #        points[faces.flatten(), :],
+    #        x1=extent[0],
+    #        x2=extent[2],
+    #        y1=extent[1],
+    #        y2=extent[3],
+    #    )
+    # elif dim == 3:
+    #    signed_distance = sdf.dblock(
+    #        points[faces.flatten(), :],
+    #        x1=extent[0],
+    #        x2=extent[3],
+    #        y1=extent[1],
+    #        y2=extent[4],
+    #        z1=extent[2],
+    #        z2=extent[5],
+    #    )
     # keep faces that don't have all their nodes "out" of the local domain
     # and
     # faces that have all their nodes in the "close" to interior of the local block
     # isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
     # determine minimum extent
-    mIext = 99999999.0
-    for ix in range(0, dim):
-        mIext = np.amin(
-            [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
-        )
+    # mIext = 99999999.0
+    # for ix in range(0, dim):
+    #    mIext = np.amin(
+    #        [mIext, extent[int(dim * 2) - int(ix) - 1] - extent[dim - int(ix) - 1]]
+    #    )
     isOut = faces >= new_idx
-    # if greater than x times the minimum lengthscale of the subdomain
-    isFar = np.reshape(signed_distance > 0.50 * mIext, (-1, (dim + 1)))
+    ## if greater than x times the minimum lengthscale of the subdomain
+    # isFar = np.reshape(signed_distance > 0.50 * mIext, (-1, (dim + 1)))
     # high aspect ratio tetrahedrals sometimes occur on the boundary delete these
     faces_new = faces[
         (np.sum(isOut, axis=1) != (dim + 1)), :

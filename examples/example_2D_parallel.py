@@ -44,7 +44,9 @@ def example_2D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1)
+    points, facets = mshgen.build(
+        max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1, perform_checks=True
+    )
 
     if rank == 0:
 

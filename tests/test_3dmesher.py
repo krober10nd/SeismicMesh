@@ -27,15 +27,15 @@ def test_3dmesher():
     ef = ef.build()
     mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
     points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
-    # 16459 vertices and 102868 cells
+    print(len(points), len(cells))
     assert len(points) == 16459
-    assert np.abs(len(cells) - 102868) < 150
+    assert np.abs(len(cells) - 96297) < 150
 
     mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")
     points, cells = mshgen.build(nscreen=1, max_iter=20, seed=0)
-    # 16459 vertices and 102868 cells
+    print(len(points), len(cells))
     assert len(points) == 16459
-    assert np.abs(len(cells) - 102868) < 150
+    assert np.abs(len(cells) - 97480) < 150
 
 
 if __name__ == "__main__":

@@ -93,7 +93,7 @@ std::vector<double> c_where_to2(std::vector<double> &points, std::vector<int> &f
     }
 
     std::vector<double> pointsToMigrate;
-    pointsToMigrate.resize(3+num_points*3,-1);
+    pointsToMigrate.resize(1+num_points*3,-1);
 
     double kount_below = 0.0;
     for(std::size_t iv=0; iv < num_points; ++iv)
@@ -161,7 +161,7 @@ py::array where_to2(py::array_t<double, py::array::c_style | py::array::forcecas
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;
-  std::vector<ssize_t> shape     = {3 + num_points, 3};
+  std::vector<ssize_t> shape     = {1 + num_points, 3};
   std::vector<ssize_t> strides   = {sodble*3, sodble};
 
   // return 2-D NumPy array
@@ -210,7 +210,7 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
             bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
 
             if(isCoplanar){
-                std::cout<<"alert"<<std::endl;
+                //std::cout<<"alert"<<std::endl;
                 continue;
             }
             //// Calculate circumball of element
@@ -230,7 +230,7 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
     }
 
     std::vector<double> pointsToMigrate;
-    pointsToMigrate.resize(4+num_points*4,-1);
+    pointsToMigrate.resize(1+num_points*4,-1);
 
     double kount_below = 0.0;
     for(std::size_t iv=0; iv < num_points; ++iv)
@@ -301,7 +301,7 @@ py::array where_to3(py::array_t<double, py::array::c_style | py::array::forcecas
 
   ssize_t              sodble    = sizeof(double);
   ssize_t              ndim      = 2;
-  std::vector<ssize_t> shape     = {4 + num_points, 4};
+  std::vector<ssize_t> shape     = {1 + num_points, 4};
   std::vector<ssize_t> strides   = {sodble*4, sodble};
 
   // return 2-D NumPy array
