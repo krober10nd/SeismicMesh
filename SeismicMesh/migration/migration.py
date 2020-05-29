@@ -27,28 +27,27 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
                 if i == axis:
                     new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
                     _bbox[i, :] = new_lims[r : r + 2]
-                    if r != 0:
-                        # starting point must be lasts + h0
-                        prev_lims = new_lims[r - 1 : r - 1 + 2]
-                        tmp = np.mgrid[slice(prev_lims[0], prev_lims[1] + h0, h0)]
-                        _bbox[i, 0] = tmp[-1] + h0
+                    # if r != 0:
+                    #    # starting point must be lasts + h0
+                    #    prev_lims = new_lims[r - 1 : r - 1 + 2]
+                    #    tmp = np.mgrid[slice(prev_lims[0], prev_lims[1] + h0, h0)]
+                    #    _bbox[i, 0] = tmp[-1] - 5 * h0
 
             grid = np.mgrid[
-                tuple(slice(min, max + h0, h0) for min, max in _bbox)
+                tuple(slice(min - 10 * h0, max + 10 * h0, h0) for min, max in _bbox)
             ].astype(float)
             # interpolate global --> local sizing grid
             lh = fh(tuple(grid[d] for d in range(dim)))
             # updated grid vectors
-            vecs = [np.arange(min, max + h0, h0) for min, max in _bbox]
+            vecs = [np.arange(min - 10 * h0, max + 10 * h0, h0) for min, max in _bbox]
             # form local interpolant
-            _lfh = RegularGridInterpolator(
-                vecs, lh, bounds_error=False, fill_value=None
-            )
+            _lfh = RegularGridInterpolator(vecs, lh, bounds_error=False, fill_value=None)
             if r == 0:
-                lfh = _lfh
+                lfh = copy.deepcopy(_lfh)
                 continue
-            # send local interpolant to r
-            comm.send(_lfh, dest=r, tag=11)
+            else:
+                # send local interpolant to r
+                comm.send(_lfh, dest=r, tag=11)
         else:
             if rank == r:
                 # recv local interpolant from rank 0

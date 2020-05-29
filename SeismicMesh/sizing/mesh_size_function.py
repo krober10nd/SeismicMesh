@@ -9,6 +9,7 @@ import warnings
 
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from scipy import ndimage
 import h5py
 import matplotlib.pyplot as plt
 
@@ -81,6 +82,7 @@ class MeshSizeFunction:
         units="m-s",
         wl=0.0,
         freq=5.0,
+        grad=0.0,
         hmax=np.inf,
         dt=0.0,
         cr_max=0.2,
@@ -105,6 +107,7 @@ class MeshSizeFunction:
         self.hmax = hmax
         self.wl = wl
         self.freq = freq
+        self.grad = grad
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
@@ -242,6 +245,14 @@ class MeshSizeFunction:
         self.__wl = value
 
     @property
+    def grad(self):
+        return self.__grad
+
+    @grad.setter
+    def grad(self, value):
+        self.__grad = value
+
+    @property
     def freq(self):
         return self.__freq
 
@@ -361,6 +372,8 @@ class MeshSizeFunction:
             _wl = self.wl
             _freq = self.freq
 
+            _grad = self.grad
+
             _dt = self.dt
             _cr_max = self.cr_max
 
@@ -377,6 +390,33 @@ class MeshSizeFunction:
                         flush=True,
                     )
                 hh_m = _vp / (_freq * _wl)
+            if _grad > 0:
+                if rank == 0:
+                    print(
+                        "Refining mesh sizes near sharp velocity gradients...",
+                        flush=True,
+                    )
+                if _dim == 2:
+                    win_rows, win_cols = 100, 100
+                    win_mean = ndimage.uniform_filter(_vp, (win_rows, win_cols))
+                    win_sqr_mean = ndimage.uniform_filter(
+                        _vp ** 2, (win_rows, win_cols)
+                    )
+                elif _dim == 3:
+                    win_rows, win_cols, win_cols2 = 100, 100, 100
+                    win_mean = ndimage.uniform_filter(
+                        _vp, (win_rows, win_cols, win_cols2)
+                    )
+                    win_sqr_mean = ndimage.uniform_filter(
+                        _vp ** 2, (win_rows, win_cols, win_cols2)
+                    )
+                win_var = win_sqr_mean - win_mean ** 2
+                # normalize variance to [0,1]
+                win_var /= np.amax(win_var)
+                win_var -= np.amin(win_var)
+                tmp = _grad / (win_var + 0.10)
+                hh_m = np.minimum(tmp, hh_m)
+
             # enforce min (and optionally max) sizes
             hh_m = np.where(hh_m < _hmin, _hmin, hh_m)
             if _hmax < np.inf:

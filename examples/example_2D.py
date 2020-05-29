@@ -16,10 +16,12 @@ def example_2D():
         domain_ext=1e3,
         dt=0.001,
         grade=0.15,
-        freq=5,
-        wl=5,
+        grad=50,
+        freq=2,
+        wl=3,
         hmax=1e3,
         hmin=50.0,
+        padstyle="linear_ramp",
     )
 
     # Build mesh size function
@@ -48,6 +50,10 @@ def example_2D():
     top = ordered_bnde[ix1:ix2, :]
     sides_bot = np.concatenate(
         (ordered_bnde[ix2 + 1 : -1, :], ordered_bnde[0 : ix1 - 1, :])
+    )
+
+    meshio.write_points_cells(
+        "BP2004_w1KM_EXT.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
     )
 
     # Write to gmsh22 format with boundary conditions

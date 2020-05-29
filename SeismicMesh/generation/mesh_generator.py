@@ -116,9 +116,10 @@ class MeshGenerator:  # noqa: C901
         t:         Triangle indices (nt, dim+1)
         """
         _ef = self.SizingFunction
+        fh = copy.deepcopy(_ef.interpolant)
+        bbox = copy.deepcopy(_ef.bbox)
         fd = _ef.fd
         h0 = _ef.hmin
-        bbox = _ef.bbox
         _method = self.method
         comm = COMM
         _axis = axis
@@ -134,10 +135,10 @@ class MeshGenerator:  # noqa: C901
             size = 1
 
         # if PARALLEL only rank 0 owns the full field.
-        if rank == 0:
-            fh = _ef.fh
+        if rank == 0 and PARALLEL:
+            gfh = copy.deepcopy(fh)
         else:
-            fh = None
+            gfh = None
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -172,7 +173,7 @@ class MeshGenerator:  # noqa: C901
             # If the user has not supplied points
             if PARALLEL:
                 # 1a. Localize mesh size function grid.
-                fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
+                fh = migration.localize_sizing_function(gfh, h0, bbox, dim, _axis, comm)
                 # 1. Create initial points in parallel in local box owned by rank
                 p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
             else:
@@ -189,14 +190,12 @@ class MeshGenerator:  # noqa: C901
                 (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
             )
 
-            # np.savetxt("points_" + str(rank) + ".txt", p, delimiter=",")
-
-            # if PARALLEL:
-            # min x min y min z max x max y max z
-            extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-            extent[_axis] -= h0
-            extent[_axis + dim] += h0
-            extents = [comm.bcast(extent, r) for r in range(size)]
+            if PARALLEL:
+                # min x min y min z max x max y max z
+                extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
+                extent[_axis] -= h0
+                extent[_axis + dim] += h0
+                extents = [comm.bcast(extent, r) for r in range(size)]
         else:
             # If the user has supplied initial points
             if PARALLEL:
@@ -237,25 +236,10 @@ class MeshGenerator:  # noqa: C901
                         extents, tria.points, tria.simplices, rank, size, dim=dim
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    tria.add_points(recv, restart=True)
-                    # print(
-                    #    "on rank " + str(rank) + " there are " + str(extent), flush=True
-                    # )
-                    # np.savetxt(
-                    #    "b4points_" + str(rank) + ".txt", tria.points, delimiter=","
-                    # )
-                    # np.savetxt(
-                    #    "b4cells" + str(rank) + ".txt",
-                    #    tria.simplices + 1,
-                    #    delimiter=",",
-                    # )
+                    tria.add_points(recv)
                     p, t, inv = geometry.remove_external_faces(
                         tria.points, tria.simplices, extent, dim=dim,
                     )
-                    # np.savetxt("points_" + str(rank) + ".txt", p, delimiter=",")
-                    # np.savetxt("cells_" + str(rank) + ".txt", t + 1, delimiter=",")
-                    # np.savetxt("recv_" + str(rank) + ".txt", recv, delimiter=",")
-                    # quit()
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
                 else:

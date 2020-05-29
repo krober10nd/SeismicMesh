@@ -16,9 +16,10 @@ def example_3D():
         nz=210,
         dt=0.001,
         freq=2,
-        wl=10,
-        hmin=25,
+        wl=3,
+        hmin=250,
         grade=0.35,
+        grad=250,
         domain_ext=1000,
     )
 

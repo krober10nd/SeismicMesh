@@ -21,12 +21,14 @@ def example_2D_parallel():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        freq=5,
-        wl=5,
+        freq=2,
+        wl=3,
+        dt=0.001,
         hmax=1e3,
-        hmin=100.0,
-        grade=0.05,
-        domain_ext=1000,
+        hmin=50.0,
+        grad=50,
+        grade=0.15,
+        domain_ext=1e3,
         padstyle="linear_ramp",
     )
 
@@ -37,6 +39,8 @@ def example_2D_parallel():
 
     if rank == 0:
         ef.WriteVelocityModel("BP2004")
+        # Visualize mesh size function
+        ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(
@@ -45,8 +49,9 @@ def example_2D_parallel():
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(
-        max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1, perform_checks=True
-    )
+        max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0
+    )  # perform_checks=True
+    # )
 
     if rank == 0:
 
