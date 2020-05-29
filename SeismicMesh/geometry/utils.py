@@ -59,10 +59,10 @@ def remove_duplicates(data):
     return np.unique(data, axis=1)
 
 
-def remove_external_faces(points, faces, extent, new_idx, dim=2):
+def remove_external_faces(points, faces, extent, dim=2):
     """
     Remove entities with all dim+1 vertices outside block (external)
-    and points that are "far" from local domain extents.
+    or one vertex out .
     """
     if dim == 2:
         signed_distance = sdf.drectangle(
@@ -82,19 +82,8 @@ def remove_external_faces(points, faces, extent, new_idx, dim=2):
             z1=extent[2],
             z2=extent[5],
         )
-    # keep faces that don't have all their nodes "out" of the local domain
-    # and
-    # faces that have all their nodes in the "close" to interior of the local block
-    # isOut = np.reshape(signed_distance > 0, (-1, (dim + 1)))
-    # determine minimum extent
-    isOut = faces >= new_idx
-    ## if greater than x times the minimum lengthscale of the subdomain
-    # isFar = np.reshape(signed_distance > 500, (-1, (dim + 1)))
-    # high aspect ratio tetrahedrals sometimes occur on the boundary delete these
-    faces_new = faces[
-        (np.sum(isOut, axis=1) != (dim + 1))
-    ]  # & (np.any(isFar, axis=1) != 1), :
-    # ]
+    isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
+    faces_new = faces[(np.sum(isOut, axis=1) != (dim + 1))]
     points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
     return points_new, faces_new, jx
 

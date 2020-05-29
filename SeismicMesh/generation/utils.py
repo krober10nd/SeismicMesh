@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 import scipy.sparse as spsparse
 
 
@@ -27,7 +28,7 @@ def make_init_points(bbox, rank, size, axis, h0, dim):
     """Create a structured grid in parallel of the entire domain
        Each processor owns a part of the domain.
     """
-    _bbox = bbox.copy()
+    _bbox = copy.deepcopy(bbox)
 
     for i in range(dim):
         if i == axis:

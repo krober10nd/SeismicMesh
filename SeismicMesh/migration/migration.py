@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 from mpi4py import MPI
 from scipy.interpolate import RegularGridInterpolator
 
@@ -19,7 +20,7 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
     rank = comm.Get_rank()
     size = comm.Get_size()
     for r in range(0, size):
-        _bbox = bbox.copy()
+        _bbox = copy.deepcopy(bbox)
         if rank == 0:
             # form local point set
             for i in range(dim):
@@ -139,6 +140,7 @@ def enqueue(extents, points, faces, rank, size, dim=2):
 
     vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
 
+    # expand to avoid intersections in ghost zones...
     if dim == 2:
         exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
     elif dim == 3:

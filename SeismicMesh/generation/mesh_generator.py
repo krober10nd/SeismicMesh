@@ -6,6 +6,7 @@
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 import numpy as np
+import copy
 from mpi4py import MPI
 import scipy.spatial as spspatial
 import matplotlib.pyplot as plt
@@ -188,14 +189,14 @@ class MeshGenerator:  # noqa: C901
                 (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
             )
 
-            if PARALLEL:
-                # create extent of local domain + h0 in cut axis
-                # min x min y min z max x max y max z
-                extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-                extent[_axis] -= 1.0 * h0
-                extent[_axis + dim] += 1.0 * h0
-                extents = [comm.bcast(extent, r) for r in range(size)]
-            USER_DEFINED_POINTS = False
+            # np.savetxt("points_" + str(rank) + ".txt", p, delimiter=",")
+
+            # if PARALLEL:
+            # min x min y min z max x max y max z
+            extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
+            extent[_axis] -= h0
+            extent[_axis + dim] += h0
+            extents = [comm.bcast(extent, r) for r in range(size)]
         else:
             # If the user has supplied initial points
             if PARALLEL:
@@ -210,9 +211,7 @@ class MeshGenerator:  # noqa: C901
                 # send points to each subdomain
                 p, extents = migration.localize_points(blocks, extents, comm, dim)
                 extent = extents[rank]
-                USER_DEFINED_POINTS = True
             else:
-                USER_DEFINED_POINTS = True
                 p = _points
 
         N = len(p)
@@ -231,22 +230,32 @@ class MeshGenerator:  # noqa: C901
             # Using the SciPy qhull wrapper for Delaunay triangulation.
             if _method == "qhull":
                 if PARALLEL:
-                    tria = spspatial.Delaunay(p, incremental=True)
-                    # This greatly avoids coplanar and colinear points (just done once)
-                    if count == 0 and not USER_DEFINED_POINTS:
-                        jitter = np.random.uniform(
-                            size=(len(p), dim), low=-h0 / 10, high=h0 / 10
-                        )
-                        p += jitter
+                    tria = spspatial.Delaunay(
+                        p, incremental=True, qhull_options="QJ Pp"
+                    )
                     exports = migration.enqueue(
                         extents, tria.points, tria.simplices, rank, size, dim=dim
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     tria.add_points(recv, restart=True)
-                    new_idx = len(tria.points) - len(recv)
+                    # print(
+                    #    "on rank " + str(rank) + " there are " + str(extent), flush=True
+                    # )
+                    # np.savetxt(
+                    #    "b4points_" + str(rank) + ".txt", tria.points, delimiter=","
+                    # )
+                    # np.savetxt(
+                    #    "b4cells" + str(rank) + ".txt",
+                    #    tria.simplices + 1,
+                    #    delimiter=",",
+                    # )
                     p, t, inv = geometry.remove_external_faces(
-                        tria.points, tria.simplices, extent, new_idx, dim=dim,
+                        tria.points, tria.simplices, extent, dim=dim,
                     )
+                    # np.savetxt("points_" + str(rank) + ".txt", p, delimiter=",")
+                    # np.savetxt("cells_" + str(rank) + ".txt", t + 1, delimiter=",")
+                    # np.savetxt("recv_" + str(rank) + ".txt", recv, delimiter=",")
+                    # quit()
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
                 else:
@@ -468,44 +477,3 @@ class MeshGenerator:  # noqa: C901
                 print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
 
         return p, t
-
-
-#        def sanity_mesh(points, entities, dim=dim):
-#            """check the mesh"""
-#            # check the points
-#            for point in points:
-#                for coord in point:
-#                    assert np.isnan(coord)
-#                    assert np.isinf(coord)
-#            # check edges
-#            edges = geometry.get_edges(points, entities, dim=dim)
-#
-#
-# // check if facet is valid (valid indexes, number if theoretically possible, length of edge is possible).
-# void Yamg::sanity_facet(const int *facet) const
-# {
-#    if(!debugging)
-#        return;
-#
-#    for(int i=0; i<3; i++) {
-#        assert(facet[i]>=0);
-#        assert(facet[i]<gcoords.size()/3);
-#
-#        assert(facet[i]!=facet[(i+1)%3]);
-#        assert(edge_length(Yamg::get_point(facet[i]), Yamg::get_point(facet[(i+1)%3]))>std::numeric_limits<double>::epsilon());
-#    }
-# }
-# const double *Yamg::get_point(int nid) const
-# {
-#    assert(nid>=0);
-#    assert(nid<gcoords.size()/3);
-#    return gcoords.data()+nid*3;
-# }
-#
-# // return pointer to an integer indicating the start of the tet
-# const int *Yamg::get_tet(int eid)
-# {
-#    assert(eid>=0);
-#    assert(eid<gcells.size()/4);
-#    return gcells.data()+eid*4;
-# }
