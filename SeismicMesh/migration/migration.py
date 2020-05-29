@@ -41,7 +41,9 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
             # updated grid vectors
             vecs = [np.arange(min - 10 * h0, max + 10 * h0, h0) for min, max in _bbox]
             # form local interpolant
-            _lfh = RegularGridInterpolator(vecs, lh, bounds_error=False, fill_value=None)
+            _lfh = RegularGridInterpolator(
+                vecs, lh, bounds_error=False, fill_value=None
+            )
             if r == 0:
                 lfh = copy.deepcopy(_lfh)
                 continue
