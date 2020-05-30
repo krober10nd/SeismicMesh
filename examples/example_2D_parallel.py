@@ -21,7 +21,7 @@ def example_2D_parallel():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        freq=2,
+        freq=5,
         wl=3,
         dt=0.001,
         hmax=1e3,
@@ -49,7 +49,7 @@ def example_2D_parallel():
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(
-        max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0
+        max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1
     )  # perform_checks=True
     # )
 

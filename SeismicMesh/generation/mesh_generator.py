@@ -186,8 +186,11 @@ class MeshGenerator:  # noqa: C901
             # 2. Remove points outside the region, apply the rejection method
             p = p[fd(p) < geps]  # Keep only d<0 points
             r0 = fh(p)
+            r0m = r0.min()
+            if PARALLEL:
+                r0m = comm.allreduce(r0m, op=MPI.MIN)
             p = np.vstack(
-                (pfix, p[np.random.rand(p.shape[0]) < r0.min() ** dim / r0 ** dim],)
+                (pfix, p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],)
             )
 
             if PARALLEL:
@@ -236,7 +239,7 @@ class MeshGenerator:  # noqa: C901
                         extents, tria.points, tria.simplices, rank, size, dim=dim
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    tria.add_points(recv)
+                    tria.add_points(recv, restart=True)
                     p, t, inv = geometry.remove_external_faces(
                         tria.points, tria.simplices, extent, dim=dim,
                     )

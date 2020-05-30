@@ -22,8 +22,7 @@ def example_3D_parallel():
         dt=0.001,
         freq=2,
         wl=3,
-        grade=0.25,
-        grad=250,
+        grad=200,
         hmin=250,
     )
 
@@ -34,7 +33,6 @@ def example_3D_parallel():
 
     if rank == 0:
         ef.WriteVelocityModel("EGAGE_Salt")
-    #    ef.SaveMeshSizeFunctionOptions("EGAGE_Salt")
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(
