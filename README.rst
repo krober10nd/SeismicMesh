@@ -25,7 +25,7 @@ Installation :
 ==============================================
 
 This software requires: a C++ compiler (GNU or Intel) with support for std++14, CMake >=3.0, CGAL >= 5.0 and Boost > 1.4.8. Note 
-CGAl requires MPFR and GMP which may or may not already be installed on your standard Linux box. Once these packages are installed, you can run the following: 
+CGAL requires MPFR and GMP which may or may not already be installed on your standard Linux box. Once these packages are installed, you can run the following: 
 
 1.  ``git submodule update --init --recursive``
 
