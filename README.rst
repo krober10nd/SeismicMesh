@@ -48,6 +48,12 @@ Notice the file ``requirements.txt`` which indicates all the dependencies and th
 
 ``-DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include,``
 
+
+Usage
+==============================================
+Check out the examples directory ``examples`` to see how to operate the software. 
+
+
 Testing:
 ==============================================
 To run tests, install ``pytest``i.e., ``pip install pytest
