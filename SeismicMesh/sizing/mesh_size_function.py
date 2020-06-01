@@ -789,10 +789,20 @@ class MeshSizeFunction:
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
         if _dim == 3:
+            mx = np.amax(hh_m)
             if _padstyle == "edge":
                 hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+            elif _padstyle == "linear_ramp":
+                # linearly ramp to maximum value in domain
+                hh_m = np.pad(
+                    hh_m,
+                    ((nnx, nnx), (nnx, nnx), (nnx, 0)),
+                    "linear_ramp",
+                    end_values=(mx, mx),
+                )
             else:
                 print("3D pad style currently not supported yet")
+                quit()
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
 
