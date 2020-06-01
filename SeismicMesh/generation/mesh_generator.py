@@ -335,6 +335,10 @@ class MeshGenerator:  # noqa: C901
                 else:
                     if num_move == 0:
                         print("Termination reached...No slivers detected!", flush=True)
+                        if rank == 0 and perform_checks:
+                            p, t = geometry.linter(p, t, dim=dim)
+                        else:
+                            p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
                         return p, t
 
                 p0, p1, p2, p3 = (
@@ -412,23 +416,8 @@ class MeshGenerator:  # noqa: C901
                 # no movement if mesh improvement (from forces)
                 maxdp = 0.0
 
-            # 7. Bring outside points back to the boundary
-            d = fd(p)
-            ix = d > 0  # Find points outside (d>0)
-            if ix.any():
-
-                def deps_vec(i):
-                    a = [0] * dim
-                    a[i] = deps
-                    return a
-
-                dgrads = [(fd(p[ix] + deps_vec(i)) - d[ix]) / deps for i in range(dim)]
-                dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
-                dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
-                p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
-
             if count % nscreen == 0 and rank == 0 and not mesh_improvement:
-                maxdp = deltat * np.sqrt((Ftot[d < -geps] ** 2).sum(1)).max()
+                maxdp = deltat * np.sqrt((Ftot ** 2).sum(1)).max()
 
             # 8. Number of iterations reached
             if count == max_iter - 1:
@@ -439,8 +428,8 @@ class MeshGenerator:  # noqa: C901
                     )
                 if PARALLEL:
                     p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-                    if rank == 0 and perform_checks:
-                        p, t = geometry.linter(p, t, dim=dim)
+                if rank == 0 and perform_checks:
+                    p, t = geometry.linter(p, t, dim=dim)
                 break
 
             # 9. Delete ghost points

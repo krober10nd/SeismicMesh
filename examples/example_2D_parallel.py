@@ -21,8 +21,8 @@ def example_2D_parallel():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        freq=5,
-        wl=3,
+        freq=10,
+        wl=5,
         dt=0.001,
         hmax=1e3,
         hmin=50.0,

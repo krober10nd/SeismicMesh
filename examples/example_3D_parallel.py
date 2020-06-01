@@ -22,8 +22,9 @@ def example_3D_parallel():
         dt=0.001,
         freq=2,
         wl=3,
-        grad=200,
+        grade=0.25,
         hmin=250,
+        hmax=1e3,
     )
 
     # Build mesh size function (in parallel)
@@ -40,11 +41,12 @@ def example_3D_parallel():
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=1)
+    points, cells = mshgen.build(max_iter=50, seed=0, COMM=comm, axis=1)
 
     if rank == 0:
+
         # Do mesh improvement in serial to bound lower dihedral angle
-        mshgen.method = "cgal"
+        # mshgen.method = "cgal"
         points, cells = mshgen.build(
             points=points,
             max_iter=50,
@@ -54,7 +56,7 @@ def example_3D_parallel():
         )
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
-            "EGAGE_Salt_F2HZ_WL3.vtk", points, [("tetra", cells)],
+            "EGAGE_Salt_F3HZ_WL3.vtk", points, [("tetra", cells)],
         )
 
 
