@@ -152,7 +152,7 @@ class MeshGenerator:  # noqa: C901
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
         deltat = 0.1
         geps = 1e-1 * h0
-        deps = np.sqrt(np.finfo(np.double).eps) * h0
+        # deps = np.sqrt(np.finfo(np.double).eps) * h0
 
         if pfix is not None:
             if PARALLEL:

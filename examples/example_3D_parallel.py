@@ -24,7 +24,9 @@ def example_3D_parallel():
         wl=3,
         grade=0.25,
         hmin=250,
-        hmax=1e3,
+        hmax=5e3,
+        domain_ext=1e3,
+        padstyle="linear_ramp",
     )
 
     # Build mesh size function (in parallel)
