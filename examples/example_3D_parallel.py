@@ -56,7 +56,15 @@ def example_3D_parallel():
         )
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
-            "EGAGE_Salt_F3HZ_WL3.vtk", points, [("tetra", cells)],
+            "EGAGE_Salt_F3HZ_WL3.vtk", points / 1000.0, [("tetra", cells)],
+        )
+        ## Write to gmsh22 format (quite slow)
+        meshio.write_points_cells(
+            "EGAGE_Salt_F3HZ_WL3.msh",
+            points / 1000,
+            [("tetra", cells)],
+            file_format="gmsh22",
+            binary=False,
         )
 
 

@@ -21,12 +21,11 @@ def example_2D_parallel():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
         model=fname,
-        freq=10,
-        wl=5,
+        freq=2,
+        wl=6,
         dt=0.001,
         hmax=1e3,
-        hmin=50.0,
-        grad=50,
+        hmin=250.0,
         grade=0.15,
         domain_ext=1e3,
         padstyle="linear_ramp",
@@ -57,11 +56,14 @@ def example_2D_parallel():
 
         # Write as a vtk format for visualization in Paraview
         meshio.write_points_cells(
-            "BP2004.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
+            "BP2004_F2HZ_WL3.vtk",
+            points / 1000,
+            [("triangle", facets)],
+            file_format="vtk",
         )
         ## Write to gmsh22 format (quite slow)
         meshio.write_points_cells(
-            "BP2004.msh",
+            "BP2004_F2HZ_WL3.msh",
             points / 1000,
             [("triangle", facets)],
             file_format="gmsh22",

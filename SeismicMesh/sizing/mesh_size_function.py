@@ -631,6 +631,7 @@ class MeshSizeFunction:
         model_fname = self.model
         ofname += ".hdf5"
         print("Writing velocity model " + ofname, flush=True)
+        print(_vp.shape, flush=True)
         with h5py.File(ofname, "w") as f:
             f.create_dataset("velocity_model", data=_vp, dtype="f")
             if _dim == 2:
