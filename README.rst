@@ -24,7 +24,8 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation :
 ==============================================
 
-This software requires, a C++ compiler (GNU or Intel) with support for std++14, CMake >=3.0, CGAL >= 5.0 and Boost > 1.4.8. Once these packages are installed, you can run: 
+This software requires: a C++ compiler (GNU or Intel) with support for std++14, CMake >=3.0, CGAL >= 5.0 and Boost > 1.4.8. Note 
+CGAL requires MPFR and GMP which may or may not already be installed on your standard Linux box. Once these packages are installed, you can run the following: 
 
 1.  ``git submodule update --init --recursive``
 
@@ -34,9 +35,9 @@ If you do not have administrative rights on your system, use the flag ``--user``
 
 1. ``git submodule update --init --recursive`` 
 
-2. ``python setup.py develop --user ``
+2. ``python setup.py develop --user``
 
-Notice the file ``Requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list ``cmake_args`` to include:
+Notice the file ``requirements.txt`` which indicates all the dependencies and their respective version numbers. If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include:
 
 
 ``-DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER,``
@@ -46,6 +47,12 @@ Notice the file ``Requirements.txt`` which indicates all the dependencies and th
 ``-DMPFR_LIBRARIES=+/PATH/TO/libmpfr.a``
 
 ``-DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include,``
+
+
+Usage
+==============================================
+Check out the examples directory ``examples`` to see how to operate the software. 
+
 
 Testing:
 ==============================================
