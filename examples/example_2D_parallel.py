@@ -22,10 +22,9 @@ def example_2D_parallel():
         bbox=bbox,
         model=fname,
         freq=2,
-        wl=6,
+        wl=10,
         dt=0.001,
-        hmax=1e3,
-        hmin=250.0,
+        hmin=75.0,
         grade=0.15,
         domain_ext=1e3,
         padstyle="linear_ramp",
@@ -37,9 +36,9 @@ def example_2D_parallel():
     ef = ef.construct_lambdas(comm)
 
     if rank == 0:
-        ef.WriteVelocityModel("BP2004")
+        ef.WriteVelocityModel("BP2004_w1KM_EXT")
         # Visualize mesh size function
-        ef.plot()
+        # ef.plot()
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(
@@ -56,14 +55,14 @@ def example_2D_parallel():
 
         # Write as a vtk format for visualization in Paraview
         meshio.write_points_cells(
-            "BP2004_F2HZ_WL3.vtk",
+            "BP2004_F2HZ_WL6_1KM_EXT.vtk",
             points / 1000,
             [("triangle", facets)],
             file_format="vtk",
         )
         ## Write to gmsh22 format (quite slow)
         meshio.write_points_cells(
-            "BP2004_F2HZ_WL3.msh",
+            "BP2004_F2HZ_WL3_1KM_EXT.msh",
             points / 1000,
             [("triangle", facets)],
             file_format="gmsh22",

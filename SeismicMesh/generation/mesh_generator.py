@@ -152,7 +152,7 @@ class MeshGenerator:  # noqa: C901
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
         deltat = 0.1
         geps = 1e-1 * h0
-        # deps = np.sqrt(np.finfo(np.double).eps) * h0
+        deps = np.sqrt(np.finfo(np.double).eps) * h0
 
         if pfix is not None:
             if PARALLEL:
@@ -415,6 +415,21 @@ class MeshGenerator:  # noqa: C901
             else:
                 # no movement if mesh improvement (from forces)
                 maxdp = 0.0
+
+            # 7. Bring outside points back to the boundary
+            d = fd(p)
+            ix = d > 0  # Find points outside (d>0)
+            if ix.any():
+
+                def deps_vec(i):
+                    a = [0] * dim
+                    a[i] = deps
+                    return a
+
+                dgrads = [(fd(p[ix] + deps_vec(i)) - d[ix]) / deps for i in range(dim)]
+                dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+                dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
+                p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             if count % nscreen == 0 and rank == 0 and not mesh_improvement:
                 maxdp = deltat * np.sqrt((Ftot ** 2).sum(1)).max()
