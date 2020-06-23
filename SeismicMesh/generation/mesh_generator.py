@@ -367,7 +367,7 @@ class MeshGenerator:  # noqa: C901
                 perturb /= perturb_norm[:, None]
 
                 # perturb % of local mesh size
-                mesh_size = h0  # fh(p[move])
+                mesh_size = h0
                 push = 0.10
                 if PARALLEL:
                     if count < max_iter - 1:
@@ -419,7 +419,7 @@ class MeshGenerator:  # noqa: C901
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
-            if ix.any():
+            if ix.any() and count < max_iter - 2:
 
                 def deps_vec(i):
                     a = [0] * dim
