@@ -251,11 +251,28 @@ class MeshGenerator:  # noqa: C901
             # Using CGAL's Delaunay triangulation algorithm
             elif _method == "cgal":
                 if PARALLEL:
-                    print(
-                        "Parallel mesh generation with CGAL not yet supported!",
-                        flush=True,
+                    if dim == 2:
+                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                    elif dim == 3:
+                        t = c_cgal.delaunay3(
+                            p[:, 0], p[:, 1], p[:, 2]
+                        )  # List of triangles
+                    exports = migration.enqueue(
+                        extents, p, t, rank, size, dim=dim
                     )
-                    quit()
+                    recv = migration.exchange(comm, rank, size, exports, dim=dim)
+                    p = np.concatenate((p,recv),axis=0)
+                    if dim == 2:
+                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                    elif dim == 3:
+                        t = c_cgal.delaunay3(
+                            p[:, 0], p[:, 1], p[:, 2]
+                        )  # List of triangles
+                    p, t, inv = geometry.remove_external_faces(
+                        p, t, extent, dim=dim,
+                    )
+                    N = p.shape[0]
+                    recv_ix = len(recv)  # we do not allow new points to move
                 else:
                     # SERIAL
                     if dim == 2:
