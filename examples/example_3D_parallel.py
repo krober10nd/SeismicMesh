@@ -21,11 +21,11 @@ def example_3D_parallel():
         nz=210,
         dt=0.001,
         freq=2,
-        wl=3,
+        wl=5,
         grade=0.25,
-        hmin=250,
+        hmin=100,
         hmax=5e3,
-        domain_ext=1e3,
+        domain_ext=250,
         padstyle="linear_ramp",
     )
 
@@ -38,31 +38,28 @@ def example_3D_parallel():
         ef.WriteVelocityModel("EGAGE_Salt")
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(
-        ef, method="qhull"
-    )  # parallel currently only works in qhull
+    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=50, seed=0, COMM=comm, axis=1)
+    points, cells = mshgen.build(max_iter=75, seed=0, COMM=comm)
 
     if rank == 0:
 
         # Do mesh improvement in serial to bound lower dihedral angle
         # mshgen.method = "cgal"
-        points, cells = mshgen.build(
-            points=points,
-            max_iter=50,
-            min_dh_bound=10,
-            nscreen=1,
-            mesh_improvement=True,
-        )
+        #points, cells = mshgen.build(
+        #    mesh_improvement=True,
+        #    points=points,
+        #    max_iter=50,
+        #    min_dh_bound=5,
+        #)
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
-            "EGAGE_Salt_F3HZ_WL3.vtk", points / 1000.0, [("tetra", cells)],
+            "EGAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],
         )
         ## Write to gmsh22 format (quite slow)
         meshio.write_points_cells(
-            "EGAGE_Salt_F3HZ_WL3.msh",
+            "EGAGE_Salt.msh",
             points / 1000,
             [("tetra", cells)],
             file_format="gmsh22",

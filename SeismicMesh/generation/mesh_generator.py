@@ -6,7 +6,6 @@
 #  see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 import numpy as np
-import copy
 from mpi4py import MPI
 import scipy.spatial as spspatial
 import matplotlib.pyplot as plt
@@ -49,7 +48,7 @@ class MeshGenerator:  # noqa: C901
 
     """
 
-    def __init__(self, SizingFunction, method="qhull"):
+    def __init__(self, SizingFunction=None, method="qhull"):
         self.SizingFunction = SizingFunction
         self.method = method
 
@@ -73,6 +72,11 @@ class MeshGenerator:  # noqa: C901
     ### PUBLIC METHODS ###
     def build(  # noqa: ignore=C901
         self,
+        SizingFunction=None,
+        bbox=None,
+        fd=None,
+        fh=None,
+        h0=None,
         pfix=None,
         max_iter=50,
         nscreen=1,
@@ -86,6 +90,7 @@ class MeshGenerator:  # noqa: C901
         min_dh_bound=10,
         max_dh_bound=170,
         improvement_method="circumsphere",  # also volume or random
+        enforce_sdf=True,  # enforce that points stay inside signed distance function
     ):
         """
         Interface to either DistMesh2D/3D mesh generator using signed distance functions.
@@ -115,11 +120,14 @@ class MeshGenerator:  # noqa: C901
         p:         Point positions (np, dim)
         t:         Triangle indices (nt, dim+1)
         """
-        _ef = self.SizingFunction
-        fh = copy.deepcopy(_ef.interpolant)
-        bbox = copy.deepcopy(_ef.bbox)
-        fd = _ef.fd
-        h0 = _ef.hmin
+        # if SizingFunction is available, grab that data.
+        if self.SizingFunction is not None:
+            _ef = self.SizingFunction
+            fh = _ef.interpolant
+            fd = _ef.fd
+            bbox = _ef.bbox
+            h0 = _ef.hmin
+
         _method = self.method
         comm = COMM
         _axis = axis
@@ -133,12 +141,6 @@ class MeshGenerator:  # noqa: C901
             PARALLEL = False
             rank = 0
             size = 1
-
-        # if PARALLEL only rank 0 owns the full field.
-        if rank == 0 and PARALLEL:
-            gfh = copy.deepcopy(fh)
-        else:
-            gfh = None
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -173,7 +175,7 @@ class MeshGenerator:  # noqa: C901
             # If the user has not supplied points
             if PARALLEL:
                 # 1a. Localize mesh size function grid.
-                fh = migration.localize_sizing_function(gfh, h0, bbox, dim, _axis, comm)
+                fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
                 # 1. Create initial points in parallel in local box owned by rank
                 p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
             else:
@@ -187,12 +189,12 @@ class MeshGenerator:  # noqa: C901
             p = p[fd(p) < geps]  # Keep only d<0 points
             r0 = fh(p)
             r0m = r0.min()
+            # Make sure decimation occurs uniformly accross ranks
             if PARALLEL:
                 r0m = comm.allreduce(r0m, op=MPI.MIN)
             p = np.vstack(
                 (pfix, p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],)
             )
-
             if PARALLEL:
                 # min x min y min z max x max y max z
                 extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
@@ -257,20 +259,16 @@ class MeshGenerator:  # noqa: C901
                         t = c_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles
-                    exports = migration.enqueue(
-                        extents, p, t, rank, size, dim=dim
-                    )
+                    exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    p = np.concatenate((p,recv),axis=0)
+                    p = np.concatenate((p, recv), axis=0)
                     if dim == 2:
                         t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
                     elif dim == 3:
                         t = c_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles
-                    p, t, inv = geometry.remove_external_faces(
-                        p, t, extent, dim=dim,
-                    )
+                    p, t, inv = geometry.remove_external_faces(p, t, extent, dim=dim,)
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
                 else:
@@ -436,7 +434,10 @@ class MeshGenerator:  # noqa: C901
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
-            if ix.any() and count < max_iter - 2:
+            if ix.any() and enforce_sdf:
+
+                if count is max_iter - 2 and PARALLEL:
+                    break
 
                 def deps_vec(i):
                     a = [0] * dim

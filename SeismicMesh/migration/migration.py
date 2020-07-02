@@ -27,12 +27,6 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
                 if i == axis:
                     new_lims = np.linspace(_bbox[i, 0], _bbox[i, 1], size + 1)
                     _bbox[i, :] = new_lims[r : r + 2]
-                    # if r != 0:
-                    #    # starting point must be lasts + h0
-                    #    prev_lims = new_lims[r - 1 : r - 1 + 2]
-                    #    tmp = np.mgrid[slice(prev_lims[0], prev_lims[1] + h0, h0)]
-                    #    _bbox[i, 0] = tmp[-1] - 5 * h0
-
             grid = np.mgrid[
                 tuple(slice(min - 3 * h0, max + 3 * h0, h0) for min, max in _bbox)
             ].astype(float)
