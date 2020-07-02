@@ -589,16 +589,16 @@ def linter(points, faces, minqual=0.10, dim=2):
     import time
 
     t1 = time.time()
-    #intersections = doAnyOverlap(points, faces, dim=dim)
-    ## delete the lower quality in the pair
-    #delete = []
-    #for intersect in intersections:
-    #    ix = [i for i in intersect]
-    #    sel = np.argmin(qual[ix])
-    #    delete = np.append(delete, intersect[sel])
-    #delete = np.unique(delete)
-    #print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
-    #faces = np.delete(faces, delete, axis=0)
+    intersections = doAnyOverlap(points, faces, dim=dim)
+    # delete the lower quality in the pair
+    delete = []
+    for intersect in intersections:
+        ix = [i for i in intersect]
+        sel = np.argmin(qual[ix])
+        delete = np.append(delete, intersect[sel])
+    delete = np.unique(delete)
+    print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
+    faces = np.delete(faces, delete, axis=0)
     print(time.time() - t1)
 
     # clean up

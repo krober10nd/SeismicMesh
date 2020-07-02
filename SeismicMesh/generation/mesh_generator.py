@@ -352,7 +352,7 @@ class MeshGenerator:  # noqa: C901
                         print("Termination reached...No slivers detected!", flush=True)
                         if rank == 0 and perform_checks:
                             p, t = geometry.linter(p, t, dim=dim)
-                        else:
+                        elif rank == 0:
                             p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
                         return p, t
 
@@ -434,10 +434,11 @@ class MeshGenerator:  # noqa: C901
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
-            if ix.any() and enforce_sdf:
 
-                if count is max_iter - 2 and PARALLEL:
-                    break
+            if PARALLEL and count is max_iter - 2:
+                enforce_sdf = False
+
+            if ix.any() and enforce_sdf:
 
                 def deps_vec(i):
                     a = [0] * dim
