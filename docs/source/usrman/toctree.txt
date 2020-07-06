@@ -2,6 +2,7 @@
    :maxdepth: 2
 
    intro
+   overview
 
 .. Local Variables:
 .. mode: rst
