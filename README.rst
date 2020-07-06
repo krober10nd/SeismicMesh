@@ -50,9 +50,11 @@ Notice the file ``requirements.txt`` which indicates all the dependencies and th
 ``-DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include,``
 
 
-Usage
+Documentation
 ==============================================
-Check out the examples directory ``examples`` to see how to operate the software. 
+https://seismicmesh.readthedocs.io
+
+For examples, check out the examples directory ``/examples``.
 
 
 Testing:
