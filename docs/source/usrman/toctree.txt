@@ -4,6 +4,7 @@
    intro
    overview
    install
+   tutorial
 
 .. Local Variables:
 .. mode: rst
