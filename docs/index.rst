@@ -1,46 +1,64 @@
-.. SeismicMesh documentation master file, created by
-   sphinx-quickstart on Mon Jul  6 13:07:04 2020.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
+==============
 SeismicMesh
-========
+==============
 
-$project will solve your problem of where to start with documentation,
-by providing a basic explanation of how to do it easily.
+:Author:  Keith Jared Roberts
+:Contact: keithrbt0@gmail.com
 
-Look how easy it is to use:
 
-    import project
-    # Get your stuff done
-    project.do_stuff()
+Online Documentation
+--------------------
 
-Features
---------
+Hosted at *Read the Docs* [http://SeismicMesh.readthedocs.org/]:
 
-- Be awesome
-- Make things faster
+.. image::  https://readthedocs.org/projects/SeismicMesh/badge/?version=stable
+   :target: https://SeismicMesh.readthedocs.org/en/stable/
+.. image::  https://readthedocs.org/projects/SeismicMesh/badge/?version=latest
+   :target: https://SeismicMesh.readthedocs.org/en/latest/
 
-Installation
-------------
+Hosted at *Github* [https://github/krober10nd/SeismicMesh]:
 
-Install $project by running:
++ `User Manual (HTML)`_ (generated with Sphinx_).
++ `User Manual (PDF)`_  (generated with Sphinx_).
++ `API Reference`_      (generated with Epydoc_).
 
-    install project
+.. _User Manual (HTML): usrman/index.html
+.. _User Manual (PDF):  SeismicMesh.pdf
+.. _API Reference:      apiref/index.html
 
-Contribute
-----------
+.. _Sphinx: http://sphinx-doc.org/
+.. _Epydoc: http://epydoc.sourceforge.net/
 
-- Issue Tracker: github.com/$project/$project/issues
-- Source Code: github.com/$project/$project
 
-Support
--------
+Discussion and Support
+----------------------
 
-If you are having issues, please let us know.
-We have a mailing list located at: project@google-groups.com
+Hosted at Google Groups:
 
-License
--------
++ Group Page:   http://groups.google.com/group/SeismicMesh
++ Mailing List: SeismicMesh@googlegroups.com
 
-The project is licensed under the BSD license.
+
+Downloads and Development
+-------------------------
+
+Hosted at Github:
+
++ Project Site:    https://github.org/krober10nd/SeismicMesh
++ Source Releases: https://github.org/krober10nd/SeismicMesh/downloads
++ Issue Tracker:   https://github.org/krober10nd/SeismicMesh/issues
++ Git Repository:  https://github.org/krober10nd/SeismicMesh.git
+
+
+Citations
+---------
+
++ K.J. Roberts
+  *SeismicMesh*
+  to be submitted to Journal of Open Source Software (JOSS)
+
+
+Acknowledgments
+---------------
+
+This project was supported by...
