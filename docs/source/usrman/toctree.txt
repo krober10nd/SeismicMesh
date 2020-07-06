@@ -3,8 +3,8 @@
 
    intro
    overview
+   install
 
 .. Local Variables:
 .. mode: rst
 .. End:
-

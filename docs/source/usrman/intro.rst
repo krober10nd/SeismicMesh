@@ -1,31 +1,6 @@
 Introduction
 ============
 
-Over the last years, high performance computing has become an
-affordable resource to many more researchers in the scientific
-community than ever before. The conjunction of quality open source
-software and commodity hardware strongly influenced the now widespread
-popularity of Beowulf_ class clusters and cluster of workstations.
-
-Among many parallel computational models, message-passing has proven
-to be an effective one.  This paradigm is specially suited for (but
-not limited to) distributed memory architectures and is used in
-today's most demanding scientific and engineering application related
-to modeling, simulation, design, and signal processing.  However,
-portable message-passing parallel programming used to be a nightmare
-in the past because of the many incompatible options developers were
-faced to.  Fortunately, this situation definitely changed after the
-MPI Forum released its standard specification.
-
-High performance computing is traditionally associated with software
-development using compiled languages. However, in typical applications
-programs, only a small part of the code is time-critical enough to
-require the efficiency of compiled languages. The rest of the code is
-generally related to memory management, error handling, input/output,
-and user interaction, and those are usually the most error prone and
-time-consuming lines of code to write and debug in the whole
-development process.  Interpreted high-level languages can be really
-advantageous for this kind of tasks.
 
 For implementing general-purpose numerical computations, MATLAB [#]_
 is the dominant interpreted programming language. In the open source
