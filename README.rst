@@ -9,12 +9,10 @@
 
 
 .. image:: http://www.repostatus.org/badges/latest/active.svg
-	:alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
 	:target: http://www.repostatus.org/#active
 
 .. image:: https://readthedocs.org/projects/seismicmesh/badge/?version=par3d
-:target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
-:alt: Documentation Status
+        :target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
 
 SeismicMesh_: Mesh generation for Seismology in Python
 ==============================================
