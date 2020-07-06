@@ -9,12 +9,10 @@
 
 
 .. image:: http://www.repostatus.org/badges/latest/active.svg
-	:alt: Project Status: Active – The project has reached a stable, usable state and is being actively developed.
 	:target: http://www.repostatus.org/#active
 
 .. image:: https://readthedocs.org/projects/seismicmesh/badge/?version=par3d
-:target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
-:alt: Documentation Status
+        :target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
 
 SeismicMesh_: Mesh generation for Seismology in Python
 ==============================================
@@ -52,9 +50,11 @@ Notice the file ``requirements.txt`` which indicates all the dependencies and th
 ``-DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include,``
 
 
-Usage
+Documentation
 ==============================================
-Check out the examples directory ``examples`` to see how to operate the software. 
+https://seismicmesh.readthedocs.io
+
+For examples, check out the examples directory ``/examples``.
 
 
 Testing:
