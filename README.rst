@@ -54,7 +54,7 @@ Documentation
 ==============================================
 https://seismicmesh.readthedocs.io
 
-For examples, check out the examples directory ``/examples``.
+For examples, check out the examples directory.
 
 
 Testing:
@@ -62,7 +62,13 @@ Testing:
 To run tests, install ``pytest``i.e., ``pip install pytest
 
 1. ``cd tests/``
-2. ``mpiexec -n 2 pytest .``
+2.  pytest .``
+
+Parallel functionality can be tested by: 
+
+1. ``mpirun -np 2 python test_2dmesher_par.py``
+
+2. ``mpirun -np 2 python test_3dmesher_par.py``
 
 Gallery:
 ==============================================
