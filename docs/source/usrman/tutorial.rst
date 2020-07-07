@@ -27,6 +27,7 @@ class along with the domain extents ::
     )
 
 
+
 .. warning::
 
     All of the mesh size functions detailed below assume you pass the :mod:`bbox` and :mod:`fname`
@@ -62,6 +63,17 @@ Mesh size gradation
 
 Mesh generation
 -------------------------------------------
+
+Parallelism is activated by passing the :mod:`COMM` to the *MeshSizeFunction* constructor ::
+
+  ef = ef.build(comm=COMM)
+  ef = ef.construct_lambdas(COMM)
+
+and also to the *MeshGenerator* constructor ::
+
+  mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+  points, cells = mshgen.build(COMM=COMM)
+
 
 2D Mesh generation
 ^^^^^^^^^^^^^^^^^^^^^^^
