@@ -1,15 +1,11 @@
 .. topic:: Abstract
 
-   This document describes the *SeismicMesh* package.  *SeismicMesh* provides
-   the capability to build two and three dimensional quality triangular meshes
-   using signed distance functions, which are intended for finite element simulation.
-   Besides mesh generation, this work aims to create end-to-end workflows to build
-   quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral
-   meshes for seismic domains suitable for numerical wave propagators.
+   This document describes the *SeismicMesh* package. This work aims to
+   create end-to-end workflows to build quality meshes for seismic domains suitable
+   for numerical wave propagators from P- and S-wave velocity models.
 
-   The package uses Python to wrap computationally intensive operations
-   performed using the Computational Geometry Algorithms Library and Boost
-   that are written in C++.
+   The package uses Python to wrap computationally intensive operations in C++ and has
+   support for distributed memory parallelism.
 
 .. Local Variables:
 .. mode: rst
