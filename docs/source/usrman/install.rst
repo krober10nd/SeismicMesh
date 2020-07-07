@@ -33,8 +33,8 @@ build *SeismicMesh*:
   -DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include
 
 
-Installation :
-==============================================
+Compilation:
+------------
 
 Perform the steps in the order they appear::
 
