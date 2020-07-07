@@ -2,8 +2,8 @@ SeismicMesh
 ==============
 
 :Author:       Keith Roberts
-:Contact:      keithrbt0@gmail.com
-:Web Site:     https://github/krober10nd/SeismicMesh
+:Contact:      krober@usp.br
+:Web Site:     https://github.com/krober10nd/SeismicMesh
 :Date:         |today|
 
 .. include:: abstract.txt
