@@ -26,23 +26,12 @@ SeismicMesh_: Mesh generation for Seismology in Python
 
 Documentation
 ==============================================
+Complete documentation including installation, theory, and tutorials is available here: 
+
 https://seismicmesh.readthedocs.io
 
-For examples, check out the examples directory.
+For practical examples, check out the scripts in the examples directory.
 
-
-Testing:
-==============================================
-To run tests, install ``pytest``i.e., ``pip install pytest
-
-1. ``cd tests/``
-2.  pytest .``
-
-Parallel functionality can be tested by: 
-
-1. ``mpirun -np 2 python test_2dmesher_par.py``
-
-2. ``mpirun -np 2 python test_3dmesher_par.py``
 
 Gallery:
 ==============================================
