@@ -12,6 +12,9 @@ rank = comm.Get_rank()
 
 def test_2dmesher_par():
 
+    if size == 1:
+        return 0
+
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     wl = 5
     hmin = 100
