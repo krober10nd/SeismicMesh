@@ -12,7 +12,7 @@ rank = comm.Get_rank()
 
 def test_3dpar_mesher():
 
-    if size == 0:
+    if size == 1:
         return 0
 
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
