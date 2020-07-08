@@ -309,15 +309,14 @@ def get_boundary_edges(entities, dim=2):
 
 
 def get_winded_boundary_edges(entities):
-    """Order the boundary edges of the mesh in a winding fashion (only works in 2D)
+    """Order the boundary edges of the mesh in a winding fashiono
 
     :param entities: the mesh connectivity
     :type entities: numpy.ndarray[int x (dim+1)]
 
-    :return: boundary_edges: the edges that make up the boundary of the mesh in a winding order.
-    :rtype numpy.ndarray[int x 2]
+    :return: boundary_edges: the edges that make up the boundary of the mesh in a winding order
+    :rtype: numpy.ndarray[int x 2]
     """
-    assert entities.shape(1) > 3, "only makes sense in 2D!"
 
     boundary_edges = get_boundary_edges(entities)
     _bedges = boundary_edges.copy()
