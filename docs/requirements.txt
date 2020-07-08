@@ -1,8 +1,8 @@
 numpy==1.18.2
 scipy==1.4.1
-mpi4py==3.0.3
+mpi4py
 segyio
 matplotlib
 meshio==4.0.10
-h5py==2.3.1
+h5py
 pybind11==2.5.0
