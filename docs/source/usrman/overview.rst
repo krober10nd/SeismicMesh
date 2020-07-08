@@ -30,16 +30,6 @@ Inputs
 * The only required input file to generate a mesh in 2D is a binary file containing the velocity data on a structured grid. In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model. In 3D, the seismic velocity model is stored as a binary file as well but we do not use the SEG-y format. Instead in 3D, data is stored contiguously in memory in the format z,x,y following the little-endian format. The user must specify how the data will be reshaped in memory by passing the number of rows, columns in the x-direction, and columns in the y-direction.
 
 
-* If the user uses the *MeshSizeFunction* class, the software makes the assumption the domain can be approximated by a rectangle/cube. Thus, the user specifies the domain geometry as a tuple of coordinates in meters::
-
-    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max})`
-
-* In 3D::
-    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
-
-.. note :: The program automatically generates the rectangle/cube domain geometry used during meshing if a *MeshSizeFunction* object is passed to the generator.
-
-
 Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 

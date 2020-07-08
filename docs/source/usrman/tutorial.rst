@@ -27,6 +27,14 @@ class along with the domain extents ::
         other-args-go-here,...
     )
 
+* If the user uses the *MeshSizeFunction* class, the software makes the assumption the domain can be approximated by a rectangle/cube. Thus, the user specifies the domain geometry as a tuple of coordinates in meters::
+
+    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max})`
+
+* In 3D::
+    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
+
+.. note :: The program automatically generates the rectangle/cube domain geometry used during meshing if a *MeshSizeFunction* object is passed to the generator.
 
 
 .. warning::
