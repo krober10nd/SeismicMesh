@@ -42,7 +42,8 @@ def test_geometry3D():
     assert len(facets) == (12 * 4)
 
     boundary_facets = geo.get_boundary_facets(cells)
-    boundary_facets = geo.remove_duplicates(boundary_facets)
+    boundary_facets = np.sort(boundary_facets, axis=1)
+    boundary_facets = np.unique(boundary_facets, axis=1)
     assert len(boundary_facets) == 12
 
     boundary_vertices = geo.get_boundary_vertices(cells, dim=3)

@@ -15,7 +15,7 @@ can often become manual and require the use of graphical user interfaces, which 
 of simulation results.
 
 Why *another* mesh generator?
-------------
+-------------------------------
 
 While there are a vast array of mesh generation tools in existince, most mesh generation tools are stand alone and general purpose simply producing a set of points and triangles. However, the mesh generation step represents only one stage of a typical geophysical modeling workflow. For example, geophysical data is often required to guide the appliation of resolution in an objective and reproducible manner and to ensure accurate numerical simulations.
 These pre-processing steps should ideally be script-able and included in the software stack for automation and reproduction of the mesh.

@@ -8,65 +8,68 @@ from .cpp import fast_geometry as gutils
 from ..generation.cpp import c_cgal
 
 """
-Routines to perform geometrical/topological operations on meshes
+Routines to perform geometrical/topological operations and calculate things on meshes
 """
 
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant
 
 
-def calc_re_ratios(points, cells):
-    """
-    Calculate radius edge ratios--mesh quality metric
+def calc_re_ratios(vertices, entities):
+    """Calculate radius edge ratios--mesh quality metric
+
+    :param vertices: point coordinates of the mesh vertices'
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity table
+    :type entities: numpy.ndarray[int x (dim + 1)]
+
+    :return: dihedral angles: array of radius-to-edge ratios
+    :rtype: dihedral angles: numpy.ndarray[float64 x 1]
     """
     # circumradius/shortest edge length
     bars = np.concatenate(
         [
-            cells[:, [0, 1]],
-            cells[:, [1, 2]],
-            cells[:, [2, 0]],
-            cells[:, [0, 3]],
-            cells[:, [1, 3]],
-            cells[:, [2, 3]],
+            entities[:, [0, 1]],
+            entities[:, [1, 2]],
+            entities[:, [2, 0]],
+            entities[:, [0, 3]],
+            entities[:, [1, 3]],
+            entities[:, [2, 3]],
         ]
     )
-    barvec = points[bars[:, 0]] - points[bars[:, 1]]
+    barvec = vertices[bars[:, 0]] - vertices[bars[:, 1]]
     L = np.sqrt((barvec ** 2).sum(1))
-    L = np.reshape(L, (6, len(cells)))
+    L = np.reshape(L, (6, len(entities)))
     # min edge length i every tetra
     minL = np.amin(L, axis=0)
-    cc = c_cgal.circumballs3(points[cells.flatten()])
+    cc = c_cgal.circumballs3(vertices[entities.flatten()])
     r = cc[:, -1]
     return np.sqrt(r) / minL
 
 
-def dump_mesh(points, cells, rank):
-    import meshio
+def remove_external_entities(vertices, entities, extent, dim=2):
+    """Remove entities with all dim+1 vertices outside block.
 
-    meshio.write_points_cells(
-        "test_" + str(rank) + ".vtk", points, [("tetra", cells)],
-    )
-    np.savetxt("points.txt", points, delimiter=",")
-    np.savetxt("cells.txt", cells, delimiter=",")
+    :param vertices: point coordinates of mesh
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity
+    :type entities: numpy.ndarray[int x (dim + 1)]
+    :param extent: coords. of the local block extents
+    :type extent: numpy.ndarray[tuple(float64 x (2*dim))]
+    :param dim: dimension of mesh
+    :type dim: int, optional
 
-
-def remove_duplicates(data):
+    :return: vertices_new: point coordinates of mesh w/ removed entities
+    :rtype: numpy.ndarray[float64 x dim]
+    :return: entities_new: mesh connectivity w/ removed entities
+    :rtype: numpy.ndarray[int x (dim +1)]
+    :return: jx: mapping from old point indexing to new point indexing
+    :rtype: numpy.ndarray[int x 1]
     """
-    removes duplicate rows for int data
-    such as the face table
-    """
-    data = np.sort(data, axis=1)
-    return np.unique(data, axis=1)
 
-
-def remove_external_faces(points, faces, extent, dim=2):
-    """
-    Remove entities with all dim+1 vertices outside block (external)
-    or one vertex out .
-    """
     if dim == 2:
         signed_distance = sdf.drectangle(
-            points[faces.flatten(), :],
+            vertices[entities.flatten(), :],
             x1=extent[0],
             x2=extent[2],
             y1=extent[1],
@@ -74,7 +77,7 @@ def remove_external_faces(points, faces, extent, dim=2):
         )
     elif dim == 3:
         signed_distance = sdf.dblock(
-            points[faces.flatten(), :],
+            vertices[entities.flatten(), :],
             x1=extent[0],
             x2=extent[3],
             y1=extent[1],
@@ -83,26 +86,39 @@ def remove_external_faces(points, faces, extent, dim=2):
             z2=extent[5],
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
-    faces_new = faces[(np.sum(isOut, axis=1) != (dim + 1))]
-    points_new, faces_new, jx = fixmesh(points, faces_new, dim=dim)
-    return points_new, faces_new, jx
+    entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
+    vertices_new, entities_new, jx = fixmesh(vertices, entities_new, dim=dim)
+    return vertices_new, entities_new, jx
 
 
-def vertex_to_elements(points, faces, dim=2):
+def vertex_to_entities(vertices, entities, dim=2):
+    """Determine which elements are connected to which vertices.
+
+    :param vertices: point coordinates of mesh vertices
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity
+    :type entities: numpy.ndarray[int x (dim + 1)]
+    :param dim: dimension of mesh
+    :type dim: int, optional
+
+    :return: vtoe: indices of entities connected to each vertex
+    :rtype: numpy.ndarray[int x 1]
+
+    :return: vtoe_pointer: indices into `vtoe` such that vertex `v` is connected to
+                          `vtoe[vtoe_pointer[v]:vtoe_pointer[v+1]]` entities
+    :rtype: numpy.ndarray[int x 1]
     """
-    Determine which elements are connected to vertices
-    """
-    num_faces = len(faces)
+    num_entities = len(entities)
 
-    ext = np.tile(np.arange(0, num_faces), (dim + 1, 1)).reshape(-1, order="F")
-    ve = np.reshape(faces, (-1,))
+    ext = np.tile(np.arange(0, num_entities), (dim + 1, 1)).reshape(-1, order="F")
+    ve = np.reshape(entities, (-1,))
     ve = np.vstack((ve, ext)).T
     ve = ve[ve[:, 0].argsort(), :]
 
     idx = np.insert(np.diff(ve[:, 0]), 0, 0)
     vtoe_pointer = np.argwhere(idx)
     vtoe_pointer = np.insert(vtoe_pointer, 0, 0)
-    vtoe_pointer = np.append(vtoe_pointer, num_faces * (dim + 1))
+    vtoe_pointer = np.append(vtoe_pointer, num_entities * (dim + 1))
 
     vtoe = ve[:, 1]
 
@@ -110,12 +126,23 @@ def vertex_to_elements(points, faces, dim=2):
 
 
 def unique_rows(A, return_index=False, return_inverse=False):
-    """
-    Similar to MATLAB's unique(A, 'rows'), this returns B, I, J
+    """Similar to MATLAB's unique(A, 'rows'), this returns B, I, J
     where B is the unique rows of A and I and J satisfy
     A = B[J,:] and B = A[I,:]
-    Returns I if return_index is True
-    Returns J if return_inverse is True
+
+    :param  A: array of data
+    :type A: numpy.ndarray[int/float64 x N]
+    :param return_index: whether to return the indices of unique data
+    :type return_index: bool, optional
+    :param return_inverse: whether to return the inverse mapping back to A from B.
+    :type return_inverse: bool, optional
+
+    :return: B: array of data with duplicates removed
+    :rtype: numpy.ndarray[int/float64 x N]
+    :return: I: array of indices to unique data B.
+    :rtype: numpy.ndarray[int x 1]
+    :return: J: array of indices to A from B.
+    :rtype: numpy.ndarray[int x 1]
     """
     A = np.require(A, requirements="C")
     assert A.ndim == 2, "array must be 2-dim'l"
@@ -141,7 +168,17 @@ def unique_rows(A, return_index=False, return_inverse=False):
 
 
 def simpvol(p, t):
-    """Signed volumes of the simplex elements in the mesh."""
+    """Signed volumes of the simplex elements in the mesh.
+
+    :param p: point coordinates of mesh
+    :type p: numpy.ndarray[float64 x dim]
+    :param t: mesh connectivity
+    :type t: numpy.ndarray[int x (dim + 1)]
+
+    :return: volume: signed volume of entity/simplex.
+    :rtype: numpy.ndarray[float64 x 1]
+    """
+
     dim = p.shape[1]
     if dim == 1:
         d01 = p[t[:, 1]] - p[t[:, 0]]
@@ -159,20 +196,26 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2, delete=None):
+def fixmesh(p, t, ptol=2e-13, dim=2, delunused=False):
+    """Remove duplicated/unused vertices & entities and
+       ensure orientation of entities is CCW.
+
+    :param p: point coordinates of mesh
+    :type p: numpy.ndarray[float64 x dim]
+    :param t: mesh connectivity
+    :type t: numpy.ndarray[int x (dim + 1)]
+    :param ptol: point tolerance to detect duplicates
+    :type ptol: float64, optional
+    :param dim: dimension of mesh
+    :type dim: int, optional
+    :param delunused: flag to delete disjoint vertices.
+    :type delunused: bool, optional
+
+    :return: p: updated point coordinates of mesh
+    :rtype: numpy.ndarray[float64 x dim]
+    :return: t: updated mesh connectivity
+    :rtype: numpy.ndarray[int x (dim+1)]
     """
-    Remove duplicated/unused nodes and
-    ensure orientation of elements is CCW
-    Parameters
-    ----------
-    p : array, shape (np, dim)
-    t : array, shape (nt, nf)
-    Usage
-    -----
-    p, t = fixmesh(p, t, ptol)
-    """
-    if delete is not None:
-        t = np.delete(t, delete, axis=0)
 
     # duplicate vertices
     snap = (p.max(0) - p.min(0)).max() * ptol
@@ -181,27 +224,18 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2, delete=N
     p = p[ix]
     t = jx[t]
 
-    # duplicate elements
+    # duplicate entities
     t = np.sort(t, axis=1)
     t = unique_rows(t)
 
-    # delete slivers
-    if delslivers:
-        dh_angles = np.rad2deg(gutils.calc_dihedral_angles(p, t))
-        outOfBounds = np.argwhere((dh_angles[:, 0] < 5) | (dh_angles[:, 0] > 175))
-        eleNums = np.floor(outOfBounds / 6).astype("int")
-        eleNums, ix = np.unique(eleNums, return_index=True)
-        print("Deleting " + str(len(eleNums)) + " slivers...", flush=True)
-        t = np.delete(t, eleNums, axis=0)
-
-    # delete unused vertices
+    # delete disjoint vertices
     if delunused:
         pix, _, jx = np.unique(t, return_index=True, return_inverse=True)
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
         pix = ix[pix]
 
-    # element orientation is CCW
+    # entity orientation is CCW
     flip = simpvol(p, t) < 0
     t[flip, :2] = t[flip, 1::-1]
 
@@ -209,21 +243,16 @@ def fixmesh(p, t, ptol=2e-13, delunused=False, delslivers=False, dim=2, delete=N
 
 
 def simpqual(p, t):
-    """Simplex quality.
-    radius-to-edge ratio
-    Usage
-    -----
-    q = simpqual(p, t)
-    Parameters
-    ----------
-    p : array, shape (np, dim)
-        nodes
-    t : array, shape (nt, dim+1)
-        triangulation
-    Returns
-    -------
-    q : array, shape (nt, )
-        qualities
+    """Simplex quality radius-to-edge ratio
+
+    :param p: vertex coordinates of mesh
+    :type p: numpy.ndarray[float64 x dim]
+    :param t: mesh connectivity
+    :type t: numpy.ndarray[int x (dim + 1)]
+
+    :return: signed mesh quality: signed mesh quality (1.0 is perfect)
+    :rtype: numpy.ndarray[float64 x 1]
+
     """
     assert p.ndim == 2 and t.ndim == 2 and p.shape[1] + 1 == t.shape[1]
 
@@ -238,39 +267,59 @@ def simpqual(p, t):
     return 2 * r / R
 
 
-def get_edges(faces, dim=2):
+def get_edges(entities, dim=2):
+    """Get the undirected edges of mesh in no order (NB: are repeated)
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+
+    :return: edges: the edges that make up the mesh
+    :rtype: numpy.ndarray[int x 2]
     """
-    Get the edges of mesh in no order
-    and are repeated.
-    """
-    num_faces = len(faces)
-    faces = np.array(faces)
+
+    num_entities = len(entities)
+    entities = np.array(entities)
     if dim == 2:
-        edges = faces[:, [[0, 1], [0, 2], [1, 2]]]
-        edges = edges.reshape((num_faces * 3, 2))
+        edges = entities[:, [[0, 1], [0, 2], [1, 2]]]
+        edges = edges.reshape((num_entities * 3, 2))
     elif dim == 3:
-        edges = faces[:, [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]]
-        edges = edges.reshape((num_faces * 6, 2))
+        edges = entities[:, [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]]
+        edges = edges.reshape((num_entities * 6, 2))
     return edges
 
 
-def get_boundary_edges(faces, dim=2):
+def get_boundary_edges(entities, dim=2):
+    """Get the boundary edges of the mesh. Boundary edges only appear (dim-1) times
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+
+    :return: boundary_edges: the edges that make up the boundary of the mesh
+    :rtype: numpy.ndarray[int x 2]
     """
-    Get the boundary edges of the mesh.
-    """
-    edges = get_edges(faces, dim=dim)
+    edges = get_edges(entities, dim=dim)
     edges = np.sort(edges, axis=1)
     unq, cnt = np.unique(edges, axis=0, return_counts=True)
-    boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == 1])
+    boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == (dim - 1)])
     return boundary_edges
 
 
-def get_winded_boundary_edges(faces):
+def get_winded_boundary_edges(entities):
+    """Order the boundary edges of the mesh in a winding fashion (only works in 2D)
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+
+    :return: boundary_edges: the edges that make up the boundary of the mesh in a winding order.
+    :rtype numpy.ndarray[int x 2]
     """
-    Order the boundary edges of the mesh in a winding fashion.
-    only works in 2D
-    """
-    boundary_edges = get_boundary_edges(faces)
+    assert entities.shape(1) > 3, "only makes sense in 2D!"
+
+    boundary_edges = get_boundary_edges(entities)
     _bedges = boundary_edges.copy()
 
     choice = 0
@@ -295,25 +344,40 @@ def get_winded_boundary_edges(faces):
     return boundary_edges
 
 
-def get_boundary_vertices(faces, dim=2):
-    """
-    Get the indices of the mesh representing boundary vertices.
-    works in 2d and 3d
+def get_boundary_vertices(entities, dim=2):
+    """Get the indices of the mesh representing boundary vertices.
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+
+    :return: indices: indices into the vertex array that are on the boundary.
+    :rtype: numpy.ndarray[float64 x dim]
     """
     if dim == 2:
-        b = get_boundary_edges(faces)
+        b = get_boundary_edges(entities)
     elif dim == 3:
-        b = get_boundary_facets(faces)
+        b = get_boundary_facets(entities)
     indices = np.unique(b.reshape(-1))
     return indices
 
 
-def get_boundary_elements(points, faces, dim=2):
+def get_boundary_entities(vertices, entities, dim=2):
+    """Determine the entities that lie on the boundary of the mesh.
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+
+    :return: bele: indices of entities on the boundary of the mesh.
+    :rtype: numpy.ndarray[int x 1]
     """
-    Determine the boundary elements of the mesh.
-    """
-    boundary_vertices = get_boundary_vertices(faces, dim=dim)
-    vtoe, ptr = vertex_to_elements(points, faces, dim=dim)
+    boundary_vertices = get_boundary_vertices(entities, dim=dim)
+    vtoe, ptr = vertex_to_entities(vertices, entities, dim=dim)
     bele = np.array([], dtype=int)
     for vertex in boundary_vertices:
         for ele in zip(vtoe[ptr[vertex] : ptr[vertex + 1]]):
@@ -322,44 +386,67 @@ def get_boundary_elements(points, faces, dim=2):
     return bele
 
 
-def get_facets(cells):
-    """
-    Gets the 4 facets of each cell in no order
+def get_facets(entities):
+    """Gets the four facets of each tetrahedral.
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+
+    :return: facets: facets of a tetrahedral entity.
+    :rtype: numpy.ndarray[int x 4]
     """
     ix = [[0, 1, 3], [1, 2, 3], [2, 0, 3], [1, 2, 0]]
-    return np.array(cells[:, ix]).reshape((len(cells) * 4, 3))
+    return np.array(entities[:, ix]).reshape((len(entities) * 4, 3))
 
 
-def get_boundary_facets(cells):
+def get_boundary_facets(entities):
+    """Get the facets that represent the boundary of a 3D mesh.
+
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+
+    :return: boundary_facets: facets on the boundary of a 3D mesh.
+    :rtype: numpy.ndarray[int x 4]
     """
-    Get the facets shared by only 1 cell
-    """
-    facets = get_facets(cells)
+    facets = get_facets(entities)
     facets = np.sort(facets, axis=1)
     unq, cnt = np.unique(facets, axis=0, return_counts=True)
     boundary_facets = np.array([e for e, c in zip(unq, cnt) if c == 1])
     return boundary_facets
 
 
-def delete_boundary_elements(points, faces, minqual=0.10, dim=2):
+def delete_boundary_entities(vertices, entities, dim=2, minqual=0.10):
+    """Delete boundary entities with poor geometric quality (i.e., < min. quality)
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+    :param minqual: minimum geometric quality to consider "poor" quality
+    :type minqual: float64, optional
+
+    :return: vertices: updated vertex array of mesh
+    :rtype: numpy.ndarray[int x dim]
+    :return: entities: update mesh connectivity
+    :rtype: numpy.ndarray[int x (dim+1)]
     """
-    Delete boundary elements with poor quality (i.e., < minqual)
-    """
-    qual = simpqual(points, faces)
-    bele = get_boundary_elements(points, faces, dim=dim)
+    qual = simpqual(vertices, entities)
+    bele = get_boundary_entities(vertices, entities, dim=dim)
     qualBou = qual[bele]
     delete = qualBou < minqual
     print(
-        "Deleting " + str(np.sum(delete)) + " poor quality boundary elements...",
+        "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
         flush=True,
     )
     delete = np.argwhere(delete == 1)
-    faces = np.delete(faces, bele[delete], axis=0)
-    points, faces, _ = fixmesh(points, faces, delunused=True, dim=dim)
-    return points, faces
+    entities = np.delete(entities, bele[delete], axis=0)
+    vertices, entities, _ = fixmesh(vertices, entities, delunused=True, dim=dim)
+    return vertices, entities
 
 
-def sparse(Ix, J, S, shape=None, dtype=None):
+def _sparse(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...)
 
@@ -386,37 +473,53 @@ def sparse(Ix, J, S, shape=None, dtype=None):
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
 
 
-def laplacian2(points, faces, max_iter=20, tol=0.01):
-    """
-    Move points to the average position of their connected neighbors
-    to hopefully improve triangular element quality
+def laplacian2(vertices, entities, max_iter=20, tol=0.01):
+    """Move vertices to the average position of their connected neighbors
+    with the goal to hopefully improve geometric entity quality.
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param max_iter: maximum number of iterations to perform
+    :type max_iter: int, optional
+    :param tol: iterations will cease when movement < tol
+    :type tol: float64, optional
+
+    :return vertices: updated vertices of mesh
+    :rtype: numpy.ndarray[float64 x dim]
+    :return entities: updated mesh connectivity
+    :rtype: numpy.ndarray[int x (dim+1)]
     """
     eps = np.finfo(float).eps
 
-    n = len(points)
+    n = len(vertices)
 
-    S = sparse(
-        faces[:, [0, 0, 1, 1, 2, 2]], faces[:, [1, 2, 0, 2, 0, 1]], 1, shape=(n, n)
+    S = _sparse(
+        entities[:, [0, 0, 1, 1, 2, 2]],
+        entities[:, [1, 2, 0, 2, 0, 1]],
+        1,
+        shape=(n, n),
     )
-    bnd = get_boundary_vertices(faces)
-    edge = get_edges(faces)
+    bnd = get_boundary_vertices(entities)
+    edge = get_edges(entities)
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
         print(np.argwhere(W == 0), flush=True)
-        return points, faces
+        return vertices, entities
 
     L = np.sqrt(
-        np.sum(np.square(points[edge[:, 0], :] - points[edge[:, 1], :]), axis=1)
+        np.sum(np.square(vertices[edge[:, 0], :] - vertices[edge[:, 1], :]), axis=1)
     )
     L[L < eps] = eps
     L = L[:, None]
     for it in range(max_iter):
-        pnew = np.divide(S * np.matrix(points), np.hstack((W, W)))
-        pnew[bnd, :] = points[bnd, :]
-        points = pnew
+        pnew = np.divide(S * np.matrix(vertices), np.hstack((W, W)))
+        pnew[bnd, :] = vertices[bnd, :]
+        vertices = pnew
         Lnew = np.sqrt(
-            np.sum(np.square(points[edge[:, 0], :] - points[edge[:, 1], :]), axis=1)
+            np.sum(np.square(vertices[edge[:, 0], :] - vertices[edge[:, 1], :]), axis=1)
         )
         Lnew[Lnew < eps] = eps
         move = np.amax(np.divide((Lnew - L), Lnew))
@@ -427,31 +530,47 @@ def laplacian2(points, faces, max_iter=20, tol=0.01):
             )
             break
         L = Lnew
-    points = np.array(points)
-    return points, faces
+    vertices = np.array(vertices)
+    return vertices, entities
 
 
-def isManifold(points, faces, dim=2):
-    """
-    Determine if mesh is manifold.
-    1. A boundary edge should have one element
-    2. A non-boundary edge should have two elements
+def isManifold(vertices, entities, dim=2):
+    """Determine if mesh is manifold by checking for the following:
+    1. A boundary edge should be a member of one entity
+    2. A non-boundary edge should be a member of two entities
     3. The number of boundary vertices == number of boundary edges
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[float64 x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of the mesh
+    :type dim: int, optional
+
+    :return: isManifold: flag to indicate if the mesh has a manifold boundary.
+    :rtype: bool.
     """
-    bedges = get_boundary_edges(faces, dim=dim)
-    if bedges.size != points[np.unique(bedges), :].size:
+    bedges = get_boundary_edges(entities, dim=dim)
+    if bedges.size != vertices[np.unique(bedges), :].size:
         print("Mesh has a non-manifold boundary...", flush=True)
         return False
     return True
 
 
-def ptInFace2(point, face):
+def vtInEntity2(vertex, entity):
     """
-    Does the 2D point lie in the face with vertices (x1,y1,x2,y2,x3,y3)
-    2D face?
+    Does the 2D vertex lie in the entity defined by vertices (x1,y1,x2,y2,x3,y3)?
+
+    :param vertex: vertex coordinates of mesh
+    :type vertex: numpy.ndarray[float64 x dim]
+    :param entity: connectivity of an entity
+    :type entity: numpy.ndarray[int x (dim+1)]
+
+    :return: vtInEntity2: logical flag indicating if it is or isn't.
+    :rtype: bool
     """
-    (x, y) = point
-    (x1, y1, x2, y2, x3, y3) = face
+    (x, y) = vertex
+    (x1, y1, x2, y2, x3, y3) = entity
     a = ((y2 - y3) * (x - x3) + (x3 - x2) * (y - y3)) / (
         (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
     )
@@ -459,19 +578,24 @@ def ptInFace2(point, face):
         (y2 - y3) * (x1 - x3) + (x3 - x2) * (y1 - y3)
     )
     c = 1 - a - b
-    # pt lies in T if and only if 0 <= a <= 1 and 0 <= b <= 1 and 0 <= c <= 1
+    # vt lies in entity if and only if 0 <= a <= 1 and 0 <= b <= 1 and 0 <= c <= 1
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
-def ptInCell3(point, cell):
+def vtInEntity3(vertex, entity):
     """
-    Does the 3D point lie in the face with vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)
-    3D cell?
-    """
-    # utilize the fixed size determinant in cpp
+    Does the 3D vertex lie in the entity defined by vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)?
 
-    (x, y, z) = point
-    (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = cell
+    :param vertex: vertex coordinates of mesh
+    :type vertex: numpy.ndarray[float64 x dim]
+    :param entity: connectivity of an entity
+    :type entity: numpy.ndarray[int x (dim+1)]
+
+    :return: vtInEntity3: logical flag indicating if it is or isn't.
+    :rtype: bool
+    """
+    (x, y, z) = vertex
+    (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = entity
     signs = np.zeros(5, dtype=int)
     A = np.array(
         [[x1, y1, z1, 1.0], [x2, y2, z2, 1.0], [x3, y3, z3, 1.0], [x4, y4, z4, 1.0]],
@@ -505,24 +629,41 @@ def ptInCell3(point, cell):
     return (signs == -1).all() or (signs == 1).all()
 
 
-def get_centroids(points, entities, dim=2):
+def get_centroids(vertices, entities, dim=2):
+    """Calculate the centroids of all the entities.
+
+    :param vertex: vertex coordinates of mesh
+    :type vertex: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of mesh
+    :type: int, optional
+
+    :return: centroids of entities
+    :rtype: numpy.ndarray[float64 x dim]
     """
-    Calculate the centroids of all the faces
-    """
-    return points[entities].sum(1) / (dim + 1)
+    return vertices[entities].sum(1) / (dim + 1)
 
 
-def doAnyOverlap(points, entities, dim=2):
+def doAnyOverlap(vertices, entities, dim=2):
     """
-    Check if any entities of dim D connected to boundary of the mesh overlap
-    with another entity D connected to the boundary ignoring self-intersections.
-    Checks only the 1-ring around each entity for potential intersections
-    using barycentric coordinates.
-    """
+    Check if any entities connected to boundary of the mesh overlap
+    ignoring self-intersections. This routine checks only the 1-ring around
+    each entity for potential intersections using barycentric coordinates.
 
-    vtoe, ptr = vertex_to_elements(points, entities, dim=dim)
+    :param vertex: vertex coordinates of mesh
+    :type vertex: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of mesh
+    :type: int, optional
+
+    :return: intersections: a list of 2-tuple of entity indices that intersect
+    :rtype: List[tuple(num_intersections x 2)]
+    """
+    vtoe, ptr = vertex_to_entities(vertices, entities, dim=dim)
     # centroids of these elements beles
-    cents = get_centroids(points, entities, dim=dim)
+    cents = get_centroids(vertices, entities, dim=dim)
     # store intersection pairs
     intersections = []
     # for all elements
@@ -541,14 +682,14 @@ def doAnyOverlap(points, entities, dim=2):
                 continue
             if dim == 2:
                 # does this centroid live inside another neighboring face?
-                x1, x2, x3 = points[entities[ele, :], 0]
-                y1, y2, y3 = points[entities[ele, :], 1]
-                if ptInFace2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
+                x1, x2, x3 = vertices[entities[ele, :], 0]
+                y1, y2, y3 = vertices[entities[ele, :], 1]
+                if vtInEntity2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
                     # centroid ie is inside face iee
                     print(
-                        "Alert: face "
+                        "Alert: entity "
                         + str(ie)
-                        + " intersects with face "
+                        + " intersects with entity "
                         + str(ele)
                         + ". These will be adjusted.",
                         flush=True,
@@ -557,18 +698,18 @@ def doAnyOverlap(points, entities, dim=2):
                     intersections.append((ie, ele))
             elif dim == 3:
                 # does this centroid live inside another nei cell?
-                x1, x2, x3, x4 = points[entities[ele], 0]
-                y1, y2, y3, y4 = points[entities[ele], 1]
-                z1, z2, z3, z4 = points[entities[ele], 2]
-                if ptInCell3(
+                x1, x2, x3, x4 = vertices[entities[ele], 0]
+                y1, y2, y3, y4 = vertices[entities[ele], 1]
+                z1, z2, z3, z4 = vertices[entities[ele], 2]
+                if vtInEntity3(
                     (cent[0], cent[1], cent[2]),
                     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4),
                 ):
                     # centroid ie is inside cell iee
                     print(
-                        "Alert: cell "
+                        "Alert: entity "
                         + str(ie)
-                        + " intersects with cell "
+                        + " intersects with entity "
                         + str(ele)
                         + ". These will be adjusted.",
                         flush=True,
@@ -579,17 +720,30 @@ def doAnyOverlap(points, entities, dim=2):
     return intersections
 
 
-def linter(points, faces, minqual=0.10, dim=2):
-    """
-    Remove and check mesh for defects
+def linter(vertices, entities, dim=2, minqual=0.10):
+    """Remove and check mesh for geometric and toplogical defects.
+
+    :param vertex: vertex coordinates of mesh
+    :type vertex: numpy.ndarray[float64 x dim]
+    :param entities: mesh connectivity
+    :type entities: numpy.ndarray[int x (dim+1)]
+    :param dim: dimension of mesh
+    :type: int, optional
+    :param minqual: minimum geometric quality to consider "poor" quality
+    :type minqual: float64, optional
+
+    :return vertices: updated mesh vertices
+    :rtype: numpy.ndarray[float64 x dim]
+    :return entities: updated mesh connectivity
+    :rtype: numpy.ndarray[int x (dim+1)]
     """
     print("Performing mesh linting...", flush=True)
-    qual = simpqual(points, faces)
+    qual = simpqual(vertices, entities)
     # determine if there's degenerate overlapping elements
     import time
 
     t1 = time.time()
-    intersections = doAnyOverlap(points, faces, dim=dim)
+    intersections = doAnyOverlap(vertices, entities, dim=dim)
     # delete the lower quality in the pair
     delete = []
     for intersect in intersections:
@@ -597,27 +751,29 @@ def linter(points, faces, minqual=0.10, dim=2):
         sel = np.argmin(qual[ix])
         delete = np.append(delete, intersect[sel])
     delete = np.unique(delete)
-    print("Deleting " + str(len(delete)) + " overlapped faces", flush=True)
-    faces = np.delete(faces, delete, axis=0)
+    print("Deleting " + str(len(delete)) + " overlapped entities", flush=True)
+    entities = np.delete(entities, delete, axis=0)
     print(time.time() - t1)
 
     # clean up
-    points, faces, _ = fixmesh(points, faces, delunused=True)
+    vertices, entities, _ = fixmesh(vertices, entities, delunused=True)
     # delete remaining low quality boundary elements
     if dim == 2:
-        points, faces = delete_boundary_elements(points, faces, minqual=minqual)
+        vertices, entities = delete_boundary_entities(
+            vertices, entities, minqual=minqual
+        )
         # check for non-manifold boundaries and alert
-        _ = isManifold(points, faces)
+        _ = isManifold(vertices, entities)
     # calculate final minimum simplex quality
-    qual = simpqual(points, faces)
+    qual = simpqual(vertices, entities)
     minimum_quality = np.amin(qual)
     print(
         "There are "
-        + str(len(points))
+        + str(len(vertices))
         + " vertices and "
-        + str(len(faces))
+        + str(len(entities))
         + " elements in the mesh",
         flush=True,
     )
     print("The minimum element quality is " + str(minimum_quality), flush=True)
-    return points, faces
+    return vertices, entities

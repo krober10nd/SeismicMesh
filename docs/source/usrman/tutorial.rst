@@ -72,7 +72,7 @@ Resolving seismic velocity gradients
 
 
 Courants-Friedrichs-Lewey (CFL) condition
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 * Acoustic wave equation
 

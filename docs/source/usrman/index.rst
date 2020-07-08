@@ -8,7 +8,6 @@ SeismicMesh
 
 .. include:: abstract.txt
 
-
 Contents
 ========
 
@@ -21,3 +20,5 @@ Contents
 .. * :ref:`genindex`
 .. * :ref:`modindex`
 .. * :ref:`search`
+
+
