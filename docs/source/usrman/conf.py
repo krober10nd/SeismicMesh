@@ -33,6 +33,8 @@ sys.path.insert(0, os.path.abspath("../../../"))
 # ones.
 extensions = ["sphinx.ext.autodoc", "sphinx.ext.coverage", "sphinx.ext.napoleon"]
 
+autodoc_mock_imports = ["h5py", "mpi4py"]
+
 master_doc = "index"
 
 # Add any paths that contain templates here, relative to this directory.
