@@ -33,7 +33,7 @@ sys.path.insert(0, os.path.abspath("../../../"))
 # ones.
 extensions = ["sphinx.ext.autodoc", "sphinx.ext.coverage", "sphinx.ext.napoleon"]
 
-autodoc_mock_imports = ["h5py", "mpi4py"]
+autodoc_mock_imports = ["h5py", "mpi4py", "fast_geometry", "c_cgal"]
 
 master_doc = "index"
 
