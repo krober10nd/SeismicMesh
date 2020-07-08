@@ -31,12 +31,12 @@ class along with the domain extents ::
 
 .. warning::
 
-    All of the mesh size functions detailed below assume you pass the :mod:`bbox` and :mod:`fname`
+    All of the mesh size functions detailed below assume you pass the :mod:`bbox` and :mod:`fname` to the *MeshSizeFunction* class constructor.
 
 Mesh size function
 -------------------------------------------
 
-Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`.  The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism.  Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., polynomial order,timestepping method, etc.), and the computational cost of the model. In the following sub-sections,each mesh adaptation strategy is described briefly and how to use it.
+Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`. The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism.  Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., polynomial order,timestepping method, etc.), and the computational cost of the model. In the following sub-sections,each mesh adaptation strategy is described briefly and how to use it.
 
 
 Wavelength-to-gridscale
@@ -63,6 +63,16 @@ Resolving seismic velocity gradients
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 
+Courants-Friedrichs-Lewey (CFL) condition
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+* Acoustic wave equation
+
+
+* Elastic wave equation
+
+
+
 Mesh size gradation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -70,12 +80,17 @@ Mesh size gradation
 Mesh generation
 -------------------------------------------
 
-Parallelism is activated by passing the :mod:`COMM` to the *MeshSizeFunction* constructor ::
+.. warning:
+    Results can be made fully deterministic by specifying the argument `seed=0` to the generator. This ensures that all
+    stochastic operations will be repeated in the same way as the random number used as the `seed` is fixed.
+
+.. note:
+    Parallelism is activated by passing the :mod:`COMM` to the *MeshSizeFunction* constructor ::
 
   ef = ef.build(comm=COMM)
   ef = ef.construct_lambdas(COMM)
 
-and also to the *MeshGenerator* constructor ::
+    and also to the *MeshGenerator* constructor ::
 
   mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
   points, cells = mshgen.build(COMM=COMM)
