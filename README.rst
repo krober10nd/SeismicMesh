@@ -16,7 +16,7 @@
 
 SeismicMesh_: Mesh generation for Seismology in Python
 ==============================================
-2D/3D triangular meshing for a slab of Earth based on modifications to the DistMesh_ algorithm. SeismicMesh is distributed under the GNU-GPL_ license.
+2D/3D triangular meshing for a slab of Earth based on modifications to the DistMesh_ algorithm. SeismicMesh is distributed under the BSD 2-Clause.
 
 .. _SeismicMesh: https://github.com/krober10nd/SeismicMesh
 .. _DistMesh: http://persson.berkeley.edu/distmesh/
