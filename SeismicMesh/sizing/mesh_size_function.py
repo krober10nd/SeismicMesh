@@ -83,9 +83,10 @@ class MeshSizeFunction:
         wl=0.0,
         freq=5.0,
         grad=0.0,
+        space_order=1,
         hmax=np.inf,
         dt=0.0,
-        cr_max=0.2,
+        cr_max=1.0,
         grade=0.0,
         nx=None,
         ny=None,
@@ -108,6 +109,7 @@ class MeshSizeFunction:
         self.wl = wl
         self.freq = freq
         self.grad = grad
+        self.space_order = space_order
         self.dt = dt
         self.cr_max = cr_max
         self.grade = grade
@@ -261,6 +263,14 @@ class MeshSizeFunction:
         self.__freq = value
 
     @property
+    def space_order(self):
+        return self.__space_order
+
+    @space_order.setter
+    def space_order(self, value):
+        self.__space_order = value
+
+    @property
     def hmax(self):
         return self.__hmax
 
@@ -371,6 +381,7 @@ class MeshSizeFunction:
 
             _wl = self.wl
             _freq = self.freq
+            _space_order = self.space_order
 
             _grad = self.grad
 
@@ -423,20 +434,27 @@ class MeshSizeFunction:
                 if rank == 0:
                     print("Enforcing maximum mesh resolution...", flush=True)
                 hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
-            # grade the mesh sizes
-            if _grade > 0:
-                if rank == 0:
-                    print("Enforcing mesh gradation in sizing function...", flush=True)
-                    hh_m = self.hj(hh_m, _width / _nx, 10000)
             # adjust mesh res. based on the CFL limit so cr < cr_max
+            # considering the space order p
             if _dt > 0:
                 if rank == 0:
                     print(
                         "Enforcing timestep of " + str(_dt) + " seconds...", flush=True
                     )
-                cr_old = (_vp * _dt) / hh_m
-                dxn = (_vp * _dt) / _cr_max
+                # assume isotropic mesh resolution
+                cr_old = (_vp * _dt) / (_dim * hh_m)
+                # divide maximum Courant by desired space order
+                _cr_max = _cr_max / (_dim * _space_order)
+                # determine resolution that statisfies desired _cr_max
+                dxn = (_vp * _dt) / (_dim * _cr_max)
+                # edit mesh size function to avoid violations of cr
                 hh_m = np.where(cr_old > _cr_max, dxn, hh_m)
+
+            # grade the mesh sizes
+            if _grade > 0:
+                if rank == 0:
+                    print("Enforcing mesh gradation in sizing function...", flush=True)
+                    hh_m = self.hj(hh_m, _width / _nx, 10000)
             # edit the bbox to reflect the new domain size
             if _domain_ext > 0:
                 self = self.__CreateDomainExtension()
