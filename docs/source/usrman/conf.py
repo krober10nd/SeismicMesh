@@ -39,6 +39,7 @@ autodoc_mock_imports = [
     "SeismicMesh.geometry.cpp",
     "SeismicMesh.migration.cpp",
     "SeismicMesh.generation.cpp",
+    "SeismicMesh.sizing.cpp",
 ]
 
 master_doc = "index"
