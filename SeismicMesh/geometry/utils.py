@@ -197,7 +197,7 @@ def simpvol(p, t):
 
 
 def fixmesh(p, t, ptol=2e-13, dim=2, delunused=False):
-    """Remove duplicated/unused vertices & entities and
+    """Remove duplicated/unused vertices and entities and
        ensure orientation of entities is CCW.
 
     :param p: point coordinates of mesh
@@ -487,7 +487,7 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
 
     :return vertices: updated vertices of mesh
     :rtype: numpy.ndarray[float64 x dim]
-    :return entities: updated mesh connectivity
+    :return: entities: updated mesh connectivity
     :rtype: numpy.ndarray[int x (dim+1)]
     """
     eps = np.finfo(float).eps
@@ -733,7 +733,7 @@ def linter(vertices, entities, dim=2, minqual=0.10):
 
     :return vertices: updated mesh vertices
     :rtype: numpy.ndarray[float64 x dim]
-    :return entities: updated mesh connectivity
+    :return: entities: updated mesh connectivity
     :rtype: numpy.ndarray[int x (dim+1)]
     """
     print("Performing mesh linting...", flush=True)
