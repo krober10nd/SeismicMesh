@@ -7,19 +7,23 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 
 Mesh?
 -------------------------------------------
-A mesh in our context is an unstructured triangulation composed of :math:`nt` triangles (otherwise referred to as entities) and :math:`np` vertices in either two or three dimensional space. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known Delaunay triangulation. 
+
+A mesh in our context is an unstructured triangulation composed of :math:`nt` triangles (otherwise referred to as entities) and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral elements but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
+
 
 *High quality mesh?*
 ^^^^^^^^^^^^^^^^^^^^^^^
- We use the following formula to quantify how *equilateral* the mesh is [Bank1998]_
- 
+
+Any set of points can be triangulated, but this triangulation may not be usuable for numerical simulation or other geophysical applications!
+
+We use the following formula to quantify how *well-shaped* the entities of the mesh are [Bank1998]_
+
 .. math::
   q_E = 4\sqrt{3}A_E\left(\sum_{i = 1}^{3}(\lambda_{E}^2)_i\right)^{-1}
 
-where :math:`A_E` is the area of the element and :math:`\lambda_{E}_i` is the length of the :math:`i^{th}` edge of the entity. :math:`q_E = 1` corresponds to an equilateral triangular element and :math:`q_E = 0` indicates a completely degenerated element.
+where :math:`A_E` is the area/volume of the entity and :math:`(\lambda_{E})_i` is the length/area of the :math:`i^{th}` edge/face of the entity. :math:`q_E = 1` corresponds to an well-shaped entity and :math:`q_E = 0` indicates a completely degenerated entity.
 
-The consideration of what constitutes a *high quality* mesh rests on the statistical distribution of entity quality, :math:`q_E`. Generally a mesh with :math:`q_E > 0.95` and 
-:math:`q_E - 3\sigma_{q_E} > 0.75` (where the over-line and :math:`\sigma` denote the mean and standard deviation respectively) is considered *high quality* and can be simulated without any changes to the mesh topology. Thus, when :math:`\overline{q_E} - 3\sigma_{q_E} > 0.75` is achieved, the mesh generation terminates and this generally occurs between 30-100 iterations in most seismic domains.
+The consideration of what constitutes a *high quality* mesh rests on the statistical distribution of entity quality, :math:`q_E`. Generally a mesh with :math:`q_E > 0.95` and :math:`q_E - 3\sigma_{q_E} > 0.75` (where the over-line and :math:`\sigma` denote the mean and standard deviation respectively) is considered *high quality* and can be simulated without any changes to the mesh topology. Thus, when :math:`\overline{q_E} - 3\sigma_{q_E} > 0.75` is achieved, the mesh generation terminates and this generally occurs between 30-100 iterations in most seismic domains.
 
 Software architecture
 -------------------------------------------
@@ -31,7 +35,7 @@ A typical workflow consists of two steps: first calling the *MeshSizeFunction* c
 *MeshSizeFunction*
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-This class creates an isotropic mesh size function and defines the domain through a signed distance function. The user passes a number of arguments to the class based on the intended application of the mesh. Specific arguments are detailed in the API section. 
+This class creates an isotropic mesh size function and defines the domain through a signed distance function. The user passes a number of arguments to the class based on the intended application of the mesh. Specific arguments are detailed in the API section.
 
 *MeshGeneration*
 ^^^^^^^^^^^^^^^^^^^^^^^
