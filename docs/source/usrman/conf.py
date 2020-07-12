@@ -42,6 +42,8 @@ autodoc_mock_imports = [
     "SeismicMesh.sizing.cpp",
 ]
 
+autoclass_content = "both"
+
 master_doc = "index"
 
 # Add any paths that contain templates here, relative to this directory.

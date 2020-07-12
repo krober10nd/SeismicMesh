@@ -14,7 +14,7 @@ Routines to perform geometrical/topological operations and calculate things on m
 *SeimsicMesh.MeshSizeFunction*
 -------------------------------
 
-.. automodule:: SeismicMesh.MeshSizeFunction
+.. autoclass:: SeismicMesh.MeshSizeFunction
     :members:
 
 *SeimsicMesh.MeshGenerator*

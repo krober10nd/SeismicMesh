@@ -31,38 +31,6 @@ from .cpp import limgrad
 
 class MeshSizeFunction:
     """The :class:`MeshSizeFunction` is used to build a rectangular or cubic isotropic mesh size function :math:`f(h)`.
-
-    :param bbox: bounding box containing domain extents.
-    :type bbox: tuple with the form in 2D `(zmin, zmax, xmin, xmax)`
-    :param hmin: minimum triangular edgelength populating the domain in meters.
-    :type hmin: float64
-    :param model: in 2D, a SEG-Y file containing the velocity model. In 3D, a binary file containing the velocity model.
-    :type model: name of file (assumes velocity in m-s). Note 3D binary file must be little endian and `nx`, `ny`, `nz` are required.
-    :param nz: number of grid points in z-direction for velocity model.
-    :type nz: int, optional in 2D, required in 3D
-    :param nx: number of grid points in x-direction for velocity model.
-    :type nx: int, optional in 2D, required in 3D
-    :param ny: number of grid points in y-direction for velocity model.
-    :type ny: int, optional in 2D, required in 3D
-    :param units: units of the velocity model (either `m-s` or `km-s`)
-    :type units: str, optional, default=`m-s`
-    :param wl: number of vertices per wavelength for a given :math:`f_{max}`
-    :type wl: int, optional
-    :param freq: :math:`f_{max}` in hertz for which to estimate `wl`
-    :type freq: float64, optional
-    :param hmax: maximum mesh size in meters allowed in the domain
-    :type hmax: float64, optional
-    :param dt: theoretical maximum stable timestep in seconds given Courant number `Cr`
-    :type dt: float64, optional
-    :param cr_max: `dt` is stable with this Courant number.
-    :type cr_max: float64, optional
-    :param grade: maximum allowable variation in mesh size in decimal percent.
-    :type grade: float64, optional
-    :param domain_ext: width of domain extension in `-z`, `+x`, `-x`, `+y`, `-y` directions
-    :type domain_ext: float64, optional
-
-    :return: class object populated with :math:`f(h)` and a :math:`f(d)`.
-    :rtype: :class:`MeshSizeFunction` object
     """
 
     def __init__(
@@ -86,7 +54,41 @@ class MeshSizeFunction:
         padstyle="edge",
         endianness="little",
     ):
-        """Constructor method"""
+        """Class constructor for :class:`MeshSizeFunction`
+
+        :param bbox: bounding box containing domain extents.
+        :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+        :param hmin: minimum triangular edgelength populating the domain in meters.
+        :type hmin: float64
+        :param model: in 2D, a SEG-Y file containing the velocity model. In 3D, a binary file containing the velocity model.
+        :type model: name of file (assumes velocity in m-s). Note 3D binary file must be little endian and `nx`, `ny`, `nz` are required.
+        :param nz: number of grid points in z-direction for velocity model.
+        :type nz: int, optional in 2D, required in 3D
+        :param nx: number of grid points in x-direction for velocity model.
+        :type nx: int, optional in 2D, required in 3D
+        :param ny: number of grid points in y-direction for velocity model.
+        :type ny: int, optional in 2D, required in 3D
+        :param units: units of the velocity model (either `m-s` or `km-s`)
+        :type units: str, optional, default=`m-s`
+        :param wl: number of vertices per wavelength for a given :math:`f_{max}`
+        :type wl: int, optional
+        :param freq: :math:`f_{max}` in hertz for which to estimate `wl`
+        :type freq: float64, optional
+        :param hmax: maximum mesh size in meters allowed in the domain
+        :type hmax: float64, optional
+        :param dt: theoretical maximum stable timestep in seconds given Courant number `Cr`
+        :type dt: float64, optional
+        :param cr_max: `dt` is stable with this Courant number.
+        :type cr_max: float64, optional
+        :param grade: maximum allowable variation in mesh size in decimal percent.
+        :type grade: float64, optional
+        :param domain_ext: width of domain extension in `-z`, `+x`, `-x`, `+y`, `-y` directions
+        :type domain_ext: float64, optional
+
+        :return: object populated with meta-data, :math:`f(h)`, and a :math:`f(d)`.
+        :rtype: :class:`MeshSizeFunction` object
+        """
+
         self.bbox = bbox
         self.dim = int(len(self.bbox) / 2)
         self.width = bbox[3] - bbox[2]
