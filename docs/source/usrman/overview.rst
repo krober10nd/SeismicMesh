@@ -5,7 +5,7 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 
 *SeismicMesh* has been used to generate meshes in 2D and 3D for acoustic and elastic wave propagators written in *Firedrake* [firedrake]_. These type of numerical simulations are used in Full Waveform Inversion, Reverse Time Migration, and Time Travel Tomography applications.
 
-Mesh?
+Mesh definition
 -------------------------------------------
 
 A mesh in our context is an unstructured triangulation composed of :math:`nt` triangles (otherwise referred to as entities) and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral elements but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
@@ -21,7 +21,7 @@ We use the following formula to quantify how *well-shaped* the entities of the m
 .. math::
   q_E = 4\sqrt{3}A_E\left(\sum_{i = 1}^{3}(\lambda_{E}^2)_i\right)^{-1}
 
-where :math:`A_E` is the area/volume of the entity and :math:`(\lambda_{E})_i` is the length/area of the :math:`i^{th}` edge/face of the entity. :math:`q_E = 1` corresponds to an well-shaped entity and :math:`q_E = 0` indicates a completely degenerated entity.
+where :math:`A_E` is the area/volume of the entity and :math:`(\lambda_{E})_i` is the length/area of the :math:`i^{th}` edge/face of the entity. :math:`q_E = 1` corresponds to an well-shaped entity and :math:`q_E = 0` indicates a completely degenerated entity. A simple interpretation of this formula is the aspect ratio of the entity. Entities with equal aspect ratios are preferred as the Jacobian of the coordinate vectors has a low condition number.
 
 The consideration of what constitutes a *high quality* mesh rests on the statistical distribution of entity quality, :math:`q_E`. Generally a mesh with :math:`q_E > 0.95` and :math:`q_E - 3\sigma_{q_E} > 0.75` (where the over-line and :math:`\sigma` denote the mean and standard deviation respectively) is considered *high quality* and can be simulated without any changes to the mesh topology. Thus, when :math:`\overline{q_E} - 3\sigma_{q_E} > 0.75` is achieved, the mesh generation terminates and this generally occurs between 30-100 iterations in most seismic domains.
 
@@ -46,11 +46,24 @@ This class takes as input a *MeshSizeFunction* object. However, it can also acce
 Inputs
 -------------------------------------------
 
-* The only required input file to generate a mesh in 2D is a binary file containing the velocity data on a structured grid. In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model. In 3D, the seismic velocity model is stored as a binary file but we do not use the SEG-y format. Instead in 3D, data is stored contiguously in memory in the format z,x,y following the little-endian format. For 3D, the user must specify how the data will be reshaped in memory by passing the number of rows, columns in the x-direction, and columns in the y-direction.
+.. note ::
+    The only required input file to generate a mesh in 2D is a binary file containing the velocity data on a structured grid. In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model. In 3D, the seismic velocity model is stored as a binary file but we do not use the SEG-y format. Instead in 3D, data is stored contiguously in memory in the format z,x,y following the little-endian format. For 3D, the user must specify how the data will be reshaped in memory by passing the number of rows, columns in the x-direction, and columns in the y-direction when the data is reshaped.
 
 
-Signed distance function
-^^^^^^^^^^^^^^^^^^^^^^^^^^
+0-level set and signed distance function
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let :math:`\Omega ⊂ D ∈ R^N`. The boundary of the domain to-be-meshed is represented the 0-level set of a continuous function:
+
+:math:`φ(·) : D → R.`
+
+The domain can be defined as:
+
+:math:`\Omega := {x ∈ D, φ(x) < 0}`
+
+where :math:`φ : D × R+ → R` is Lipschitz continuous and called level set function. If we assume :math:`|∇φ(·)| = 0` on the set :math:`{x ∈ D, φ(x) = 0}`, then we have :math:`∂ \Omega = {x ∈ D, φ(x) = 0}` i.e., the boundary :math:`∂ \Omega` is the zero level set of :math:`φ(·)`. The property that :math:`|∇φ(·)| = 0` is satisfied if :math:`φ(·)` is a signed distance function whose task is to return the :math:`d` distance to the :math:`∂ \Omega` from any point :math:`x \in D`.
+
+We provide tools to generate :math:`φ(·)` from contours extracted from real data using the Fast Marching Method, which makes meshing irregular geometries such as faults and salt-bodies more automatic and by-pass the explicit geometry tracing step.
 
 Mesh sizing function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,7 +83,7 @@ Mesh improvement
 Mesh adaptation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. warning:
+.. warning ::
     Functionality to adapt an existing mesh is a work in progress
 
 
