@@ -62,6 +62,8 @@ class MeshSizeFunction:
         :type hmin: float64
         :param model: in 2D, a SEG-Y file containing the velocity model. In 3D, a binary file containing the velocity model.
         :type model: name of file (assumes velocity in m-s). Note 3D binary file must be little endian and `nx`, `ny`, `nz` are required.
+        :param endianness: binary layout.
+        :type endianness: optional, (little or big)
         :param nz: number of grid points in z-direction for velocity model.
         :type nz: int, optional in 2D, required in 3D
         :param nx: number of grid points in x-direction for velocity model.
@@ -72,8 +74,12 @@ class MeshSizeFunction:
         :type units: str, optional, default=`m-s`
         :param wl: number of vertices per wavelength for a given :math:`f_{max}`
         :type wl: int, optional
+        :param grad: the resolution in m nearby sharp gradients in velociy.
+        :type grad: float64, optional
         :param freq: :math:`f_{max}` in hertz for which to estimate `wl`
         :type freq: float64, optional
+        :param space_order: the polynomial order of the basis functions.
+        :type space_order: int, optional
         :param hmax: maximum mesh size in meters allowed in the domain
         :type hmax: float64, optional
         :param dt: theoretical maximum stable timestep in seconds given Courant number `Cr`
@@ -84,6 +90,8 @@ class MeshSizeFunction:
         :type grade: float64, optional
         :param domain_ext: width of domain extension in `-z`, `+x`, `-x`, `+y`, `-y` directions
         :type domain_ext: float64, optional
+        :param padstyle: method to pad velocity in the domain extension
+        :type padstyle: str, optional, `edge`, `linear`, `constant`
 
         :return: object populated with meta-data, :math:`f(h)`, and a :math:`f(d)`.
         :rtype: :class:`MeshSizeFunction` object
