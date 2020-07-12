@@ -20,58 +20,39 @@ from .cpp import limgrad
 
 
 class MeshSizeFunction:
-    """
-    MeshSizeFunction: build an isotropic mesh size function for seismic domains.
+    """The :class:`MeshSizeFunction` is used to build a rectangular or cubic isotropic mesh size function :math:`f(h)`.
 
-    Usage
-    -------
-    >>> obj = MeshSizeFunction(bbox,hmin,segy,**kwargs)
+    :param bbox: bounding box containing domain extents.
+    :type bbox: tuple with the form in 2D `(zmin, zmax, xmin, xmax)`
+    :param hmin: minimum triangular edgelength populating the domain in meters.
+    :type hmin: float64
+    :param model: in 2D, a SEG-Y file containing the velocity model. In 3D, a binary file containing the velocity model.
+    :type model: name of file (assumes velocity in m-s). Note 3D binary file must be little endian and `nx`, `ny`, `nz` are required.
+    :param nz: number of grid points in z-direction for velocity model.
+    :type nz: int, optional in 2D, required in 3D
+    :param nx: number of grid points in x-direction for velocity model.
+    :type nx: int, optional in 2D, required in 3D
+    :param ny: number of grid points in y-direction for velocity model.
+    :type ny: int, optional in 2D, required in 3D
+    :param units: units of the velocity model (either `m-s` or `km-s`)
+    :type units: str, optional, default=`m-s`
+    :param wl: number of vertices per wavelength for a given :math:`f_{max}`
+    :type wl: int, optional
+    :param freq: :math:`f_{max}` in hertz for which to estimate `wl`
+    :type freq: float64, optional
+    :param hmax: maximum mesh size in meters allowed in the domain
+    :type hmax: float64, optional
+    :param dt: theoretical maximum stable timestep in seconds given Courant number `Cr`
+    :type dt: float64, optional
+    :param cr_max: `dt` is stable with this Courant number.
+    :type cr_max: float64, optional
+    :param grade: maximum allowable variation in mesh size in decimal percent.
+    :type grade: float64, optional
+    :param domain_ext: width of domain extension in `-z`, `+x`, `-x`, `+y`, `-y` directions
+    :type domain_ext: float64, optional
 
-
-    Parameters
-    -------
-        bbox: Bounding box, (xmin, xmax, ymin, ymax)
-        hmin: Minimum triangular edgelength populating domain, (meters)
-        model: (2D) Seg-y file containing velocity model, (assumes velocity is in METERS PER SECOND)
-                                                OR
-        (3D) binary file containing velocity model, (assumes velocity is in METERS PER SECOND)
-             -Litte endian.
-             -Requires to specify number of grid points in each dimension. nx, ny, and nz.
-
-                                **kwargs
-        nz: for velocity model, number of grid points in z-direction
-        nx: for velocity model, number of grid points in x-direction
-        ny: for velocity model, number of grid points in y-direction (only for 3D)
-        units: velocity is in either m-s or km-s (default='m-s')
-        wl:   number of nodes per wavelength for given max. freq, (num. of nodes per wl., default=disabled)
-        freq: maximum source frequency for which to estimate wl (hertz, default=disabled)
-        hmax: maximum edgelength in the domain (meters, default=disabled)
-        dt: maximum stable timestep (in seconds given Courant number cr, default=disabled)
-        cr_max: dt is theoretically stable with this Courant number (default=0.2)
-        grade: maximum allowable variation in mesh size (default=disabled)
-        domain_ext: width of domain extension (in meters, default=0.0)
-
-
-    Returns
-    -------
-        MeshSizeFunction object
-
-
-    Example (see examples/)
-    ------
-    import SeismicMesh
-    # In 2D
-    ef = SeismicMesh.MeshSizeFunction(
-            bbox=(-12e3,0,0,67e3),
-            ,model=fname,
-            hmin=2e3
-            # ,wl=5,freq=5
-            # ,hmax=4e3
-            # ,grade=10.0
-            # ,dt=0.001
-            # ,cr_max=0.1
-            )
-
+    :return: class object populated with :math:`f(h)` and a :math:`f(d)`.
+    :rtype: :class:`MeshSizeFunction` object
     """
 
     def __init__(
@@ -95,6 +76,7 @@ class MeshSizeFunction:
         padstyle="edge",
         endianness="little",
     ):
+        """Constructor method"""
         self.bbox = bbox
         self.dim = int(len(self.bbox) / 2)
         self.width = bbox[3] - bbox[2]

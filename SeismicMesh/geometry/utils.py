@@ -7,10 +7,6 @@ from .cpp import fast_geometry as gutils
 
 from ..generation.cpp import c_cgal
 
-"""
-Routines to perform geometrical/topological operations and calculate things on meshes
-"""
-
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant
 
@@ -636,7 +632,7 @@ def get_centroids(vertices, entities, dim=2):
     :param entities: mesh connectivity
     :type entities: numpy.ndarray[int x (dim+1)]
     :param dim: dimension of mesh
-    :type: int, optional
+    :type dim: int, optional
 
     :return: centroids of entities
     :rtype: numpy.ndarray[float64 x dim]
@@ -655,7 +651,7 @@ def doAnyOverlap(vertices, entities, dim=2):
     :param entities: mesh connectivity
     :type entities: numpy.ndarray[int x (dim+1)]
     :param dim: dimension of mesh
-    :type: int, optional
+    :type dim: int, optional
 
     :return: intersections: a list of 2-tuple of entity indices that intersect
     :rtype: List[tuple(num_intersections x 2)]
@@ -727,7 +723,7 @@ def linter(vertices, entities, dim=2, minqual=0.10):
     :param entities: mesh connectivity
     :type entities: numpy.ndarray[int x (dim+1)]
     :param dim: dimension of mesh
-    :type: int, optional
+    :type dim: int, optional
     :param minqual: minimum geometric quality to consider "poor" quality
     :type minqual: float64, optional
 
