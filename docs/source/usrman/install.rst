@@ -15,10 +15,10 @@ build *SeismicMesh*:
 
 * CGAL >= 5.0
 
+* Boost > 1.4.8
+
 .. note ::
     CGAL requires MPFR and GMP which may or may not already be installed on your standard Linux box.
-
-* Boost > 1.4.8
 
 .. warning ::
 
@@ -42,7 +42,7 @@ $  git submodule update --init --recursive
 $  python setup.py develop
 
 .. note ::
-    If you do not have administrative rights on your system, add the flag ``--user``
+    If you do not have administrative rights on your system, add the flag ``--user`` to the second command
 
 Testing
 -------
