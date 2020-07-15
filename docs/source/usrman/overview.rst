@@ -8,7 +8,13 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 Mesh definition
 -------------------------------------------
 
-A mesh in our context is an unstructured triangulation composed of :math:`nt` triangles (otherwise referred to as entities) and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral elements but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
+The domain :math:`\Omega` is partitioned into a finite set of cells :math:`\mathcal{T}_{h} = {T}` with disjoint interiors
+such that
+
+:math:`\cup_{T \in \mathcal{T}_{h}} T = \Omega`
+
+Together, these cells form a mesh of the domain :math:`\Omega`. The cells are typically simple polygonal shapes. In our case,
+the mesh is a triangulation composed of :math:`nt` triangles (otherwise referred to as entities or cells) and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral cells but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
 
 
 *High quality mesh?*
