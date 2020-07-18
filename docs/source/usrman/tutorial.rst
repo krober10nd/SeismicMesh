@@ -1,15 +1,23 @@
 .. _tutorial:
-
 Tutorial
 ========
+
+*SeismicMesh* supports the generation of both 2D and 3D meshes in
+either serial or parallel. It also supports the generation of
+complex mesh sizing function that are relevant to Seismology. Here we show how to use it.
+
 
 .. warning::
 
    Under construction. Contributions very welcome!
 
-*SeismicMesh* supports the generation of both 2D and 3D meshes in
-either serial or parallel. It also supports the generation of
-complex mesh sizing function that are relevant to Seismology.
+Data
+--------
+Data for this tutorial can be downloaded for the BP2004 benchmark model:
+*
+
+Things to know
+---------------
 
 In order to use these sizing functions, it is assumed you have a seismic velocity model
 defined on a structured grid. This seismic velocity model is passed to the *MeshSizeFunction*
@@ -32,7 +40,8 @@ class along with the domain extents ::
     :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max})`
 
 * In 3D::
-    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
+
+    :math: bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
 
 .. note :: The program automatically generates the rectangle/cube domain geometry used during meshing if a *MeshSizeFunction* object is passed to the generator.
 
@@ -44,7 +53,9 @@ class along with the domain extents ::
 Mesh size function
 -------------------------------------------
 
-Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`. The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism.  Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., polynomial order,timestepping method, etc.), and the computational cost of the model. In the following sub-sections,each mesh adaptation strategy is described briefly and how to use it.
+Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`. The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism. Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.
+
+The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., polynomial order,timestepping method, etc.), and the computational cost of the model. In the following sub-sections, each mesh strategy is described briefly and how to use it.
 
 
 Wavelength-to-gridscale
@@ -74,15 +85,31 @@ Resolving seismic velocity gradients
 Courants-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* Acoustic wave equation
-
-
-* Elastic wave equation
-
-
 
 Mesh size gradation
 ^^^^^^^^^^^^^^^^^^^^^^^
+
+In regions where there are sharp material contrasts, the variation in element size can become substantially large, especially using the aforementioned sizing strategies such as the wavelength-to-gridscale. When attempting to construct a mesh with such large spatial variations in mesh sizes, it would result in low-geometric quality elements that compromise the numerical stability of a model.
+
+Thus, the final stage of the development of a mesh size function :math:`h(x)` involves ensuring a size smoothness limit, :math:`g` such that for any two points :math:`x_i`, :math:`x_j`, the local increase in size is bounded such as:
+
+ :math:`h(\boldsymbol{x_j}) \leq h(\boldsymbol{x_i}) + \alpha_g||\boldsymbol{x_i}-\boldsymbol{x_j}||`
+
+A smoothness criteria is necessary to produce a mesh that can simulate physical processes with a practical time step as sharp gradients in mesh resolution typically lead to highly skewed angles that result in poor numerical performance.
+
+We adopt the method to smooth the mesh size function originally proposed by [grading]_. A smoother sizing function is congruent with a higher overall element quality but with more triangles in the mesh. Generally, setting :math:`0.2 \leq \alpha_g \leq 0.3` produces good results::
+
+   import SeismicMesh
+   fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+   bbox = (-12e3, 0, 0, 67e3)
+
+   # Construct mesh sizing object from velocity model
+   ef = SeismicMesh.MeshSizeFunction(
+       bbox=bbox,
+       model=fname,
+       grade=0.15, # :math:`g` cell-to-cell size rate growth bound
+       ...
+   )
 
 
 Mesh generation
@@ -90,7 +117,7 @@ Mesh generation
 
 .. warning:
     Results can be made fully deterministic by specifying the argument `seed=0` to the generator. This ensures that all
-    stochastic operations will be repeated in the same way as the random number used as the `seed` is fixed.
+    stochastic operations will be repeated in the same way using the same `seed`.
 
 .. note:
     Parallelism is activated by passing the :mod:`COMM` to the *MeshSizeFunction* constructor ::
@@ -117,3 +144,9 @@ Mesh improvement
 
 3D *Sliver* removal
 ^^^^^^^^^^^^^^^^^^^^^^^
+
+References
+______________
+
+.. [grading] Persson, Per-Olof. "Mesh size functions for implicit geometries and PDE-based gradient limiting."
+                Engineering with Computers 22.2 (2006): 95-109.
