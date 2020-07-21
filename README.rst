@@ -23,14 +23,20 @@ SeismicMesh_: Mesh generation for Seismology in Python
 .. _`GNU-GPL`: http://www.gnu.org/copyleft/gpl.html
 
 
+Getting Started
+===============
 
-Documentation
-==============================================
-Complete documentation including installation, theory, and tutorials is available here: 
+All information is available at: https://seismicmesh.readthedocs.io
 
-https://seismicmesh.readthedocs.io
+`Install <http://cnn.com>`_
+- How to install SeismicMesh. 
 
-For practical examples, check out the scripts in the examples directory.
+`Getting started <https://seismicmesh.readthedocs.io/en/par3d/overview.html>`_
+- Learn the basics about the program and the application domain. 
+
+`Tutorials <https://seismicmesh.readthedocs.io/en/par3d/tutorial.html>`_
+- Tutorials that will guide you through the main features.
+
 
 
 Gallery:
