@@ -42,7 +42,7 @@ def example_2D_parallel():
 
     # Construct mesh generator
     mshgen = SeismicMesh.MeshGenerator(
-        ef, method="qhull"
+        ef, method="cgal"
     )  # parallel currently only works in qhull
 
     # Build the mesh (note the seed makes the result deterministic)

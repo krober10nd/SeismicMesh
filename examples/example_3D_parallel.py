@@ -8,6 +8,7 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 
+# warning with 4 processors, this example takes roughly 30 minutes...
 def example_3D_parallel():
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/EGAGE_Salt.bin"
@@ -47,12 +48,9 @@ def example_3D_parallel():
 
         # Do mesh improvement in serial to bound lower dihedral angle
         # mshgen.method = "cgal"
-        # points, cells = mshgen.build(
-        #    mesh_improvement=True,
-        #    points=points,
-        #    max_iter=50,
-        #    min_dh_bound=5,
-        # )
+        points, cells = mshgen.build(
+            mesh_improvement=True, points=points, max_iter=50, min_dh_bound=5,
+        )
         # Write to disk (see meshio for more details)
         meshio.write_points_cells(
             "EGAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],

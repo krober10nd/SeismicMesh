@@ -34,3 +34,12 @@ def dblock(p, x1, x2, y1, y2, z1, z2):
         ),
         x2 - p[:, 0],
     )
+
+
+def dintersect(d1, d2):
+    """Signed distance to set intersection of two regions described by signed
+    distance functions d1 and d2.
+    Not exact the true signed distance function for the difference,
+    for example around corners.
+    """
+    return np.amax(d1, d2, axis=1)

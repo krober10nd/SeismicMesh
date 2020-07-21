@@ -30,37 +30,46 @@ from .cpp import c_cgal
 
 
 class MeshGenerator:  # noqa: C901
-    """
-    MeshGenerator: using sizng function and signed distance field build a mesh
+    """Class constructor for :class:`MeshGenerator`. User can also register their callbacks to
+       the sizing function :math:`f(h)` and signed distance function `f(d)` manually.
+       Addiontally performs sanity checks input arguments.
 
-    Usage
-    -------
-    >>> obj = MeshGenerator(MeshSizeFunction_obj,method='qhull')
+       :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
+       :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
+       :param method: The back-end Delaunay triangulation algorithm to use. Either `qhull` or `cgal`. NB: qhull is 5 times slower than cgal. Default=`cgal`.
+       :type method: A string either `qhull` or `cgal`, optional
+       :param fd: A function that accepts an array of points and returns the signed distance to the boundary of the domain.
+       :type fd: A function object, optional if no :class:`SizingFunction` is passed
+       :param fh: A call-back function that accepts an array of points and returns an array of desired triangular mesh sizes close by to each point in the passed array.
+       :type fh: A function object, optional if no :class:`SizingFunction` is passed.
+       :param bbox: bounding box containing domain extents.
+       :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`. Optional if no :class:`SizingFunction` is passed.
+       :param hmin: minimum triangular edgelength populating the domain in meters.
+       :type hmin: float64,optional if no :class:`SizingFunction` is passed.
+       :param pfix: points that you wish you constrain in location.
+       :type pfix: nested list [num_fixed_points x dim], optional
 
-    Parameters
-    -------
-        MeshSizeFunction_obj: self-explantatory
-                        **kwargs
-        method: verbose name of mesh generation method to use  (default=qhull) or cgal
-    -------
-
-
-    Returns
-    -------
-        A mesh object
-    -------
-
-
-    Example
-    ------
-    >>> msh = MeshSizeFunction(ef)
-    -------
-
+       :return: object populated with meta-data.
+       :rtype: :class:`MeshGenerator` object
     """
 
-    def __init__(self, SizingFunction=None, method="qhull"):
+    def __init__(
+        self,
+        SizingFunction=None,
+        method="cgal",
+        fd=None,
+        fh=None,
+        bbox=None,
+        hmin=None,
+        pfix=None,
+    ):
         self.SizingFunction = SizingFunction
         self.method = method
+        self.fd = fd
+        self.fh = fh
+        self.bbox = bbox
+        self.h0 = hmin
+        self.pfix = pfix
 
     # SETTERS AND GETTERS
     @property
@@ -77,24 +86,67 @@ class MeshGenerator:  # noqa: C901
 
     @method.setter
     def method(self, value):
+        assert value == "qhull" or value == "cgal", "method is not recognized"
         self.__method = value
+
+    @property
+    def fd(self):
+        return self.__fd
+
+    @fd.setter
+    def fd(self, value):
+        self.__fd = value
+
+    @property
+    def fh(self):
+        return self.__fh
+
+    @fh.setter
+    def fh(self, value):
+        self.__fh = value
+
+    @property
+    def bbox(self):
+        return self.__bbox
+
+    @bbox.setter
+    def bbox(self, value):
+        if value is None:
+            self.__bbox = value
+        else:
+            assert (
+                len(value) >= 4 and len(value) <= 6
+            ), "bbox has wrong number of values. either 4 or 6."
+            self.__bbox = value
+
+    @property
+    def hmin(self):
+        return self.__hmin
+
+    @hmin.setter
+    def hmin(self, value):
+        assert value > 0.0, "hmin must be non-zero"
+        self.__hmin = value
+
+    @property
+    def pfix(self):
+        return self.__pfix
+
+    @pfix.setter
+    def pfix(self, value):
+        self.__pfix = value
 
     ### PUBLIC METHODS ###
     def build(  # noqa: ignore=C901
         self,
         SizingFunction=None,
-        bbox=None,
-        fd=None,
-        fh=None,
-        h0=None,
-        pfix=None,
+        points=None,
         max_iter=50,
         nscreen=1,
         plot=False,
         seed=None,
         COMM=None,
         axis=0,
-        points=None,
         perform_checks=False,
         mesh_improvement=False,
         min_dh_bound=10,
@@ -103,46 +155,57 @@ class MeshGenerator:  # noqa: C901
         enforce_sdf=True,  # enforce that points stay inside signed distance function
     ):
         """
-        Interface to either DistMesh2D/3D mesh generator using signed distance functions.
-        User has option to use either qhull or cgal for Del. retriangulation.
+         Using callbacks to a sizing function and signed distance field build a simplical mesh.
 
-        Usage
-        -----
-        >>> p, t = build(self, max_iter=20)
+        :param max_iter: maximum number of iterations, default=100
+        :type max_iter: int, optional
+        :param nscreen: output to screen every nscreen iterations (default==1)
+        :type nscreen: int, optional
+        :param plot: Visualize incremental meshes (only valid opt in 2D )(default==False)
+        :type plot: logical, optional
+        :param seed: Random seed to ensure results are deterministic (default==None)
+        :type seed: int, optional
+        :param points: initial point distribution to commence mesh generation (default==None)
+        :type points: numpy.ndarray[num_points x dimension], optional
+        :param COMM: communicator for parallel execution (default==None)
+        :type COMM: MPI4py communicator object generated when initializing MPI environment, required if parallel.
+        :param axis: axis to decomp the domain wrt for parallel execution (default==0)
+        :type axis: int, required if parallel.
+        :param perform_checks: run serial mesh linting (default==False)
+        :type perform_checks: logical, optional
+        :param min_dh_bound: minimum dihedral angle allowed (default=5)
+        :type min_dh_bound: float64, optional
+        :param mesh_improvement: run 3D sliver perturbation mesh improvement (default=False)
+        :type mesh_improvement: logical, optional
+        :param improvement_method: method to perturb slivers (default=circumsphere)
+        :type improvement_method: logical, optional
 
-        Parameters
-        ----------
-        pfix: points that you wish you constrain (default==None)
-        max_iter: maximum number of iterations (default==100)
-        nscreen: output to screen every nscreen iterations (default==1)
-        plot: Visualize incremental meshes (only valid opt in 2D )(default==False)
-        seed: Random seed to ensure results are deterministic (default==None)
-        points: initial point distribution (default==None)
-        COMM: MPI4py communicator for parallel execution (default==None)
-        axis: axis to decomp the domain wrt for parallel execution (default==0)
-        perform_checks: run serial linting (slow)
-        min_dh_bound: minimum dihedral angle allowed (default=5)
-        mesh_improvement: run 3D sliver perturbation mesh improvement (default=False)
-        improvement_method: method to perturb slivers (default=circumsphere)
-
-        Returns
-        -------
-        p:         Point positions (np, dim)
-        t:         Triangle indices (nt, dim+1)
+        :return: vertices of simplical mesh
+        :rtype: numpy.ndarray[num_points x dimension]
+        :return: cells of simplicial mesh
+        :rtype: numpy.ndarray[num_cells x (dimension + 1)]
         """
-        # if SizingFunction is available, grab that data.
         if self.SizingFunction is not None:
+            # if :class:`SizingFunction` is passed, grab that data.
             _ef = self.SizingFunction
             fh = _ef.interpolant
             fd = _ef.fd
             bbox = _ef.bbox
             h0 = _ef.hmin
+        else:
+            # else it had to have been passed
+            fh = self.fh
+            fd = self.fd
+            bbox = self.bbox
+            h0 = self.hmin
 
+        _pfix = self.pfix
         _method = self.method
         comm = COMM
         _axis = axis
         _points = points
 
+        # configure parallel computing env.
         if comm is not None:
             PARALLEL = True
             rank = comm.Get_rank()
@@ -166,12 +229,12 @@ class MeshGenerator:  # noqa: C901
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
 
-        if pfix is not None:
+        if _pfix is not None:
             if PARALLEL:
                 print("Fixed points aren not supported in parallel yet", flush=True)
                 quit()
             else:
-                pfix = np.array(pfix, dtype="d")
+                pfix = np.array(_pfix, dtype="d")
                 nfix = len(pfix)
             if rank == 0:
                 print(
@@ -252,7 +315,7 @@ class MeshGenerator:  # noqa: C901
                     )
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     tria.add_points(recv, restart=True)
-                    p, t, inv = geometry.remove_external_faces(
+                    p, t, inv = geometry.remove_external_entities(
                         tria.points, tria.simplices, extent, dim=dim,
                     )
                     N = p.shape[0]
@@ -278,7 +341,9 @@ class MeshGenerator:  # noqa: C901
                         t = c_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles
-                    p, t, inv = geometry.remove_external_faces(p, t, extent, dim=dim,)
+                    p, t, inv = geometry.remove_external_entities(
+                        p, t, extent, dim=dim,
+                    )
                     N = p.shape[0]
                     recv_ix = len(recv)  # we do not allow new points to move
                 else:

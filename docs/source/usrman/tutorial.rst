@@ -145,8 +145,17 @@ Mesh improvement
 3D *Sliver* removal
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Application
+-------------
+
+A simple scalar wave equation can be modeled using the Firedrake [firedrake]_ package with a mesh generated from *SeismicMesh* in the following code.
+
+
 References
 ______________
 
 .. [grading] Persson, Per-Olof. "Mesh size functions for implicit geometries and PDE-based gradient limiting."
                 Engineering with Computers 22.2 (2006): 95-109.
+
+.. [firedrake] Florian Rathgeber, David A. Ham, Lawrence Mitchell, Michael Lange, Fabio Luporini, Andrew T. T. Mcrae, Gheorghe-Teodor Bercea, Graham R. Markall, and Paul H. J. Kelly. Firedrake: automating the finite element method by composing abstractions. ACM Trans. Math. Softw., 43(3):24:1–24:27, 2016. URL: http://arxiv.org/abs/1501.01809, arXiv:1501.01809, doi:10.1145/2998441.
