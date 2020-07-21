@@ -133,7 +133,7 @@ def enqueue(extents, points, faces, rank, size, dim=2):
         le = np.insert(le, 0, [-999999999] * dim)
         re = np.insert(re, 0, [-999999998] * dim)
 
-    vtoe, ptr = geometry.vertex_to_elements(points, faces, dim=dim)
+    vtoe, ptr = geometry.vertex_to_entities(points, faces, dim=dim)
 
     # expand to avoid intersections in ghost zones...
     if dim == 2:

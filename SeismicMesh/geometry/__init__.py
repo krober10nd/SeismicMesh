@@ -1,4 +1,4 @@
-from .signed_distance_functions import dblock, drectangle
+from .signed_distance_functions import dblock, drectangle, dintersect
 from .utils import (
     calc_re_ratios,
     doAnyOverlap,

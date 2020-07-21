@@ -6,14 +6,15 @@ import SeismicMesh
 
 
 def example_2D_SDF():
-    bbox = (0, 1, 0, 1)
-    hmin = 0.01
+    bbox = (0, 0.6, 0, 1)
+    hmin = 0.005
 
     # build a simple signed distance function
-    xvec = np.linspace(0, 1, 55)
-    yvec = np.linspace(0, 1, 90)
+    xvec = np.linspace(0, 0.6, 110)
+    yvec = np.linspace(0, 1, 180)
     # load in the SDF data from a file.
-    vals = np.loadtxt("simple_sdf.txt", delimiter=",")
+    # vals = np.loadtxt("simple_sdf.txt", delimiter=",")
+    vals = np.load("last_phi_mat.npy")
     interpolant = RegularGridInterpolator(
         (xvec, yvec), vals, bounds_error=False, fill_value=None
     )
@@ -23,14 +24,17 @@ def example_2D_SDF():
 
     # build a simple sizing function
     def EF(p):
-        print(len(p))
-        return np.repeat(hmin, len(p))
+        d = SDF(p)
+        h = hmin - d * 0.15
+        return h
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(
+        method="cgal", hmin=hmin, bbox=bbox, fd=SDF, fh=EF
+    )
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, facets = mshgen.build(h0=hmin, bbox=bbox, fd=SDF, fh=EF, max_iter=20)
+    points, facets = mshgen.build(max_iter=50)
 
     meshio.write_points_cells(
         "simple_irregular.vtk",

@@ -16,13 +16,13 @@ def example_3D():
         nz=210,
         dt=0.001,
         freq=2,
-        wl=3,
-        hmin=250,
-        grade=0.35,
-        grad=250,
-        domain_ext=1000,
+        wl=5,
+        grade=0.25,
+        hmin=100,
+        hmax=5e3,
+        domain_ext=250,
+        padstyle="linear_ramp",
     )
-
     # Build mesh size function
     ef = ef.build()
 
@@ -30,10 +30,15 @@ def example_3D():
     ef.SaveMeshSizeFunctionOptions("EGAGE_Salt")
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")  # or cgal if installed
+    mshgen = SeismicMesh.MeshGenerator(
+        ef, method="cgal"
+    )  # or qhull but qhull is 5x slower than cgal
 
     # Build the mesh
     points, cells = mshgen.build(nscreen=1, max_iter=30, seed=0)
+
+    # Mesh improvement
+    points, cells = mshgen.build(points=points, mesh_improvement=True)
 
     # Write to disk (see meshio for more details)
     meshio.write_points_cells(

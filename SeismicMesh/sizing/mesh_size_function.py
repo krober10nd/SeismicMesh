@@ -124,6 +124,7 @@ class MeshSizeFunction:
         self.endianness = endianness
         self.padstyle = padstyle
         self.interpolant = None
+        self.vp = 1500.0
 
     ### SETTERS AND GETTERS ###
 
@@ -340,22 +341,6 @@ class MeshSizeFunction:
 
         """Builds the isotropic mesh size function according
             to the user arguments that were passed.
-
-        Usage
-        -------
-        >>>> obj = build(self)
-
-
-        Parameters
-        -------
-            MeshSizeFunction object
-
-         Returns
-        -------
-            SeismicMesh.MeshSizeFunction object with specific fields populated:
-                self.fh: lambda function w/ scipy.inerpolate.RegularGridInterpolater representing isotropic mesh sizes in domain
-                self.fd: lambda function representing the signed distance function of domain
-
         """
         if comm is not None:
             rank = comm.Get_rank()
@@ -530,23 +515,7 @@ class MeshSizeFunction:
         return self
 
     def plot(self, stride=5):
-        """ Plot the isotropic mesh size function
-
-        Usage
-        -------
-        >>>> plot(self)
-
-
-        Parameters
-        -------
-            self: SeismicMesh.MeshSizeFunction object
-                        **kwargs
-            stride: downsample the image by n (n=5 by default)
-
-         Returns
-        -------
-            none
-            """
+        """ Plot the isotropic mesh size function"""
         _dim = self.dim
         _fh = self.fh
         _domain_ext = self.domain_ext
