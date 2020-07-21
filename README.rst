@@ -28,7 +28,7 @@ Getting Started
 
 All information is available at: https://seismicmesh.readthedocs.io
 
-`Install <http://cnn.com>`_
+`Install <https://seismicmesh.readthedocs.io/en/par3d/install.html>`_
 - How to install SeismicMesh. 
 
 `Getting started <https://seismicmesh.readthedocs.io/en/par3d/overview.html>`_
