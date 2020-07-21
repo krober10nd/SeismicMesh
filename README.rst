@@ -35,5 +35,6 @@ For practical examples, check out the scripts in the examples directory.
 
 Gallery:
 ==============================================
+.. image:: imgs/seismic_example3.png
 .. image:: imgs/seismic_example.png
 
