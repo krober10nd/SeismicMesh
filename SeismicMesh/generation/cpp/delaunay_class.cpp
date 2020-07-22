@@ -214,7 +214,7 @@ PYBIND11_MODULE(delaunay_class, m)
                for(DT::Finite_vertices_iterator fit = dt.finite_vertices_begin();
                  fit != dt.finite_vertices_end(); ++fit) {
 
-                 DT::Vertex_handle vertex = fit;
+                 Vertex_handle vertex = fit;
                  // critical! update the point index table so faces comes out correctly
                  vertex->info() = i;
                  vertices[i*2]=vertex->point().x();
