@@ -4,6 +4,7 @@ import numpy as np
 
 import SeismicMesh
 
+
 @pytest.mark.serial
 def test_3dmesher():
 
