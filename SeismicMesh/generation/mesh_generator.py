@@ -307,6 +307,9 @@ class MeshGenerator:  # noqa: C901
             # 3. Retriangulation by the Delaunay algorithm
             start = time.time()
 
+            if count > 0 and PARALLEL:
+                del dt
+
             # Using the SciPy qhull wrapper for Delaunay triangulation.
             if _method == "qhull":
                 if PARALLEL:
@@ -330,6 +333,7 @@ class MeshGenerator:  # noqa: C901
             elif _method == "cgal":
                 if PARALLEL:
                     if dim == 2:
+                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
                         dt = DT()
                         dt.insert(p.flatten().tolist())
                         p = dt.get_finite_vertices()
@@ -341,6 +345,8 @@ class MeshGenerator:  # noqa: C901
                     exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     if dim == 2:
+                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                        # p = np.concatenate((p, recv), axis=0)
                         dt.insert(recv.flatten().tolist())
                         p = dt.get_finite_vertices()
                         t = dt.get_finite_faces()
@@ -552,7 +558,6 @@ class MeshGenerator:  # noqa: C901
             # 9. Delete ghost points
             if PARALLEL:
                 p = np.delete(p, inv[-recv_ix::], axis=0)
-                comm.barrier()
 
             if count % nscreen == 0 and rank == 0:
                 if PARALLEL:
