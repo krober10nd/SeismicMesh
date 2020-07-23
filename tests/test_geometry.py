@@ -1,7 +1,9 @@
+import pytest
 import numpy as np
 from SeismicMesh import geometry as geo
 
 
+@pytest.mark.serial
 def test_geometry3D():
 
     # tetraheadrals in a unit cube with l, w, h of 2 units

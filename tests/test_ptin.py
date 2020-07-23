@@ -1,7 +1,9 @@
+import pytest
 import numpy as np
 import SeismicMesh
 
 
+@pytest.mark.serial
 def test_ptin():
     # a perfect tetra
     points = np.array(

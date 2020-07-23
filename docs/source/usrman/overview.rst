@@ -53,6 +53,8 @@ This class takes as input a *MeshSizeFunction* object and it constructs a simpli
 Inputs
 -------------------------------------------
 
+Seismic velocity model
+^^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
     The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
 
@@ -61,7 +63,7 @@ Inputs
 * In 3D, the seismic velocity model is stored as a binary file but we do not use the SEG-y format. Instead in 3D, data is stored contiguously in memory in the format z,x,y following the little-endian format. For 3D, the user must specify how the data will be reshaped in memory by passing the number of rows, columns in the x-direction, and columns in the y-direction when the data is reshaped.
 
 
-0-level set and signed distance function
+Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Let :math:`\Omega ⊂ D ∈ R^N` be the domain in :math:`N` dimensions. The boundary of the domain to-be-meshed is represented as the 0-level set of a continuous function:
@@ -82,6 +84,7 @@ Mesh sizing function
 
 Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`. In our case, we store a discrete version of :math:`f(h)` as a bi-linear gridded interpolant and query :math:`f(h)` during execution.
 
+The purpose of the :class:`MeshSizeFunction` class is to build this map directly from the seismic velocity model provided.
 
 
 *DistMesh* algorithm

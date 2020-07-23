@@ -27,6 +27,7 @@ from .. import migration
 from .. import geometry
 
 from .cpp import c_cgal
+from .cpp.delaunay_class import DelaunayTriangulation as DT
 
 
 class MeshGenerator:  # noqa: C901
@@ -215,6 +216,9 @@ class MeshGenerator:  # noqa: C901
             rank = 0
             size = 1
 
+        if size > 1 and mesh_improvement:
+            raise Exception("Mesh improvement only works in serial")
+
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
             if rank == 0:
@@ -231,8 +235,7 @@ class MeshGenerator:  # noqa: C901
 
         if _pfix is not None:
             if PARALLEL:
-                print("Fixed points aren not supported in parallel yet", flush=True)
-                quit()
+                raise Exception("Fixed points aren not supported in parallel yet")
             else:
                 pfix = np.array(_pfix, dtype="d")
                 nfix = len(pfix)
@@ -323,21 +326,26 @@ class MeshGenerator:  # noqa: C901
                 else:
                     # SERIAL
                     t = spspatial.Delaunay(p).vertices  # List of triangles
-            # Using CGAL's Delaunay triangulation algorithm
+            # Using CGAL's incremental Delaunay triangulation algorithm
             elif _method == "cgal":
                 if PARALLEL:
                     if dim == 2:
-                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                        dt = DT()
+                        dt.insert(p.flatten().tolist())
+                        p = dt.get_finite_vertices()
+                        t = dt.get_finite_faces()
                     elif dim == 3:
                         t = c_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles
                     exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    p = np.concatenate((p, recv), axis=0)
                     if dim == 2:
-                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
+                        dt.insert(recv.flatten().tolist())
+                        p = dt.get_finite_vertices()
+                        t = dt.get_finite_faces()
                     elif dim == 3:
+                        p = np.concatenate((p, recv), axis=0)
                         t = c_cgal.delaunay3(
                             p[:, 0], p[:, 1], p[:, 2]
                         )  # List of triangles

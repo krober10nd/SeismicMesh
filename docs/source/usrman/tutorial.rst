@@ -13,14 +13,18 @@ complex mesh sizing function that are relevant to Seismology. Here we show how t
 
 Data
 --------
-Data for this tutorial can be downloaded for the BP2004 benchmark model:
-*
+Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
+
+    wget http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz
+
+See instructions at the link https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model::
+
 
 Things to know
 ---------------
 
 In order to use these sizing functions, it is assumed you have a seismic velocity model
-defined on a structured grid. This seismic velocity model is passed to the *MeshSizeFunction*
+defined on a structured grid as was mentioned in the tutorial. This seismic velocity model is passed to the *MeshSizeFunction*
 class along with the domain extents ::
 
     import SeismicMesh
@@ -116,7 +120,7 @@ Mesh generation
 -------------------------------------------
 
 .. warning:
-    Results can be made fully deterministic by specifying the argument `seed=0` to the generator. This ensures that all
+    Connectivity can be made fully deterministic by specifying the argument `seed=0` to the generator. This ensures that all
     stochastic operations will be repeated in the same way using the same `seed`.
 
 .. note:
