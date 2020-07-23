@@ -14,7 +14,6 @@
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
-//#include <CGAL/Delaunay_mesh_cell_base_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
 namespace py = pybind11;
@@ -152,9 +151,18 @@ PYBIND11_MODULE(delaunay_class3, m)
                     return dt;
                     })
 
-            .def("number_of_vertices", &DT::number_of_vertices)
+            .def("number_of_vertices", [](DT & dt){
+                    return dt.number_of_vertices();
+                })
 
-            .def("number_of_cells", &DT::number_of_cells)
+            .def("number_of_cells", [](DT & dt){
+                int count=0;
+                for(DT::Finite_cells_iterator fit = dt.finite_cells_begin();
+                fit != dt.finite_cells_end(); ++fit) {
+                    count += 1;
+                }
+                    return count;
+                })
 
             .def("finite_vertices", [](DT & dt) -> py::iterator
              {
@@ -167,7 +175,7 @@ PYBIND11_MODULE(delaunay_class3, m)
               // YOU MUST CALL get_finite_vertices before if any incremental operations
               // were performed
               std::vector<int> cells;
-              cells.resize(dt.number_of_cells()*4);
+              cells.resize(dt.number_of_finite_cells()*4);
 
               int i=0;
               for(DT::Finite_cells_iterator fit = dt.finite_cells_begin();
@@ -177,7 +185,7 @@ PYBIND11_MODULE(delaunay_class3, m)
                 cells[i*4]=cell->vertex(0)->info();
                 cells[i*4+1]=cell->vertex(1)->info();
                 cells[i*4+2]=cell->vertex(2)->info();
-                cells[i*4+3]=cell->vertex(2)->info();
+                cells[i*4+3]=cell->vertex(3)->info();
                 i+=1;
               }
               ssize_t              soint      = sizeof(int);

@@ -162,7 +162,14 @@ PYBIND11_MODULE(delaunay_class, m)
 
             .def("number_of_vertices", &DT::number_of_vertices)
 
-            .def("number_of_faces", &DT::number_of_faces)
+            .def("number_of_faces", [](DT & dt){
+                int count=0;
+                for(DT::Finite_faces_iterator fit = dt.finite_faces_begin();
+                fit != dt.finite_faces_end(); ++fit) {
+                    count += 1;
+                }
+                    return count;
+                })
 
             .def("finite_vertices", [](DT & dt) -> py::iterator
              {

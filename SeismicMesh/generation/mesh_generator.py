@@ -28,12 +28,12 @@ from .. import geometry
 
 from .cpp import c_cgal
 from .cpp.delaunay_class import DelaunayTriangulation as DT
+from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
 
 class MeshGenerator:  # noqa: C901
     """Class constructor for :class:`MeshGenerator`. User can also register their callbacks to
        the sizing function :math:`f(h)` and signed distance function `f(d)` manually.
-       Addiontally performs sanity checks input arguments.
 
        :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
        :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
@@ -194,7 +194,7 @@ class MeshGenerator:  # noqa: C901
             bbox = _ef.bbox
             h0 = _ef.hmin
         else:
-            # else it had to have been passed
+            # else it had to have been passed to constructor
             fh = self.fh
             fd = self.fd
             bbox = self.bbox
@@ -307,9 +307,6 @@ class MeshGenerator:  # noqa: C901
             # 3. Retriangulation by the Delaunay algorithm
             start = time.time()
 
-            if count > 0 and PARALLEL:
-                del dt
-
             # Using the SciPy qhull wrapper for Delaunay triangulation.
             if _method == "qhull":
                 if PARALLEL:
@@ -339,22 +336,31 @@ class MeshGenerator:  # noqa: C901
                         p = dt.get_finite_vertices()
                         t = dt.get_finite_faces()
                     elif dim == 3:
-                        t = c_cgal.delaunay3(
-                            p[:, 0], p[:, 1], p[:, 2]
-                        )  # List of triangles
+                        # t = c_cgal.delaunay3(
+                        #    p[:, 0], p[:, 1], p[:, 2]
+                        # )  # List of triangles
+                        dt = DT3()
+                        dt.insert(p.flatten().tolist())
+                        p = dt.get_finite_vertices()
+                        t = dt.get_finite_cells()
+
                     exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
                     recv = migration.exchange(comm, rank, size, exports, dim=dim)
                     if dim == 2:
-                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
                         # p = np.concatenate((p, recv), axis=0)
+                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
                         dt.insert(recv.flatten().tolist())
                         p = dt.get_finite_vertices()
                         t = dt.get_finite_faces()
                     elif dim == 3:
-                        p = np.concatenate((p, recv), axis=0)
-                        t = c_cgal.delaunay3(
-                            p[:, 0], p[:, 1], p[:, 2]
-                        )  # List of triangles
+                        # p = np.concatenate((p, recv), axis=0)
+                        # t = c_cgal.delaunay3(
+                        #    p[:, 0], p[:, 1], p[:, 2]
+                        # )  # List of triangles
+                        dt.insert(recv.flatten().tolist())
+                        p = dt.get_finite_vertices()
+                        t = dt.get_finite_cells()
+
                     p, t, inv = geometry.remove_external_entities(
                         p, t, extent, dim=dim,
                     )
@@ -558,6 +564,7 @@ class MeshGenerator:  # noqa: C901
             # 9. Delete ghost points
             if PARALLEL:
                 p = np.delete(p, inv[-recv_ix::], axis=0)
+                comm.barrier()
 
             if count % nscreen == 0 and rank == 0:
                 if PARALLEL:
