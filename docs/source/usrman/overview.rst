@@ -7,6 +7,8 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 
 Mesh definition
 -------------------------------------------
+.. note ::
+    tl;dr triangles and tetrahedral meshes.
 
 The domain :math:`\Omega` is partitioned into a finite set of cells :math:`\mathcal{T}_{h} = {T}` with disjoint interiors
 such that
@@ -18,6 +20,8 @@ Together, these cells form a mesh of the domain :math:`\Omega`. In our case, the
 
 *High quality cells*
 ^^^^^^^^^^^^^^^^^^^^^^^
+.. note ::
+    A high quality cell has an aspect ratio of 1.
 
 Any set of points can be triangulated, but the resulting triangulation will likely not be usuable for numerical simulation. Thus, we strive to produce high-quality geometric meshes.
 
@@ -32,6 +36,8 @@ The consideration of what constitutes a *high quality* mesh rests on the statist
 
 Software architecture
 -------------------------------------------
+.. note ::
+    tl;dr Python calls complicated C++ libraries like CGAL so you don't have to.
 
 The software is implemented in a mixed language environment (Python and C++). The Python language is used for the API while computationally expensive operations are performed in C++. The two languages are linked together with *pybind11* and installation is carried out using *cmake*. The Computational Geometry Algorithms Library [cgal]_ is used to perform geometric operations that use floating point arithmetic to avoid numerical precision issues. Besides this, several common Python packages: *Numpy*, *Scipy*, *MeshIO*, *SegyIO*, and *MPI4py* are used.
 
@@ -56,7 +62,7 @@ Inputs
 Seismic velocity model
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
-    The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
+    tl;dr The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
 
 * In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model.
 
@@ -65,6 +71,9 @@ Seismic velocity model
 
 Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. note ::
+    tl;dr A signed distance funciton is an implicit function that defines a domain as a set of points that are enclosed within a polygonal region and the boundary is the set of points with a 0 valued distance to the boundary.
 
 Let :math:`\Omega ⊂ D ∈ R^N` be the domain in :math:`N` dimensions. The boundary of the domain to-be-meshed is represented as the 0-level set of a continuous function:
 
@@ -90,6 +99,9 @@ The purpose of the :class:`MeshSizeFunction` class is to build this map directly
 *DistMesh* algorithm
 -------------------------------------------
 
+.. note ::
+    tl;dr This program uses the *DistMesh* algorithm [distmesh]_ to generate simplical meshes.
+
 For the generation of triangular meshes in 2D and 3D, we use the *DistMesh* algorithm [distmesh]_. The algorithm is both simple and practically useful as it can produce high-geometric quality meshes in N-dimensional space. Further, by utilizing our approach to produce mesh size functions, the mesh generation algorithm is capable of generating high-quality meshes faithful to user-defined target sizing fields and that are numerically stable.
 
 Briefly, the mesh generation algorithm is iterative and terminates after a pre-set number of iterations (e.g., 50-100). It commences with an initial distribution of vertices in the domain and iteratively relocates the vertices to create higher-geometric quality elements.The edges of the mesh act as *springs* that obey a constitutive law (e.g., Hooke's Law) otherwise referred to as a *force function*. During each meshing iteration, the discrepancy between the length of the edges in the mesh connectivity and their target length from the sizing function produce movement in the triangles' vertices. The boundary of the domain is enforced by projecting any points that leave the domain back into it each meshing iteration. After a sufficient number of iterations, an equilibrium-like state is almost always approached and the movement of the vertices becomes relatively small. The equilibrium-like state of the mesh connectivity corresponds to a mesh that contains mostly isotropic equilateral triangles, which is critical for numerical simulation. However, as with nearly all mesh generators, a sequence of mesh improvement strategies are applied after mesh generation terminates to ensure the mesh will be robust for simulation.
@@ -113,12 +125,18 @@ The *sliver* removal technique fits well within the *DistMesh* framework. For ex
     A *sliver* element is defined by their dihedral angle (i.e., angle between two surfaces) of which a tetrahedral has :math:`6`. Generally, if a 3D mesh has a minimum dihedral angle less than 1 degree, it will be numerically unstable. We've had success in simulating with meshes that have minimum dihedral angles of minimally around 5 degrees.
 
 
-Parallelism
+Parallelism and speed
 -------------------------------------------
+
+.. note ::
+    tl;dr This code uses distributed memory parallelism with the MPI4py package.
 
 When constructing models at scale, the primary computational bottleneck in the *DistMesh* algorithm becomes the time spent in the Delauany triangulation algorithm, which occurs each iteration of the mesh generation step. The other steps involving the formation and calculation of the target sizing field and signed distance function are far less demanding. Using *MPI4py*, I implemented a simplified version of the [hpc_del]_ to parallelize the Delaunay triangulation algorithm. This approach scales well and reduces the time spent performing each meshing iteration thus making the approach feasible for large-scale 3D mesh generation applications. The domain is decomposed into axis-aligned *slices* than cut one axis of the domain. While this strategy doesn't fare well with load balancing, it simplifies the implementation and runtime communication cost associated with neighboring processor exchanges.
 
+When possible, *SeismicMesh* uses low-level functionality from the CGAL package including the evalulation of geometric predicates, circumball calculations, polygonal intersection tests, and incremental triangulation capabilities.
 
+Application to Seismology
+------------------------------
 
 References
 -------------------------------------------
