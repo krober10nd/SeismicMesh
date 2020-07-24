@@ -39,7 +39,7 @@ def example_3D_parallel():
         ef.WriteVelocityModel("EGAGE_Salt")
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(ef)
 
     # Build the mesh (note the seed makes the result deterministic)
     points, cells = mshgen.build(max_iter=75, seed=0, COMM=comm)

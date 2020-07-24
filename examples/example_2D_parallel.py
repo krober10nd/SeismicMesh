@@ -41,9 +41,7 @@ def example_2D_parallel():
         # ef.plot()
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(
-        ef, method="cgal"
-    )  # parallel currently only works in qhull
+    mshgen = SeismicMesh.MeshGenerator(ef)
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(

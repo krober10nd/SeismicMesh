@@ -29,9 +29,7 @@ def example_2D_SDF():
         return h
 
     # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(
-        method="cgal", hmin=hmin, bbox=bbox, fd=SDF, fh=EF
-    )
+    mshgen = SeismicMesh.MeshGenerator(hmin=hmin, bbox=bbox, fd=SDF, fh=EF)
 
     # Build the mesh (note the seed makes the result deterministic)
     points, facets = mshgen.build(max_iter=50)
