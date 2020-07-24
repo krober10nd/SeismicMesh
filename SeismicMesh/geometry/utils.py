@@ -55,12 +55,8 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     :param dim: dimension of mesh
     :type dim: int, optional
 
-    :return: vertices_new: point coordinates of mesh w/ removed entities
-    :rtype: numpy.ndarray[float64 x dim]
-    :return: entities_new: mesh connectivity w/ removed entities
-    :rtype: numpy.ndarray[int x (dim +1)]
-    :return: jx: mapping from old point indexing to new point indexing
-    :rtype: numpy.ndarray[int x 1]
+    :return: isOut: point indices to remove
+    :rtype: numpy.ndarray[float64 x 1]
     """
 
     if dim == 2:
@@ -82,9 +78,7 @@ def remove_external_entities(vertices, entities, extent, dim=2):
             z2=extent[5],
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
-    entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new, entities_new, jx = fixmesh(vertices, entities_new, dim=dim)
-    return vertices_new, entities_new, jx
+    return isOut
 
 
 def vertex_to_entities(vertices, entities, dim=2):
