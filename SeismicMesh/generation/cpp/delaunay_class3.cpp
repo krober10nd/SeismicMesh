@@ -13,18 +13,17 @@
 #include <boost/lexical_cast.hpp>
 
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Delaunay_mesh_face_base_2.h>
-#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Triangulation_vertex_base_with_info_3.h>
 
 namespace py = pybind11;
 
 using K = CGAL::Exact_predicates_inexact_constructions_kernel;
-using Vb = CGAL::Triangulation_vertex_base_with_info_2<unsigned int, K>;
-using Tds = CGAL::Triangulation_data_structure_2<Vb>;
-using DT = CGAL::Delaunay_triangulation_2<K, Tds>;
+using Vb = CGAL::Triangulation_vertex_base_with_info_3<unsigned int, K>;
+using Tds = CGAL::Triangulation_data_structure_3<Vb>;
+using DT = CGAL::Delaunay_triangulation_3<K, Tds>;
 
-using Point = K::Point_2;
+using Point = K::Point_3;
 using Vertex_handle = DT::Vertex_handle;
 using Vi = DT::Vertex_iterator;
 
@@ -82,19 +81,22 @@ private:
 };
 
 
-PYBIND11_MODULE(delaunay_class, m)
+PYBIND11_MODULE(delaunay_class3, m)
 {
     py::class_<Point>(m, "Point")
-            .def(py::init<int, int>(),  py::arg("x"), py::arg("y"))
-            .def(py::init<double, double>(), py::arg("x"), py::arg("y"))
+            .def(py::init<int, int, int>(),  py::arg("x"), py::arg("y"), py::arg("z"))
+            .def(py::init<double, double, double>(), py::arg("x"), py::arg("y"), py::arg("z"))
             .def_property_readonly("x", &Point::x)
             .def_property_readonly("y", &Point::y)
+            .def_property_readonly("z", &Point::z)
             .def("__repr__",
             [](const Point &p) {
                 std::string r("Point(");
                 r += boost::lexical_cast<std::string>(p.x());
                 r += ", ";
                 r += boost::lexical_cast<std::string>(p.y());
+                r += ", ";
+                r += boost::lexical_cast<std::string>(p.z());
                 r += ")";
                 return r;
             })
@@ -109,35 +111,24 @@ PYBIND11_MODULE(delaunay_class, m)
         })
         ;
 
-        py::class_<DT>(m, "DelaunayTriangulation")
+        py::class_<DT>(m, "DelaunayTriangulation3")
 
             .def(py::init())
 
             .def("insert", [](DT & dt, const std::vector<double> & p) {
                   std::vector< std::pair<Point,unsigned> > points;
-                  int num_points = p.size()/2;
+                  int num_points = p.size()/3;
                   // start adding at the end of the current table
                   int start = dt.number_of_vertices();
                   for(std::size_t i = 0; i < num_points; ++i)
                   {
                     // add index information to form face table later
-                     points.push_back( std::make_pair( Point(p[i*2+0],p[i*2+1]), start) );
+                     points.push_back( std::make_pair( Point(p[i*3+0],p[i*3+1], p[i*3+2]), start) );
                      start += 1;
                   }
                   return dt.insert(points.begin(),points.end());
                 })
 
-            .def("remove", [](DT & dt, const std::vector<unsigned int> & to_remove) {
-                    int num_to_remove= to_remove.size();
-                    std::vector<Vertex_handle> handles;
-                    for (Vi vi = dt.vertices_begin(); vi != dt.vertices_end(); vi++){
-                        handles.push_back(vi);
-                    }
-                    for(std::size_t i=0; i < num_to_remove; ++i){
-                        dt.remove(handles[to_remove[i]]);
-                    }
-                    return dt;
-                })
 
             .def("move", [](DT & dt, const std::vector<unsigned int> & to_move, const std::vector<double> & new_positions){
                     std::vector<Vertex_handle> handles;
@@ -150,7 +141,7 @@ PYBIND11_MODULE(delaunay_class, m)
                     // store new positions as a vector of Point
                     for(std::size_t i = 0; i < num_to_move; ++i)
                     {
-                       new_pos.push_back(Point(new_positions[2*i], new_positions[2*i+1]));
+                       new_pos.push_back(Point(new_positions[3*i], new_positions[3*i+1], new_positions[3*i+2]));
                     }
                     //
                     for(std::size_t i = 0; i < num_to_move; ++i)
@@ -160,12 +151,14 @@ PYBIND11_MODULE(delaunay_class, m)
                     return dt;
                     })
 
-            .def("number_of_vertices", &DT::number_of_vertices)
+            .def("number_of_vertices", [](DT & dt){
+                    return dt.number_of_vertices();
+                })
 
-            .def("number_of_faces", [](DT & dt){
+            .def("number_of_cells", [](DT & dt){
                 int count=0;
-                for(DT::Finite_faces_iterator fit = dt.finite_faces_begin();
-                fit != dt.finite_faces_end(); ++fit) {
+                for(DT::Finite_cells_iterator fit = dt.finite_cells_begin();
+                fit != dt.finite_cells_end(); ++fit) {
                     count += 1;
                 }
                     return count;
@@ -176,33 +169,34 @@ PYBIND11_MODULE(delaunay_class, m)
                  return py::make_iterator(dt.finite_vertices_begin(), dt.finite_vertices_end());
              })
 
-            .def("get_finite_faces", [](DT & dt)
+            .def("get_finite_cells", [](DT & dt)
             {
-              // ouput the face table
+              // ouput the cell table
               // YOU MUST CALL get_finite_vertices before if any incremental operations
               // were performed
-              std::vector<int> faces;
-              faces.resize(dt.number_of_faces()*3);
+              std::vector<int> cells;
+              cells.resize(dt.number_of_finite_cells()*4);
 
               int i=0;
-              for(DT::Finite_faces_iterator fit = dt.finite_faces_begin();
-                fit != dt.finite_faces_end(); ++fit) {
+              for(DT::Finite_cells_iterator fit = dt.finite_cells_begin();
+                fit != dt.finite_cells_end(); ++fit) {
 
-                DT::Face_handle face = fit;
-                faces[i*3]=face->vertex(0)->info();
-                faces[i*3+1]=face->vertex(1)->info();
-                faces[i*3+2]=face->vertex(2)->info();
+                DT::Cell_handle cell = fit;
+                cells[i*4]=cell->vertex(0)->info();
+                cells[i*4+1]=cell->vertex(1)->info();
+                cells[i*4+2]=cell->vertex(2)->info();
+                cells[i*4+3]=cell->vertex(3)->info();
                 i+=1;
               }
               ssize_t              soint      = sizeof(int);
-              ssize_t              num_faces = faces.size()/3;
+              ssize_t              num_cells = cells.size()/4;
               ssize_t              ndim      = 2;
-              std::vector<ssize_t> shape     = {num_faces, 3};
-              std::vector<ssize_t> strides   = {soint*3, soint};
+              std::vector<ssize_t> shape     = {num_cells, 4};
+              std::vector<ssize_t> strides   = {soint*4, soint};
 
               // return 2-D NumPy array
               return py::array(py::buffer_info(
-                faces.data(),                           /* data as contiguous array  */
+                cells.data(),                           /* data as contiguous array  */
                 sizeof(int),                          /* size of one scalar        */
                 py::format_descriptor<int>::format(), /* data type                 */
                 2,                                    /* number of dimensions      */
@@ -215,7 +209,7 @@ PYBIND11_MODULE(delaunay_class, m)
              {
                // ouput the vertices
                std::vector<double> vertices;
-               vertices.resize(dt.number_of_vertices()*2);
+               vertices.resize(dt.number_of_vertices()*3);
 
                int i=0;
                for(DT::Finite_vertices_iterator fit = dt.finite_vertices_begin();
@@ -224,15 +218,16 @@ PYBIND11_MODULE(delaunay_class, m)
                  Vertex_handle vertex = fit;
                  // critical! update the point index table so faces comes out correctly
                  vertex->info() = i;
-                 vertices[i*2]=vertex->point().x();
-                 vertices[i*2+1]=vertex->point().y();
+                 vertices[i*3]=vertex->point().x();
+                 vertices[i*3+1]=vertex->point().y();
+                 vertices[i*3+2]=vertex->point().z();
                  i+=1;
                }
                ssize_t              sdble   = sizeof(double);
-               ssize_t              num_vertices = vertices.size()/2;
+               ssize_t              num_vertices = vertices.size()/3;
                ssize_t              ndim      = 2;
-               std::vector<ssize_t> shape     = {num_vertices, 2};
-               std::vector<ssize_t> strides   = {sdble*2, sdble};
+               std::vector<ssize_t> shape     = {num_vertices, 3};
+               std::vector<ssize_t> strides   = {sdble*3, sdble};
 
                // return 2-D NumPy array
                return py::array(py::buffer_info(
@@ -256,11 +251,11 @@ PYBIND11_MODULE(delaunay_class, m)
             )
             ;
 
-    py::class_<DT::Finite_faces_iterator::value_type>(m, "Face")
+    py::class_<DT::Finite_cells_iterator::value_type>(m, "Cell")
             .def("vertex_handle",
-                [](DT::Finite_faces_iterator::value_type& face, int index)
+                [](DT::Finite_cells_iterator::value_type& cell, int index)
                 {
-                    return face.vertex(index);
+                    return cell.vertex(index);
                 },
                 py::arg("index")
             )

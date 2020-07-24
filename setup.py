@@ -74,10 +74,10 @@ class CMakeBuild(build_ext):
 
 setup(
     name="SeismicMesh",
-    version="0.5.0",
+    version="1.0.0",
     author="Keith Roberts",
     author_email="keithrbt0gmail.com",
-    description="2D/3D serial and parallel triangular mesh generation for seismology",
+    description="2D/3D serial and parallel triangular mesh generation and mesh improvement for seismology",
     long_description="",
     setup_requires=["pybind11"],
     install_requires=[
@@ -97,6 +97,7 @@ setup(
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay_class"),
+        CMakeExtension("SeismicMesh/generation/cpp/delaunay_class3"),
         CMakeExtension("SeismicMesh/migration/cpp/cpputils"),
         CMakeExtension("SeismicMesh/geometry/cpp/fast_geometry"),
     ],

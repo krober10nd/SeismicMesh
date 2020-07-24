@@ -9,12 +9,9 @@
 
 #include <CGAL/Kernel/global_functions.h>
 
-#include <CGAL/Delaunay_triangulation_3.h>
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_3.h>
 #include <CGAL/Triangulation_vertex_base_with_info_3.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
-#include <CGAL/Delaunay_triangulation_2.h>
-#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Delaunay_triangulation_2.h>
 #include <CGAL/Triangulation_vertex_base_with_info_2.h>
 
@@ -84,6 +81,7 @@ std::vector<double> c_circumballs3(std::vector<double> &vertices)
     }
     return circumcenters;
 }
+
 std::vector<int> c_delaunay2(std::vector<double> &x, std::vector<double> &y)
 {
   int num_points = x.size();

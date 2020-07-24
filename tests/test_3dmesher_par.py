@@ -1,3 +1,4 @@
+import pytest
 import os
 
 import numpy as np
@@ -10,10 +11,8 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 
+@pytest.mark.parallel
 def test_3dpar_mesher():
-
-    if size == 1:
-        return 0
 
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     wl = 10
@@ -41,20 +40,13 @@ def test_3dpar_mesher():
     mshgen = SeismicMesh.MeshGenerator(
         ef, method="qhull"
     )  # parallel currently only works in qhull
-
     points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0,)
-    # remove slivers
-    points, cells = mshgen.build(
-        points=points,
-        max_iter=15,
-        nscreen=1,
-        seed=0,
-        COMM=comm,
-        axis=0,
-        mesh_improvement=True,
-    )
 
     if rank == 0:
+        # remove slivers
+        points, cells = mshgen.build(
+            points=points, max_iter=15, nscreen=1, seed=0, mesh_improvement=True,
+        )
         # import meshio
 
         # meshio.write_points_cells(
@@ -72,18 +64,12 @@ def test_3dpar_mesher():
     )  # parallel currently only works in qhull
 
     points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0,)
-    # remove slivers
-    points, cells = mshgen.build(
-        points=points,
-        max_iter=15,
-        nscreen=1,
-        seed=0,
-        COMM=comm,
-        axis=0,
-        mesh_improvement=True,
-    )
 
     if rank == 0:
+        # remove slivers
+        points, cells = mshgen.build(
+            points=points, max_iter=15, nscreen=1, seed=0, mesh_improvement=True,
+        )
         # import meshio
 
         # meshio.write_points_cells(

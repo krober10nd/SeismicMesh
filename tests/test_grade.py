@@ -1,3 +1,4 @@
+import pytest
 import os
 
 import numpy as np
@@ -21,6 +22,7 @@ def CheckGrade(hh, nz, nx, elen):
     return max_grade
 
 
+@pytest.mark.serial
 def test_grade():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     wl = 5

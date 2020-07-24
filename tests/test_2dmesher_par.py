@@ -1,3 +1,5 @@
+import pytest
+
 import os
 
 from mpi4py import MPI
@@ -10,10 +12,8 @@ size = comm.Get_size()
 rank = comm.Get_rank()
 
 
+@pytest.mark.parallel
 def test_2dmesher_par():
-
-    if size == 1:
-        return 0
 
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     wl = 5
@@ -33,7 +33,7 @@ def test_2dmesher_par():
         # import meshio
 
         # meshio.write_points_cells(
-        #    "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk",
+        #   "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk",
         # )
         area = SeismicMesh.geometry.simpvol(points / 1000, cells)
         # 7658 vertices and 14965

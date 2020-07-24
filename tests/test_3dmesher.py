@@ -1,9 +1,11 @@
+import pytest
 import os
 import numpy as np
 
 import SeismicMesh
 
 
+@pytest.mark.serial
 def test_3dmesher():
 
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")

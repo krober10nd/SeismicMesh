@@ -1,3 +1,4 @@
+import pytest
 import os
 
 import numpy as np
@@ -5,6 +6,7 @@ import numpy as np
 import SeismicMesh
 
 
+@pytest.mark.serial
 def test_hmin():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     hmin = 100
