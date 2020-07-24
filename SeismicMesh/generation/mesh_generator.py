@@ -118,13 +118,10 @@ class MeshGenerator:  # noqa: C901
         self.__pfix = value
 
     ### PRIVATE METHODS ###
-    def __get_topology(self, dt):
-        """ Get points and entities from CGAL:DelaunayTriangulation2/3 object"""
+    def _get_topology(self, dt):
+        """ Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
         p = dt.get_finite_vertices()
-        if self.dim == 2:
-            t = dt.get_finite_faces()
-        elif self.dim == 3:
-            t = dt.get_finite_cells()
+        t = dt.get_finite_cells()
         return p, t
 
     ### PUBLIC METHODS ###
@@ -204,6 +201,9 @@ class MeshGenerator:  # noqa: C901
         if size > 1 and mesh_improvement:
             raise Exception("Mesh improvement only works in serial.")
 
+        if mesh_improvement and points is None:
+            raise Exception("Mesh improvement requires an initial point set.")
+
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
             if rank == 0:
@@ -212,6 +212,9 @@ class MeshGenerator:  # noqa: C901
 
         dim = int(len(bbox) / 2)
         bbox = np.array(bbox).reshape(-1, 2)
+
+        if mesh_improvement and dim == 2:
+            raise Exception("Mesh improvement currently on works in 3D")
 
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
         deltat = 0.1
@@ -294,38 +297,50 @@ class MeshGenerator:  # noqa: C901
             flush=True,
         )
 
+        def dist(p1, p2):
+            return np.sqrt(((p1 - p2) ** 2).sum(1))
+
+        pold = None
         while True:
 
-            # 3. Retriangulation by the Delaunay algorithm
+            # 3. (Re)-triangulation by the Delaunay algorithm
             start = time.time()
 
-            # Using CGAL's incremental Delaunay triangulation algorithm
-            # Triangulate first iteration, the rest perform incremental operations.
-            if count == 1:
-                dt = DT().insert(p.flatten().tolist())
+            # Using CGAL's incremental Delaunay triangulation capabilities.
+            if not mesh_improvement:
+                dt = DT()
+                dt.insert(p.flatten().tolist())
+            else:
+                if count == 0:
+                    dt = DT()
+                    dt.insert(p.flatten().tolist())
+                else:
+                    # what points moved?
+                    to_move = np.where(dist(p, pold) > 0.00)[0]
+                    print(len(to_move))
+                    dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
 
             # Get the current topology of the triangulation
             p, t = self._get_topology(dt)
+            pold = p.copy()
+
+            N = p.shape[0]
 
             if PARALLEL:
                 exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
                 recv = migration.exchange(comm, rank, size, exports, dim=dim)
                 recv_ix = len(recv)
-
-                # insert halo points. NB: can add a flag to insert to make info negative for halo vertices
                 dt.insert(recv.flatten().tolist())
                 p, t = self._get_topology(dt)
                 # remove entities will all vertices outside local block
-                remove = geometry.remove_external_entities(p, t, extent, dim=dim)
-                dt.remove(remove)
-                p, t = self._get_topology(dt)
+                p, t, inv = geometry.remove_external_entities(p, t, extent, dim=dim,)
+                N = p.shape[0]
 
+            # Remove vertices outside the domain
             pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
-            remove = np.unique(t[fd(pmid) < -geps])  # Keep interior triangles
-            dt.remove(remove)  # remove the points associated with these simplices
+            t = t[fd(pmid) < -geps]  # Keep interior triangles
 
             # 4. Describe each bar by a unique pair of nodes
-            p, t = self._get_topology(dt)
             bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
             if dim == 3:
                 bars = np.concatenate(
@@ -333,9 +348,9 @@ class MeshGenerator:  # noqa: C901
                 )
             bars = mutils.unique_rows(bars)[0]  # Bars as node pairs
 
-            # Periodic sliver removal
-            num_move = 0
-            if mesh_improvement and count != (max_iter - 1) and dim == 3:
+            # Sliver removal
+            if mesh_improvement and count != (max_iter - 1):
+                num_move = 0
                 # calculate dihedral angles in mesh
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 outOfBounds = np.argwhere(
@@ -356,27 +371,10 @@ class MeshGenerator:  # noqa: C901
 
                 move = t[eleNums, 0]
                 num_move = move.size
-                if PARALLEL:
-                    g_num_move = comm.allreduce(num_move, op=MPI.SUM)
-                    if num_move == 0 and g_num_move != 1:
-                        if count % nscreen == 0:
-                            print("Rank " + str(rank) + " is locked...", flush=True)
-                        nfix = N
-                    if g_num_move == 0:
-                        if rank == 0:
-                            print(
-                                "Termination reached...No slivers detected!", flush=True
-                            )
-                        p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-                        return p, t
-                else:
-                    if num_move == 0:
-                        print("Termination reached...No slivers detected!", flush=True)
-                        if rank == 0 and perform_checks:
-                            p, t = geometry.linter(p, t, dim=dim)
-                        elif rank == 0:
-                            p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
-                        return p, t
+                if num_move == 0:
+                    print("Termination reached...No slivers detected!", flush=True)
+                    p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
+                    return p, t
 
                 p0, p1, p2, p3 = (
                     p[t[eleNums, 0], :],
@@ -389,17 +387,12 @@ class MeshGenerator:  # noqa: C901
                 perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
                 perturb[np.isinf(perturb)] = 1.0
 
-                # normalize
+                # normalize perturbation vector
                 perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 perturb /= perturb_norm[:, None]
 
                 # perturb % of local mesh size
-                new_pos = p[move] + 0.10 * h0 * perturb
-
-                # incrementally move the points
-                dt.move(new_pos.flatten().tolist(), move)
-
-            p, t = self._get_topology(dt)
+                p[move] += 0.10 * h0 * perturb
 
             if not mesh_improvement:
                 # 6. Move mesh points based on bar lengths L and forces F
@@ -426,10 +419,11 @@ class MeshGenerator:  # noqa: C901
 
                 Ftot[:nfix] = 0  # Force = 0 at fixed points
 
-                new_pos = p + deltat * Ftot
-                moved = np.arange(len(p))  # move only points that actually moved a bit
-                dt.move(new_pos, moved)
-                p, t = self._get_topology(dt)
+                if PARALLEL:
+                    if count < max_iter - 1:
+                        p += deltat * Ftot
+                else:
+                    p += deltat * Ftot  # Update node positions
 
             else:
                 # no movement if mesh improvement (from forces)
@@ -438,6 +432,9 @@ class MeshGenerator:  # noqa: C901
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
+
+            if PARALLEL and count is max_iter - 2:
+                enforce_sdf = False
 
             if ix.any() and enforce_sdf:
 
@@ -449,10 +446,7 @@ class MeshGenerator:  # noqa: C901
                 dgrads = [(fd(p[ix] + deps_vec(i)) - d[ix]) / deps for i in range(dim)]
                 dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
                 dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
-                new_pos = p[ix] - (d[ix] * np.vstack(dgrads) / dgrad2).T
-                # move the points back into the domain!
-                dt.move(new_pos.flatten().tolist(), ix)
-                p, t = self._get_topology(dt)
+                p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             if count % nscreen == 0 and rank == 0 and not mesh_improvement:
                 maxdp = deltat * np.sqrt((Ftot ** 2).sum(1)).max()
@@ -472,8 +466,7 @@ class MeshGenerator:  # noqa: C901
 
             # 9. Delete ghost points
             if PARALLEL:
-                # NEED TO HAVE LABEL TO ADDED GHOST POINTS
-                # dt.remove(inv[-recv_ix::])
+                p = np.delete(p, inv[-recv_ix::], axis=0)
                 comm.barrier()
 
             if count % nscreen == 0 and rank == 0:

@@ -26,7 +26,7 @@ jobs:
       - run: pip install . --user
       - run: pip3 install -U pytest pytest-cov --user
       - run:
-          command: cd tests && pytest --cov -m "serial" --source=. #&& mpirun -np 2 pytest --cov -m "parallel" .
+          command: cd tests && pytest --cov -m "serial" --source= . #&& mpirun -np 2 pytest --cov -m "parallel" .
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2

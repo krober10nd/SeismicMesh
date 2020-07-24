@@ -176,7 +176,7 @@ PYBIND11_MODULE(delaunay_class, m)
                  return py::make_iterator(dt.finite_vertices_begin(), dt.finite_vertices_end());
              })
 
-            .def("get_finite_faces", [](DT & dt)
+            .def("get_finite_cells", [](DT & dt)
             {
               // ouput the face table
               // YOU MUST CALL get_finite_vertices before if any incremental operations
