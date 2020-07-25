@@ -315,9 +315,7 @@ class MeshGenerator:  # noqa: C901
                     dt = DT()
                     dt.insert(p.flatten().tolist())
                 else:
-                    # what points moved?
-                    to_move = np.where(dist(p, pold) > 0.00)[0]
-                    print(len(to_move))
+                    to_move = np.where(dist(p, pold) > 0)[0]
                     dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
 
             # Get the current topology of the triangulation

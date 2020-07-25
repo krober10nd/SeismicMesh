@@ -26,7 +26,7 @@ using DT = CGAL::Delaunay_triangulation_2<K, Tds>;
 
 using Point = K::Point_2;
 using Vertex_handle = DT::Vertex_handle;
-using Vi = DT::Vertex_iterator;
+using Vi = DT::Finite_vertices_iterator;
 
 
 template <typename T>
@@ -130,7 +130,7 @@ PYBIND11_MODULE(delaunay_class, m)
             .def("remove", [](DT & dt, const std::vector<unsigned int> & to_remove) {
                     int num_to_remove= to_remove.size();
                     std::vector<Vertex_handle> handles;
-                    for (Vi vi = dt.vertices_begin(); vi != dt.vertices_end(); vi++){
+                    for (Vi vi = dt.finite_vertices_begin(); vi != dt.finite_vertices_end(); vi++){
                         handles.push_back(vi);
                     }
                     for(std::size_t i=0; i < num_to_remove; ++i){
@@ -144,7 +144,7 @@ PYBIND11_MODULE(delaunay_class, m)
                     std::vector<Point> new_pos;
                     int num_to_move= to_move.size();
                     // store all vertex handles
-                    for (Vi vi = dt.vertices_begin(); vi != dt.vertices_end(); vi++){
+                    for (Vi vi = dt.finite_vertices_begin(); vi != dt.finite_vertices_end(); vi++){
                         handles.push_back(vi);
                     }
                     // store new positions as a vector of Point
