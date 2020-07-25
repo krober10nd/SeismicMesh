@@ -9,7 +9,7 @@ complex mesh sizing function that are relevant to Seismology. Here we show how t
 
 .. warning::
 
-   Under construction. Contributions very welcome!
+    Under construction. Contributions very welcome!
 
 Data
 --------
@@ -17,7 +17,7 @@ Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
 
     wget http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz
 
-See instructions at the link https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model::
+See instructions at the link https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
 
 
 Things to know
@@ -41,11 +41,15 @@ class along with the domain extents ::
 
 * If the user uses the *MeshSizeFunction* class, the software makes the assumption the domain can be approximated by a rectangle/cube. Thus, the user specifies the domain geometry as a tuple of coordinates in meters::
 
-    :math:`bbox = (z_{min}, z_{max}, x_{min}, x_{max})`
+.. math::
+
+    bbox = (z_{min}, z_{max}, x_{min}, x_{max})
 
 * In 3D::
 
-    :math: bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
+.. math::
+
+    bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
 
 .. note :: The program automatically generates the rectangle/cube domain geometry used during meshing if a *MeshSizeFunction* object is passed to the generator.
 
@@ -84,6 +88,8 @@ The user is able to specify the number of vertices per wavelength :math:`\alpha_
 
 Resolving seismic velocity gradients
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
 
 
 Courants-Friedrichs-Lewey (CFL) condition

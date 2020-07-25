@@ -8,7 +8,7 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 Mesh definition
 -------------------------------------------
 .. note ::
-    tl;dr triangles and tetrahedral meshes.
+    Triangular and tetrahedral meshes.
 
 The domain :math:`\Omega` is partitioned into a finite set of cells :math:`\mathcal{T}_{h} = {T}` with disjoint interiors
 such that
@@ -37,7 +37,7 @@ The consideration of what constitutes a *high quality* mesh rests on the statist
 Software architecture
 -------------------------------------------
 .. note ::
-    tl;dr Python calls complicated C++ libraries like CGAL so you don't have to.
+    Python calls peformant C++ libraries like CGAL.
 
 The software is implemented in a mixed language environment (Python and C++). The Python language is used for the API while computationally expensive operations are performed in C++. The two languages are linked together with *pybind11* and installation is carried out using *cmake*. The Computational Geometry Algorithms Library [cgal]_ is used to perform geometric operations that use floating point arithmetic to avoid numerical precision issues. Besides this, several common Python packages: *Numpy*, *Scipy*, *MeshIO*, *SegyIO*, and *MPI4py* are used.
 
@@ -62,7 +62,7 @@ Inputs
 Seismic velocity model
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
-    tl;dr The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
+    The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
 
 * In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model.
 
@@ -71,9 +71,6 @@ Seismic velocity model
 
 Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. note ::
-    tl;dr A signed distance funciton is an implicit function that defines a domain as a set of points that are enclosed within a polygonal region and the boundary is the set of points with a 0 valued distance to the boundary.
 
 Let :math:`\Omega ⊂ D ∈ R^N` be the domain in :math:`N` dimensions. The boundary of the domain to-be-meshed is represented as the 0-level set of a continuous function:
 
@@ -100,7 +97,7 @@ The purpose of the :class:`MeshSizeFunction` class is to build this map directly
 -------------------------------------------
 
 .. note ::
-    tl;dr This program uses the *DistMesh* algorithm [distmesh]_ to generate simplical meshes.
+    This program uses a modified version of the *DistMesh* algorithm [distmesh]_ to generate simplical meshes.
 
 For the generation of triangular meshes in 2D and 3D, we use the *DistMesh* algorithm [distmesh]_. The algorithm is both simple and practically useful as it can produce high-geometric quality meshes in N-dimensional space. Further, by utilizing our approach to produce mesh size functions, the mesh generation algorithm is capable of generating high-quality meshes faithful to user-defined target sizing fields and that are numerically stable.
 
@@ -119,7 +116,7 @@ Mesh adaptation
 
 3D Delaunay mesh genration algorithms form degenerate elements called *slivers*. If any *sliver* exists in a 3D mesh, the FEM solution can become numerically unstable and the results unusable. Fortunately, this problem does not occur in 2D and, in 2D, a high quality mesh free of degenerate elements is easily achieved. To tackle this problem in 3D, a method similar to that of [slivers]_ was implemented. This algorithm aims at removing *slivers* while preserving the triangulation sizing distribution and domain boundary.
 
-The *sliver* removal technique fits well within the *DistMesh* framework. For example, like the mesh generation approach, the algorithm operates iteratively. Each meshing iteration, it perturbs only vertices associated with *slivers* so that the circumspheres' radius of the *sliver* tetrahedral increases rapidly (i.e.., gradient ascent of the circumsphere radius) [slivers]_. The method operates on an existing mesh that ideally already has a high-mesh quality. The perturbation of a vertex of the *sliver* leads to a local combinational change in the nearby mesh connectivity to maintain Delaunayhood and almost always destroys the *sliver* in lieu of elements with larger dihedral angles.
+The *sliver* removal technique fits well within the *DistMesh* framework. For example, like the mesh generation approach, the algorithm operates iteratively. Each meshing iteration, it perturbs *only* vertices associated with *slivers* so that the circumspheres' radius of the *sliver* tetrahedral increases rapidly (i.e.., gradient ascent of the circumsphere radius) [slivers]_. The method operates on an existing mesh that ideally already has a high-mesh quality. The perturbation of a vertex of the *sliver* leads to a local combinational change in the nearby mesh connectivity to maintain Delaunayhood and almost always destroys the *sliver* in lieu of elements with larger dihedral angles.
 
 .. note ::
     A *sliver* element is defined by their dihedral angle (i.e., angle between two surfaces) of which a tetrahedral has :math:`6`. Generally, if a 3D mesh has a minimum dihedral angle less than 1 degree, it will be numerically unstable. We've had success in simulating with meshes that have minimum dihedral angles of minimally around 5 degrees.
@@ -129,7 +126,7 @@ Parallelism and speed
 -------------------------------------------
 
 .. note ::
-    tl;dr This code uses distributed memory parallelism with the MPI4py package.
+    This code uses distributed memory parallelism with the MPI4py package.
 
 When constructing models at scale, the primary computational bottleneck in the *DistMesh* algorithm becomes the time spent in the Delauany triangulation algorithm, which occurs each iteration of the mesh generation step. The other steps involving the formation and calculation of the target sizing field and signed distance function are far less demanding. Using *MPI4py*, I implemented a simplified version of the [hpc_del]_ to parallelize the Delaunay triangulation algorithm. This approach scales well and reduces the time spent performing each meshing iteration thus making the approach feasible for large-scale 3D mesh generation applications. The domain is decomposed into axis-aligned *slices* than cut one axis of the domain. While this strategy doesn't fare well with load balancing, it simplifies the implementation and runtime communication cost associated with neighboring processor exchanges.
 
@@ -137,6 +134,9 @@ When possible, *SeismicMesh* uses low-level functionality from the CGAL package 
 
 Application to Seismology
 ------------------------------
+
+.. warning ::
+    WIP
 
 References
 -------------------------------------------

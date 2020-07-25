@@ -2,7 +2,7 @@ Installation
 ============
 
 Requirements
-------------
+-------------
 
 You need to have the following software properly installed in order to
 build *SeismicMesh*:
