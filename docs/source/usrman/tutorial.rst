@@ -6,6 +6,8 @@ Tutorial
 either serial or parallel. It also supports the generation of
 complex mesh sizing function that are relevant to Seismology. Here we show how to use it.
 
+Here I show how to build a 2D mesh adapted to the BP2004 benchmark model. The code and calls extend to 3D simply.
+For a 3D example, see the file example/example_3D.py
 
 .. warning::
 
@@ -89,11 +91,67 @@ The user is able to specify the number of vertices per wavelength :math:`\alpha_
 Resolving seismic velocity gradients
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+Seismic domains are known for sharp gradients in material properties. These sharp gradients lead to reflections and refractions in propagated waves, which are critical for succesful imaging. Thus, finer mesh resolution can be deployed inversely proportional to the local standard deviation of P-wave velocity. The local standard deviation of seismic P-wave velocity is calculated in a sliding window around each point on the velocity model. The user chooses the mapping relationship between the local standard deviation of the seismic velocity model and the values of the corresponding mesh size nearby it. This parameter is referred to as the :math:`grad` and is specified in meters.
+For instance a :math:`grad` of 50, would imply that the largest gradient in seismic P-wave velocity is mapped to a minimum resolution of 50-m.::
+
+    import SeismicMesh
+
+    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+    bbox = (-12e3, 0, 0, 67e3)
+
+    # Construct mesh sizing object from velocity model
+    ef = SeismicMesh.MeshSizeFunction(
+        bbox=bbox,
+        model=fname,
+        grad=50, # the desired mesh size in meters near the shaprest gradient in the domain
+    )
+
+.. note:
+
+    The map of the local standard deviation of the gradient is normalized to an interval of :math:`[0,1]` so that the largest gradient is assigned the mesh resolution indicated by :math`grad` and all other grad-to-mesh-sizes are associated using a linear relationship (with a slope of 1 and y-intercept of 0).
 
 
 
 Courants-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Almost all numerical wave propagators are explicit in the seismic domain. The major advantage for these methods is computational speed. However, all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey condition. Ignoring this condition will lead to a numerical instability and a useless simulation. One thing we must be careful of when using the above mesh size functions is that the CFL condition is indeed bounded.
+
+After sizing functions have been activated, a conservative maximum Courant number is enforced.
+
+For the 2D linear acoustic wave equation assuming isotropic mesh resolution, the CFL condition is described by
+
+.. math::
+
+    C_{r}(x) = \frac{(\Delta t*v_p(x))}{dim*h(x)}
+
+where :math:`h` is the diameter of the circumball that inscribes the element either calculated from :math:`f(h)` or from the actual mesh cells, :math:`dim` is the spatial dimension of the problem (2 or 3), :math:`\Delta t` is the intended simulation time step in seconds and :math:`v_p` is the seismic P-wave velocity. The above equation can be rearranged to find the minimum mesh size possible for a given :math:`v_p` and :math:`\Delta t`, based on some user-defined value of :math:`Cr \leq 1`. If there are any violations of the CFL, they are edited to satisfy that the maximum :math:`Cr` is less than some conservative threshold. We normally apply :math:`Cr = 0.5`, which provides a solid buffer but this can but this can be controlled by the user like the following::
+
+    import SeismicMesh
+    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+    bbox = (-12e3, 0, 0, 67e3)
+
+    # Construct mesh sizing object from velocity model
+    ef = SeismicMesh.MeshSizeFunction(
+        bbox=bbox,
+        model=fname,
+        cr=0.5, # maximum bounded Courant number to be bounded in the mesh sizing function
+        dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
+        ...
+    )
+
+The space order of the method (:math:`p`) can also be incorporated into the above formula to consider for the numerics that the simulation will use::
+
+    ef = SeismicMesh.MeshSizeFunction(
+        bbox=bbox,
+        model=fname,
+        cr=0.5, # maximum bounded Courant number :math:`Cr_{max}` in the mesh
+        dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
+        space_order = 2, # assume quadratic elements :math:`P=2`
+        ...
+    )
+
+This implies that the simulation will use quadratic elements, and thus will ensure the :math:`Cr_{max}` is divided by :math:`\frac{1}{space\_order}`
 
 
 Mesh size gradation
