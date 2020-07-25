@@ -43,9 +43,7 @@ def test_3dpar_mesher():
 
     if rank == 0:
         # remove slivers
-        points, cells = mshgen.build(
-            points=points, max_iter=15, nscreen=1, seed=0, mesh_improvement=True,
-        )
+        points, cells = mshgen.build(points=points, max_iter=15, mesh_improvement=True,)
         # import meshio
 
         # meshio.write_points_cells(
@@ -56,7 +54,7 @@ def test_3dpar_mesher():
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
         print(len(points), len(cells))
         assert np.abs(9220 - len(points)) < 250
-        assert np.abs(57044 - len(cells)) < 250
+        assert np.abs(49156 - len(cells)) < 250
 
 
 if __name__ == "__main__":

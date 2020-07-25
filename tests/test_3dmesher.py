@@ -33,6 +33,8 @@ def test_3dmesher():
     assert len(points) == 16459
     assert np.abs(len(cells) - 96297) < 600
 
+    points, cells = mshgen.build(points=points, mesh_improvement=True)
+
 
 if __name__ == "__main__":
     test_3dmesher()
