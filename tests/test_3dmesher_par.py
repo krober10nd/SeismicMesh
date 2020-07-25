@@ -37,31 +37,7 @@ def test_3dpar_mesher():
     # Build lambda functions
     ef = ef.construct_lambdas(comm)
 
-    mshgen = SeismicMesh.MeshGenerator(
-        ef, method="qhull"
-    )  # parallel currently only works in qhull
-    points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0,)
-
-    if rank == 0:
-        # remove slivers
-        points, cells = mshgen.build(
-            points=points, max_iter=15, nscreen=1, seed=0, mesh_improvement=True,
-        )
-        # import meshio
-
-        # meshio.write_points_cells(
-        #    "foo3D_V3.vtk", points, [("tetra", cells)],
-        # )
-
-        vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
-        assert np.abs(2 - np.sum(vol)) < 0.10  # km2
-        print(len(points), len(cells))
-        assert np.abs(9220 - len(points)) < 250
-        assert np.abs(49263 - len(cells)) < 250
-
-    mshgen = SeismicMesh.MeshGenerator(
-        ef, method="cgal"
-    )  # parallel currently only works in qhull
+    mshgen = SeismicMesh.MeshGenerator(ef)
 
     points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0,)
 
@@ -80,7 +56,7 @@ def test_3dpar_mesher():
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
         print(len(points), len(cells))
         assert np.abs(9220 - len(points)) < 250
-        assert np.abs(49263 - len(cells)) < 250
+        assert np.abs(57044 - len(cells)) < 250
 
 
 if __name__ == "__main__":

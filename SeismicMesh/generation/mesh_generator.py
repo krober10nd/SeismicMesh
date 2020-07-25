@@ -17,8 +17,6 @@
 
 import numpy as np
 from mpi4py import MPI
-import scipy.spatial as spspatial
-import matplotlib.pyplot as plt
 import time
 
 from . import utils as mutils
@@ -26,8 +24,7 @@ from .. import decomp
 from .. import migration
 from .. import geometry
 
-from .cpp import c_cgal
-from .cpp.delaunay_class import DelaunayTriangulation as DT
+from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
 
@@ -55,17 +52,9 @@ class MeshGenerator:  # noqa: C901
     """
 
     def __init__(
-        self,
-        SizingFunction=None,
-        method="cgal",
-        fd=None,
-        fh=None,
-        bbox=None,
-        hmin=None,
-        pfix=None,
+        self, SizingFunction=None, fd=None, fh=None, bbox=None, hmin=None, pfix=None,
     ):
         self.SizingFunction = SizingFunction
-        self.method = method
         self.fd = fd
         self.fh = fh
         self.bbox = bbox
@@ -80,15 +69,6 @@ class MeshGenerator:  # noqa: C901
     @SizingFunction.setter
     def SizingFunction(self, value):
         self.__SizingFunction = value
-
-    @property
-    def method(self):
-        return self.__method
-
-    @method.setter
-    def method(self, value):
-        assert value == "qhull" or value == "cgal", "method is not recognized"
-        self.__method = value
 
     @property
     def fd(self):
@@ -137,6 +117,13 @@ class MeshGenerator:  # noqa: C901
     def pfix(self, value):
         self.__pfix = value
 
+    ### PRIVATE METHODS ###
+    def _get_topology(self, dt):
+        """ Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
+        p = dt.get_finite_vertices()
+        t = dt.get_finite_cells()
+        return p, t
+
     ### PUBLIC METHODS ###
     def build(  # noqa: ignore=C901
         self,
@@ -144,7 +131,6 @@ class MeshGenerator:  # noqa: C901
         points=None,
         max_iter=50,
         nscreen=1,
-        plot=False,
         seed=None,
         COMM=None,
         axis=0,
@@ -152,8 +138,7 @@ class MeshGenerator:  # noqa: C901
         mesh_improvement=False,
         min_dh_bound=10,
         max_dh_bound=170,
-        improvement_method="circumsphere",  # also volume or random
-        enforce_sdf=True,  # enforce that points stay inside signed distance function
+        enforce_sdf=True,
     ):
         """
          Using callbacks to a sizing function and signed distance field build a simplical mesh.
@@ -162,8 +147,6 @@ class MeshGenerator:  # noqa: C901
         :type max_iter: int, optional
         :param nscreen: output to screen every nscreen iterations (default==1)
         :type nscreen: int, optional
-        :param plot: Visualize incremental meshes (only valid opt in 2D )(default==False)
-        :type plot: logical, optional
         :param seed: Random seed to ensure results are deterministic (default==None)
         :type seed: int, optional
         :param points: initial point distribution to commence mesh generation (default==None)
@@ -178,8 +161,8 @@ class MeshGenerator:  # noqa: C901
         :type min_dh_bound: float64, optional
         :param mesh_improvement: run 3D sliver perturbation mesh improvement (default=False)
         :type mesh_improvement: logical, optional
-        :param improvement_method: method to perturb slivers (default=circumsphere)
-        :type improvement_method: logical, optional
+        :type enforce_sdf: whether to enforce domain boundaries with SDF (default=True)
+        :param enforce_sdf: logical, optional
 
         :return: vertices of simplical mesh
         :rtype: numpy.ndarray[num_points x dimension]
@@ -201,7 +184,6 @@ class MeshGenerator:  # noqa: C901
             h0 = self.hmin
 
         _pfix = self.pfix
-        _method = self.method
         comm = COMM
         _axis = axis
         _points = points
@@ -217,7 +199,10 @@ class MeshGenerator:  # noqa: C901
             size = 1
 
         if size > 1 and mesh_improvement:
-            raise Exception("Mesh improvement only works in serial")
+            raise Exception("Mesh improvement only works in serial.")
+
+        if mesh_improvement and points is None:
+            raise Exception("Mesh improvement requires an initial point set.")
 
         # set random seed to ensure deterministic results for mesh generator
         if seed is not None:
@@ -228,14 +213,23 @@ class MeshGenerator:  # noqa: C901
         dim = int(len(bbox) / 2)
         bbox = np.array(bbox).reshape(-1, 2)
 
+        if mesh_improvement and dim == 2:
+            raise Exception("Mesh improvement currently on works in 3D")
+
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
 
+        # select back-end CGAL call
+        if dim == 2:
+            DT = DT2
+        elif dim == 3:
+            DT = DT3
+
         if _pfix is not None:
             if PARALLEL:
-                raise Exception("Fixed points aren not supported in parallel yet")
+                raise Exception("Fixed points are not yet supported in parallel.")
             else:
                 pfix = np.array(_pfix, dtype="d")
                 nfix = len(pfix)
@@ -248,11 +242,11 @@ class MeshGenerator:  # noqa: C901
             nfix = 0
 
         if _points is None:
-            # If the user has not supplied points
+            # If the user has NOT supplied points
             if PARALLEL:
                 # 1a. Localize mesh size function grid.
                 fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
-                # 1. Create initial points in parallel in local box owned by rank
+                # 1b. Create initial points in parallel in local box owned by rank
                 p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
             else:
                 # 1. Create initial distribution in bounding box (equilateral triangles)
@@ -280,6 +274,7 @@ class MeshGenerator:  # noqa: C901
         else:
             # If the user has supplied initial points
             if PARALLEL:
+                # Domain decompose and localize points
                 p = None
                 if rank == 0:
                     blocks, extents = decomp.blocker(
@@ -302,113 +297,58 @@ class MeshGenerator:  # noqa: C901
             flush=True,
         )
 
+        def dist(p1, p2):
+            return np.sqrt(((p1 - p2) ** 2).sum(1))
+
+        pold = None
         while True:
 
-            # 3. Retriangulation by the Delaunay algorithm
+            # 3. (Re)-triangulation by the Delaunay algorithm
             start = time.time()
 
-            # Using the SciPy qhull wrapper for Delaunay triangulation.
-            if _method == "qhull":
-                if PARALLEL:
-                    tria = spspatial.Delaunay(
-                        p, incremental=True, qhull_options="QJ Pp"
-                    )
-                    exports = migration.enqueue(
-                        extents, tria.points, tria.simplices, rank, size, dim=dim
-                    )
-                    recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    tria.add_points(recv, restart=True)
-                    p, t, inv = geometry.remove_external_entities(
-                        tria.points, tria.simplices, extent, dim=dim,
-                    )
-                    N = p.shape[0]
-                    recv_ix = len(recv)  # we do not allow new points to move
+            # Using CGAL's incremental Delaunay triangulation capabilities.
+            if not mesh_improvement:
+                dt = DT()
+                dt.insert(p.flatten().tolist())
+            else:
+                if count == 0:
+                    dt = DT()
+                    dt.insert(p.flatten().tolist())
                 else:
-                    # SERIAL
-                    t = spspatial.Delaunay(p).vertices  # List of triangles
-            # Using CGAL's incremental Delaunay triangulation algorithm
-            elif _method == "cgal":
-                if PARALLEL:
-                    if dim == 2:
-                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
-                        dt = DT()
-                        dt.insert(p.flatten().tolist())
-                        p = dt.get_finite_vertices()
-                        t = dt.get_finite_faces()
-                    elif dim == 3:
-                        # t = c_cgal.delaunay3(
-                        #    p[:, 0], p[:, 1], p[:, 2]
-                        # )  # List of triangles
-                        dt = DT3()
-                        dt.insert(p.flatten().tolist())
-                        p = dt.get_finite_vertices()
-                        t = dt.get_finite_cells()
+                    to_move = np.where(dist(p, pold) > 0)[0]
+                    dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
 
-                    exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
-                    recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                    if dim == 2:
-                        # p = np.concatenate((p, recv), axis=0)
-                        # t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
-                        dt.insert(recv.flatten().tolist())
-                        p = dt.get_finite_vertices()
-                        t = dt.get_finite_faces()
-                    elif dim == 3:
-                        # p = np.concatenate((p, recv), axis=0)
-                        # t = c_cgal.delaunay3(
-                        #    p[:, 0], p[:, 1], p[:, 2]
-                        # )  # List of triangles
-                        dt.insert(recv.flatten().tolist())
-                        p = dt.get_finite_vertices()
-                        t = dt.get_finite_cells()
+            # Get the current topology of the triangulation
+            p, t = self._get_topology(dt)
+            pold = p.copy()
 
-                    p, t, inv = geometry.remove_external_entities(
-                        p, t, extent, dim=dim,
-                    )
-                    N = p.shape[0]
-                    recv_ix = len(recv)  # we do not allow new points to move
-                else:
-                    # SERIAL
-                    if dim == 2:
-                        t = c_cgal.delaunay2(p[:, 0], p[:, 1])  # List of triangles
-                    elif dim == 3:
-                        t = c_cgal.delaunay3(
-                            p[:, 0], p[:, 1], p[:, 2]
-                        )  # List of triangles
+            N = p.shape[0]
 
+            if PARALLEL:
+                exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
+                recv = migration.exchange(comm, rank, size, exports, dim=dim)
+                recv_ix = len(recv)
+                dt.insert(recv.flatten().tolist())
+                p, t = self._get_topology(dt)
+                # remove entities will all vertices outside local block
+                p, t, inv = geometry.remove_external_entities(p, t, extent, dim=dim,)
+                N = p.shape[0]
+
+            # Remove vertices outside the domain
             pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
             t = t[fd(pmid) < -geps]  # Keep interior triangles
 
             # 4. Describe each bar by a unique pair of nodes
-            if dim == 2:
-                bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
-            elif dim == 3:
+            bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+            if dim == 3:
                 bars = np.concatenate(
-                    [
-                        t[:, [0, 1]],
-                        t[:, [1, 2]],
-                        t[:, [2, 0]],
-                        t[:, [0, 3]],
-                        t[:, [1, 3]],
-                        t[:, [2, 3]],
-                    ]
+                    (bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
                 )
-            bars = mutils.unique_rows(bars)  # Bars as node pairs
-            bars = bars[0]
+            bars = mutils.unique_rows(bars)[0]  # Bars as node pairs
 
-            # 5a. Graphical output of the current mesh
-            if plot and not PARALLEL:
-                if count % nscreen == 0:
-                    if dim == 2:
-                        plt.triplot(p[:, 0], p[:, 1], t)
-                        plt.title("Retriangulation %d" % count)
-                        plt.axis("equal")
-                        plt.show()
-                    elif dim == 3:
-                        plt.title("Retriangulation %d" % count)
-
-            # Periodic sliver removal
-            num_move = 0
-            if mesh_improvement and count != (max_iter - 1) and dim == 3:
+            # Sliver removal
+            if mesh_improvement and count != (max_iter - 1):
+                num_move = 0
                 # calculate dihedral angles in mesh
                 dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
                 outOfBounds = np.argwhere(
@@ -429,27 +369,10 @@ class MeshGenerator:  # noqa: C901
 
                 move = t[eleNums, 0]
                 num_move = move.size
-                if PARALLEL:
-                    g_num_move = comm.allreduce(num_move, op=MPI.SUM)
-                    if num_move == 0 and g_num_move != 1:
-                        if count % nscreen == 0:
-                            print("Rank " + str(rank) + " is locked...", flush=True)
-                        nfix = N
-                    if g_num_move == 0:
-                        if rank == 0:
-                            print(
-                                "Termination reached...No slivers detected!", flush=True
-                            )
-                        p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-                        return p, t
-                else:
-                    if num_move == 0:
-                        print("Termination reached...No slivers detected!", flush=True)
-                        if rank == 0 and perform_checks:
-                            p, t = geometry.linter(p, t, dim=dim)
-                        elif rank == 0:
-                            p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
-                        return p, t
+                if num_move == 0:
+                    print("Termination reached...No slivers detected!", flush=True)
+                    p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
+                    return p, t
 
                 p0, p1, p2, p3 = (
                     p[t[eleNums, 0], :],
@@ -458,38 +381,16 @@ class MeshGenerator:  # noqa: C901
                     p[t[eleNums, 3], :],
                 )
 
-                # perturb the points associated with the out-of-bound dihedral angle
-                if improvement_method == "random":
-                    # pertubation vector is random
-                    perturb = np.random.uniform(size=(num_move, dim), low=-1, high=1)
+                # perturb vector is based on INCREASING circumsphere's radius
+                perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+                perturb[np.isinf(perturb)] = 1.0
 
-                if improvement_method == "volume":
-                    # perturb vector is based on REDUCING slivers volume
-                    perturb = geometry.calc_volume_grad(p1, p2, p3)
-
-                if improvement_method == "circumsphere":
-                    # perturb vector is based on INCREASING circumsphere's radius
-                    perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-                    perturb[np.isinf(perturb)] = 1.0
-
-                # normalize
+                # normalize perturbation vector
                 perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
                 perturb /= perturb_norm[:, None]
 
                 # perturb % of local mesh size
-                mesh_size = h0
-                push = 0.10
-                if PARALLEL:
-                    if count < max_iter - 1:
-                        if improvement_method == "volume":
-                            p[move] -= push * mesh_size * perturb
-                        else:
-                            p[move] += push * mesh_size * perturb
-                else:
-                    if improvement_method == "volume":
-                        p[move] -= push * mesh_size * perturb
-                    else:
-                        p[move] += push * mesh_size * perturb
+                p[move] += 0.10 * h0 * perturb
 
             if not mesh_improvement:
                 # 6. Move mesh points based on bar lengths L and forces F

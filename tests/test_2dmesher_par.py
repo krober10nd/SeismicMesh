@@ -26,23 +26,8 @@ def test_2dmesher_par():
     # Build lambda functions
     ef = ef.construct_lambdas(comm)
 
-    # test qhull
-    mshgen = SeismicMesh.MeshGenerator(ef, method="qhull")
-    points, cells = mshgen.build(max_iter=100, seed=0, COMM=comm, perform_checks=True)
-    if rank == 0:
-        # import meshio
-
-        # meshio.write_points_cells(
-        #   "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk",
-        # )
-        area = SeismicMesh.geometry.simpvol(points / 1000, cells)
-        # 7658 vertices and 14965
-        assert np.abs(100 - np.sum(area)) < 0.50  # km2
-        assert np.abs(7658 - len(points)) < 20
-        assert np.abs(14965 - len(cells)) < 20
-
     # test cgal
-    mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
+    mshgen = SeismicMesh.MeshGenerator(ef)
     points, cells = mshgen.build(max_iter=100, seed=0, COMM=comm, perform_checks=True)
     if rank == 0:
         # import meshio
