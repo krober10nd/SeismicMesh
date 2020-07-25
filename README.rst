@@ -13,6 +13,11 @@
 
 .. image:: https://readthedocs.org/projects/seismicmesh/badge/?version=par3d
         :target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
+	
+.. image:: https://img.shields.io/badge/License-BSD%202--Clause-orange.svg
+	:target: https://opensource.org/licenses/BSD-2-Clause
+
+
 
 SeismicMesh_: Mesh generation for Seismology in Python
 ==============================================
