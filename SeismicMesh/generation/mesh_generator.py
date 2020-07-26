@@ -15,9 +15,11 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 # -----------------------------------------------------------------------------
 
+import math
+import time
+
 import numpy as np
 from mpi4py import MPI
-import time
 
 from . import utils as mutils
 from .. import decomp
@@ -220,6 +222,8 @@ class MeshGenerator:  # noqa: C901
         deltat = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
+        min_dh_bound *= math.pi / 180
+        max_dh_bound *= math.pi / 180
 
         # select back-end CGAL call
         if dim == 2:
@@ -344,13 +348,16 @@ class MeshGenerator:  # noqa: C901
                 bars = np.concatenate(
                     (bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
                 )
-            bars = mutils.unique_rows(bars)[0]  # Bars as node pairs
+
+            bars = mutils.unique_rows(
+                np.ascontiguousarray(bars, dtype=np.uint32)
+            )  # Bars as node pairs
 
             # Sliver removal
             if mesh_improvement and count != (max_iter - 1):
                 num_move = 0
                 # calculate dihedral angles in mesh
-                dh_angles = np.rad2deg(geometry.calc_dihedral_angles(p, t))
+                dh_angles = geometry.calc_dihedral_angles(p, t)
                 outOfBounds = np.argwhere(
                     (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
                 )
