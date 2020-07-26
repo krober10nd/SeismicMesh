@@ -5,7 +5,7 @@
 
 namespace py = pybind11;
 
-double l2_norm(std::vector<double> const& u) {
+double l2_norm(const std::array<double, 3> &u) {
     double accum = 0.;
     for (int i = 0; i < 3; ++i) {
         accum += u[i] * u[i];
@@ -13,17 +13,16 @@ double l2_norm(std::vector<double> const& u) {
     return sqrt(accum);
 }
 
-std::vector<double> cross_product(std::vector<double> &vect_A, std::vector<double> &vect_B)
+std::array<double, 3> cross_product(const std::array<double, 3> &vect_A, const std::array<double, 3> &vect_B)
 {
-    std::vector<double> cross_P;
-    cross_P.resize(3);
+    std::array<double,3> cross_P;
     cross_P[0] = vect_A[1] * vect_B[2] - vect_A[2] * vect_B[1];
     cross_P[1] = vect_A[2] * vect_B[0] - vect_A[0] * vect_B[2];
     cross_P[2] = vect_A[0] * vect_B[1] - vect_A[1] * vect_B[0];
     return cross_P;
 }
 
-double dot_product(std::vector<double> &vect_A, std::vector<double> &vect_B)
+double dot_product(const std::array<double, 3> &vect_A, const std::array<double, 3> &vect_B)
 {
     double product = 0.0;
     for (unsigned int i = 0; i < 3; i++)
@@ -41,6 +40,11 @@ std::vector<double> c_calc_dihedral_angles(std::vector<double> &points, std::vec
   std::vector<double> dh_angles;
   dh_angles.resize(num_cells*6);
 
+  std::array<double,3> p0;
+  std::array<double,3> v1;
+  std::array<double,3> v2;
+  std::array<double,3> v3;
+
   for (unsigned int c = 0; c < num_cells; ++c)
   {
     for (unsigned int i = 0; i < 6; ++i)
@@ -50,10 +54,13 @@ std::vector<double> c_calc_dihedral_angles(std::vector<double> &points, std::vec
       const std::size_t i2 = cells[4*c + edges[5 - i][0]];
       const std::size_t i3 = cells[4*c + edges[5 - i][1]];
 
-      std::vector<double> p0(points.begin()+i0*3,points.begin()+i0*3+3);
-      std::vector<double> v1(points.begin()+i1*3,points.begin()+i1*3+3);
-      std::vector<double> v2(points.begin()+i2*3,points.begin()+i2*3+3);
-      std::vector<double> v3(points.begin()+i3*3,points.begin()+i3*3+3);
+      // populate point coordinates
+      for (unsigned int j = 0; j < 3; ++j){
+          p0[j] = points[i0*3+j];
+          v1[j] = points[i1*3+j];
+          v2[j] = points[i2*3+j];
+          v3[j] = points[i3*3+j];
+      }
 
       // subtract p0 vector
       for (unsigned int j = 0; j < 3; ++j){
@@ -79,8 +86,8 @@ std::vector<double> c_calc_dihedral_angles(std::vector<double> &points, std::vec
       double v1Dotv3 = dot_product(v1,v3);
 
       // compute cross product
-      std::vector<double> v1Crossv2 = cross_product(v1,v2);
-      std::vector<double> v1Crossv3 = cross_product(v1,v3);
+      std::array<double, 3> v1Crossv2 = cross_product(v1,v2);
+      std::array<double, 3> v1Crossv3 = cross_product(v1,v3);
 
       const double norm_v1Crossv2 = l2_norm(v1Crossv2);
       const double norm_v1Crossv3 = l2_norm(v1Crossv3);
