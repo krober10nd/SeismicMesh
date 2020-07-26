@@ -34,8 +34,6 @@ def test_3dpar_mesher():
     )
     # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
-    # Build lambda functions
-    ef = ef.construct_lambdas(comm)
 
     mshgen = SeismicMesh.MeshGenerator(ef)
 

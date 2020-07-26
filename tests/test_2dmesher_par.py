@@ -23,8 +23,6 @@ def test_2dmesher_par():
         bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
     )
     ef = ef.build(comm=comm)
-    # Build lambda functions
-    ef = ef.construct_lambdas(comm)
 
     # test cgal
     mshgen = SeismicMesh.MeshGenerator(ef)

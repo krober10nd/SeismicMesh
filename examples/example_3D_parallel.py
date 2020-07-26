@@ -32,8 +32,6 @@ def example_3D_parallel():
 
     # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
-    # Build lambda functions
-    ef = ef.construct_lambdas(comm)
 
     if rank == 0:
         ef.WriteVelocityModel("EGAGE_Salt")
