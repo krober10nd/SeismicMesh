@@ -32,8 +32,6 @@ def example_3D_parallel():
 
     # Build mesh size function (in parallel)
     ef = ef.build(comm=comm)
-    # Build lambda functions
-    ef = ef.construct_lambdas(comm)
 
     if rank == 0:
         ef.WriteVelocityModel("EGAGE_Salt")
@@ -42,7 +40,7 @@ def example_3D_parallel():
     mshgen = SeismicMesh.MeshGenerator(ef)
 
     # Build the mesh (note the seed makes the result deterministic)
-    points, cells = mshgen.build(max_iter=75, seed=0, COMM=comm)
+    points, cells = mshgen.build(max_iter=75, seed=0, COMM=comm, axis=1)
 
     if rank == 0:
 

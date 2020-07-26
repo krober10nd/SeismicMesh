@@ -80,13 +80,11 @@ def __setdiff_rows(A, B, return_index=False):
         return C
 
 
-def unique_rows(a):
-    # The cleaner alternative `numpy.unique(a, axis=0)` is slow; cf.
-    # <https://github.com/numpy/numpy/issues/11136>.
-    b = np.ascontiguousarray(a).view(np.dtype((np.void, a.dtype.itemsize * a.shape[1])))
-    a_unique, inv, cts = np.unique(b, return_inverse=True, return_counts=True)
-    a_unique = a_unique.view(a.dtype).reshape(-1, a.shape[1])
-    return a_unique, inv, cts
+def unique_rows(ar):
+    ar_row_view = ar.view("|S%d" % (ar.itemsize * ar.shape[1]))
+    _, unique_row_indices = np.unique(ar_row_view, return_index=True)
+    ar_out = ar[unique_row_indices]
+    return ar_out
 
 
 def dense(Ix, J, S, shape=None, dtype=None):

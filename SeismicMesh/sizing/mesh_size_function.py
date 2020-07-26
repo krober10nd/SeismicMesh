@@ -484,9 +484,11 @@ class MeshSizeFunction:
                     self.fd = lambda p: fdd(p)
                 if _dim == 3:
                     self.fd = lambda p: fdd2(p)
+        if size > 1:
+            self._construct_lambdas(comm)
         return self
 
-    def construct_lambdas(self, comm):
+    def _construct_lambdas(self, comm):
         """
         Build lambda fields (for parallel only) for
         SDF and mesh size function
