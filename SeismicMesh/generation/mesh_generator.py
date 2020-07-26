@@ -133,8 +133,8 @@ class MeshGenerator:  # noqa: C901
         points=None,
         max_iter=50,
         nscreen=1,
-        seed=None,
-        COMM=None,
+        seed=0,
+        comm=None,
         axis=0,
         perform_checks=False,
         mesh_improvement=False,
@@ -149,12 +149,12 @@ class MeshGenerator:  # noqa: C901
         :type max_iter: int, optional
         :param nscreen: output to screen every nscreen iterations (default==1)
         :type nscreen: int, optional
-        :param seed: Random seed to ensure results are deterministic (default==None)
+        :param seed: Random seed to ensure results are deterministic (default==0)
         :type seed: int, optional
         :param points: initial point distribution to commence mesh generation (default==None)
         :type points: numpy.ndarray[num_points x dimension], optional
-        :param COMM: communicator for parallel execution (default==None)
-        :type COMM: MPI4py communicator object generated when initializing MPI environment, required if parallel.
+        :param comm: communicator for parallel execution (default==None)
+        :type comm: MPI4py communicator object generated when initializing MPI environment, optional.
         :param axis: axis to decomp the domain wrt for parallel execution (default==0)
         :type axis: int, required if parallel.
         :param perform_checks: run serial mesh linting (default==False)
@@ -171,6 +171,7 @@ class MeshGenerator:  # noqa: C901
         :return: cells of simplicial mesh
         :rtype: numpy.ndarray[num_cells x (dimension + 1)]
         """
+        comm = comm or MPI.COMM_WORLD
         if self.SizingFunction is not None:
             # if :class:`SizingFunction` is passed, grab that data.
             _ef = self.SizingFunction
@@ -186,12 +187,11 @@ class MeshGenerator:  # noqa: C901
             h0 = self.hmin
 
         _pfix = self.pfix
-        comm = COMM
         _axis = axis
         _points = points
 
         # configure parallel computing env.
-        if comm is not None:
+        if comm.size > 1:
             PARALLEL = True
             rank = comm.Get_rank()
             size = comm.Get_size()
@@ -200,17 +200,19 @@ class MeshGenerator:  # noqa: C901
             rank = 0
             size = 1
 
-        if size > 1 and mesh_improvement:
-            raise Exception("Mesh improvement only works in serial.")
+        if mesh_improvement and comm.size > 1:
+            PARALLEL = False
+            if rank > 0:
+                # all ranks exit!
+                return True, True
 
         if mesh_improvement and points is None:
             raise Exception("Mesh improvement requires an initial point set.")
 
         # set random seed to ensure deterministic results for mesh generator
-        if seed is not None:
-            if rank == 0:
-                print("Setting psuedo-random number seed to " + str(seed), flush=True)
-            np.random.seed(seed)
+        if rank == 0:
+            print("Setting psuedo-random number seed to " + str(seed), flush=True)
+        np.random.seed(seed)
 
         dim = int(len(bbox) / 2)
         bbox = np.array(bbox).reshape(-1, 2)

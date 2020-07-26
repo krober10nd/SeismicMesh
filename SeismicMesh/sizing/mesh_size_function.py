@@ -17,6 +17,7 @@
 
 import warnings
 
+from mpi4py import MPI
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from scipy import ndimage
@@ -342,6 +343,7 @@ class MeshSizeFunction:
         """Builds the isotropic mesh size function according
             to the user arguments that were passed.
         """
+        comm = comm or MPI.COMM_WORLD
         if comm is not None:
             rank = comm.Get_rank()
             size = comm.Get_size()
@@ -516,46 +518,48 @@ class MeshSizeFunction:
             self.fd = lambda p: fdd2(p)
         return self
 
-    def plot(self, stride=5):
+    def plot(self, stride=5, comm=None):
         """ Plot the isotropic mesh size function"""
-        _dim = self.dim
-        _fh = self.fh
-        _domain_ext = self.domain_ext
-        _width = self.width
-        _depth = self.depth
+        comm = comm or MPI.COMM_WORLD
+        if comm.rank == 0:
+            _dim = self.dim
+            _fh = self.fh
+            _domain_ext = self.domain_ext
+            _width = self.width
+            _depth = self.depth
 
-        if _dim == 2:
-            zg, xg = self.__CreateDomainMatrices()
-            sz1z, sz1x = zg.shape
-            _zg = np.reshape(zg, (-1, 1))
-            _xg = np.reshape(xg, (-1, 1))
-            hh = _fh((_zg, _xg))
-            hh = np.reshape(hh, (sz1z, sz1x))
+            if _dim == 2:
+                zg, xg = self.__CreateDomainMatrices()
+                sz1z, sz1x = zg.shape
+                _zg = np.reshape(zg, (-1, 1))
+                _xg = np.reshape(xg, (-1, 1))
+                hh = _fh((_zg, _xg))
+                hh = np.reshape(hh, (sz1z, sz1x))
 
-            fig, ax = plt.subplots()
-            plt.pcolormesh(
-                xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none"
-            )
-            if _domain_ext > 0:
-                rect = plt.Rectangle(
-                    (0, -_depth + _domain_ext),
-                    _width - 2 * _domain_ext,
-                    _depth - _domain_ext,
-                    fill=False,
-                    edgecolor="black",
+                fig, ax = plt.subplots()
+                plt.pcolormesh(
+                    xg[0::stride], zg[0::stride], hh[0::stride], edgecolors="none"
                 )
-                ax.add_patch(rect)
+                if _domain_ext > 0:
+                    rect = plt.Rectangle(
+                        (0, -_depth + _domain_ext),
+                        _width - 2 * _domain_ext,
+                        _depth - _domain_ext,
+                        fill=False,
+                        edgecolor="black",
+                    )
+                    ax.add_patch(rect)
 
-            plt.title("Isotropic mesh sizes")
-            plt.colorbar(label="mesh size (m)")
-            plt.xlabel("x-direction (km)")
-            plt.ylabel("z-direction (km)")
-            ax.axis("equal")
-            # ax.set_xlim(0 - _domain_ext, _width)
-            # ax.set_ylim(-_depth, 0)
-            plt.show()
-        elif _dim == 3:
-            print("visualization in 3D not yet supported!")
+                plt.title("Isotropic mesh sizes")
+                plt.colorbar(label="mesh size (m)")
+                plt.xlabel("x-direction (km)")
+                plt.ylabel("z-direction (km)")
+                ax.axis("equal")
+                # ax.set_xlim(0 - _domain_ext, _width)
+                # ax.set_ylim(-_depth, 0)
+                plt.show()
+            elif _dim == 3:
+                print("visualization in 3D not yet supported!")
         return None
 
     def GetDomainMatrices(self):
@@ -585,52 +589,57 @@ class MeshSizeFunction:
             fun_s = np.reshape(tmp, (_nx, _ny, _nz), "F")
         return fun_s
 
-    def WriteVelocityModel(self, ofname):
+    def WriteVelocityModel(self, ofname, comm=None):
         """ Writes a velocity model as a hdf5 file for use in Spyro """
-        _dim = self.dim
-        _vp = self.vp
-        _nz = self.nz
-        _nx = self.nx
-        _domain_ext = self.domain_ext
-        _spacing = self.spacing
-        _padstyle = self.padstyle
-        nnx = int(_domain_ext / _spacing)
-        # create domain extension in velocity model
-        if _dim == 2:
-            mx = np.amax(_vp)
-            if _padstyle == "edge":
-                _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
-            elif _padstyle == "constant":
-                # set to maximum value in domain
-                _vp = np.pad(
-                    _vp, ((nnx, 0), (nnx, nnx)), "constant", constant_values=(mx, mx)
-                )
-            elif _padstyle == "linear_ramp":
-                # linearly ramp to maximum value in domain
-                _vp = np.pad(
-                    _vp, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
-                )
-        if _dim == 3:
-            _vp = np.pad(_vp, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
-
-        _nz += nnx  # only bottom
-        _nx += nnx * 2  # left and right
-        if _dim == 3:
-            _ny = self.ny
-            _ny += nnx * 2  # behind and in front
-
-        model_fname = self.model
-        ofname += ".hdf5"
-        print("Writing velocity model " + ofname, flush=True)
-        print(_vp.shape, flush=True)
-        with h5py.File(ofname, "w") as f:
-            f.create_dataset("velocity_model", data=_vp, dtype="f")
+        comm = comm or MPI.COMM_WORLD
+        if comm.rank == 0:
+            _dim = self.dim
+            _vp = self.vp
+            _nz = self.nz
+            _nx = self.nx
+            _domain_ext = self.domain_ext
+            _spacing = self.spacing
+            _padstyle = self.padstyle
+            nnx = int(_domain_ext / _spacing)
+            # create domain extension in velocity model
             if _dim == 2:
-                f.attrs["shape"] = (_nz, _nx)
-            elif _dim == 3:
-                f.attrs["shape"] = (_nz, _nx, _ny)
-            f.attrs["units"] = "m/s"
-            f.attrs["source"] = model_fname
+                mx = np.amax(_vp)
+                if _padstyle == "edge":
+                    _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
+                elif _padstyle == "constant":
+                    # set to maximum value in domain
+                    _vp = np.pad(
+                        _vp,
+                        ((nnx, 0), (nnx, nnx)),
+                        "constant",
+                        constant_values=(mx, mx),
+                    )
+                elif _padstyle == "linear_ramp":
+                    # linearly ramp to maximum value in domain
+                    _vp = np.pad(
+                        _vp, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
+                    )
+            if _dim == 3:
+                _vp = np.pad(_vp, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+
+            _nz += nnx  # only bottom
+            _nx += nnx * 2  # left and right
+            if _dim == 3:
+                _ny = self.ny
+                _ny += nnx * 2  # behind and in front
+
+            model_fname = self.model
+            ofname += ".hdf5"
+            print("Writing velocity model " + ofname, flush=True)
+            print(_vp.shape, flush=True)
+            with h5py.File(ofname, "w") as f:
+                f.create_dataset("velocity_model", data=_vp, dtype="f")
+                if _dim == 2:
+                    f.attrs["shape"] = (_nz, _nx)
+                elif _dim == 3:
+                    f.attrs["shape"] = (_nz, _nx, _ny)
+                f.attrs["units"] = "m/s"
+                f.attrs["source"] = model_fname
 
     def SaveMeshSizeFunctionOptions(self, ofname):
         " Save your mesh size function options as a hdf5 file" ""
