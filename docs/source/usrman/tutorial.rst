@@ -3,11 +3,22 @@ Tutorial
 ========
 
 *SeismicMesh* supports the generation of both 2D and 3D meshes in
-either serial or parallel. It also supports the generation of
-complex mesh sizing function that are relevant to Seismology. Here we show how to use it.
+either serial or parallel from seismic velocity models. It also supports the generation of
+complex mesh sizing functions that are relevant to seismologic applications.
 
-Here I show how to build a 2D mesh adapted to the BP2004 benchmark model. The code and calls extend to 3D simply.
-For a 3D example, see the file example/example_3D.py
+Here I show how to build a 2D mesh adapted to the BP2004 benchmark model. The same code extends to 3D.
+For a 3D example, see the file ``example/example_3D.py``
+
+Parallelism is activated by importing ``mpi4py`` and declaring the following three lines near the top of the script::
+
+    from mpi4py import MPI
+
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+Othersie, the application program interface is the same between serial and parallel execution.
+
 
 .. warning::
 
@@ -15,11 +26,12 @@ For a 3D example, see the file example/example_3D.py
 
 Data
 --------
+
 Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
 
     wget http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz
 
-See instructions at the link https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
+For more instructions, see the link https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
 
 
 Things to know
@@ -41,7 +53,7 @@ class along with the domain extents ::
         other-args-go-here,...
     )
 
-* If the user uses the *MeshSizeFunction* class, the software makes the assumption the domain can be approximated by a rectangle/cube. Thus, the user specifies the domain geometry as a tuple of coordinates in meters::
+* If the user uses the *MeshSizeFunction* class, the software makes the assumption the domain can be approximated by a rectangle/cube. Thus, the user specifies the domain geometry as a tuple of coordinates in meters representing the corners of the domain::
 
 .. math::
 
@@ -63,9 +75,9 @@ class along with the domain extents ::
 Mesh size function
 -------------------------------------------
 
-Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`. The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism. Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.
+Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing map returns the desired mesh size :mod:`h`. The mesh sizing capability provides a method to draft new meshes in a consistent and repeatable manner from available seismic velocity models. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism. Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.
 
-The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., polynomial order,timestepping method, etc.), and the computational cost of the model. In the following sub-sections, each mesh strategy is described briefly and how to use it.
+The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model. In the following sub-sections, each mesh strategy is described briefly and how to use it by calling the :class:`MeshSizeFunction` class constructor.
 
 
 Wavelength-to-gridscale
@@ -91,7 +103,7 @@ The user is able to specify the number of vertices per wavelength :math:`\alpha_
 Resolving seismic velocity gradients
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Seismic domains are known for sharp gradients in material properties. These sharp gradients lead to reflections and refractions in propagated waves, which are critical for succesful imaging. Thus, finer mesh resolution can be deployed inversely proportional to the local standard deviation of P-wave velocity. The local standard deviation of seismic P-wave velocity is calculated in a sliding window around each point on the velocity model. The user chooses the mapping relationship between the local standard deviation of the seismic velocity model and the values of the corresponding mesh size nearby it. This parameter is referred to as the :math:`grad` and is specified in meters.
+Seismic domains are known for sharp gradients in material properties. These sharp gradients lead to reflections and refractions in propagated waves, which are critical for successful imaging. Thus, finer mesh resolution can be deployed inversely proportional to the local standard deviation of P-wave velocity. The local standard deviation of seismic P-wave velocity is calculated in a sliding window around each point on the velocity model. The user chooses the mapping relationship between the local standard deviation of the seismic velocity model and the values of the corresponding mesh size nearby it. This parameter is referred to as the :math:`grad` and is specified in meters.
 For instance a :math:`grad` of 50, would imply that the largest gradient in seismic P-wave velocity is mapped to a minimum resolution of 50-m.::
 
     import SeismicMesh
@@ -108,24 +120,24 @@ For instance a :math:`grad` of 50, would imply that the largest gradient in seis
 
 .. note:
 
-    The map of the local standard deviation of the gradient is normalized to an interval of :math:`[0,1]` so that the largest gradient is assigned the mesh resolution indicated by :math`grad` and all other grad-to-mesh-sizes are associated using a linear relationship (with a slope of 1 and y-intercept of 0).
+    The mapping of the local standard deviation of the gradient of seismic velocity is normalized to an interval of :math:`[0,1]` so that the largest gradient is assigned the mesh resolution indicated by :math`grad` and all other grad-to-mesh-sizes are associated using a linear relationship (with a slope of 1 and y-intercept of 0).
 
 
 
 Courants-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Almost all numerical wave propagators are explicit in the seismic domain. The major advantage for these methods is computational speed. However, all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey condition. Ignoring this condition will lead to a numerical instability and a useless simulation. One thing we must be careful of when using the above mesh size functions is that the CFL condition is indeed bounded.
+Almost all numerical wave propagators are explicit in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerical instability and a useless simulation. One thing we must be careful of when using the above mesh size functions is that the CFL condition is indeed bounded.
 
 After sizing functions have been activated, a conservative maximum Courant number is enforced.
 
-For the 2D linear acoustic wave equation assuming isotropic mesh resolution, the CFL condition is described by
+For the linear acoustic wave equation assuming isotropic mesh resolution, the CFL condition is commonly described by
 
 .. math::
 
     C_{r}(x) = \frac{(\Delta t*v_p(x))}{dim*h(x)}
 
-where :math:`h` is the diameter of the circumball that inscribes the element either calculated from :math:`f(h)` or from the actual mesh cells, :math:`dim` is the spatial dimension of the problem (2 or 3), :math:`\Delta t` is the intended simulation time step in seconds and :math:`v_p` is the seismic P-wave velocity. The above equation can be rearranged to find the minimum mesh size possible for a given :math:`v_p` and :math:`\Delta t`, based on some user-defined value of :math:`Cr \leq 1`. If there are any violations of the CFL, they are edited to satisfy that the maximum :math:`Cr` is less than some conservative threshold. We normally apply :math:`Cr = 0.5`, which provides a solid buffer but this can but this can be controlled by the user like the following::
+where :math:`h` is the diameter of the circumball that inscribes the element either calculated from :math:`f(h)` or from the actual mesh cells, :math:`dim` is the spatial dimension of the problem (2 or 3), :math:`\Delta t` is the intended simulation time step in seconds and :math:`v_p` is the local seismic P-wave velocity. The above equation can be rearranged to find the minimum mesh size possible for a given :math:`v_p` and :math:`\Delta t`, based on some user-defined value of :math:`Cr \leq 1`. If there are any violations of the CFL, they can bed edited before building the mesh so to satisfy that the maximum :math:`Cr` is less than some conservative threshold. We normally apply :math:`Cr = 0.5`, which provides a solid buffer but this can but this can be controlled by the user like the following::
 
     import SeismicMesh
     fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
@@ -140,7 +152,7 @@ where :math:`h` is the diameter of the circumball that inscribes the element eit
         ...
     )
 
-The space order of the method (:math:`p`) can also be incorporated into the above formula to consider for the numerics that the simulation will use::
+Further, the space order of the method (:math:`p`) can also be incorporated into the above formula to consider for the numerics that the simulation will use::
 
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
@@ -151,13 +163,13 @@ The space order of the method (:math:`p`) can also be incorporated into the abov
         ...
     )
 
-This implies that the simulation will use quadratic elements, and thus will ensure the :math:`Cr_{max}` is divided by :math:`\frac{1}{space\_order}`
+This implies that the mesh will be used in a simulation with :math:`P=2` quadratic elements, and thus will ensure the :math:`Cr_{max}` is divided by :math:`\frac{1}{space\_order}`
 
 
 Mesh size gradation
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-In regions where there are sharp material contrasts, the variation in element size can become substantially large, especially using the aforementioned sizing strategies such as the wavelength-to-gridscale. When attempting to construct a mesh with such large spatial variations in mesh sizes, it would result in low-geometric quality elements that compromise the numerical stability of a model.
+In regions where there are sharp material contrasts, the variation in element size can become substantially large, especially using the aforementioned sizing strategies such as the wavelength-to-gridscale. Attempting to construct a mesh with such large spatial variations in mesh sizes would result in low-geometric quality elements that compromise the numerical stability of a model.
 
 Thus, the final stage of the development of a mesh size function :math:`h(x)` involves ensuring a size smoothness limit, :math:`g` such that for any two points :math:`x_i`, :math:`x_j`, the local increase in size is bounded such as:
 
@@ -179,25 +191,60 @@ We adopt the method to smooth the mesh size function originally proposed by [gra
        ...
    )
 
+Domain extension
+^^^^^^^^^^^^^^^^^^^
+
+.. note::
+
+    It is assumed that the top side of the domain represents the free-surface thus no domain extension is applied there.
+
+In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce abosrbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
+
+   import SeismicMesh
+   fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+   bbox = (-12e3, 0, 0, 67e3)
+
+   # Construct mesh sizing object from velocity model
+   ef = SeismicMesh.MeshSizeFunction(
+       bbox=bbox,
+       model=fname,
+       domain_extension=250, # domain will be extended by 250-m on all three sides
+       ...
+   )
+
+
+
+In this domain extension region, mesh resolution can be adapted according to following three different styles.
+
+ * ``Linear`` - extends the seismic velocities on the edges of the domain linearly into the domain extension.
+
+ * ``Constant`` - places a constant velocity of 4000 m/s in the domain extension.
+
+ * ``Edge`` - reflects the seismic velocity about the domain boundary so that velocity profile is symmetric.
+
+An example of the ``edge`` style is below::
+
+   # Construct mesh sizing object from velocity model
+   ef = SeismicMesh.MeshSizeFunction(
+       bbox=bbox,
+       model=fname,
+       domain_extension=250, # domain will be extended by 250-m on all three sides
+       padstyle="edge", # velocity will be reflected about the edges of the domain
+       ...
+   )
+
+.. note::
+
+    In our experience, the ``edge`` option works the best at reducing reflections with absorbing boundary conditions.
+
+
 
 Mesh generation
 -------------------------------------------
 
 .. warning:
-    Connectivity can be made fully deterministic by specifying the argument `seed=0` to the generator. This ensures that all
-    stochastic operations will be repeated in the same way using the same `seed`.
-
-.. note:
-    Parallelism is activated by passing the :mod:`COMM` to the *MeshSizeFunction* constructor ::
-
-  ef = ef.build(comm=COMM)
-  ef = ef.construct_lambdas(COMM)
-
-    and also to the *MeshGenerator* constructor ::
-
-  mshgen = SeismicMesh.MeshGenerator(ef, method="cgal")
-  points, cells = mshgen.build(COMM=COMM)
-
+    Connectivity is made approximately deterministic as each instance of mesh generatio uses
+    the same ``seed=0``.
 
 2D Mesh generation
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -214,10 +261,8 @@ Mesh improvement
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 
-Application
--------------
-
-A simple scalar wave equation can be modeled using the Firedrake [firedrake]_ package with a mesh generated from *SeismicMesh* in the following code.
+Creating your own signed distance functions
+-----------------------------------------------
 
 
 References

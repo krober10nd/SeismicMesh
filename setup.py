@@ -89,6 +89,7 @@ setup(
         "pybind11",
         "matplotlib",
         "mpi4py",
+        "scikit-fmm",
     ],
     packages=find_packages(),
     package_data={"SeismicMesh": files},
