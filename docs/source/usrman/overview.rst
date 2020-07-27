@@ -132,11 +132,6 @@ When constructing models at scale, the primary computational bottleneck in the *
 
 When possible, *SeismicMesh* uses low-level functionality from the CGAL package including the evalulation of geometric predicates, circumball calculations, polygonal intersection tests, and incremental triangulation capabilities.
 
-Application to Seismology
-------------------------------
-
-.. warning ::
-    WIP
 
 References
 -------------------------------------------
