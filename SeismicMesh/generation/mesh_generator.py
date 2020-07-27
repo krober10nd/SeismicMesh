@@ -108,7 +108,6 @@ class MeshGenerator:  # noqa: C901
 
     @hmin.setter
     def hmin(self, value):
-        assert value > 0.0, "hmin must be non-zero"
         self.__hmin = value
 
     @property
