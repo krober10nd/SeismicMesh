@@ -552,8 +552,8 @@ class MeshSizeFunction:
 
                 plt.title("Isotropic mesh sizes")
                 plt.colorbar(label="mesh size (m)")
-                plt.xlabel("x-direction (km)")
-                plt.ylabel("z-direction (km)")
+                plt.xlabel("x-direction (m)")
+                plt.ylabel("z-direction (m)")
                 ax.axis("equal")
                 # ax.set_xlim(0 - _domain_ext, _width)
                 # ax.set_ylim(-_depth, 0)

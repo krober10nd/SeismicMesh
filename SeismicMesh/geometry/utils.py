@@ -1,5 +1,8 @@
+from mpi4py import MPI
 import scipy.sparse as spsparse
+from scipy.interpolate import RegularGridInterpolator
 import numpy as np
+import skfmm
 
 from . import signed_distance_functions as sdf
 
@@ -9,6 +12,135 @@ from ..generation.cpp import c_cgal
 
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant
+
+
+class SignedDistanceFunctionGenerator:
+    """Tool used to build signed distance functions
+       from seismic velocity models.
+    """
+
+    def __init__(
+        self,
+        field=None,
+        min_threshold=1487,
+        max_threshold=99999.0,
+        bbox=None,
+        gridspacing=None,
+        method="union",
+        narrow=0.0,
+        comm=None,
+    ):
+        """Class constructor for :class:`SignedDistanceFunctionGenerator`
+
+        :param field: seismic velocity model on a structured grid
+        :type field: array-like with dimensions (nz, nx) or (nz, nx, ny)
+        :param min_threshold: seismic velocity min threshold (default=1487 m/s) for which all values > threshold will be meshed
+        :type min_threshold: float, optional
+        :param max_threshold: seismic velocity max. threshold (default=99999 m/s) for which all values < threshold will be meshed
+        :param bbox: bounding box containing domain extents.
+        :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+        :param gridspacing: space between points of seismic velocity model in meters, required
+        :param gridspacing: tuple with size (dim)
+        :param method: method used to combine subsection with bounding box. Currently only the default==union.
+        :type method: string, optional
+        :type narrow: only calculate SDF within a region close to the isocontour default=0.0 i.e., calc'ed everywhere
+        :param narrow: float64, optional
+        :param comm: MPI4py communicator default==None
+        :type comm: MPI4py communicator object, optional
+
+        """
+        self.field = field
+        self.min_threshold = min_threshold
+        self.max_threshold = max_threshold
+        self.bbox = bbox
+        self.gridspacing = gridspacing
+        self.method = method
+        self.narrow_band = narrow
+        self.SDF = None
+
+        comm = comm or MPI.COMM_WORLD
+
+        if comm.rank == 0:
+            print("Building a custom signed distance function...", flush=True)
+
+            if field is None:
+                raise ValueError(
+                    "field must be specified as a grid of values (e.g., vp)."
+                )
+
+            if bbox is None:
+                raise ValueError(
+                    "bbox must be a tuple of corner extents in z --> x --> fashion"
+                )
+            dim = int(len(bbox) / 2)
+            if dim < 2 or dim > 3:
+                raise ValueError("dimension is invalid, is bbox specified correctly?")
+            if gridspacing is None or len(gridspacing) < (dim - 1):
+                raise ValueError("gridspacing must be larger than 0.")
+
+            if dim == 2:
+                nz, nx = self.field.shape
+            elif dim == 3:
+                nz, nx, ny = self.field.shape
+
+            # create a field to apply to fast marching method
+            phi = np.ones_like(self.field)
+            phi[
+                np.logical_and(
+                    self.field > self.min_threshold, self.field < self.max_threshold
+                )
+            ] = -1
+            # call fast marching method
+            d = skfmm.distance(phi, [*self.gridspacing], narrow=self.narrow_band)
+            if self.narrow_band > 0:
+                d[d > self.narrow_band] = self.narrow_band
+                d[d < -self.narrow_band] = -self.narrow_band
+
+            # create the grid vectors
+            if dim == 2:
+                zvec = np.linspace(self.bbox[0], self.bbox[1], nz)
+                xvec = np.linspace(self.bbox[2], self.bbox[3], nx)
+                z, x = np.meshgrid(zvec, xvec)
+                interpolant = RegularGridInterpolator(
+                    (zvec, xvec), d, bounds_error=False, fill_value=None
+                )
+            if dim == 3:
+                zvec = np.linspace(self.bbox[0], self.bbox[1], nz)
+                xvec = np.linspace(self.bbox[2], self.bbox[3], nx)
+                yvec = np.linspace(self.bbox[4], self.bbox[5], ny)
+                x, y, z = np.meshgrid(xvec, yvec, zvec)
+                interpolant = RegularGridInterpolator(
+                    (zvec, xvec, yvec), d, bounds_error=False, fill_value=None
+                )
+
+            # interpolant of level-set
+            def SDF1(p):
+                return interpolant(p)
+
+            # primary interpolant of box
+            if dim == 2:
+
+                def SDF2(p):
+                    return sdf.drectangle(p, *self.bbox)
+
+            elif dim == 3:
+
+                def SDF2(p):
+                    return sdf.dblock(p, *self.bbox)
+
+            # intersect with box
+            if method == "union":
+
+                def SDF(p):
+                    d = np.stack((SDF1(p), SDF2(p)), axis=-1)
+                    return np.amax(d, 1)
+
+                self.SDF = SDF
+
+            else:
+                raise NotImplementedError(
+                    "Other methods not yet supported besides union"
+                )
 
 
 def calc_re_ratios(vertices, entities):

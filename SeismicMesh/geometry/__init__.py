@@ -21,6 +21,7 @@ from .utils import (
     delete_boundary_entities,
     vtInEntity3,
 )
+from .utils import SignedDistanceFunctionGenerator
 from .cpp.fast_geometry import (
     calc_volume_grad,
     calc_circumsphere_grad,
@@ -30,6 +31,7 @@ from .cpp.fast_geometry import (
 )
 
 __all__ = [
+    "SignedDistanceFunctionGenerator",
     "calc_re_ratios",
     "calc_volume_grad",
     "calc_circumsphere_grad",

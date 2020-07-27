@@ -60,7 +60,7 @@ class MeshGenerator:  # noqa: C901
         self.fd = fd
         self.fh = fh
         self.bbox = bbox
-        self.h0 = hmin
+        self.hmin = hmin
         self.pfix = pfix
 
     # SETTERS AND GETTERS
