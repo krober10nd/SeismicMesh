@@ -40,11 +40,11 @@ class SignedDistanceFunctionGenerator:
         :param bbox: bounding box containing domain extents.
         :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
         :param gridspacing: space between points of seismic velocity model in meters, required
-        :param gridspacing: tuple with size (dim)
+        :type gridspacing: tuple with size (dim)
         :param method: method used to combine subsection with bounding box. Currently only the default==union.
         :type method: string, optional
-        :type narrow: only calculate SDF within a region close to the isocontour default=0.0 i.e., calc'ed everywhere
-        :param narrow: float64, optional
+        :param narrow: only calculate SDF within a region close to the isocontour default=0.0 i.e., calc'ed everywhere
+        :type narrow: float64, optional
         :param comm: MPI4py communicator default==None
         :type comm: MPI4py communicator object, optional
 
@@ -83,7 +83,6 @@ class SignedDistanceFunctionGenerator:
             elif dim == 3:
                 nz, nx, ny = self.field.shape
 
-            # create a field to apply to fast marching method
             phi = np.ones_like(self.field)
             phi[
                 np.logical_and(
