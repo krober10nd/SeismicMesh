@@ -81,7 +81,7 @@ class SignedDistanceFunctionGenerator:
             if dim == 2:
                 nz, nx = self.field.shape
             elif dim == 3:
-                nz, nx, ny = self.field.shape
+                nx, ny, nz = self.field.shape
 
             phi = np.ones_like(self.field)
             phi[
@@ -108,6 +108,7 @@ class SignedDistanceFunctionGenerator:
                 xvec = np.linspace(self.bbox[2], self.bbox[3], nx)
                 yvec = np.linspace(self.bbox[4], self.bbox[5], ny)
                 x, y, z = np.meshgrid(xvec, yvec, zvec)
+                d = d.transpose((2, 0, 1))
                 interpolant = RegularGridInterpolator(
                     (zvec, xvec, yvec), d, bounds_error=False, fill_value=None
                 )
