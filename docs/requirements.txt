@@ -4,3 +4,4 @@ segyio
 matplotlib
 meshio==4.0.10
 pybind11==2.5.0
+scikit-fmm
