@@ -93,7 +93,7 @@ class SignedDistanceFunctionGenerator:
             d = skfmm.distance(phi, [*self.gridspacing], narrow=self.narrow_band)
             if self.narrow_band > 0:
                 d[d > self.narrow_band] = self.narrow_band
-                d[d < -self.narrow_band] = -self.narrow_band
+                d[d < -self.narrow_ba] = -self.narrow_band
 
             # create the grid vectors
             if dim == 2:

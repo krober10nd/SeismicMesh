@@ -135,7 +135,6 @@ def enqueue(extents, points, faces, rank, size, dim=2):
 
     vtoe, ptr = geometry.vertex_to_entities(points, faces, dim=dim)
 
-    # expand to avoid intersections in ghost zones...
     if dim == 2:
         exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
     elif dim == 3:

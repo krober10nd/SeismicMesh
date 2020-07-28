@@ -207,6 +207,10 @@ std::vector<double> c_where_to3(std::vector<double> &points, std::vector<int> &f
             Point3 pnm3 = Point3(points[nm3*3], points[nm3*3+1], points[nm3*3+2]);
             Point3 pnm4 = Point3(points[nm4*3], points[nm4*3+1], points[nm4*3+2]);
 
+            if(volume(pnm1, pnm2, pnm3, pnm4) == 0){
+                continue;
+            }
+
             bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
 
             if(isCoplanar){

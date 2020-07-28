@@ -325,6 +325,7 @@ class MeshGenerator:  # noqa: C901
 
             # Get the current topology of the triangulation
             p, t = self._get_topology(dt)
+
             pold = p.copy()
 
             N = p.shape[0]
@@ -404,6 +405,7 @@ class MeshGenerator:  # noqa: C901
                 # 6. Move mesh points based on bar lengths L and forces F
                 barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
                 L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
+                L[L == 0] = np.finfo(float).eps
                 hbars = fh(p[bars].sum(1) / 2)
                 L0 = (
                     hbars
@@ -439,8 +441,8 @@ class MeshGenerator:  # noqa: C901
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
 
-            if PARALLEL and count is max_iter - 2:
-                enforce_sdf = False
+            # if PARALLEL and count is max_iter - 2:
+            #   enforce_sdf = False
 
             if ix.any() and enforce_sdf:
 
