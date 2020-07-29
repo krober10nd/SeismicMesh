@@ -9,6 +9,8 @@ from SeismicMesh.geometry import (
 # signed distance function. It constructs a mesh of the BP2004 model
 # without a water layer by thresholding the velocity model.
 
+# The velocity model can be downloaded from here: https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
+
 
 # Name of SEG-Y file containg velocity model.
 fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
