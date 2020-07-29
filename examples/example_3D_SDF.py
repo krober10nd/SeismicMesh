@@ -11,8 +11,9 @@ rank = comm.Get_rank()
 hmin = 0.10
 bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 
+# This examples builds a small and simple cylinder in either serial or parallel. 
 
-# signed distancem function
+# signed distance function for a cylinder
 def fd(p):
     # sizing function of a cylinder in [-1., -1., -.1] x [1., 1., 1.]
     r, z = np.sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
