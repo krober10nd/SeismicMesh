@@ -19,7 +19,7 @@ class SignedDistanceFunctionGenerator:
        from seismic velocity models.
     """
 
-    def __init__(
+    def __init__(  # noqa: ignore=C901
         self,
         field=None,
         min_threshold=1487,
@@ -227,8 +227,38 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     return vertices_new, entities_new, jx
 
 
-def entities_to_entities(entities, dim=2):
-    """Determine which elements are connected to which elements"""
+#def cells_to_cells(t, dim=2):
+#    """Determine which cells are connected to which cells
+#    if an element shares an edge then it is a neighbor
+#    returns element-to-element connectivity in crs format.
+#    triangle ie is connected to etoe(idx(ie):idx(ie+1)-1,2) triangles
+#    """
+#    if dim == 3:
+#        raise NotImplementedError("currently doesn't work in 3d")
+#    t = np.sort(t, axis=1)
+#    edges = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+#    if dim == 3:
+#        edges = np.concatenate(
+#            (edges, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
+#        )
+#    nt = np.shape(t)[0]
+#    trinum = np.tile(np.arange(nt), 3)
+#    _, tags = np.sort(edges * [2 ^ 31, 1])
+#    edges = edges[tags]
+#    trinum = trinum[tags]
+#    # [~,tags]=sort(edges*[2^31;1]);
+#    # edges=edges(tags,:);
+#    #%[edges,tags] = sortrows(edges);
+#    # trinum = trinum(tags);
+#    # k = find(all(diff(edges,1)==0,2));
+#    # etoe=trinum([k,k+1]);
+#    # [~,dmy1]=sort(etoe(:,1));[~,dmy2]=sort(etoe(:,2));
+#    #% use sort by converting edges to bytes for speed
+#    # temp=[etoe(dmy1,:); fliplr(etoe(dmy2,:)); (1:nt)',(1:nt)'];
+#    # [~,tags]=sort(temp*[2^31;1]);
+#    # etoe=temp(tags,:);
+#    #%etoe=sortrows([etoe(dmy1,:); fliplr(etoe(dmy2,:)); (1:nt)',(1:nt)']);%added self adjs.
+#    # idx = find(diff(etoe(:,1))==1); idx=[idx;length(etoe)]; idx = [1;idx+1];
 
 
 def vertex_to_entities(vertices, entities, dim=2):

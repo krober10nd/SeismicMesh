@@ -260,9 +260,9 @@ class MeshGenerator:  # noqa: C901
                 ].astype(float)
                 p = p.reshape(dim, -1).T
 
-            #np.savetxt('init.txt', p, delimiter=',')
-            #np.savetxt('fd.txt', fd(p), delimiter=',')
-            #quit()
+            # np.savetxt('init.txt', p, delimiter=',')
+            # np.savetxt('fd.txt', fd(p), delimiter=',')
+            # quit()
             # 2. Remove points outside the region, apply the rejection method
             p = p[fd(p) < geps]  # Keep only d<0 points
             r0 = fh(p)
