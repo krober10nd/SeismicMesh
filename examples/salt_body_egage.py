@@ -50,6 +50,9 @@ mshgen = SeismicMesh.MeshGenerator(hmin=hmin, bbox=bbox, fd=SDF, fh=ef.fh)
 # Build the mesh
 points, cells = mshgen.build(max_iter=10)
 
+# Mesh improvement 
+points, cells = mshgen.build(points=points, mesh_improvement=True)
+
 # Write the mesh to disk
 meshio.write_points_cells(
     "egage_salt_body.vtk", points / 1000.0, [("tetra", cells)], file_format="vtk"
