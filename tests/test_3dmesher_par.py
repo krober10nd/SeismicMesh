@@ -33,15 +33,15 @@ def test_3dpar_mesher():
         hmin=hmin,
     )
     # Build mesh size function (in parallel)
-    ef = ef.build(comm=comm)
+    ef = ef.build()
 
     mshgen = SeismicMesh.MeshGenerator(ef)
 
-    points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, COMM=comm, axis=0,)
+    points, cells = mshgen.build(max_iter=50, nscreen=1, seed=0, axis=0,)
+
+    points, cells = mshgen.build(points=points, max_iter=15, mesh_improvement=True,)
 
     if rank == 0:
-        # remove slivers
-        points, cells = mshgen.build(points=points, max_iter=15, mesh_improvement=True,)
         # import meshio
 
         # meshio.write_points_cells(

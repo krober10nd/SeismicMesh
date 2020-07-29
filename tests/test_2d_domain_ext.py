@@ -65,9 +65,11 @@ def test_2d_domain_ext():
     ef = ef.build()
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, cells = mshgen.build(max_iter=100, seed=0, nscreen=1)
-    # (14773, 2) (29076, 3)
-    assert np.abs(len(points) - 14773) < 20
-    assert np.abs(len(cells) - 29076) < 20
+    # 15260 30029
+
+    print(len(points), len(cells))
+    assert np.abs(len(points) - 15260) < 20
+    assert np.abs(len(cells) - 30029) < 20
 
 
 if __name__ == "__main__":

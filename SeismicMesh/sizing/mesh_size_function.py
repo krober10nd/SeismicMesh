@@ -104,7 +104,8 @@ class MeshSizeFunction:
         self.depth = bbox[1] - bbox[0]
         if self.dim == 3:
             self.length = bbox[5] - bbox[4]
-        self.spacing = None
+        self.spacingZ = None
+        self.spacingX = None
         self.model = model
         self.units = units
         self.hmin = hmin
@@ -381,6 +382,7 @@ class MeshSizeFunction:
                 hh_m = np.zeros(shape=(_nz, _nx), dtype=np.float32) + _hmin
             if _dim == 3:
                 hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
+
             if _wl > 0:
                 if rank == 0:
                     print(
@@ -390,6 +392,7 @@ class MeshSizeFunction:
                         flush=True,
                     )
                 hh_m = _vp / (_freq * _wl)
+
             if _grad > 0:
                 if rank == 0:
                     print(
@@ -423,8 +426,9 @@ class MeshSizeFunction:
                 if rank == 0:
                     print("Enforcing maximum mesh resolution...", flush=True)
                 hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
+
             # adjust mesh res. based on the CFL limit so cr < cr_max
-            # considering the space order p
+            # NB: considering the space order p
             if _dt > 0:
                 if rank == 0:
                     print(
@@ -442,20 +446,30 @@ class MeshSizeFunction:
             # grade the mesh sizes
             if _grade > 0:
                 if rank == 0:
+                    # TODO: grader needs to consider varying constant resolution by dimension
                     print("Enforcing mesh gradation in sizing function...", flush=True)
                     hh_m = self.hj(hh_m, _width / _nx, 10000)
+
+            # Domain extension
             # edit the bbox to reflect the new domain size
             if _domain_ext > 0:
-                self = self.__CreateDomainExtension()
-                hh_m = self.__EditMeshSizeFunction(hh_m, rank)
+                self = self.__CreateDomainExtension()  # edit the bbox
+                hh_m = self.__EditMeshSizeFunction(
+                    hh_m, rank
+                )  # edit the sizing function
+
             # construct a interpolator object to be queried during mesh generation
             if rank == 0:
                 print("Building a gridded interpolant...", flush=True)
+
             if _dim == 2:
                 z_vec, x_vec = self.__CreateDomainVectors()
+
             if _dim == 3:
                 z_vec, x_vec, y_vec = self.__CreateDomainVectors()
-            assert np.all(hh_m > 0.0), "edge_size_function must be strictly positive."
+
+            assert np.all(hh_m > 0.0), "Mesh size_function must be strictly positive."
+
             if _dim == 2:
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
@@ -473,19 +487,22 @@ class MeshSizeFunction:
 
                 _bbox = self.bbox
 
+                # signed distance function for a rectangle
                 def fdd(p):
                     return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
 
+                # signed distance function for a cube
                 def fdd2(p):
                     return sdf.dblock(
                         p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5]
                     )
 
-                # create a signed distance function
                 if _dim == 2:
                     self.fd = lambda p: fdd(p)
                 if _dim == 3:
                     self.fd = lambda p: fdd2(p)
+
+        # if parallel
         if size > 1:
             self._construct_lambdas(comm)
         return self
@@ -598,31 +615,33 @@ class MeshSizeFunction:
             _nz = self.nz
             _nx = self.nx
             _domain_ext = self.domain_ext
-            _spacing = self.spacing
+            _spacingZ = self.spacingZ
+            _spacingX = self.spacingX
             _padstyle = self.padstyle
-            nnx = int(_domain_ext / _spacing)
+            nnz = int(_domain_ext / _spacingZ)
+            nnx = int(_domain_ext / _spacingX)
             # create domain extension in velocity model
             if _dim == 2:
                 mx = np.amax(_vp)
                 if _padstyle == "edge":
-                    _vp = np.pad(_vp, ((nnx, 0), (nnx, nnx)), "edge")
+                    _vp = np.pad(_vp, ((nnz, 0), (nnx, nnx)), "edge")
                 elif _padstyle == "constant":
                     # set to maximum value in domain
                     _vp = np.pad(
                         _vp,
-                        ((nnx, 0), (nnx, nnx)),
+                        ((nnz, 0), (nnx, nnx)),
                         "constant",
                         constant_values=(mx, mx),
                     )
                 elif _padstyle == "linear_ramp":
                     # linearly ramp to maximum value in domain
                     _vp = np.pad(
-                        _vp, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
+                        _vp, ((nnz, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
                     )
             if _dim == 3:
-                _vp = np.pad(_vp, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+                _vp = np.pad(_vp, ((nnz, nnz), (nnx, nnx), (nnx, 0)), "edge")
 
-            _nz += nnx  # only bottom
+            _nz += nnz  # only bottom
             _nx += nnx * 2  # left and right
             if _dim == 3:
                 _ny = self.ny
@@ -631,7 +650,6 @@ class MeshSizeFunction:
             model_fname = self.model
             ofname += ".hdf5"
             print("Writing velocity model " + ofname, flush=True)
-            print(_vp.shape, flush=True)
             with h5py.File(ofname, "w") as f:
                 f.create_dataset("velocity_model", data=_vp, dtype="f")
                 if _dim == 2:
@@ -679,7 +697,8 @@ class MeshSizeFunction:
                 self.nx = len(f.trace)
                 _nz = self.nz
                 _nx = self.nx
-                self.spacing = self.width / _nx
+                self.spacingZ = self.depth / _nz
+                self.spacingX = self.width / _nx
                 _vp = np.zeros(shape=(_nz, _nx))
                 index = 0
                 for trace in f.trace:
@@ -691,7 +710,8 @@ class MeshSizeFunction:
             _nx = self.nx
             _ny = self.ny
             _nz = self.nz
-            self.spacing = self.width / _nx
+            self.spacingZ = self.width / _nz
+            self.spacingX = self.width / _nx
             _type = self.endianness
             # assumes file is little endian byte order and fortran ordering (column-wise)
             with open(_fname, "r") as file:
@@ -710,33 +730,36 @@ class MeshSizeFunction:
         return None
 
     def __CreateDomainVectors(self):
+        """ it is what it is """
         _dim = self.dim
         _nz = self.nz
         _nx = self.nx
         if _dim == 3:
             _ny = self.ny
-            _len = self.length
-        _width = self.width
-        _depth = self.depth
         _domain_ext = self.domain_ext
-        _spacing = self.spacing
+        _spacingZ = self.spacingZ
+        _spacingX = self.spacingX
+        _bbox = self.bbox
 
         # if domain extension is enabled, we augment the domain vectors
-        nnx = int(_domain_ext / _spacing)
+        nnz = int(_domain_ext / _spacingZ)
+        nnx = int(_domain_ext / _spacingX)
         if _domain_ext > 0:
-            _nz += nnx  # only bottom
+            _nz += nnz  # only bottom
             _nx += nnx * 2  # left and right
             if _dim == 3:
                 _ny += nnx * 2  # behind and in front
 
-        zvec = np.linspace(-_depth, 0, _nz, dtype=np.float32)
-        xvec = np.linspace(0 - _domain_ext, _width - _domain_ext, _nx, dtype=np.float32)
+        zvec = np.linspace(_bbox[0], _bbox[1], _nz, dtype=np.float32)
+        xvec = np.linspace(
+            _bbox[2] - _domain_ext, _bbox[3] + _domain_ext, _nx, dtype=np.float32
+        )
 
         if _dim == 2:
             return zvec, xvec
         elif _dim == 3:
             yvec = np.linspace(
-                0 - _domain_ext, _len - _domain_ext, _ny, dtype=np.float32
+                _bbox[4] - _domain_ext, _bbox[5] + _domain_ext, _ny, dtype=np.float32
             )
             return zvec, xvec, yvec
 
@@ -758,10 +781,12 @@ class MeshSizeFunction:
         _domain_ext = self.domain_ext
         _dim = self.dim
         _hmax = self.hmax
-        _spacing = self.spacing
+        _spacingZ = self.spacingZ
+        _spacingX = self.spacingX
         _padstyle = self.padstyle
 
-        nnx = int(_domain_ext / _spacing)
+        nnz = int(_domain_ext / _spacingZ)
+        nnx = int(_domain_ext / _spacingX)
 
         if rank == 0:
             print(
@@ -775,23 +800,23 @@ class MeshSizeFunction:
         if _dim == 2:
             mx = np.amax(hh_m)
             if _padstyle == "edge":
-                hh_m = np.pad(hh_m, ((nnx, 0), (nnx, nnx)), "edge")
+                hh_m = np.pad(hh_m, ((nnz, 0), (nnx, nnx)), "edge")
             elif _padstyle == "constant":
                 # set to maximum value in domain
                 hh_m = np.pad(
-                    hh_m, ((nnx, 0), (nnx, nnx)), "constant", constant_values=(mx, mx)
+                    hh_m, ((nnz, 0), (nnx, nnx)), "constant", constant_values=(mx, mx)
                 )
             elif _padstyle == "linear_ramp":
                 # linearly ramp to maximum value in domain
                 hh_m = np.pad(
-                    hh_m, ((nnx, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
+                    hh_m, ((nnz, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
                 )
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
         if _dim == 3:
             mx = np.amax(hh_m)
             if _padstyle == "edge":
-                hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnx, 0)), "edge")
+                hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnz, 0)), "edge")
             elif _padstyle == "linear_ramp":
                 # linearly ramp to maximum value in domain
                 hh_m = np.pad(
@@ -801,8 +826,7 @@ class MeshSizeFunction:
                     end_values=(mx, mx),
                 )
             else:
-                print("3D pad style currently not supported yet")
-                quit()
+                raise ValueError("3D pad style currently not supported yet")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
 

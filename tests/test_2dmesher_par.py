@@ -22,11 +22,11 @@ def test_2dmesher_par():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
     )
-    ef = ef.build(comm=comm)
+    ef = ef.build()
 
     # test cgal
     mshgen = SeismicMesh.MeshGenerator(ef)
-    points, cells = mshgen.build(max_iter=100, seed=0, COMM=comm, perform_checks=True)
+    points, cells = mshgen.build(max_iter=100, seed=0, perform_checks=True)
     if rank == 0:
         # import meshio
 

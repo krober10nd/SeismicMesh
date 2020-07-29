@@ -29,6 +29,7 @@ class SignedDistanceFunctionGenerator:
         method="union",
         narrow=0.0,
         comm=None,
+        flip=False,
     ):
         """Class constructor for :class:`SignedDistanceFunctionGenerator`
 
@@ -47,6 +48,8 @@ class SignedDistanceFunctionGenerator:
         :type narrow: float64, optional
         :param comm: MPI4py communicator default==None
         :type comm: MPI4py communicator object, optional
+        :param flip: Whether to flip the signed distance function or not (default=False)
+        :type flip: boolean
 
         """
         self.field = field
@@ -56,21 +59,22 @@ class SignedDistanceFunctionGenerator:
         self.gridspacing = gridspacing
         self.method = method
         self.narrow_band = narrow
+        self.flip = flip
         self.SDF = None
 
         comm = comm or MPI.COMM_WORLD
 
         if comm.rank == 0:
-            print("Building a custom signed distance function...", flush=True)
+            print("Building a signed distance function from data...", flush=True)
 
             if field is None:
                 raise ValueError(
-                    "field must be specified as a grid of values (e.g., vp)."
+                    "field must be specified as a grid of dim containing values to threshold (e.g., MeshSizeFunction object.vp)."
                 )
 
             if bbox is None:
                 raise ValueError(
-                    "bbox must be a tuple of corner extents in z --> x --> fashion"
+                    "bbox must be a tuple of corner extents in z --> x (--> y) fashion"
                 )
             dim = int(len(bbox) / 2)
             if dim < 2 or dim > 3:
@@ -93,7 +97,11 @@ class SignedDistanceFunctionGenerator:
             d = skfmm.distance(phi, [*self.gridspacing], narrow=self.narrow_band)
             if self.narrow_band > 0:
                 d[d > self.narrow_band] = self.narrow_band
-                d[d < -self.narrow_ba] = -self.narrow_band
+                d[d < -self.narrow_band] = -self.narrow_band
+
+            if self.flip:
+                print("Flipping the distance sign...", flush=True)
+                d *= -1
 
             # create the grid vectors
             if dim == 2:
@@ -217,6 +225,10 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
     vertices_new, entities_new, jx = fixmesh(vertices, entities_new, dim=dim)
     return vertices_new, entities_new, jx
+
+
+def entities_to_entities(entities, dim=2):
+    """Determine which elements are connected to which elements"""
 
 
 def vertex_to_entities(vertices, entities, dim=2):
@@ -870,17 +882,17 @@ def linter(vertices, entities, dim=2, minqual=0.10):
     import time
 
     t1 = time.time()
-    intersections = doAnyOverlap(vertices, entities, dim=dim)
+    # intersections = doAnyOverlap(vertices, entities, dim=dim)
     # delete the lower quality in the pair
-    delete = []
-    for intersect in intersections:
-        ix = [i for i in intersect]
-        sel = np.argmin(qual[ix])
-        delete = np.append(delete, intersect[sel])
-    delete = np.unique(delete)
-    print("Deleting " + str(len(delete)) + " overlapped entities", flush=True)
-    entities = np.delete(entities, delete, axis=0)
-    print(time.time() - t1)
+    # Delete = []
+    # For intersect in intersections:
+    #    ix = [i for i in intersect]
+    #    sel = np.argmin(qual[ix])
+    #    delete = np.append(delete, intersect[sel])
+    # Delete = np.unique(delete)
+    # Print("Deleting " + str(len(delete)) + " overlapped entities", flush=True)
+    # Entities = np.delete(entities, delete, axis=0)
+    # Print(time.time() - t1)
 
     # clean up
     vertices, entities, _ = fixmesh(vertices, entities, delunused=True)
