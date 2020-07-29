@@ -130,7 +130,9 @@ Using the :class:`SignedDistanceFunctionGenerator` tool, the user can threshold 
 
 .. note :: We modify the velocity model so that some small pockets of area with velocity less than 4,000 m/s don't appear as holes in the mesh when we use 4,000 m/s to create the signed distance function.
 
-Shown images below are the seismic P-wave velocity model for the foothills example and the resulting SDF from exeucting the code directly above where the color yellow indicates the region to-be-meshed and the greenish color indicates the region outside of the domain.
+The output of the call to the ``SdfGen`` gives a handle to a function object, which can be passed to the mesh generator as detailed below in the section describing how to call the mesh generator.
+
+Images shown below are the seismic P-wave velocity model for the foothills example and the resulting SDF from exeucting the code directly above. In this second image below, the color yellow indicates the region to-be-meshed and the greenish color indicates the region outside of the domain.
 
 .. image:: Foothills.png
 
@@ -289,7 +291,7 @@ In this domain extension region, mesh resolution can be adapted according to fol
 
  * ``Linear`` - extends the seismic velocities on the edges of the domain linearly into the domain extension.
 
- * ``Constant`` - places a constant velocity of 4000 m/s in the domain extension.
+ * ``Constant`` - places a constant velocity of the users selection in the domain extension.
 
  * ``Edge`` - reflects the seismic velocity about the domain boundary so that velocity profile is symmetric w.r.t domain boudnaries.
 
@@ -335,7 +337,7 @@ And then they call the ``build`` method specifying the number of iterations they
 
 Or, the second way the user specified their own mesh size function ``f(h)`` and/or ``f(d)``::
 
-    # signed distance function for a cylinder
+    # Example of a signed distance function for a cylinder in unit space.
     def fd(p):
         # sizing function of a cylinder in [-1., -1., -.1] x [1., 1., 1.]
         r, z = np.sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
@@ -349,7 +351,7 @@ Or, the second way the user specified their own mesh size function ``f(h)`` and/
         return d
 
 
-    # uniform resolution sizing function
+    # Example of an uniform resolution sizing function
     def fh(p):
         # note for parallel execution this logic is required
         # since the decomposition of the sizing function passes a tuple to fh
@@ -383,7 +385,7 @@ If the intended usage of the mesh is for numerical simulation, it is strongly en
         points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
     )
 
-Note that here we pass it the points from the previous call to build and specify the flag ``mesh_improvement`` to True. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_angle`` is set to :math:`10`.  The sliver removal algorithm will attempt 50 iterations and will stop earlier if no slivers are detected.
+Note that here we pass it the points from the previous call to build and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_angle`` is set to :math:`10`.  The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already succesfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
