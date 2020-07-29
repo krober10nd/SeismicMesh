@@ -20,6 +20,8 @@ def example_2D_Irregular():
     Build a 2D mesh of a benchmark velocity  model of a Monuntainous thrust region.
     Builds in serial or parallel. Demonstrates how to ensure the topography is respected
     in the mesh.
+    
+    Velocity model was downloaded from here: https://wiki.seg.org/wiki/1994_BP_migration_from_topography
     """
 
     # Name of SEG-Y file containg velocity model.
