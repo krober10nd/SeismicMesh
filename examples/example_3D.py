@@ -10,11 +10,30 @@ rank = comm.Get_rank()
 # Serial or parallel 3d mesh generation building a mesh roughly 1.6 million cells.
 # Warning: In serial, this example takes roughly 20 minutes...
 
+# The velocity model was downloaded from here: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
+# and the following steps were used to convert the file Saltf@@ to a binary file that's usable in the program
+#
+# import zipfile
+# import numpy as np
+# # Dimensions
+# nx, ny, nz = 676, 676, 210
+
+# # Extract Saltf@@ from SALTF.ZIP
+# zipfile.ZipFile('./data/SALTF.ZIP', 'r').extract('Saltf@@', path='./data/')
+
+# Load data
+# with open('./data/Saltf@@', 'r') as file:
+#    v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
+#    v = v.reshape(nx, ny, nz, order='F')
+# # Write the v to a binary file 
+# file = open("EAGE_Salt.bin", "wb")
+# file.write(v)
+# file.close()
 
 def example_3D():
 
     # Name of SEG-Y file containg velocity model.
-    fname = "velocity_models/EGAGE_Salt.bin"
+    fname = "velocity_models/EAGE_Salt.bin"
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-4200, 0, 0, 13520, 0, 13520)
 
