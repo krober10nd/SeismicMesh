@@ -117,6 +117,9 @@ class SignedDistanceFunctionGenerator:
                     (zvec, xvec), d, bounds_error=False, fill_value=None
                 )
             if dim == 3:
+                # Apply gaussian filter
+                sigma = [10, 10, 10]
+                d = sp.ndimage.filters.gaussian_filter(d, sigma, mode="constant")
                 zvec = np.linspace(self.bbox[0], self.bbox[1], nz)
                 xvec = np.linspace(self.bbox[2], self.bbox[3], nx)
                 yvec = np.linspace(self.bbox[4], self.bbox[5], ny)
@@ -880,9 +883,9 @@ def linter(vertices, entities, dim=2, minqual=0.10):
     print("Performing mesh linting...", flush=True)
     qual = simpqual(vertices, entities)
     # determine if there's degenerate overlapping elements
-    import time
+    # import time
 
-    t1 = time.time()
+    # t1 = time.time()
     # intersections = doAnyOverlap(vertices, entities, dim=dim)
     # delete the lower quality in the pair
     # Delete = []

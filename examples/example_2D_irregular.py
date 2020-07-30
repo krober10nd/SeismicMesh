@@ -20,7 +20,7 @@ def example_2D_Irregular():
     Build a 2D mesh of a benchmark velocity  model of a Monuntainous thrust region.
     Builds in serial or parallel. Demonstrates how to ensure the topography is respected
     in the mesh.
-    
+
     Velocity model was downloaded from here: https://wiki.seg.org/wiki/1994_BP_migration_from_topography
     """
 
@@ -28,11 +28,11 @@ def example_2D_Irregular():
     fname = "velocity_models/velocity.segy"
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-8e3, 2e3, 0, 25e3)
-    hmin = 50
+    hmin = 37.5
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, freq=2, wl=10, dt=0.001, hmin=hmin, grade=0.15,
+        bbox=bbox, model=fname, freq=4, wl=10, dt=0.001, hmin=hmin, grade=0.15,
     )
 
     # Build mesh size function

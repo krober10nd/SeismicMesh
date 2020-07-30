@@ -11,7 +11,7 @@ rank = comm.Get_rank()
 hmin = 0.10
 bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 
-# This examples builds a small and simple cylinder in either serial or parallel. 
+# This examples builds a small and simple cylinder in either serial or parallel.
 
 # signed distance function for a cylinder
 def fd(p):

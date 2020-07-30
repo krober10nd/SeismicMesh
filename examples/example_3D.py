@@ -25,10 +25,11 @@ rank = comm.Get_rank()
 # with open('./data/Saltf@@', 'r') as file:
 #    v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
 #    v = v.reshape(nx, ny, nz, order='F')
-# # Write the v to a binary file 
+# # Write the v to a binary file
 # file = open("EAGE_Salt.bin", "wb")
 # file.write(v)
 # file.close()
+
 
 def example_3D():
 
@@ -58,7 +59,7 @@ def example_3D():
     ef = ef.build()
 
     # Write to disk for later use
-    ef.WriteVelocityModel("EGAGE_Salt")
+    ef.WriteVelocityModel("EAGE_Salt")
 
     # Construct a mesh generator object
     mshgen = SeismicMesh.MeshGenerator(ef)
@@ -74,11 +75,12 @@ def example_3D():
     if rank == 0:
         # Write to disk (see meshio package for more details)
         meshio.write_points_cells(
-            "EGAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],
+            "EAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],
         )
+
         # Write to gmsh22 format (quite slow)
         meshio.write_points_cells(
-            "EGAGE_Salt.msh",
+            "EAGE_Salt.msh",
             points / 1000,
             [("tetra", cells)],
             file_format="gmsh22",

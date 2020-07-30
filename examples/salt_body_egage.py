@@ -5,8 +5,7 @@ from SeismicMesh.geometry import (
     SignedDistanceFunctionGenerator as SdfGen,
 )  # import the tool used to generate the SDF
 
-# This example highlights how build a 3D mesh from a custom signed distance function.
-# It constructs a mesh of the salt-body as defined by a velocity iso-contour within the EGAGE model
+# This example highlights how build a 3D mesh from a signed distance function built from an iso-contour in serial.
 
 # Name of SEG-Y file containg velocity model.
 fname = "velocity_models/EGAGE_Salt.bin"
@@ -39,21 +38,21 @@ ef.build()
 SDF = SdfGen(
     bbox=bbox,
     field=ef.vp,
-    min_threshold=3000,
+    min_threshold=3500,
     gridspacing=(20.0, 20.0, 20.0),
-    narrow=2000,
+    narrow=1000,
 ).SDF
 
 # Construct mesh generator
 mshgen = SeismicMesh.MeshGenerator(hmin=hmin, bbox=bbox, fd=SDF, fh=ef.fh)
 
 # Build the mesh
-points, cells = mshgen.build(max_iter=10)
+points, cells = mshgen.build(max_iter=50)
 
-# Mesh improvement 
+# Mesh improvement
 points, cells = mshgen.build(points=points, mesh_improvement=True)
 
 # Write the mesh to disk
 meshio.write_points_cells(
-    "egage_salt_body.vtk", points / 1000.0, [("tetra", cells)], file_format="vtk"
+    "eage_salt_body.vtk", points / 1000.0, [("tetra", cells)], file_format="vtk"
 )
