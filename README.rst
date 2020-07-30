@@ -16,6 +16,9 @@
 	
 .. image:: https://img.shields.io/badge/License-BSD%202--Clause-orange.svg
 	:target: https://opensource.org/licenses/BSD-2-Clause
+	
+.. image:: https://zenodo.org/badge/216707188.svg
+   :target: https://zenodo.org/badge/latestdoi/216707188
 
 
 
