@@ -12,7 +12,6 @@ def example_2D():
     """
     Build a mesh of the BP2004 benchmark velocity model in serial or parallel
     Takes roughly 1 minute with 2 processors.
-    
     The velocity model can be downloaded from here: https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
     """
 
