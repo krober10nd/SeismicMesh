@@ -39,12 +39,13 @@ def test_3dmesher():
     mshgen = SeismicMesh.MeshGenerator(fh=ef.fh, fd=SDF, hmin=hmin, bbox=bbox)
 
     points, cells = mshgen.build(nscreen=1, max_iter=50, seed=1)
-    # 13744 vertices and 68600 cells
+    # 16479 89862
 
     points, cells = mshgen.build(points=points, mesh_improvement=True)
+    print(len(points), len(cells))
 
-    assert np.abs(len(points) - 13744) < 200
-    assert np.abs(len(cells) - 68600) < 200
+    assert np.abs(len(points) - 16479) < 200
+    assert np.abs(len(cells) - 89862) < 200
 
 
 if __name__ == "__main__":
