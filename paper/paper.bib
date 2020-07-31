@@ -28,7 +28,6 @@ keywords = {computer-aided design, mesh generation, post-processing, finite elem
 doi = {10.1002/nme.2579},
 url = {https://onlinelibrary.wiley.com/doi/abs/10.1002/nme.2579},
 eprint = {https://onlinelibrary.wiley.com/doi/pdf/10.1002/nme.2579},
-abstract = {Abstract Gmsh is an open-source 3-D finite element grid generator with a build-in CAD engine and post-processor. Its design goal is to provide a fast, light and user-friendly meshing tool with parametric input and advanced visualization capabilities. This paper presents the overall philosophy, the main design choices and some of the original algorithms implemented in Gmsh. Copyright © 2009 John Wiley \& Sons, Ltd.},
 year = {2009}
 }
 
@@ -52,7 +51,6 @@ year = {2009}
     pages = {1419-1435},
     year = {2015},
     month = {10},
-    abstract = "{Improving both accuracy and computational performance of numerical tools is a major challenge for seismic imaging and generally requires specialized implementations to make full use of modern parallel architectures. We present a computational strategy for reverse-time migration (RTM) with accelerator-aided clusters. A new imaging condition computed from the pressure and velocity fields is introduced. The model solver is based on a high-order discontinuous Galerkin time-domain (DGTD) method for the pressure–velocity system with unstructured meshes and multirate local time stepping. We adopted the MPI+X approach for distributed programming where X is a threaded programming model. In this work we chose OCCA, a unified framework that makes use of major multithreading languages (e.g. CUDA and OpenCL) and offers the flexibility to run on several hardware architectures. DGTD schemes are suitable for efficient computations with accelerators thanks to localized element-to-element coupling and the dense algebraic operations required for each element. Moreover, compared to high-order finite-difference schemes, the thin halo inherent to DGTD method reduces the amount of data to be exchanged between MPI processes and storage requirements for RTM procedures. The amount of data to be recorded during simulation is reduced by storing only boundary values in memory rather than on disk and recreating the forward wavefields. Computational results are presented that indicate that these methods are strong scalable up to at least 32 GPUs for a three-dimensional RTM case.}",
     issn = {0956-540X},
     doi = {10.1093/gji/ggv380},
     url = {https://doi.org/10.1093/gji/ggv380},
@@ -79,16 +77,8 @@ number = {2},
 pages = {329-345},
 year = {2004},
 doi = {10.1137/S0036144503429121},
-
-URL = {
-        https://doi.org/10.1137/S0036144503429121
-
-},
-eprint = {
-        https://doi.org/10.1137/S0036144503429121
-
-}
-
+URL = {https://doi.org/10.1137/S0036144503429121},
+eprint = {https://doi.org/10.1137/S0036144503429121}
 }
 
 @article{doi:10.1190/1.1441754,
@@ -100,16 +90,28 @@ number = {8},
 pages = {1259-1266},
 year = {1984},
 doi = {10.1190/1.1441754},
-
-URL = {
-        https://doi.org/10.1190/1.1441754
-
-},
-eprint = {
-        https://doi.org/10.1190/1.1441754
-
-}
-,
-    abstract = { The nonlinear inverse problem for seismic reflection data is solved in the acoustic approximation. The method is based on the generalized least‐squares criterion, and it can handle errors in the data set and a priori information on the model. Multiply reflected energy is naturally taken into account, as well as refracted energy or surface waves. The inverse problem can be solved using an iterative algorithm which gives, at each iteration, updated values of bulk modulus, density, and time source function. Each step of the iterative algorithm essentially consists of a forward propagation of the actual sources in the current model and a forward propagation (backward in time) of the data residuals. The correlation at each point of the space of the two fields thus obtained yields the corrections of the bulk modulus and density models. This shows, in particular, that the general solution of the inverse problem can be attained by methods strongly related to the methods of migration of unstacked data, and commercially competitive with them. }
+URL = {https://doi.org/10.1190/1.1441754},
+eprint = {https://doi.org/10.1190/1.1441754}
 }
 
+@incollection{tournois2009perturbing,
+  title={Perturbing slivers in 3D Delaunay meshes},
+  author={Tournois, Jane and Srinivasan, Rahul and Alliez, Pierre},
+  booktitle={Proceedings of the 18th international meshing roundtable},
+  pages={157--173},
+  year={2009},
+  publisher={Springer}
+}
+
+@article{doi:10.1190/1.1437283,
+author = {F. Aminzadeh and N. Burkhard and J. Long and T. Kunz and P. Duclos},
+title = {Three dimensional SEG/EAEG models — an update},
+journal = {The Leading Edge},
+volume = {15},
+number = {2},
+pages = {131-134},
+year = {1996},
+doi = {10.1190/1.1437283},
+URL = {https://doi.org/10.1190/1.1437283},
+eprint = {https://doi.org/10.1190/1.1437283}
+}
