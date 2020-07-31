@@ -821,7 +821,7 @@ class MeshSizeFunction:
                 # linearly ramp to maximum value in domain
                 hh_m = np.pad(
                     hh_m,
-                    ((nnx, nnx), (nnx, nnx), (nnx, 0)),
+                    ((nnx, nnx), (nnx, nnx), (nnz, 0)),
                     "linear_ramp",
                     end_values=(mx, mx),
                 )
