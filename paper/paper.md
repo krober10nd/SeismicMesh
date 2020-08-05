@@ -66,9 +66,9 @@ NOTE TO SELF: ADD WALL-CLOCK TIMES HERE
 
 # Future applications
 
-The addition of distributed memory parallelism and the ability to remove degenerate 3D elements on top of the `DistMesh` algorithm represents a general purpose mesh generation tool. Much like how `DistMesh` has been used, it can be applied to many domains besides seismology. In fact, the user only needs to supply their own mesh sizing function and signed distance function to use the mesh generation capability.
+The ability to perform distributed memory parallelism, the Python wrapper for CGAL, and the ability to remove degenerate 3D elements represent  significant improvements to the `DistMesh` algorithm. Much like how `DistMesh` has already been used, it can be applied to many domains besides seismology. To use the mesh generation capabilities standalone, the user only needs to supply their own mesh sizing function and signed distance function.
 
-The usage of SDF to define the meshing domain present potential use cases in the topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of the SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce a new 0-level set. In this scenario, `SeismicMesh` can be embedded within the algorithm to generate/adapt meshes that conform to the updated 0-level set.
+The usage of SDF to define the meshing domain present potential use cases in a topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of the SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce a pertubations to the 0-level set. In this framework, `SeismicMesh` can be embedded within the algorithm to generate and adapt meshes so that they conform to the incremental 0-level sets.
 
 
 # Acknowledgements
