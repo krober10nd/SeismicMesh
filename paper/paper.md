@@ -45,7 +45,7 @@ A high-level depiction of the execution of 'SeismicMesh' is shown in Figure \aut
  3. An implementation of a 3D degenerate tetrahedral element removal technique [@tournois2009perturbing] to bound the minimum mesh quality while preserving the domain structure.
 
 
- ![A workflow to build a mesh using `SeismicMesh`. On the right hand side, a BP2004 dataset of the P-wave seismic velocity in the Canadian Rockies [@gray1995migration]  \label{fig:workflow}](Workflow.png)
+![A workflow to generate a mesh using `SeismicMesh`. On the right hand side, a BP2004 dataset of the P-wave seismic velocity in the Canadian Rockies [@gray1995migration]  \label{fig:workflow}](Performance.jpg)
 
 Similar to other meshing programs such as `gmsh` [@doi:10.1002/nme.2579], `tetgen` [@si2015tetgen] and `mmg` [@mmg], `SeismicMesh` provides both generation and improvement of meshes through a scripting-based approach. However, one point of difference from the aforementioned software programs is a convenience class that can be used to generate graded mesh sizing functions directly from geophysical datasets such as a seismic velocity model. Using this capability, mesh resolution is distributed to resolve material variations within the interior of the domain while at the same time statisfying numerical stability requirements and requiring little effort on part of the user.
 
@@ -55,15 +55,15 @@ In `SeismicMesh`, the domain geometry is defined as the 0-level set of a signed 
 
 In applications such as time-domain FWI and RTM, relatively high source frequencies are required (e.g., 5-7 Hz) to produce high-resolution seismic velocity images. Depending on the spatial polynomial order of the finite elements, these models require a minimum number of vertices per wavelength (e.g., 5 to 10) of the source wavelet to ensure the subsequent numerical simulation can be considered numerically accurate. However, this can make the generation of tetrahedral meshes prohibitively computationally expensive for a realistic 3D inversion domain, which motivates the implemented distributed memory paralllelism. For example, a 3D mesh of a benchmark FWI model EAGE Salt [@doi:10.1190/1.1437283] requires 507,862 cells when resolving a 2 Hz source frequency using 5 vertices per wavelength. For the same model discretized for source wavelet with a peak frequency of 4 Hz, the tetrahedral mesh increases in number of cells by a factor of approximately 8 and becomes 4,082,978 cells.
 
-The implemented distributed memory parallelism makes generating high-quality meshes for high-frequency FWI and RTM applications feasible on the order of minutes. Figure \autoref{fig:speedup} shows a peak speed-up of approximately 7 times using 11 cores when performing 50 meshing iterations with `SeismicMesh` to build a 4 million cell mesh. The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+The implemented distributed memory parallelism makes generating high-quality meshes for high-frequency FWI and RTM applications feasible on the order of minutes. Figure \autoref{fig:speedup} shows a peak speed-up of approximately 7 times using 11 cores when performing 50 meshing iterations with `SeismicMesh` to generate a 4 million cell mesh. The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
 
 
- ![Speed-up obtained when building a 3D mesh (approximately 4 M cells) for the EAGE seismic velocity model as compared to the sequential version of the     algorithm.\label{fig:speedup}](SpeedUpOverSerial.png)
+![Speed-up obtained when generate a 3D mesh (approximately 4 M cells) for the EAGE Salt seismic velocity model as compared to the sequential version of the program.\label{fig:speedup}](Performance.jpg)
 
 
 # Future applications
 
-The usage of SDF to define the meshing domain present potential use cases in the topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of the SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce a new 0-level set. In this scenario, `SeismicMesh` can be embedded within the algorithm to build/adapt meshes that conform to the updated 0-level set.
+The usage of SDF to define the meshing domain present potential use cases in the topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of the SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce a new 0-level set. In this scenario, `SeismicMesh` can be embedded within the algorithm to generate/adapt meshes that conform to the updated 0-level set.
 
 
 # Acknowledgements
