@@ -45,7 +45,7 @@ A high-level depiction of the execution of 'SeismicMesh' is shown in Figure \aut
  3. An implementation of a 3D degenerate tetrahedral element removal technique [@tournois2009perturbing] to bound the minimum mesh quality while preserving the domain structure.
 
 
-![A workflow to generate a mesh using `SeismicMesh`. On the right hand side, a BP2004 dataset of the P-wave seismic velocity in the Canadian Rockies [@gray1995migration]  \label{fig:workflow}](Performance.jpg)
+![A workflow to generate a mesh using `SeismicMesh`. On the right hand side, a BP2004 dataset of the P-wave seismic velocity in the Canadian Rockies [@gray1995migration]  \label{fig:workflow}](Workflow.jpg)
 
 Similar to other meshing programs such as `gmsh` [@doi:10.1002/nme.2579], `tetgen` [@si2015tetgen] and `mmg` [@mmg], `SeismicMesh` provides both generation and improvement of meshes through a scripting-based approach. However, one point of difference from the aforementioned software programs is a convenience class that can be used to generate graded mesh sizing functions directly from geophysical datasets such as a seismic velocity model. Using this capability, mesh resolution is distributed to resolve material variations within the interior of the domain while at the same time statisfying numerical stability requirements and requiring little effort on part of the user.
 
