@@ -20,7 +20,7 @@ bibliography: paper.bib
 # Summary
 
 `SeismicMesh` is a Python package for generating quality two and three dimensional triangular and tetrahedral
-meshes directly from seismic velocity models using signed distance functions define geometry. Low-level C++ code is wrapped with Python for high performance at scale without losing flexibility or ease-of-use. At a low level, the program makes direct calls to the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20a] to robustly and efficiently produce triangulations. Mesh generation is accomplished through modifications to a smoothing-based mesh generation algorithm known as `DistMesh` [@doi:10.1137/S0036144503429121]. Computationally expensive operations are parallelized through an implementation of a parallel Delaunay triangulation algorithm [@peterka2014high].
+meshes directly from seismic velocity models using signed distance functions to define geometry. Low-level C++ code is wrapped with Python for high performance at scale without losing flexibility or ease-of-use. At a low level, the program makes direct calls to the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20a] to robustly and efficiently produce triangulations. Mesh generation is accomplished through modifications to a smoothing-based mesh generation algorithm known as `DistMesh` [@doi:10.1137/S0036144503429121]. Computationally expensive operations are parallelized through an implementation of a parallel Delaunay triangulation algorithm [@peterka2014high].
 
 # Background
 
@@ -58,7 +58,7 @@ In applications such as time-domain FWI and RTM, relatively high source frequenc
 The implemented distributed memory parallelism makes generating high-quality meshes for high-frequency FWI and RTM applications feasible on the order of minutes. Figure \autoref{fig:speedup} shows a peak speed-up of approximately 7 times using 11 cores when performing 50 meshing iterations with `SeismicMesh` to generate a 4 million cell mesh. The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
 
 
-![Speed-up obtained when generate a 3D mesh (approximately 4 M cells) for the EAGE Salt seismic velocity model as compared to the sequential version of the program.\label{fig:speedup}](Performance.jpg)
+![Speed-up obtained when generate a 3D mesh (approximately 4.6 M cells) for the EAGE Salt seismic velocity model as compared to the sequential version of the program. The panel on the right hand side shows the a slice through the center of the mesh. \label{fig:speedup}](Performance.jpg)
 
 
 # Future applications
