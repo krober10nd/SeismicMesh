@@ -73,6 +73,6 @@ The usage of SDF to define the meshing domain present potential use cases in a t
 
 # Acknowledgements
 
-Shell and Research Center for Gas Innovation
+This research was carried out in association with the ongoing R&D project registered as ANP 20714-2, "Software technologies for modelling and inversion, with applications in seismic imaging"  (University of São Paulo / Shell Brasil / ANP).
 
 # References
