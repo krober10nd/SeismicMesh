@@ -475,8 +475,6 @@ class MeshSizeFunction:
                     (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
                 )
             if _dim == 3:
-                # x,y,z -> z,x,y
-                #hh_m = hh_m.transpose((2, 0, 1))
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
                 )
@@ -598,12 +596,12 @@ class MeshSizeFunction:
         if _dim == 2:
             tmp = limgrad([_nz, _nx, 1], elen, _grade, imax, ffun_list)
         if _dim == 3:
-            tmp = limgrad([_nx, _ny, _nz], elen, _grade, imax, ffun_list)
+            tmp = limgrad([_nz, _nx, _ny], elen, _grade, imax, ffun_list)
         tmp = np.asarray(tmp)
         if _dim == 2:
             fun_s = np.reshape(tmp, (_nz, _nx), "F")
         if _dim == 3:
-            fun_s = np.reshape(tmp, (_nx, _ny, _nz), "F")
+            fun_s = np.reshape(tmp, (_nz, _nx, _ny), "F")
         return fun_s
 
     def WriteVelocityModel(self, ofname, comm=None):
@@ -737,6 +735,7 @@ class MeshSizeFunction:
                 _vp = _vp.reshape(_nx, _ny, _nz, order="F")
             # make sure its z, x, and y
             _vp = np.flipud(_vp.transpose((2, 0, 1)))
+            print(_vp.shape)
             # if file was big endian then switch to little endian
             if _type == "big":
                 _vp = _vp.byteswap()
