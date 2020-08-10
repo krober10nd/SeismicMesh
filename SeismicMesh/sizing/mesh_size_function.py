@@ -475,8 +475,6 @@ class MeshSizeFunction:
                     (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
                 )
             if _dim == 3:
-                # x,y,z -> z,x,y
-                hh_m = hh_m.transpose((2, 0, 1))
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
                 )
@@ -598,22 +596,25 @@ class MeshSizeFunction:
         if _dim == 2:
             tmp = limgrad([_nz, _nx, 1], elen, _grade, imax, ffun_list)
         if _dim == 3:
-            tmp = limgrad([_nx, _ny, _nz], elen, _grade, imax, ffun_list)
+            tmp = limgrad([_nz, _nx, _ny], elen, _grade, imax, ffun_list)
         tmp = np.asarray(tmp)
         if _dim == 2:
             fun_s = np.reshape(tmp, (_nz, _nx), "F")
         if _dim == 3:
-            fun_s = np.reshape(tmp, (_nx, _ny, _nz), "F")
+            fun_s = np.reshape(tmp, (_nz, _nx, _ny), "F")
         return fun_s
 
     def WriteVelocityModel(self, ofname, comm=None):
         """ Writes a velocity model as a hdf5 file for use in Spyro """
         comm = comm or MPI.COMM_WORLD
         if comm.rank == 0:
+            model_fname = self.model
             _dim = self.dim
             _vp = self.vp
             _nz = self.nz
             _nx = self.nx
+            if _dim == 3:
+                _ny = self.ny
             _domain_ext = self.domain_ext
             _spacingZ = self.spacingZ
             _spacingX = self.spacingX
@@ -621,8 +622,8 @@ class MeshSizeFunction:
             nnz = int(_domain_ext / _spacingZ)
             nnx = int(_domain_ext / _spacingX)
             # create domain extension in velocity model
+            mx = np.amax(_vp)
             if _dim == 2:
-                mx = np.amax(_vp)
                 if _padstyle == "edge":
                     _vp = np.pad(_vp, ((nnz, 0), (nnx, nnx)), "edge")
                 elif _padstyle == "constant":
@@ -639,15 +640,30 @@ class MeshSizeFunction:
                         _vp, ((nnz, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
                     )
             if _dim == 3:
-                _vp = np.pad(_vp, ((nnz, nnz), (nnx, nnx), (nnx, 0)), "edge")
+                if _padstyle == "edge":
+                    _vp = np.pad(_vp, ((nnz, 0), (nnx, nnx), (nnx, nnx)), "edge")
+                elif _padstyle == "linear_ramp":
+                    _vp = np.pad(
+                        _vp,
+                        ((nnz, 0), (nnx, nnx), (nnx, nnx)),
+                        "linear_ramp",
+                        end_values=(mx, mx),
+                    )
+                elif _padstyle == "constant":
+                    # set to maximum value in domain
+                    _vp = np.pad(
+                        _vp,
+                        ((nnz, 0), (nnx, nnx), (nnx, nnx)),
+                        "constant",
+                        constant_values=(mx, mx),
+                    )
 
+            print(_vp.shape)
             _nz += nnz  # only bottom
             _nx += nnx * 2  # left and right
             if _dim == 3:
-                _ny = self.ny
                 _ny += nnx * 2  # behind and in front
 
-            model_fname = self.model
             ofname += ".hdf5"
             print("Writing velocity model " + ofname, flush=True)
             with h5py.File(ofname, "w") as f:
@@ -717,6 +733,9 @@ class MeshSizeFunction:
             with open(_fname, "r") as file:
                 _vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
                 _vp = _vp.reshape(_nx, _ny, _nz, order="F")
+            # make sure its z, x, and y
+            _vp = np.flipud(_vp.transpose((2, 0, 1)))
+            print(_vp.shape)
             # if file was big endian then switch to little endian
             if _type == "big":
                 _vp = _vp.byteswap()
@@ -816,12 +835,12 @@ class MeshSizeFunction:
         if _dim == 3:
             mx = np.amax(hh_m)
             if _padstyle == "edge":
-                hh_m = np.pad(hh_m, ((nnx, nnx), (nnx, nnx), (nnz, 0)), "edge")
+                hh_m = np.pad(hh_m, ((nnz, 0), (nnx, nnx), (nnx, nnx)), "edge")
             elif _padstyle == "linear_ramp":
                 # linearly ramp to maximum value in domain
                 hh_m = np.pad(
                     hh_m,
-                    ((nnx, nnx), (nnx, nnx), (nnx, 0)),
+                    ((nnz, 0), (nnx, nnx), (nnx, nnx)),
                     "linear_ramp",
                     end_values=(mx, mx),
                 )
