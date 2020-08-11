@@ -10,10 +10,12 @@ tags:
 authors:
   - name: Keith Jared Roberts
     affiliation: 1
+  - name: Rafael dos Santos Gioria
+    affiliation: 1
 affiliations:
  - name: Escola Politécnica da Universidade de São Paulo
    index: 1
-date: 4 August 2020
+date: 11 August 2020
 bibliography: paper.bib
 
 ---
@@ -56,7 +58,7 @@ In `SeismicMesh`, the domain geometry is defined as the 0-level set of a signed 
 
 One motivation for parallelism in applications such as time-domain FWI and RTM is that relatively high source frequencies are used (e.g., 5-7 Hz) to produce high-resolution seismic velocity images. These models require a minimum number of 5 to 10 vertices per wavelength of the source wavelet to ensure the subsequent numerical simulation is numerically accurate. However, this can make the generation of tetrahedral meshes prohibitively computationally expensive for a realistic 3D inversion domain. For example, a 3D mesh of a benchmark FWI model EAGE Salt [@doi:10.1190/1.1437283] requires 507,862 cells when resolving a 2 Hz source frequency using 5 vertices per wavelength. For the same model discretized for source wavelet with a peak frequency of 4 Hz, the tetrahedral mesh increases in number of cells by a factor of approximately 8 (approximately 4,082,978 cells).
 
-Thus, parallelism enables the rapid generation of high-quality meshes for FWI and RTM applications on the order of minutes. \autoref{fig:speedup} shows a peak speed-up of approximately 6.60 times using 11 cores when performing 50 meshing iterations with `SeismicMesh` to generate an approximately 4 million cell mesh. The usage of 11 cores reduces the generation time of this example from 20 minutes to approximately 2 wall-clock minutes. The scability of the mesh generation algorithm is primarily limited by the size of the subdomains and fails if the subdomain becomes too thin relative to the local maximum element size [@doi:10.1137/S003614450342912]. The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+Thus, parallelism enables the rapid generation of high-quality meshes for FWI and RTM applications on the order of minutes. \autoref{fig:speedup} shows a peak speed-up of approximately 6.60 times using 11 cores when performing 50 meshing iterations with `SeismicMesh` to generate an approximately 4 million cell mesh. The usage of 11 cores reduces the generation time of this example from 20 minutes to approximately 2 wall-clock minutes. The scalability of the mesh generation algorithm is primarily limited by the size of the subdomains and fails if the subdomain becomes too thin relative to the local maximum element size [@doi:10.1137/S003614450342912]. The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
 
 
 ![Speed-up (left-axis) as compared to the sequential version of the program and wall-clock time in minutes to generate a 3D mesh (approximately 4.6 M cells) for the EAGE Salt seismic velocity model. The panel on the right hand side shows the a slice through the center of the generated mesh. \label{fig:speedup}](Performance.jpg)
@@ -66,7 +68,9 @@ Thus, parallelism enables the rapid generation of high-quality meshes for FWI an
 
 Here are some future applications for this software:
 
-* Much like how `DistMesh` has been used, `SeismicMesh` can be also applied to many domains besides seismology such as fluid dynamics, astrophysics, and coastal ocean modeling. An open source project project is already under way to use the parallel mesh generation technology for a Python version of OceanMesh2D to build meshes of the global oceans [@roberts2019oceanmesh2d].
+* `SeismicMesh` is being used by a group of researchers to build 2D/3D meshes for a seismological FEM model has been developed in the Firedrake language [@10.1145/2998441].
+
+* Much like how the original `DistMesh` program has been used, `SeismicMesh` can be also applied to many domains besides seismology such as fluid dynamics, astrophysics, and coastal ocean modeling. An open source project project is already under way to use the same mesh generation technology for a Python version of `OceanMesh2D` to build industrial-grade meshes of coastal oceans [@roberts2019oceanmesh2d].
 
 * The usage of SDF to define the meshing domain present potential use cases in a topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of a SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce modifications to the 0-level set. In this framework, `SeismicMesh` can be embedded within the inversion algorithm to generate and adapt meshes so that they conform accurately to the 0-level set.
 
