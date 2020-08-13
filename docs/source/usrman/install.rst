@@ -10,6 +10,8 @@ build *SeismicMesh*:
 * Python >= 3.0
 .. note ::
     The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers.
+.. note ::
+    Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package.
 
 * Pybind11 >= 2.5
 .. note ::
@@ -67,4 +69,4 @@ To quickly test the installation, serial and parallel capabilites, you can use `
 
 $ cd tests/
 $ pytest -m "serial" .
-$ mpirun -np 2 -m "parallel" .
+$ mpirun -np 2 pytest -m "parallel" .
