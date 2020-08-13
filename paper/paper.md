@@ -12,9 +12,13 @@ authors:
     affiliation: 1
   - name: Rafael dos Santos Gioria
     affiliation: 1
+  - name: William J. Pringle
+    affiliation: 2
 affiliations:
  - name: Escola Politécnica da Universidade de São Paulo
    index: 1
+ - name: Argonne National Laboratory
+   index: 2
 date: 11 August 2020
 bibliography: paper.bib
 
@@ -35,13 +39,13 @@ and Reverse Time Migration (RTM) [@10.1093/gji/ggv380]. Many forward and adjoint
 
 # Rationale
 
-Self-contained automatic meshing workflows that incorporate geophysical data to generate unstructured meshes have been successful in several geophysical domains such as coastal ocean modeling `OceanMesh2D`[@roberts2019oceanmesh2d], `Terro`, [@gorman2008systematic] and reservoir modeling `MeshIT` [@cacace2015meshit]. The overall motivation behind these tools is that, besides providing an implementation to generate a high-quality mesh, there are numerous application-specific aspects to consider in the design of the mesh. For example, the distribution of elements must accurately represent physical features in the domain such as faults and the location of wells. At the same time, mesh resolution must respect the Courant-Friedrichs-Lewey condition to ensure numerical stability. In applications such as FWI and RTM, material discontinuities in the interior of the domain need to be resolved to ensure reflection and refraction of waves are modeled accurately as compared to observed data. Domain extensions are also needed to be built into the mesh, which absorb outgoing waves and thus minimize artificial boundary reflections. In domains with irregular free surface boundaries such as land-based seismological surveys, explicit geometry data of the boundary surface may not exist requiring the use of external programs to create it and then to mesh it.
+Self-contained automatic meshing workflows that incorporate geophysical data to generate unstructured meshes have been successful in several geophysical domains such as coastal ocean modeling `OceanMesh2D`[@roberts2019oceanmesh2d], `GMT` and `Terreno`, [@gorman2008systematic] and reservoir modeling `MeshIT` [@cacace2015meshit] to name a few. The overall motivation behind these tools is that, besides providing an tool to generate a high-quality mesh, there are numerous application-specific aspects to consider in the design of the mesh. For example, the distribution of elements must accurately represent physical features in the domain such as faults and the location of wells. At the same time, mesh resolution must respect the Courant-Friedrichs-Lewey condition to ensure numerical stability when used in simulations. In applications such as FWI and RTM, material discontinuities in the interior of the domain need to be resolved to ensure reflection and refraction of waves are modeled accurately as compared to observed data. Domain extensions are also needed to be built into the mesh, which absorb outgoing waves and thus minimize artificial boundary reflections. In domains with irregular free surface boundaries such as land-based seismological surveys, explicit geometry data of the boundary surface may not exist requiring the use of external programs to create it and then to mesh it. These domain-specific aspects motivate the development of a self-contained mesh generation program.
 
 # Software architecture
 
 A schematic of `SeismicMesh` is shown in \autoref{fig:workflow}. The core functionality is as follows:
 
- 1. The creation of 2D/3D graded mesh size functions defined on regular Cartesian grids. These mesh sizing functions contain mesh resolution variations that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics.
+ 1. The creation of 2D/3D graded mesh size functions defined on regular Cartesian grids. These mesh sizing functions contain mesh resolution variations that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics. Mesh size function grading is accomplished using [@persson2006mesh].
 
  2. The generation of potentially large (> 10 million cells) high-geometric quality triangular or tetrahedral meshes in either serial or using distributed parallelism.
 
