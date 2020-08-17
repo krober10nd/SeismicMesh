@@ -1,7 +1,7 @@
 Overview
 ========
 
-This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. These meshes are suitable for acoustic and elastic numerical wave propagators. A focus is placed on parallel unstructured mesh generation capabilities. The capabilities of the software are exposed to the user via a simple application program interfaces (API) written in Python and the software feature parallel algorithms that can be scaled up on distributed memory clusters.
+This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. These meshes are suitable for acoustic and elastic numerical wave propagators [WP: why?? Why not rectangular, cubes etc?]. A focus is placed on parallel unstructured mesh generation capabilities. The capabilities of the software are exposed to the user via a simple application program interfaces (API) written in Python and the software feature parallel algorithms that can be scaled up on distributed memory clusters.
 
 *SeismicMesh* is currently being used to generate simplical meshes in 2D and 3D for acoustic and elastic wave propagators written using a Domain Specific Language called *Firedrake* [firedrake]_. These type of numerical simulations are used in Full Waveform Inversion, Reverse Time Migration, and Time Travel Tomography applications.
 
