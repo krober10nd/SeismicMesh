@@ -32,6 +32,7 @@ where `N` is the number of processors (e.g., 2,3,4 etc.)
 
 Data for examples
 -------------------
+[WJP: do you want to point out to users to make a data directory like we do with OceanMesh?]
 
 Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
 
