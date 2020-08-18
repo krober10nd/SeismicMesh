@@ -155,7 +155,7 @@ Wavelength-to-gridscale
 ^^^^^^^^^^^^^^^^^^^^^^^
 The highest frequency of the source wavelet :math:`f_{max}` and the smallest value of the velocity model :math:`v_{min}` define the shortest scale length of the problem since the shortest spatial wavelength :math:`\lambda_{min}` is equal to the :math:`\frac{v_{min}}{f_{max}}`. For marine domains, :math:`v_{min}` is approximately 1,484 m/s, which is the speed of sound in seawater, thus the finest mesh resolution is near the water layer.
 
-The user is able to specify the number of vertices per wavelength :math:`\alpha_{wl}` the peak source frequency :math:`f_{max}`. This sizing heuristic also  can be used to take into account varying polynomial orders for finite elements. For instance if using quadratic P=2 elements, :math:`\alpha_{wl}` can be safely be set to 5 to avoid excessive dispersion and dissipatation otherwise that would occur with P=1 elements::
+The user is able to specify the number of vertices per wavelength :math:`\alpha_{wl}` the peak source frequency :math:`f_{max}`. This sizing heuristic also can be used to take into account varying polynomial orders for finite elements. For instance if using quadratic P=2 elements, :math:`\alpha_{wl}` can be safely be set to 5 to avoid excessive dispersion and dissipatation otherwise that would occur with P=1 elements::
 
    import SeismicMesh
    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
@@ -201,7 +201,7 @@ For instance a :math:`grad` of 50 would imply that the largest gradient in seism
 Courant-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Almost all numerical wave propagators utilize explicit numerical methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerical instability and a useless unstable simulation. Thus, one thing we must be careful of when using the above mesh size functions is that the CFL condition is indeed bounded.
+Almost all numerical wave propagators utilize explicit numerical methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerical unstable simulation. Thus, we must ensure that the Courant number is indeed bounded for the overall mesh size function.
 
 After sizing functions have been activated, a conservative maximum Courant number is enforced.
 
@@ -334,7 +334,7 @@ And then they call the ``build`` method specifying the number of iterations they
 
 .. note :: Generally setting max_iter to between 50 to 100 iterations works best. By default it runs 50 iterations.
 
-.. note :: For parallel exeuction, the user can choose which axis (0, 1, or 2 (if 3D)) to decompose the domain.
+.. note :: For parallel execution, the user can choose which axis (0, 1, or 2 (if 3D)) to decompose the domain.
 
 Or, the second way the user specified their own mesh size function ``f(h)`` and/or ``f(d)``::
 
@@ -396,5 +396,3 @@ ______________
 
 .. [grading] Persson, Per-Olof. "Mesh size functions for implicit geometries and PDE-based gradient limiting."
                 Engineering with Computers 22.2 (2006): 95-109.
-
-.. [firedrake] Florian Rathgeber, David A. Ham, Lawrence Mitchell, Michael Lange, Fabio Luporini, Andrew T. T. Mcrae, Gheorghe-Teodor Bercea, Graham R. Markall, and Paul H. J. Kelly. Firedrake: automating the finite element method by composing abstractions. ACM Trans. Math. Softw., 43(3):24:1–24:27, 2016. URL: http://arxiv.org/abs/1501.01809, arXiv:1501.01809, doi:10.1145/2998441.
