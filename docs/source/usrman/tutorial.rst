@@ -274,7 +274,7 @@ Domain extension
 
     It is assumed that the top side of the domain represents the free-surface thus no domain extension is applied there.
 
-In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce abosrbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
+In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
    import SeismicMesh
    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
@@ -294,7 +294,7 @@ In this domain extension region, mesh resolution can be adapted according to fol
 
  * ``Constant`` - places a constant velocity of the users selection in the domain extension.
 
- * ``Edge`` - reflects the seismic velocity about the domain boundary so that velocity profile is symmetric w.r.t domain boudnaries.
+ * ``Edge`` - reflects the seismic velocity about the domain boundary so that velocity profile is symmetric w.r.t domain boundaries. [WJP: this is basically what I would usually understand to be a periodic type condition]
 
 An example of the ``edge`` style is below::
 
