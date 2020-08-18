@@ -201,7 +201,7 @@ For instance a :math:`grad` of 50 would imply that the largest gradient in seism
 Courant-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Almost all numerical wave propagators utilize explicit numerical methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerical unstable simulation. Thus, we must ensure that the Courant number is indeed bounded for the overall mesh size function.
+Almost all numerical wave propagators utilize explicit time-stepping methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerically unstable simulation. Thus, we must ensure that the Courant number is indeed bounded for the overall mesh size function.
 
 After sizing functions have been activated, a conservative maximum Courant number is enforced.
 
