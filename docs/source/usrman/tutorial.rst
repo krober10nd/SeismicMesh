@@ -11,9 +11,9 @@ Tutorial
 either serial or parallel from seismic velocity models. It also supports the generation of
 complex mesh sizing functions that are relevant to seismological applications.
 
-Here I show how to build meshes from sizing functions created with the software and explain what the options mean. Nearly the same code extends to 3D with only changes to the data and domain extents. For a 3D example, see the file ``example/example_3D.py``
+Here I show how to build meshes from sizing functions created with the software and explain what the options mean. Nearly the same code extends to 3D with only changes to the data and domain extents [WJ: what extends to 3D?]. For a 3D example, see the file ``example/example_3D.py`` [WJ: I don't get what is the point of bringing this example up]
 
-Distributed memory parallelism can be used by first importing ``mpi4py`` and declaring the following three lines near the top of the script (after your other imports)::
+Distributed memory parallelism can be used by first importing ``mpi4py`` and declaring the following three lines near the top of the script (after your other imports) [WJ: do I need to write this into the example scripts? Can we still use these lines with serial version or should we omit them?]::
 
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
