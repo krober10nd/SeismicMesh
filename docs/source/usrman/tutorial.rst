@@ -55,7 +55,7 @@ The original data for the 3D example can be downloaded here::
 For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
 The 3D Salt model was used from that archive.
 
-The following procedure was used to turn the original binary data into a format that was usable for *SeismicMesh* [this is only relevant for the SALTF.ZIP file?]::
+The following procedure was used to turn the original binary data into a format that was usable for *SeismicMesh* [WJP: this is only relevant for the SALTF.ZIP file? Why you don't have a convert from segy binary file function built-in for this process for 3D? (but seems you can use the segy file for 2D)::
 
     import zipfile
     import numpy as np
