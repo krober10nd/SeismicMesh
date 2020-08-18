@@ -11,7 +11,7 @@ build *SeismicMesh*:
 .. note ::
     The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers.
 .. note ::
-    Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package.
+    Some users have experienced  problems with the `skfmm-fmm` [WJP: should be scikit-fmm] Python package not being found. If this occurs, try uninstalling and then reinstalling this package.
 
 * Pybind11 >= 2.5
 .. note ::
@@ -29,7 +29,7 @@ build *SeismicMesh*:
 
 * CGAL >= 5.0
 .. warning ::
-    Be aware that apt-get does not install the necessary version >=5.0 of CGAL. It is strongly recommended to build CGAL manually by source using Cmake instead. Please follow these instructions https://doc.cgal.org/latest/Manual/installation.html
+    Be aware that apt-get does not install the necessary version >=5.0 of CGAL. It is strongly recommended to build CGAL manually by source using Cmake instead. Please follow these instructions https://doc.cgal.org/latest/Manual/installation.html [WJP: make clear need to compile the Release version not header only following the linked instructions]
 
 * Boost > 1.4.8
 
@@ -61,7 +61,7 @@ $  python setup.py develop
 Testing
 -------
 
-Testing is accomplished with `pytest`. The `pytest` package can be installed like so::
+Testing is accomplished with `pytest`. The `pytest` package can be installed like so [WJP: also point out should add --user this one]::
 
     pip install pytest
 
