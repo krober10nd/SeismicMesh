@@ -55,25 +55,25 @@ The original data for the 3D example can be downloaded here::
 For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
 The 3D Salt model was used from that archive.
 
-The following procedure was used to turn the original binary data into a format that was usable for *SeismicMesh* [WJP: this is only relevant for the SALTF.ZIP file? Why you don't have a convert from segy binary file function built-in for this process for 3D? (but seems you can use the segy file for 2D)::
+The following procedure was used to turn the original binary data into a format that was usable for *SeismicMesh* [WJP: this is only relevant for the SALTF.ZIP file? Why you don't have a convert from segy binary file function built-in for this process for 3D? (but seems you can use the segy file for 2D). We can make clear that the user also needs to do this too to the downloaded data and make a file called, e.g., convert.py:]::
 
     import zipfile
     import numpy as np
     # Dimensions
     nx, ny, nz = 676, 676, 210
 
+    path = './salt_and_overthrust_models/3-D_Salt_Model/VEL_GRIDS/'
     # Extract Saltf@@ from SALTF.ZIP
-    zipfile.ZipFile('./data/SALTF.ZIP', 'r').extract('Saltf@@', path='./data/')
+    zipfile.ZipFile(path + 'SALTF.ZIP', 'r').extract('Saltf@@', path=path)
 
     # Load data
-    with open('./data/Saltf@@', 'r') as file:
-       v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
-       v = v.reshape(nx, ny, nz, order='F')
+    with open(path + 'Saltf@@', 'r') as file:
+        v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
+        v = v.reshape(nx, ny, nz, order='F')
     # Write the v to a binary file
     file = open("EAGE_Salt.bin", "wb")
     file.write(v)
     file.close()
-
 
 Some things to know
 ---------------------
