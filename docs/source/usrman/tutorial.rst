@@ -387,7 +387,7 @@ If the intended usage of the mesh is for numerical simulation, it is strongly en
         points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
     )
 
-Note that here we pass it the points from the previous call to build and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_angle`` is set to :math:`10`.  The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected.
+Note that here we pass it the points from the previous call to build and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_angle`` is set to :math:`10`. [WJP: should it be min_dh_bound or min_dh_angle?]  The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already succesfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
