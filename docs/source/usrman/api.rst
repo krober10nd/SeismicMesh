@@ -24,7 +24,9 @@ This class can be passed to :class:`MeshGenerator` to build a simplical mesh.
 -------------------------------
 
 Class to build a simplical mesh that conforms to the signed distance function :math:`f(d)`
-and :math:`f(h)`.
+and :math:`f(h)`. 
+
+[WJP: need to make sure max_iter default is written correctly (I think should be 50).] 
 
 .. autoclass:: SeismicMesh.MeshGenerator
     :members:
