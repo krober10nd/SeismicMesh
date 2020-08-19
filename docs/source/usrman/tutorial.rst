@@ -49,6 +49,7 @@ For more details about these two models, see the following link::
 
 The original data for the 3D example can be downloaded here::
 
+    [WJP: just need this one?: wget https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz]
     wget https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/salt_and_overthrust_models.tar.gz
 
 
