@@ -26,7 +26,7 @@ bibliography: paper.bib
 # Summary
 
 `SeismicMesh` is a Python package for generating quality two and three dimensional triangular and tetrahedral
-meshes from seismic velocity models using signed distance functions to define geometry. C++ code is wrapped with Python for high performance without losing flexibility or ease-of-use. Mesh generation is accomplished in either serial or using distributed memory parallelism through modifications to a smoothing-based mesh generation algorithm known as `DistMesh` [@doi:10.1137/S0036144503429121, @peterka2014high ]. The program uses the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20a] to perform many geometric operations efficiently while avoiding numerical round-off errors.
+meshes from seismic velocity models using signed distance functions to define geometry. C++ code is wrapped with Python for high performance without losing flexibility or ease-of-use. Mesh generation is accomplished in either serial or using distributed memory parallelism through modifications to a smoothing-based mesh generation algorithm known as `DistMesh` [@doi:10.1137/S0036144503429121; @peterka2014high]. The program uses the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20a] to perform many geometric operations efficiently while avoiding numerical round-off errors.
 
 Generating a high-geometric quality graded mesh for a geophysical domain represents a modern
 challenge for sophisticated seismological workflows using the Finite Element Method (FEM). In these applications,
@@ -42,7 +42,7 @@ At the same time, the distribution of elements must be placed in such a way  tha
 
 A schematic of `SeismicMesh` is shown in \autoref{fig:workflow}. The core functionality is as follows:
 
- 1. The creation of 2D/3D graded mesh size functions defined on regular Cartesian grids. These mesh sizing functions contain mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [e.g., wavelength-to-gridscale, sharp gradients, mesh gradation, CFL-limiting, @webpage]. Note that mesh size function grading is accomplished using [@persson2006mesh].
+ 1. The creation of 2D/3D graded mesh size functions defined on regular Cartesian grids. These mesh sizing functions contain mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [e.g., wavelength-to-gridscale, sharp gradients, mesh gradation, CFL-limiting, @SeismicMeshDocs]. Note that mesh size function grading is accomplished using [@persson2006mesh].
 
  2. The generation of potentially large (> 10 million cells) high-geometric quality triangular or tetrahedral meshes in either serial or using distributed memory parallelism.
 
