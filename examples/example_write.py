@@ -4,12 +4,13 @@ import SeismicMesh
 def example_write():
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+    vp = SeismicMesh.ReadSegy(fname)
     bbox = (-12e3, 0, 0, 67e3)
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
-        model=fname,
+        velocity_grid=vp,
         domain_ext=2e3,
         dt=0.001,
         freq=5,

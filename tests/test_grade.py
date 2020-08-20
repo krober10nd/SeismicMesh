@@ -25,12 +25,13 @@ def CheckGrade(hh, nz, nx, elen):
 @pytest.mark.serial
 def test_grade():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
+    vp = SeismicMesh.ReadSegy(fname)
     wl = 5
     hmin = 10
     grade = 0.005
     elen = 1e3
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, model=fname, hmin=hmin
+        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, velocity_grid=vp, hmin=hmin
     )
     ef = ef.build()
 

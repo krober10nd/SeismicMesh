@@ -15,6 +15,14 @@ rank = comm.Get_rank()
 def test_3dpar_mesher():
 
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
+    nz, nx, ny = 20, 10, 10
+
+    # Load data
+    with open(fname, "r") as file:
+        vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder("<"))
+        vp = vp.reshape(nx, ny, nz, order="F")
+        vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+
     wl = 10
     hmin = 50
     freq = 4
@@ -25,14 +33,12 @@ def test_3dpar_mesher():
         nx=nx,
         ny=ny,
         nz=nz,
-        endianness="big",
         grade=grade,
         freq=freq,
         wl=wl,
-        model=fname,
+        velocity_grid=vp,
         hmin=hmin,
     )
-    # Build mesh size function (in parallel)
     ef = ef.build()
 
     mshgen = SeismicMesh.MeshGenerator(ef)

@@ -14,6 +14,9 @@ comm = MPI.COMM_WORLD
 size = comm.Get_size()
 rank = comm.Get_rank()
 
+if size > 1:
+    print("This is a serial example!")
+
 
 def example_2D_Irregular():
     """
@@ -26,13 +29,15 @@ def example_2D_Irregular():
 
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/velocity.segy"
+    vp = SeismicMesh.ReadSegy(fname)
+
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-8e3, 2e3, 0, 25e3)
     hmin = 37.5
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, model=fname, freq=4, wl=10, dt=0.001, hmin=hmin, grade=0.15,
+        bbox=bbox, velocity_grid=vp, freq=4, wl=10, dt=0.001, hmin=hmin, grade=0.15,
     )
 
     # Build mesh size function
@@ -46,7 +51,7 @@ def example_2D_Irregular():
 
     # Bulid a signed distance function from the seismic velocity model
     # Some pockets of velocity < 4000 exist, fill those in.
-    vp2 = ef.vp.copy()
+    vp2 = vp.copy()
     vp2 = np.where(vp2 < 4000, 4001, vp2)
     SDF = SdfGen(
         bbox=bbox, field=vp2, min_threshold=4000.0, gridspacing=(10.0, 15.0),
