@@ -11,7 +11,8 @@ Tutorial
 either serial or parallel from seismic velocity models. It also supports the generation of
 complex mesh sizing functions that are relevant to seismological applications.
 
-Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial or parallel and 2D or 3D is identical.
+
+Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial/parallel and 2D/3D is identical.
 
 Assuming you've coded a short Python script to call *SeismicMesh* (similar to what is shown in the examples), you simply call the script with python for serial execution::
 
