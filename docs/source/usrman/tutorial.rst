@@ -93,7 +93,7 @@ The following lines were used to turn the original binary data into a format tha
 File I/O and visualization of meshes
 ------------------------
 
-Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). For visualization, we can output in the vtk format and load in Paraview.
+Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). Note that *SeismicMesh* makes the assumption that the first dimenion is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
 
 Some things to know
 ---------------------
