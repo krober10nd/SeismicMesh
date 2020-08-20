@@ -1,3 +1,5 @@
+import numpy as np
+import zipfile
 import meshio
 
 import SeismicMesh
@@ -7,8 +9,23 @@ from SeismicMesh.geometry import (
 
 # This example highlights how build a 3D mesh from a signed distance function built from an iso-contour in serial.
 
-# Name of SEG-Y file containg velocity model.
-fname = "velocity_models/EGAGE_Salt.bin"
+# The velocity model was downloaded from here:
+# https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
+
+# Dimensions of model
+nx, ny, nz = 676, 676, 210
+
+path = "velocity_models/Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
+# Extract Saltf@@ from SALTF.ZIP
+zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
+
+# Load data
+with open(path + "Saltf@@", "r") as file:
+    vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+    vp = vp.reshape(nx, ny, nz, order="F")
+    vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+
+
 # Bounding box describing domain extents (corner coordinates)
 bbox = (-4200, 0, 0, 13520, 0, 13520)
 
@@ -17,10 +34,7 @@ hmin = 100.0
 
 ef = SeismicMesh.MeshSizeFunction(
     bbox=bbox,
-    model=fname,
-    nx=676,  # size of velocity model in x-direction
-    ny=676,  # size of velocity model in y-direction
-    nz=210,  # size of velocity model in z-direction
+    velocity_grid=vp,
     dt=0.001,
     freq=2,
     wl=5,
@@ -37,7 +51,7 @@ ef.build()
 # and less than the maximum velocity in the model
 SDF = SdfGen(
     bbox=bbox,
-    field=ef.vp,
+    field=vp,
     min_threshold=3500,
     gridspacing=(20.0, 20.0, 20.0),
     narrow=1000,

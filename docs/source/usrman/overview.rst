@@ -64,11 +64,11 @@ Inputs
 Seismic velocity model
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
-    The only required input file to generate a mesh is a binary file containing the velocity data on a structured grid.
+    The only required input file to generate a mesh is velocity model defined as a numpy.ndarray grid of velocity data.
 
-* In 2D, the SEG-y format containing the seismic velocities of the domain is used. To store the seismic velocity model as a SEG-y file (if it isn't already in this format), the traces represent columns of the seismic velocity model. There are many ways to write SEG-y files including the Python package SegyIO.
-
-* In 3D, the seismic velocity model is stored as a binary file but we do not use the SEG-y format. Instead in 3D, data is stored contiguously in memory in the format z,x,y following the little-endian format (by default). For 3D, the user must specify how the data will be reshaped in memory by passing the number of rows in the z-direciton, number of columns in the x-direction, and number of columns in the y-direction when the data is reshaped.
+* A velocity model is a regular Cartesian grid of values with potentially varying grid spacing in each dimension. *SeismicMesh* expects the
+  velocity model to be a numpy.ndarray and orientated so z is the first dimension, x is the second, (and y if in 3D is the 3rd dimension of the array).
+  Please make sure the velocity model grid is orientated in this format otherwise you will experience undeseriable results!
 
 
 Signed distance function

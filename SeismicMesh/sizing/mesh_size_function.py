@@ -30,6 +30,16 @@ from ..geometry import signed_distance_functions as sdf
 from .cpp import limgrad
 
 
+def ReadSegy(fname):
+    """Read a velocity model from a SEG-y file"""
+    with segyio.open(fname, ignore_geometry=True) as f:
+        nz, nx = len(f.samples), len(f.trace)
+        vp = np.zeros(shape=(nz, nx))
+        for index, trace in enumerate(f.trace):
+            vp[:, index] = trace
+        return np.flipud(vp)
+
+
 class MeshSizeFunction:
     """The :class:`MeshSizeFunction` is used to build a rectangular or cubic isotropic mesh size function :math:`f(h)`.
        and assumes the domain is a rectangle (2D) or cube (3D).
@@ -39,7 +49,7 @@ class MeshSizeFunction:
         self,
         bbox,
         hmin,
-        model,
+        velocity_grid,
         units="m-s",
         wl=0.0,
         freq=5.0,
@@ -54,7 +64,6 @@ class MeshSizeFunction:
         nz=None,
         domain_ext=0.0,
         padstyle="edge",
-        endianness="little",
     ):
         """Class constructor for :class:`MeshSizeFunction`
 
@@ -62,16 +71,8 @@ class MeshSizeFunction:
         :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
         :param hmin: minimum triangular edgelength populating the domain in meters.
         :type hmin: float64
-        :param model: in 2D, a SEG-Y file containing the velocity model. In 3D, a binary file containing the velocity model.
-        :type model: name of file (assumes velocity in m-s). Note 3D binary file must be little endian and `nx`, `ny`, `nz` are required.
-        :param endianness: binary layout.
-        :type endianness: optional, (little or big)
-        :param nz: number of grid points in z-direction for velocity model.
-        :type nz: int, optional in 2D, required in 3D
-        :param nx: number of grid points in x-direction for velocity model.
-        :type nx: int, optional in 2D, required in 3D
-        :param ny: number of grid points in y-direction for velocity model.
-        :type ny: int, optional in 2D, required in 3D
+        :param velocity_grid: a grid of velocity values.
+        :type velocity_grid: array-like, numpy.ndarray()
         :param units: units of the velocity model (either `m-s` or `km-s`)
         :type units: str, optional, default=`m-s`
         :param wl: number of vertices per wavelength for a given :math:`f_{max}`
@@ -100,6 +101,7 @@ class MeshSizeFunction:
         """
 
         self.bbox = bbox
+        self.velocity_grid = velocity_grid
         self.dim = int(len(self.bbox) / 2)
         self.width = bbox[3] - bbox[2]
         self.depth = bbox[1] - bbox[0]
@@ -107,7 +109,6 @@ class MeshSizeFunction:
             self.length = bbox[5] - bbox[4]
         self.spacingZ = None
         self.spacingX = None
-        self.model = model
         self.units = units
         self.hmin = hmin
         self.hmax = hmax
@@ -124,10 +125,8 @@ class MeshSizeFunction:
         self.ny = ny
         self.nz = nz
         self.domain_ext = domain_ext
-        self.endianness = endianness
         self.padstyle = padstyle
         self.interpolant = None
-        self.vp = 1500.0
 
     ### SETTERS AND GETTERS ###
 
@@ -185,55 +184,18 @@ class MeshSizeFunction:
         self.__dim = value
 
     @property
-    def vp(self):
-        return self.__vp
+    def velocity_grid(self):
+        return self.__velocity_grid
 
-    @vp.setter
-    def vp(self, value):
+    @velocity_grid.setter
+    def velocity_grid(self, value):
+        if value is None:
+            raise ValueError("Velocity grid must be a numpy array")
         if np.amin(value) < 1000:
             warnings.warn("Min. velocity < 1000 m-s. Units may be incorrect.")
         if np.amax(value) > 10000:
             warnings.warn("Max. velocity > 10,000 m-s. Units may be incorrect.")
-        self.__vp = value
-
-    @property
-    def nz(self):
-        assert self.__nz is not None, "binary file specified but nz was not."
-        return self.__nz
-
-    @nz.setter
-    def nz(self, value):
-        assert value is None or value > 0, " nz is not > 0"
-        self.__nz = value
-
-    @property
-    def nx(self):
-        assert self.__nx is not None, "binary file specified but nx was not."
-        return self.__nx
-
-    @nx.setter
-    def nx(self, value):
-        assert value is None or value > 0, " nx is not > 0"
-        self.__nx = value
-
-    @property
-    def ny(self):
-        assert self.__ny is not None, "binary file specified but ny was not."
-        return self.__ny
-
-    @ny.setter
-    def ny(self, value):
-        assert value is None or value > 0, " ny is not > 0"
-        self.__ny = value
-
-    @property
-    def model(self):
-        return self.__model
-
-    @model.setter
-    def model(self, value):
-        assert isinstance(value, str) is True, "model must be a filename"
-        self.__model = value
+        self.__velocity_grid = value
 
     @property
     def units(self):
@@ -321,15 +283,6 @@ class MeshSizeFunction:
         self.__domain_ext = value
 
     @property
-    def endianness(self):
-        return self.__endianness
-
-    @endianness.setter
-    def endianness(self, value):
-        assert value == "big" or value == "little", "endianness must be little or big"
-        self.__endianness = value
-
-    @property
     def padstyle(self):
         return self.__padstyle
 
@@ -355,7 +308,7 @@ class MeshSizeFunction:
 
         if rank == 0:
             self.__ReadVelocityModel()
-            _vp = self.vp
+            _vp = self.velocity_grid
 
             _bbox = self.bbox
             _dim = self.dim
@@ -609,9 +562,8 @@ class MeshSizeFunction:
         """Writes a velocity model as a hdf5 file for use in Spyro """
         comm = comm or MPI.COMM_WORLD
         if comm.rank == 0:
-            model_fname = self.model
             _dim = self.dim
-            _vp = self.vp
+            _vp = self.velocity_grid
             _nz = self.nz
             _nx = self.nx
             if _dim == 3:
@@ -674,7 +626,6 @@ class MeshSizeFunction:
                 elif _dim == 3:
                     f.attrs["shape"] = (_nz, _nx, _ny)
                 f.attrs["units"] = "m/s"
-                f.attrs["source"] = model_fname
 
     def SaveMeshSizeFunctionOptions(self, ofname):
         " Save your mesh size function options as a hdf5 file" ""
@@ -682,7 +633,6 @@ class MeshSizeFunction:
         print("Saving mesh size function options " + ofname)
         with h5py.File(ofname, "a") as f:
             f.attrs["bbox"] = self.bbox
-            f.attrs["model"] = self.model
             f.attrs["units"] = self.units
             f.attrs["hmin"] = self.hmin
             f.attrs["hmax"] = self.hmax
@@ -701,51 +651,19 @@ class MeshSizeFunction:
     # ---PRIVATE METHODS---#
 
     def __ReadVelocityModel(self):
-        """ Reads a velocity model from a SEG-Y file (2D) or a binary file (3D). Uses the python package segyio."""
-        _fname = self.model
-        # determine type of file
-        isSegy = _fname.lower().endswith((".segy"))
-        isBin = _fname.lower().endswith((".bin"))
-        if isSegy:
-            # print("Found SEG-Y file: " + _fname)
-            with segyio.open(_fname, ignore_geometry=True) as f:
-                # determine dimensions of velocity model from trace length
-                self.nz = len(f.samples)
-                self.nx = len(f.trace)
-                _nz = self.nz
-                _nx = self.nx
-                self.spacingZ = self.depth / _nz
-                self.spacingX = self.width / _nx
-                _vp = np.zeros(shape=(_nz, _nx))
-                for index, trace in enumerate(f.trace):
-                    _vp[:, index] = trace
-                _vp = np.flipud(_vp)
-        elif isBin:
-            # print("Found binary file: " + _fname)
-            _nx = self.nx
-            _ny = self.ny
-            _nz = self.nz
-            self.spacingZ = self.width / _nz
-            self.spacingX = self.width / _nx
-            _type = self.endianness
-            # assumes file is little endian byte order and fortran ordering (column-wise)
-            with open(_fname, "r") as file:
-                _vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
-                _vp = _vp.reshape(_nx, _ny, _nz, order="F")
-            # make sure its z, x, and y
-            _vp = np.flipud(_vp.transpose((2, 0, 1)))
-            print(_vp.shape)
-            # if file was big endian then switch to little endian
-            if _type == "big":
-                _vp = _vp.byteswap()
-        else:
-            print("Did not recognize file type...either .bin or .segy")
-            quit()
+        """Parses a numpy.ndarray velocity model"""
+        # nz, nx, ny and spacingZ, and spacingX
+        sd = self.dim
+        if sd == 2:
+            self.nz, self.nx = self.velocity_grid.shape
+        elif sd == 3:
+            self.nz, self.nx, self.ny = self.velocity_grid.shape
+        self.spacingZ = self.depth / self.nz
+        self.spacingX = self.width / self.nx
+
         if self.__units == "km-s":
             print("Converting model velocities to m-s...")
-            _vp *= 1e3
-        self.vp = _vp
-        return None
+            self.velocity_grid *= 1e3
 
     def __CreateDomainVectors(self):
         """ it is what it is """

@@ -63,32 +63,7 @@ The original data for the 3D example can be downloaded here::
 
 
 For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
-The 3D Salt model was used from that archive and modified using the code below.
-
-The following lines were used to turn the original binary data into a format that was usable for *SeismicMesh*. Please copy these lines and place them in a file say called `convert.py` and execute that.::
-
-    import zipfile
-    import numpy as np
-    # Dimensions
-    nx, ny, nz = 676, 676, 210
-
-    path = './salt_and_overthrust_models/3-D_Salt_Model/VEL_GRIDS'
-    # Extract Saltf@@ from SALTF.ZIP
-    zipfile.ZipFile(path + 'SALTF.ZIP', 'r').extract('Saltf@@', path=path)
-
-    # Load data
-    with open(path + 'Saltf@@', 'r') as file:
-       v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
-       v = v.reshape(nx, ny, nz, order='F')
-       v = np.asarray(v, order="C")
-
-    # Write the v to a binary file
-    file = open("EAGE_Salt.bin", "wb")
-    file.write(v)
-    file.close()
-
-.. note::
-    In addition to the above, one can simply pass the 3D grid of velocity data directly to the :class:`MeshSizeFunction` class through the gridded_v name/value pair.
+See example_3D.py for how to read in the binary into a numpy array.
 
 
 File I/O and visualization of meshes
@@ -106,13 +81,13 @@ This seismic velocity model is passed to the *MeshSizeFunction* class along with
 
     import SeismicMesh
 
-    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
     bbox = (-12e3, 0, 0, 67e3)
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
-        model=fname,
+        velocity_grid = vp,
         other-args-go-here,...
     )
 
@@ -178,14 +153,13 @@ The highest frequency of the source wavelet :math:`f_{max}` and the smallest val
 
 The user is able to specify the number of vertices per wavelength :math:`\alpha_{wl}` the peak source frequency :math:`f_{max}`. This sizing heuristic also  can be used to take into account varying polynomial orders for finite elements. For instance if using quadratic P=2 elements, :math:`\alpha_{wl}` can be safely be set to 5 to avoid excessive dispersion and dissipatation otherwise that would occur with P=1 elements::
 
-   import SeismicMesh
-   fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
    bbox = (-12e3, 0, 0, 67e3)
+   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
 
    # Construct mesh sizing object from velocity model
    ef = SeismicMesh.MeshSizeFunction(
        bbox=bbox,
-       model=fname,
+       velocity_grid = vp,
        freq=2, # maximum source frequency
        wl=3, # :math:`\alpha_{wl}` number of grid points per wavelength
    )
@@ -200,13 +174,13 @@ For instance a :math:`grad` of 50 would imply that the largest gradient in seism
 
     import SeismicMesh
 
-    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
     bbox = (-12e3, 0, 0, 67e3)
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
-        model=fname,
+        velocity_grid=vp,
         grad=50, # the desired mesh size in meters near the shaprest gradient in the domain
     )
 
@@ -235,13 +209,14 @@ For the linear acoustic wave equation assuming isotropic mesh resolution, the CF
 where :math:`h` is the diameter of the circumball that inscribes the element either calculated from :math:`f(h)` or from the actual mesh cells, :math:`dim` is the spatial dimension of the problem (2 or 3), :math:`\Delta t` is the intended simulation time step in seconds and :math:`v_p` is the local seismic P-wave velocity. The above equation can be rearranged to find the minimum mesh size possible for a given :math:`v_p` and :math:`\Delta t`, based on some user-defined value of :math:`Cr \leq 1`. If there are any violations of the CFL, they can bed edited before building the mesh so to satisfy that the maximum :math:`Cr` is less than some conservative threshold. We normally apply :math:`Cr = 0.5`, which provides a solid buffer but this can but this can be controlled by the user like the following::
 
     import SeismicMesh
-    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
+
     bbox = (-12e3, 0, 0, 67e3)
+    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
-        model=fname,
+        velocity_grid=vp,
         cr=0.5, # maximum bounded Courant number to be bounded in the mesh sizing function
         dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
         ...
@@ -251,7 +226,7 @@ Further, the space order of the method (:math:`p`) can also be incorporated into
 
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
-        model=fname,
+        velocity_grid=vp,
         cr=0.5, # maximum bounded Courant number :math:`Cr_{max}` in the mesh
         dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
         space_order = 2, # assume quadratic elements :math:`P=2`
@@ -275,13 +250,13 @@ A smoothness criteria is necessary to produce a mesh that can simulate physical 
 We adopt the method to smooth the mesh size function originally proposed by [grading]_. A smoother sizing function is congruent with a higher overall element quality but with more triangles in the mesh. Generally, setting :math:`0.2 \leq \alpha_g \leq 0.3` produces good results::
 
    import SeismicMesh
-   fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
    bbox = (-12e3, 0, 0, 67e3)
+   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
 
    # Construct mesh sizing object from velocity model
    ef = SeismicMesh.MeshSizeFunction(
        bbox=bbox,
-       model=fname,
+       velocity_grid=vp,
        grade=0.15, # :math:`g` cell-to-cell size rate growth bound
        ...
    )
@@ -298,13 +273,13 @@ Domain extension
 In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
    import SeismicMesh
-   fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
    bbox = (-12e3, 0, 0, 67e3)
+   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
 
    # Construct mesh sizing object from velocity model
    ef = SeismicMesh.MeshSizeFunction(
        bbox=bbox,
-       model=fname,
+       velocity_grid=vp,
        domain_extension=250, # domain will be extended by 250-m on all three sides
        ...
    )
@@ -322,7 +297,7 @@ An example of the ``edge`` style is below::
    # Construct mesh sizing object from velocity model
    ef = SeismicMesh.MeshSizeFunction(
        bbox=bbox,
-       model=fname,
+       velocity_grid=vp,
        domain_extension=250, # domain will be extended by 250-m on all three sides
        padstyle="edge", # velocity will be extends from values at the edges of the domain
        ...
