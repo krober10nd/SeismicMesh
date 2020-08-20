@@ -1,7 +1,8 @@
 Overview
 ========
 
-This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. These meshes are suitable for acoustic and elastic numerical wave propagators. A focus is placed on parallel unstructured mesh generation capabilities. The capabilities of the software are exposed to the user via a simple application program interfaces (API) written in Python and the software feature parallel algorithms that can be scaled up on distributed memory clusters.
+
+This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. The main advantage of triangular meshes over cubes or rectangles is their ability to cost-effectively resolve variable material properties. These meshes are suitable for acoustic and elastic numerical wave propagators. A focus is placed on parallel unstructured mesh generation capabilities. A simple application program interfaces (API) written in Python enables the user to call parallel meshing algorithms that can be scaled up on distributed memory clusters.
 
 *SeismicMesh* is currently being used to generate simplical meshes in 2D and 3D for acoustic and elastic wave propagators written using a Domain Specific Language called *Firedrake* [firedrake]_. These type of numerical simulations are used in Full Waveform Inversion, Reverse Time Migration, and Time Travel Tomography applications.
 
@@ -47,7 +48,7 @@ The code is partitioned into two main classes. A typical workflow consists of tw
 *MeshSizeFunction*
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-This convenience class creates an isotropic mesh size function :math:`f(h)` and defines the domain through a signed distance function :math:`f(d)` assuming the domain is a rectangle/cube. The user passes a number of arguments to the class. Specific arguments are detailed in the code API section of this website.
+This convenience class creates a mesh size function :math:`f(h)` and defines the domain through a signed distance function :math:`f(d)` assuming the domain is a rectangle/cube. The user passes a number of arguments to the class. Specific arguments are detailed in the code API section of this website.
 
 *MeshGeneration*
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -55,7 +56,7 @@ This convenience class creates an isotropic mesh size function :math:`f(h)` and 
 This class takes as input a *MeshSizeFunction* object and it constructs a simplicial mesh in either serial or parallel outputting points and simplices. Additionally, it has support a mesh improvement strategy [slivers]_ aimed at removing degenerate elements that are ubiqituous in 3D Delaunay mesh generation methods.
 
 .. note ::
-    However, it can also accept a user-defined signed distance function and mesh sizing function.
+    However, it can also accept a user-defined signed distance function and user-defined mesh sizing function.
 
 Inputs
 -------------------------------------------
@@ -100,7 +101,7 @@ The purpose of the :class:`MeshSizeFunction` class is to build this map directly
 .. note ::
     This program uses a modified version of the *DistMesh* algorithm [distmesh]_ to generate simplical meshes.
 
-For the generation of triangular meshes in 2D and 3D, we use a modified version of the *DistMesh* algorithm [distmesh]_. The algorithm is both simple and practically useful as it can produce high-geometric quality meshes in N-dimensional space. Further, by utilizing our approach to produce mesh size functions, the mesh generation algorithm is capable of generating high-quality meshes faithful to user-defined target sizing fields and that are numerically stable.
+For the generation of triangular meshes in 2D and 3D, we use a modified version of the *DistMesh* algorithm [distmesh]_. The algorithm is both simple and practically useful as it can produce high-geometric quality meshes in N-dimensional space. Further, by utilizing our approach to produce mesh size functions, the mesh generation algorithm is capable of generating high-quality meshes faithful to user-defined target sizing fields. A benefit of this is that mesh sizes can be built to respect numerically stability requirements a priori.
 
 Briefly, the mesh generation algorithm is iterative and terminates after a pre-set number of iterations (e.g., 50-100). It commences with an initial distribution of vertices in the domain and iteratively relocates the vertices to create higher-geometric quality elements. The edges of the mesh act as *springs* that obey a constitutive law (e.g., Hooke's Law) otherwise referred to as a *force function*. During each meshing iteration, the discrepancy between the length of the edges in the mesh connectivity and their target length from the sizing function produce movement in the triangles' vertices.
 
