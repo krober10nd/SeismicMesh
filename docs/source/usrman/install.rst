@@ -9,9 +9,9 @@ build *SeismicMesh*:
 
 * Python >= 3.0
 .. note ::
-    The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers.
+    The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers. These packages should be installed at compile time by setuptools
 .. note ::
-    Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package.
+    Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package after attempting installation of SeismicMesh.
 
 * Pybind11 >= 2.5
 .. note ::
@@ -21,22 +21,28 @@ build *SeismicMesh*:
 
 * Cmake >= 3.0
 
-* MPFR
+* CGAL >= 5.0.0
 
-* GMP
-.. note ::
-    CGAL requires MPFR and GMP. These packages may already be installed on your standard Linux box.
+    * MPFR
 
-* CGAL >= 5.0
+    * GMP
+
+    * Boost > 1.4.8
+
+
 .. warning ::
-    Be aware that apt-get does not install the necessary version >=5.0 of CGAL. It is strongly recommended to build CGAL manually by source using Cmake instead. Please follow these instructions https://doc.cgal.org/latest/Manual/installation.html
+    Be aware that apt-get does not install the necessary version >=5.0.0 of CGAL for this project. Thus, you will need to build CGAL manually by source using CMake instead. To do this, please follow these instructions https://doc.cgal.org/latest/Manual/installation.html
 
-* Boost > 1.4.8
+.. note ::
+    CGAL requires Boost, MPFR and GMP. These packages may already be installed on your standard Linux box.
+
+
+
 
 Clusters
 -------------
 
-If installing on a cluster with a local  installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
+If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
 
   -DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER
 
@@ -50,10 +56,10 @@ If installing on a cluster with a local  installation of ``CGAL`` and ``Boost``,
 Compilation
 -------------
 
-After installing all dependencies, perform the two steps in the main directory in the order they appear::
+After installing all dependencies, perform the two steps in the main directory in the order that they appear below::
 
 $  git submodule update --init --recursive
-$  python setup.py develop
+$  pip install -e .
 
 .. note ::
     If you do not have administrative rights on your system, add the flag ``--user`` to end of the second command
@@ -65,7 +71,10 @@ Testing is accomplished with `pytest`. The `pytest` package can be installed lik
 
     pip install pytest
 
-To quickly test the installation, serial and parallel capabilites, you can use `pytest` from the `test/` directory::
+.. note ::
+    If you do not have administrative rights on your system, add the flag ``--user`` to end of the pip command.
+
+To test the installation, serial and parallel capabilites, you can use `pytest` from the `test/` directory::
 
 $ cd tests/
 $ pytest -m "serial" .

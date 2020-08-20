@@ -32,6 +32,7 @@ from .cpp import limgrad
 
 class MeshSizeFunction:
     """The :class:`MeshSizeFunction` is used to build a rectangular or cubic isotropic mesh size function :math:`f(h)`.
+       and assumes the domain is a rectangle (2D) or cube (3D).
     """
 
     def __init__(
@@ -92,7 +93,7 @@ class MeshSizeFunction:
         :param domain_ext: width of domain extension in `-z`, `+x`, `-x`, `+y`, `-y` directions
         :type domain_ext: float64, optional
         :param padstyle: method to pad velocity in the domain extension
-        :type padstyle: str, optional, `edge`, `linear`, `constant`
+        :type padstyle: str, optional, `edge`, `linear_ramp`, `constant`
 
         :return: object populated with meta-data, :math:`f(h)`, and a :math:`f(d)`.
         :rtype: :class:`MeshSizeFunction` object
@@ -478,7 +479,7 @@ class MeshSizeFunction:
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
                 )
-            # python can't bcast pickles so this is done after in parallel
+            # Python can't bcast pickles so this is done after in parallel
             if size == 1:
                 # create a mesh size function interpolant
                 self.fh = lambda p: self.interpolant(p)
@@ -583,7 +584,7 @@ class MeshSizeFunction:
         return zg, xg
 
     def hj(self, fun, elen, imax):
-        """ Call-back to the cpp gradient limiter code """
+        """Call-back to the cpp gradient limiter code """
         _dim = self.dim
         _nz = self.nz
         _nx = self.nx
@@ -605,7 +606,7 @@ class MeshSizeFunction:
         return fun_s
 
     def WriteVelocityModel(self, ofname, comm=None):
-        """ Writes a velocity model as a hdf5 file for use in Spyro """
+        """Writes a velocity model as a hdf5 file for use in Spyro """
         comm = comm or MPI.COMM_WORLD
         if comm.rank == 0:
             model_fname = self.model
@@ -716,10 +717,8 @@ class MeshSizeFunction:
                 self.spacingZ = self.depth / _nz
                 self.spacingX = self.width / _nx
                 _vp = np.zeros(shape=(_nz, _nx))
-                index = 0
-                for trace in f.trace:
+                for index, trace in enumerate(f.trace):
                     _vp[:, index] = trace
-                    index += 1
                 _vp = np.flipud(_vp)
         elif isBin:
             # print("Found binary file: " + _fname)
@@ -850,7 +849,7 @@ class MeshSizeFunction:
             return hh_m
 
     def __CreateDomainExtension(self):
-        """ edit bbox to reflect domain extension (should be a function) """
+        """Edit bbox to reflect domain extension"""
         _dim = self.dim
         _bbox = self.bbox
         _domain_ext = self.domain_ext

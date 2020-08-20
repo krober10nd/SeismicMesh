@@ -17,13 +17,7 @@ find_package(CGAL)
 message(STATUS "CGAL version: ${CGAL_VERSION}")
 
 if( CGAL_VERSION  VERSION_LESS 5.0)
-    message(FATAL "This project requires the CGAL 5.0 library, and will not be compiled.")
-    return()
-endif()
-
-if (NOT CGAL_FOUND)
-    message(FATAL "This project requires the CGAL library, and will not be compiled.")
-  return()
+    message(FATAL_ERROR "This project requires at least CGAL 5.0 library and will not be compiled.")
 endif()
 
 

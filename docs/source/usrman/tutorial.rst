@@ -11,27 +11,37 @@ Tutorial
 either serial or parallel from seismic velocity models. It also supports the generation of
 complex mesh sizing functions that are relevant to seismological applications.
 
-Here I show how to build meshes from sizing functions created with the software and explain what the options mean. Nearly the same code extends to 3D with only changes to the data and domain extents. For a 3D example, see the file ``example/example_3D.py``
+Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial or parallel and 2D or D is identical.
 
-Distributed memory parallelism can be used by first importing ``mpi4py`` and declaring the following three lines near the top of the script (after your other imports)::
+Assuming you've coded a short Python script to call *SeismicMesh* (similar to what is shown in the examples), you simply call the script with python for serial execution::
+
+    python your_script.py
+
+Distributed memory parallelism can be used by first writing an extra import statement for  ``mpi4py`` (``import mpipy``) near your other imports and then writing the following three lines directly near the top of your script (after your other imports and before you call the *SeismicMesh* API)::
 
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-Otherwise, the application program interface remains the same between serial and parallel execution in both 2D and 3D. Parallel exeuction takes place by typing::
+.. note::
+   These lines have no affect on serial execution and its fine to leave them in if you intend to only use serial execution.
+
+Parallel exeuction takes place by typing::
 
     mpirun -np N python your_script.py
 
 where `N` is the number of processors (e.g., 2,3,4 etc.)
 
 .. warning::
-    Oversubscribing the problem to too many processors will surely lead to problems and slow downs. Generally, keeping the number of vertices per rank between 10-30k/ rank results in optimal performance.
-
+    Oversubscribing the problem to too many processors will surely lead to problems and slow downs. Generally, keeping the minimum number of vertices per rank to between 20-50k/rank results in optimal performance.
 
 
 Data for examples
 -------------------
+
+.. note::
+    Users should create a directory called `velocity_models` and place their seismic velocity models there.
+
 
 Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
 
@@ -48,31 +58,42 @@ For more details about these two models, see the following link::
 
 The original data for the 3D example can be downloaded here::
 
-    wget https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/salt_and_overthrust_models.tar.gz
+    https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
 
 
 For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
-The 3D Salt model was used from that archive.
+The 3D Salt model was used from that archive and modified using the code below.
 
-The following procedure was used to turn the original binary data into a format that was usable for *SeismicMesh*::
+The following lines were used to turn the original binary data into a format that was usable for *SeismicMesh*. Please copy these lines and place them in a file say called `convert.py` and execute that.::
 
     import zipfile
     import numpy as np
     # Dimensions
     nx, ny, nz = 676, 676, 210
 
+    path = './salt_and_overthrust_models/3-D_Salt_Model/VEL_GRIDS'
     # Extract Saltf@@ from SALTF.ZIP
-    zipfile.ZipFile('./data/SALTF.ZIP', 'r').extract('Saltf@@', path='./data/')
+    zipfile.ZipFile(path + 'SALTF.ZIP', 'r').extract('Saltf@@', path=path)
 
     # Load data
-    with open('./data/Saltf@@', 'r') as file:
+    with open(path + 'Saltf@@', 'r') as file:
        v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
        v = v.reshape(nx, ny, nz, order='F')
+       v = np.asarray(v, order="C")
+
     # Write the v to a binary file
     file = open("EAGE_Salt.bin", "wb")
     file.write(v)
     file.close()
 
+.. note::
+    In addition to the above, one can simply pass the 3D grid of velocity data directly to the :class:`MeshSizeFunction` class through the gridded_v name/value pair.
+
+
+File I/O and visualization of meshes
+------------------------
+
+Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). Note that *SeismicMesh* makes the assumption that the first dimenion is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
 
 Some things to know
 ---------------------
@@ -144,7 +165,7 @@ Mesh size function
 Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing function returns the desired mesh size :mod:`h` near to that point. The mesh sizing capability provides is a convenience class that helps draft new meshes in a consistent and repeatable manner directly from available seismic velocity models. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism. Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.
 
 .. note:
-    Seismic velocity models often have constant grid spacing in each dimension. The software considers this automatically.
+    Seismic velocity models often have different constant grid spacings in each dimension. The software considers this automatically based on the domain extents.
 
 The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh strategy is briefly described and psuedo-code regarding how to call the :class:`MeshSizeFunction` class constructor.
 
@@ -200,7 +221,7 @@ For instance a :math:`grad` of 50 would imply that the largest gradient in seism
 Courant-Friedrichs-Lewey (CFL) condition
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Almost all numerical wave propagators utilize explicit numerical methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerical instability and a useless unstable simulation. Thus, one thing we must be careful of when using the above mesh size functions is that the CFL condition is indeed bounded.
+Almost all numerical wave propagators utilize explicit time-stepping methods in the seismic domain. The major advantage for these explicit methods is computational speed. However, it is well-known that all explicit or semi-explicit methods require that the Courant number be bounded above by the Courant-Friedrichs-Lewey (CFL) condition. Ignoring this condition will lead to a numerically unstable simulation. Thus, we must ensure that the Courant number is indeed bounded for the overall mesh size function.
 
 After sizing functions have been activated, a conservative maximum Courant number is enforced.
 
@@ -273,7 +294,7 @@ Domain extension
 
     It is assumed that the top side of the domain represents the free-surface thus no domain extension is applied there.
 
-In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce abosrbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
+In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
    import SeismicMesh
    fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
@@ -293,7 +314,7 @@ In this domain extension region, mesh resolution can be adapted according to fol
 
  * ``Constant`` - places a constant velocity of the users selection in the domain extension.
 
- * ``Edge`` - reflects the seismic velocity about the domain boundary so that velocity profile is symmetric w.r.t domain boudnaries.
+ * ``Edge`` - extends the seismic velocity about the domain boundary so that velocity profile is identical to its edge values.
 
 An example of the ``edge`` style is below::
 
@@ -302,7 +323,7 @@ An example of the ``edge`` style is below::
        bbox=bbox,
        model=fname,
        domain_extension=250, # domain will be extended by 250-m on all three sides
-       padstyle="edge", # velocity will be reflected about the edges of the domain
+       padstyle="edge", # velocity will be extends from values at the edges of the domain
        ...
    )
 
@@ -333,7 +354,7 @@ And then they call the ``build`` method specifying the number of iterations they
 
 .. note :: Generally setting max_iter to between 50 to 100 iterations works best. By default it runs 50 iterations.
 
-.. note :: For parallel exeuction, the user can choose which axis (0, 1, or 2 (if 3D)) to decompose the domain.
+.. note :: For parallel execution, the user can choose which axis (0, 1, or 2 (if 3D)) to decompose the domain.
 
 Or, the second way the user specified their own mesh size function ``f(h)`` and/or ``f(d)``::
 
@@ -385,7 +406,7 @@ If the intended usage of the mesh is for numerical simulation, it is strongly en
         points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
     )
 
-Note that here we pass it the points from the previous call to build and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_angle`` is set to :math:`10`.  The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected.
+Note that here we pass it the points from the previous call to `build` and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to bulid the mesh, this algorithm will converge in 10-20 iterations.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already succesfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
@@ -395,5 +416,3 @@ ______________
 
 .. [grading] Persson, Per-Olof. "Mesh size functions for implicit geometries and PDE-based gradient limiting."
                 Engineering with Computers 22.2 (2006): 95-109.
-
-.. [firedrake] Florian Rathgeber, David A. Ham, Lawrence Mitchell, Michael Lange, Fabio Luporini, Andrew T. T. Mcrae, Gheorghe-Teodor Bercea, Graham R. Markall, and Paul H. J. Kelly. Firedrake: automating the finite element method by composing abstractions. ACM Trans. Math. Softw., 43(3):24:1–24:27, 2016. URL: http://arxiv.org/abs/1501.01809, arXiv:1501.01809, doi:10.1145/2998441.

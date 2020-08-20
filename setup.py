@@ -4,9 +4,18 @@ import sys
 import platform
 import subprocess
 
-from setuptools import setup, Extension, find_packages
 from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
+
+try:
+    from setuptools import setup, Extension, find_packages
+except ImportError:
+    print("Setuptools is required to build!")
+
+if sys.version_info < (3, 0):
+    print("Python 3.0 or higher required, please upgrade.")
+    sys.exit(1)
+
 
 files = ["*.so*"]
 

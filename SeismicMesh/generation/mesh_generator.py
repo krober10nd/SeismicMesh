@@ -36,8 +36,6 @@ class MeshGenerator:  # noqa: C901
 
        :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
        :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
-       :param method: The back-end Delaunay triangulation algorithm to use. Either `qhull` or `cgal`. NB: qhull is 5 times slower than cgal. Default=`cgal`.
-       :type method: A string either `qhull` or `cgal`, optional
        :param fd: A function that accepts an array of points and returns the signed distance to the boundary of the domain.
        :type fd: A function object, optional if no :class:`SizingFunction` is passed
        :param fh: A call-back function that accepts an array of points and returns an array of desired triangular mesh sizes close by to each point in the passed array.
@@ -144,7 +142,7 @@ class MeshGenerator:  # noqa: C901
         """
          Using callbacks to a sizing function and signed distance field build a simplical mesh.
 
-        :param max_iter: maximum number of iterations, default=100
+        :param max_iter: maximum number of iterations (default==50)
         :type max_iter: int, optional
         :param nscreen: output to screen every nscreen iterations (default==1)
         :type nscreen: int, optional

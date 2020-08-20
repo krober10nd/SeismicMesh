@@ -51,8 +51,8 @@ def test_3dpar_mesher():
         vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
         print(len(points), len(cells))
-        assert np.abs(9220 - len(points)) < 250
-        assert np.abs(49156 - len(cells)) < 250
+        assert np.abs(9220 - len(points)) < 1000
+        assert np.abs(49156 - len(cells)) < 1000
 
 
 if __name__ == "__main__":
