@@ -25,6 +25,7 @@ rank = comm.Get_rank()
 # with open('./data/Saltf@@', 'r') as file:
 #    v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
 #    v = v.reshape(nx, ny, nz, order='F')
+#    v = np.asarray(v, order="C")
 # # Write the v to a binary file
 # file = open("EAGE_Salt.bin", "wb")
 # file.write(v)
@@ -49,7 +50,7 @@ def example_3D():
         freq=2,
         wl=5,
         grade=0.25,
-        hmin=100,
+        hmin=150,
         hmax=5e3,
         domain_ext=250,
         padstyle="linear_ramp",

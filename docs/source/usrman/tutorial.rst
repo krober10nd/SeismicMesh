@@ -79,6 +79,8 @@ The following lines were used to turn the original binary data into a format tha
     with open(path + 'Saltf@@', 'r') as file:
        v = np.fromfile(file, dtype=np.dtype('float32').newbyteorder('>'))
        v = v.reshape(nx, ny, nz, order='F')
+       v = np.asarray(v, order="C")
+
     # Write the v to a binary file
     file = open("EAGE_Salt.bin", "wb")
     file.write(v)
