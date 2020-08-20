@@ -11,7 +11,7 @@ Tutorial
 either serial or parallel from seismic velocity models. It also supports the generation of
 complex mesh sizing functions that are relevant to seismological applications.
 
-Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial or parallel and 2D or D is identical.
+Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial or parallel and 2D or 3D is identical.
 
 Assuming you've coded a short Python script to call *SeismicMesh* (similar to what is shown in the examples), you simply call the script with python for serial execution::
 
@@ -24,7 +24,7 @@ Distributed memory parallelism can be used by first writing an extra import stat
     rank = comm.Get_rank()
 
 .. note::
-   These lines have no affect on serial execution and its fine to leave them in if you intend to only use serial execution.
+   These lines have no effect on serial execution and its fine to leave them in if you intend to only use serial execution.
 
 Parallel exeuction takes place by typing::
 
