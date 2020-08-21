@@ -27,7 +27,7 @@ bibliography: paper.bib
 `SeismicMesh` is a Python package for generating quality two and three dimensional triangular and tetrahedral meshes from seismic velocity models using signed distance functions to define geometry. C++ code is wrapped with Python for high performance without losing flexibility or ease-of-use. Mesh generation is accomplished in either serial or using distributed memory parallelism through modifications to a smoothing-based mesh generation algorithm known as `DistMesh` [@doi:10.1137/S0036144503429121; @peterka2014high]. The program uses the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20a] to perform many geometric operations efficiently while avoiding numerical round-off problems
 
 
-  # Background
+# Background
 
 Generating a high-geometric quality graded mesh for a geophysical domain represents a modern challenge for sophisticated seismological workflows using the Finite Element Method (FEM). In these applications, a domain is discretized typically with triangles/tetrahedral elements that vary widely in size around features of interest. In seismology, these meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves. Geophysical exploration studies solve inverse problems with these wave propagators for seismic velocity model building applications such as Full Waveform Inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and Reverse Time Migration (RTM) [@10.1093/gji/ggv380]. In these inversion problems, many forward and adjoint simulations are computed, which motivates a mesh that needs to efficiently discretize the domain and be accurate to simulate  with.
 
@@ -53,7 +53,7 @@ A schematic of `SeismicMesh` is shown in \autoref{fig:workflow}. The core functi
 
 Domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary. Geometries such as the free surface  boundary, seafloor, volcanoes, and salt-bodies are characterized by pronounced changes to seismic velocities making it possible to demarcate these regions by thresholding seismic velocity. A capability is provided in to create signed distance functions from isocontours of seismic velocity using the Fast-Marching method [@sethian1996fast].
 
- # Parallelism
+# Parallelism
 
 Time-domain FWI and RTM require relatively high source frequencies (e.g., 5-7 Hz) to produce high-resolution seismic velocity images, which lead to large meshes. A minimum number of 5 to 10 vertices per wavelength (~250-2000 m) of the source wavelet is applied to ensure the subsequent simulation is numerically accurate, which makes the generation of tetrahedral meshes computationally expensive. For example, a 3D mesh of a benchmark FWI model EAGE Salt [@doi:10.1190/1.1437283] requires 507,862 cells when resolving a 2 Hz source frequency using 5 vertices per wavelength. The umber of cells by a factor of approximately 8 (approximately 4,082,978 cells) as the source frequency is doubled.
 
@@ -63,7 +63,7 @@ Time-domain FWI and RTM require relatively high source frequencies (e.g., 5-7 Hz
  ![Speed-up (left-axis) as compared to the sequential version of the program and wall-clock time in minutes to generate a 3D mesh (approximately 4.6 M cells) for the EAGE Salt seismic velocity model. The panel on the right hand side shows the a slice through the center of the generated mesh. \label{fig:speedup}](Performance.jpg)
 
 
- # Future applications
+# Future applications
 
  Here are some future applications for this software:
 
