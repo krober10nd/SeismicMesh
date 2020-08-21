@@ -64,7 +64,7 @@ Inputs
 Seismic velocity model
 ^^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
-    The only required input file to generate a mesh is velocity model defined as a numpy.ndarray grid of velocity data.
+    The only required input file to generate a mesh is a velocity model defined as a numpy.ndarray grid containing velocity data at each grid point.
 
 * A velocity model is a regular Cartesian grid of values with potentially varying grid spacing in each dimension. *SeismicMesh* expects the
   velocity model to be a numpy.ndarray and orientated so z is the first dimension, x is the second, (and y if in 3D is the 3rd dimension of the array).
