@@ -12,6 +12,8 @@ build *SeismicMesh*:
     The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers. These packages should be installed at compile time by setuptools
 .. note ::
     Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package after attempting installation of SeismicMesh.
+.. note :: 
+    On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
 
 * Pybind11 >= 2.5
 .. note ::
