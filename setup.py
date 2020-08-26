@@ -17,9 +17,6 @@ if sys.version_info < (3, 0):
     sys.exit(1)
 
 
-files = ["*.so*"]
-
-
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
         Extension.__init__(self, name, sources=[])
@@ -87,14 +84,13 @@ with open("README.rst", "r") as fh:
 setup(
     name="SeismicMesh",
     url="https://github.com/krober10nd/SeismicMesh",
-    version="1.2.4",
+    version="1.2.41",
     author="Keith Roberts",
     author_email="keithrbt0@gmail.com",
     description="2D/3D serial and parallel triangular mesh generation and mesh improvement for seismology",
     long_description=long_description,
     long_description_content_type="text/x-rst",
     setup_requires=["pybind11"],
-    license_files="LICENSE",
     install_requires=[
         "numpy",
         "segyio",
@@ -107,7 +103,7 @@ setup(
         "scikit-fmm",
     ],
     packages=find_packages(),
-    package_data={"SeismicMesh": files},
+    package_data={"SeismicMesh": ["*.so", "*.txt"]},
     include_package_data=True,
     ext_modules=[
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),

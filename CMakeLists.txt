@@ -31,6 +31,9 @@ set (GEOMETRY_SRCE "SeismicMesh/geometry/cpp")
 
 include_directories (${MIGRATION_SRCE} ${GENERATION_SRCE} ${SIZING_SRC} ${GEOMETRY_SRCE})
 
+find_package(pybind11)
+message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
+
 add_subdirectory(pybind11)
 pybind11_add_module(cpputils ${SOURCES}  "${MIGRATION_SRCE}/cpputils.cpp")
 pybind11_add_module(FastHJ ${SOURCES} "${SIZING_SRCE}/FastHJ.cpp")
