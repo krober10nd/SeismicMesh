@@ -14,8 +14,8 @@
 .. image:: https://readthedocs.org/projects/seismicmesh/badge/?version=par3d
         :target: https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d
 	
-.. image:: https://img.shields.io/badge/License-BSD%202--Clause-orange.svg
-	:target: https://opensource.org/licenses/BSD-2-Clause
+.. image:: https://img.shields.io/badge/License-GPLv3-blue.svg
+	:target: https://www.gnu.org/licenses/gpl-3.0
 	
 .. image:: https://zenodo.org/badge/216707188.svg
    :target: https://zenodo.org/badge/latestdoi/216707188
@@ -24,7 +24,7 @@
 
 SeismicMesh_: Mesh generation for Seismology in Python
 ==============================================
-2D/3D triangular meshing for a slab of Earth based on modifications to the DistMesh_ algorithm. SeismicMesh is distributed under the BSD 2-Clause.
+2D/3D triangular meshing for a slab of Earth based on modifications to the DistMesh_ algorithm. SeismicMesh is distributed under GPL3.
 
 .. _SeismicMesh: https://github.com/krober10nd/SeismicMesh
 .. _DistMesh: http://persson.berkeley.edu/distmesh/
