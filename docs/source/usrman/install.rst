@@ -55,8 +55,8 @@ If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, 
   -DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include
 
 
-Compilation
--------------
+Compilation by source
+----------------------
 
 After installing all dependencies, perform the two steps in the main directory in the order that they appear below::
 
@@ -65,6 +65,8 @@ $  pip install -e .
 
 .. note ::
     If you do not have administrative rights on your system, add the flag ``--user`` to end of the second command
+.. note :: 
+    It's highly recommended to just use pip to install (after installing CGAL): pip install SeismicMesh
 
 Testing
 -------
