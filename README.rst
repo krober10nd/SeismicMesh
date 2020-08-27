@@ -7,7 +7,6 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
         :target: https://github.com/ambv/black
 
-
 .. image:: http://www.repostatus.org/badges/latest/active.svg
 	:target: http://www.repostatus.org/#active
 
@@ -19,6 +18,15 @@
 	
 .. image:: https://zenodo.org/badge/216707188.svg
    :target: https://zenodo.org/badge/latestdoi/216707188
+
+.. image:: https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square 
+   :target: https://pypi.org/pypi/SeismicMesh
+
+.. image:: https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square 
+   :target: https://pypi.org/project/SeismicMesh
+
+.. image:: https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square
+   :target: https://pypistats.org/packages/SeismicMesh
 
 
 
