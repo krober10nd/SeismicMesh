@@ -67,7 +67,6 @@ Example
 The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel like so...
 
 .. code-block:: python
-    #First we take care of our imports
 
     import numpy as np
     import zipfile
