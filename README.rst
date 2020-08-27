@@ -26,7 +26,7 @@
    :target: https://pypi.org/project/SeismicMesh
 
 .. image:: https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square
-   :target: https://pypistats.org/packages/SeismicMesh
+   :target: https://pypistats.org/packages/seismicmesh
 
 
 
@@ -42,16 +42,12 @@ SeismicMesh_: Mesh generation for Seismology in Python
 Installation
 =====================
 
-For installation, SeismicMesh needs CGAL (https://www.cgal.org/)::
+For installation, SeismicMesh needs `CGAL <https://www.cgal.org/>`_ and `pybind11 <https://github.com/pybind/pybind11>`_:: 
 
-    sudo apt install libcgal-dev
-
-and pybind11 (https://github.com/pybind/pybind11):: 
-
-    sudo apt-get install python-pybind11
+    sudo apt install libcgal-dev python-pybind11
 
 After that, SeismicMesh can be installed from the Python Package
-Index (https://pypi.org/project/SeismicMesh/), so with::
+Index (`pypi <https://pypi.org/project/SeismicMesh/>`_), so with::
 
     pip install -U SeismicMesh
 
@@ -64,7 +60,14 @@ For more detailed information about installation and requirements see:
 Example 
 ===========
 
-The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel like so...
+The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel. For example in 3D...
+
+.. warning:: 
+    You must download the benchmark 3D velocity model from here to run the example below:
+    https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
+
+
+.. image:: https://github.com/krober10nd/SeismicMesh/raw/par3d/imgs/EAGE_Example.jpg
 
 .. code-block:: python
 
@@ -80,8 +83,6 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-    # Here we download a benchmark 3D velocity model and turn it into a Numpy array
-    # https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
 
     if rank == 0: 
         # Dimensions of model (number of grid points in z, x, and y)
@@ -158,9 +159,5 @@ All other information is available at: https://seismicmesh.readthedocs.io
 - Tutorials that will guide you through the main features.
 
 
-Gallery:
-==============================================
-
-.. image:: https://github.com/krober10nd/SeismicMesh/raw/par3d/imgs/seismic_example3.png
 .. image:: https://github.com/krober10nd/SeismicMesh/raw/par3d/imgs/seismic_example.png
 
