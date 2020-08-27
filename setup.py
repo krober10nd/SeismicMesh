@@ -8,7 +8,7 @@ from setuptools.command.build_ext import build_ext
 from distutils.version import LooseVersion
 
 try:
-    from setuptools import setup, Extension, find_packages
+    from setuptools import setup, Extension
 except ImportError:
     print("Setuptools is required to build!")
 
@@ -78,34 +78,7 @@ class CMakeBuild(build_ext):
         )
 
 
-with open("README.rst", "r") as fh:
-    long_description = fh.read()
-
 setup(
-    name="SeismicMesh",
-    license="GPL-3.0-or-later",
-    url="https://github.com/krober10nd/SeismicMesh",
-    version="1.2.42",
-    author="Keith Roberts",
-    author_email="keithrbt0@gmail.com",
-    description="2D/3D serial and parallel triangular mesh generation and mesh improvement for seismology",
-    long_description=long_description,
-    long_description_content_type="text/x-rst",
-    setup_requires=["pybind11"],
-    install_requires=[
-        "numpy",
-        "segyio",
-        "scipy",
-        "meshio",
-        "h5py",
-        "pybind11",
-        "matplotlib",
-        "mpi4py",
-        "scikit-fmm",
-    ],
-    packages=find_packages(),
-    package_data={"SeismicMesh": ["*.so", "*.txt"]},
-    include_package_data=True,
     ext_modules=[
         CMakeExtension("SeismicMesh/sizing/cpp/FastHJ"),
         CMakeExtension("SeismicMesh/generation/cpp/delaunay"),
@@ -115,16 +88,5 @@ setup(
         CMakeExtension("SeismicMesh/geometry/cpp/fast_geometry"),
     ],
     cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=False,
-    classifiers=[
-        "Development Status :: 4 - Beta",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
-        "Operating System :: OS Independent",
-        "Programming Language :: Python :: 3",
-        "Topic :: Scientific/Engineering",
-        "Topic :: Scientific/Engineering :: Mathematics",
-        "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Visualization",
-    ],
     python_requires=">=3.0",
 )
