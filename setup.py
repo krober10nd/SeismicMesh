@@ -123,6 +123,7 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Visualization"],
-    python_requires='>=3.0',
+        "Topic :: Scientific/Engineering :: Visualization",
+    ],
+    python_requires=">=3.0",
 )
