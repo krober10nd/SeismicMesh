@@ -49,5 +49,8 @@ points, cells = mshgen.build(points=points, mesh_improvement=True)
 
 if rank == 0:
     meshio.write_points_cells(
-        "cylinder_3d.vtk", points / 1000, [("tetra", cells)], file_format="vtk",
+        "cylinder_3d.vtk",
+        points / 1000,
+        [("tetra", cells)],
+        file_format="vtk",
     )

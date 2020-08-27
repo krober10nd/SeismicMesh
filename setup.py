@@ -84,7 +84,7 @@ with open("README.rst", "r") as fh:
 setup(
     name="SeismicMesh",
     url="https://github.com/krober10nd/SeismicMesh",
-    version="1.2.41",
+    version="1.2.42",
     author="Keith Roberts",
     author_email="keithrbt0@gmail.com",
     description="2D/3D serial and parallel triangular mesh generation and mesh improvement for seismology",
@@ -123,6 +123,7 @@ setup(
         "Topic :: Scientific/Engineering",
         "Topic :: Scientific/Engineering :: Mathematics",
         "Topic :: Scientific/Engineering :: Physics",
-        "Topic :: Scientific/Engineering :: Visualization"],
-    python_requires='>=3.0',
+        "Topic :: Scientific/Engineering :: Visualization",
+    ],
+    python_requires=">=3.0",
 )

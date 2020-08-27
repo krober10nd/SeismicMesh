@@ -26,12 +26,20 @@ def test_3dmesher():
     grade = 0.005
     bbox = (-2000.0, 0.0, 0.0, 1000.0, 0.0, 1000.0)
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, grade=grade, freq=freq, wl=wl, velocity_grid=vp, hmin=hmin,
+        bbox=bbox,
+        grade=grade,
+        freq=freq,
+        wl=wl,
+        velocity_grid=vp,
+        hmin=hmin,
     )
     ef = ef.build()
 
     SDF = SdfGen(
-        bbox=bbox, field=vp, min_threshold=2000.0, gridspacing=(100.0, 100.0, 100.0),
+        bbox=bbox,
+        field=vp,
+        min_threshold=2000.0,
+        gridspacing=(100.0, 100.0, 100.0),
     ).SDF
 
     mshgen = SeismicMesh.MeshGenerator(fh=ef.fh, fd=SDF, hmin=hmin, bbox=bbox)

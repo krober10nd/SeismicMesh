@@ -2,9 +2,9 @@ import numpy as np
 
 
 def blocker(points, rank, nblocks, axis=0):
-    """ Decompose point coordinates into # of blocks
-        Blocks are orientated parallel to axis and have two neighbors
-        above and below/left and right to the block depending on axis.
+    """Decompose point coordinates into # of blocks
+    Blocks are orientated parallel to axis and have two neighbors
+    above and below/left and right to the block depending on axis.
     """
     num_points, dim = points.shape
     EPS = np.finfo(float).eps

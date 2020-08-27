@@ -63,13 +63,18 @@ def example_3D():
 
     # Do mesh improvement in serial to bound lower dihedral angle to >= 5 degrees
     points, cells = mshgen.build(
-        points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
+        points=points,
+        mesh_improvement=True,
+        max_iter=50,
+        min_dh_bound=5,
     )
 
     if rank == 0:
         # Write to disk (see meshio package for more details)
         meshio.write_points_cells(
-            "EAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],
+            "EAGE_Salt.vtk",
+            points / 1000.0,
+            [("tetra", cells)],
         )
 
         # Write to gmsh22 format (quite slow)
