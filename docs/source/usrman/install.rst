@@ -12,18 +12,17 @@ build *SeismicMesh*:
     The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers. These packages should be installed at compile time by setuptools
 .. note ::
     Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package after attempting installation of SeismicMesh.
-.. note :: 
+.. note ::
     On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
 
 * Pybind11 >= 2.5
-.. note ::
-    Pybind11 is shipped as a submodule thus you do not need to install manually. You will activate it below when performing the installation.
+    If building by source, pybind11 is shipped as a submodule. If this case, you do not need to install. You can activate it below when performing the installation by source.
 
 * C++ compiler (GNU or Intel) with support for std++14 or newer.
 
 * Cmake >= 3.0
 
-* CGAL >= 5.0.0
+* CGAL >= 5.0.0 which requires:
 
     * MPFR
 
@@ -31,28 +30,10 @@ build *SeismicMesh*:
 
     * Boost > 1.4.8
 
-
-.. warning ::
-    Be aware that apt-get does not install the necessary version >=5.0.0 of CGAL for this project. Thus, you will need to build CGAL manually by source using CMake instead. To do this, please follow these instructions https://doc.cgal.org/latest/Manual/installation.html
-
 .. note ::
     CGAL requires Boost, MPFR and GMP. These packages may already be installed on your standard Linux box.
 
 
-
-
-Clusters
--------------
-
-If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
-
-  -DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER
-
-  -DBoost_INCLUDE_DIR=+/PATH/TO/BOOST/
-
-  -DMPFR_LIBRARIES=+/PATH/TO/libmpfr.a
-
-  -DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include
 
 
 Compilation by source
@@ -65,8 +46,9 @@ $  pip install -e .
 
 .. note ::
     If you do not have administrative rights on your system, add the flag ``--user`` to end of the second command
-.. note :: 
-    It's highly recommended to just use pip to install (after installing CGAL): pip install SeismicMesh
+
+.. note ::
+    The preferred method of installation is: pip install SeismicMesh
 
 Testing
 -------
@@ -83,3 +65,19 @@ To test the installation, serial and parallel capabilites, you can use `pytest` 
 $ cd tests/
 $ pytest -m "serial" .
 $ mpirun -np 2 pytest -m "parallel" .
+
+Clusters
+-------------
+
+.. note::
+    Make sure the CXX environment variable points to your intended compiler!
+
+If installing on a cluster by source with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
+
+  -DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER
+
+  -DBoost_INCLUDE_DIR=+/PATH/TO/BOOST/
+
+  -DMPFR_LIBRARIES=+/PATH/TO/libmpfr.a
+
+  -DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include
