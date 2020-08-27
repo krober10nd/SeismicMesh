@@ -62,9 +62,7 @@ Example
 
 The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel. For example in 3D...
 
-.. warning:: 
-    You must download the benchmark 3D velocity model from here to run the example below:
-    https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
+You must download the benchmark 3D EAGE `velocity model <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`
 
 
 .. image:: https://github.com/krober10nd/SeismicMesh/raw/par3d/imgs/EAGE_Example.jpg
@@ -159,5 +157,4 @@ All other information is available at: https://seismicmesh.readthedocs.io
 - Tutorials that will guide you through the main features.
 
 
-.. image:: https://github.com/krober10nd/SeismicMesh/raw/par3d/imgs/seismic_example.png
 
