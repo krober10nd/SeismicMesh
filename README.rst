@@ -7,7 +7,6 @@
 .. image:: https://img.shields.io/badge/code%20style-black-000000.svg
         :target: https://github.com/ambv/black
 
-
 .. image:: http://www.repostatus.org/badges/latest/active.svg
 	:target: http://www.repostatus.org/#active
 
@@ -19,6 +18,15 @@
 	
 .. image:: https://zenodo.org/badge/216707188.svg
    :target: https://zenodo.org/badge/latestdoi/216707188
+
+.. image:: https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square 
+   :target: https://pypi.org/pypi/SeismicMesh
+
+.. image:: https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square 
+   :target: https://pypi.org/project/SeismicMesh
+
+.. image:: https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square
+   :target: https://pypistats.org/packages/SeismicMesh
 
 
 
@@ -56,8 +64,9 @@ For more detailed information about installation and requirements see:
 Example 
 ===========
 
-The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel like so. 
-First we take care of our imports::
+The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel like so...
+
+.. code-block:: python
 
     import numpy as np
     import zipfile
@@ -71,8 +80,7 @@ First we take care of our imports::
     size = comm.Get_size()
     rank = comm.Get_rank()
 
-Here we download a benchmark 3D velocity model and turn it into a Numpy array::
-
+    # Here we download a benchmark 3D velocity model and turn it into a Numpy array
     # https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
 
     if rank == 0: 
@@ -88,14 +96,18 @@ Here we download a benchmark 3D velocity model and turn it into a Numpy array::
             vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
             vp = vp.reshape(nx, ny, nz, order="F")
             vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+    else: 
+        vp = np.zeros(shape=(1, 1, 1))
+        vp[:] = 1500.0
 
-The domain is defined (in this case) as a cube and domain extents are provided in meters::
+    # The domain is defined (in this case) as a cube and domain extents are provided in meters
 
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-4200, 0, 0, 13520, 0, 13520)
 
-A graded sizing function is created from the velocity model along with a signed distance function by passing
-the velocity grid that we created above::
+    # A graded sizing function is created from the velocity model along with a signed distance function by passing
+    # the velocity grid that we created above. More details for the :class:`MeshSizeFunction` can be found here
+    # https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction
 
     ef = SeismicMesh.MeshSizeFunction(
         bbox=bbox,
@@ -112,7 +124,7 @@ the velocity grid that we created above::
 
     ef = ef.build()
 
-The user then calls the mesh generator::
+    # The user then calls the mesh generator
 
     # Construct a mesh generator object
     mshgen = SeismicMesh.MeshGenerator(ef)
@@ -120,13 +132,13 @@ The user then calls the mesh generator::
     # Build the mesh
     points, cells = mshgen.build(max_iter=75, axis=1)
 
-For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
+    # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 
     points, cells = mshgen.build(
         points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
     )
 
-Meshes can be written quickly to disk using meshio and visualized with Paraview::
+    # Meshes can be written quickly to disk using meshio and visualized with Paraview::
 
     if rank == 0:
         meshio.write_points_cells(
