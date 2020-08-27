@@ -55,7 +55,10 @@ def example_2D():
 
         # Write the mesh as a vtk format for visualization in Paraview
         meshio.write_points_cells(
-            "BP2004.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
+            "BP2004.vtk",
+            points / 1000,
+            [("triangle", facets)],
+            file_format="vtk",
         )
         # Write to gmsh22 format (quite slow) used by many numerical solvers
         meshio.write_points_cells(

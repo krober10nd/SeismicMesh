@@ -26,7 +26,7 @@ def closestNumber(n, m):
 
 def make_init_points(bbox, rank, size, axis, h0, dim):
     """Create a structured grid in parallel of the entire domain
-       Each processor owns a part of the domain.
+    Each processor owns a part of the domain.
     """
     _bbox = copy.deepcopy(bbox)
 

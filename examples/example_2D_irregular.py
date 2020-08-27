@@ -37,7 +37,13 @@ def example_2D_Irregular():
 
     # Construct mesh sizing object from velocity model
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox, velocity_grid=vp, freq=4, wl=10, dt=0.001, hmin=hmin, grade=0.15,
+        bbox=bbox,
+        velocity_grid=vp,
+        freq=4,
+        wl=10,
+        dt=0.001,
+        hmin=hmin,
+        grade=0.15,
     )
 
     # Build mesh size function
@@ -54,7 +60,10 @@ def example_2D_Irregular():
     vp2 = vp.copy()
     vp2 = np.where(vp2 < 4000, 4001, vp2)
     SDF = SdfGen(
-        bbox=bbox, field=vp2, min_threshold=4000.0, gridspacing=(10.0, 15.0),
+        bbox=bbox,
+        field=vp2,
+        min_threshold=4000.0,
+        gridspacing=(10.0, 15.0),
     ).SDF
 
     # Construct a mesh generator object
@@ -67,7 +76,10 @@ def example_2D_Irregular():
 
         # Write the mesh as a vtk format for visualization in Paraview
         meshio.write_points_cells(
-            "Irregular2D.vtk", points / 1000, [("triangle", facets)], file_format="vtk",
+            "Irregular2D.vtk",
+            points / 1000,
+            [("triangle", facets)],
+            file_format="vtk",
         )
         # Write to gmsh22 format (quite slow) used by many numerical solvers
         meshio.write_points_cells(

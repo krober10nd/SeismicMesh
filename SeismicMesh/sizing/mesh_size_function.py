@@ -40,7 +40,7 @@ def ReadSegy(fname):
 
 class MeshSizeFunction:
     """The :class:`MeshSizeFunction` is used to build a rectangular or cubic isotropic mesh size function :math:`f(h)`.
-       and assumes the domain is a rectangle (2D) or cube (3D).
+    and assumes the domain is a rectangle (2D) or cube (3D).
     """
 
     def __init__(
@@ -294,7 +294,7 @@ class MeshSizeFunction:
     def build(self, comm=None):  # noqa: C901
 
         """Builds the isotropic mesh size function according
-            to the user arguments that were passed.
+        to the user arguments that were passed.
         """
         comm = comm or MPI.COMM_WORLD
         if comm is not None:

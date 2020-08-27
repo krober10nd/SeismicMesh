@@ -18,7 +18,7 @@ dete = gutils.calc_4x4determinant
 
 class SignedDistanceFunctionGenerator:
     """Tool used to build signed distance functions
-       from seismic velocity models.
+    from seismic velocity models.
     """
 
     def __init__(  # noqa: ignore=C901

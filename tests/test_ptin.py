@@ -11,7 +11,10 @@ def test_ptin():
         dtype=np.float,
     )
 
-    cells = np.array([[0, 1, 2, 3]], dtype=np.int,)
+    cells = np.array(
+        [[0, 1, 2, 3]],
+        dtype=np.int,
+    )
 
     # test point if in tetraheadral
     queryIn = (0.5, 0.5, 1.0)  # should be in

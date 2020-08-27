@@ -30,27 +30,33 @@ from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
 class MeshGenerator:  # noqa: C901
     """Class constructor for :class:`MeshGenerator`. User can also register their callbacks to
-       the sizing function :math:`f(h)` and signed distance function `f(d)` manually.
+    the sizing function :math:`f(h)` and signed distance function `f(d)` manually.
 
-       :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
-       :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
-       :param fd: A function that accepts an array of points and returns the signed distance to the boundary of the domain.
-       :type fd: A function object, optional if no :class:`SizingFunction` is passed
-       :param fh: A call-back function that accepts an array of points and returns an array of desired triangular mesh sizes close by to each point in the passed array.
-       :type fh: A function object, optional if no :class:`SizingFunction` is passed.
-       :param bbox: bounding box containing domain extents.
-       :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`. Optional if no :class:`SizingFunction` is passed.
-       :param hmin: minimum triangular edgelength populating the domain in meters.
-       :type hmin: float64,optional if no :class:`SizingFunction` is passed.
-       :param pfix: points that you wish you constrain in location.
-       :type pfix: nested list [num_fixed_points x dim], optional
+    :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
+    :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
+    :param fd: A function that accepts an array of points and returns the signed distance to the boundary of the domain.
+    :type fd: A function object, optional if no :class:`SizingFunction` is passed
+    :param fh: A call-back function that accepts an array of points and returns an array of desired triangular mesh sizes close by to each point in the passed array.
+    :type fh: A function object, optional if no :class:`SizingFunction` is passed.
+    :param bbox: bounding box containing domain extents.
+    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`. Optional if no :class:`SizingFunction` is passed.
+    :param hmin: minimum triangular edgelength populating the domain in meters.
+    :type hmin: float64,optional if no :class:`SizingFunction` is passed.
+    :param pfix: points that you wish you constrain in location.
+    :type pfix: nested list [num_fixed_points x dim], optional
 
-       :return: object populated with meta-data.
-       :rtype: :class:`MeshGenerator` object
+    :return: object populated with meta-data.
+    :rtype: :class:`MeshGenerator` object
     """
 
     def __init__(
-        self, SizingFunction=None, fd=None, fh=None, bbox=None, hmin=None, pfix=None,
+        self,
+        SizingFunction=None,
+        fd=None,
+        fh=None,
+        bbox=None,
+        hmin=None,
+        pfix=None,
     ):
         self.SizingFunction = SizingFunction
         self.fd = fd
@@ -236,7 +242,8 @@ class MeshGenerator:  # noqa: C901
                 nfix = len(pfix)
             if rank == 0:
                 print(
-                    "Constraining " + str(nfix) + " fixed points..", flush=True,
+                    "Constraining " + str(nfix) + " fixed points..",
+                    flush=True,
                 )
         else:
             pfix = np.empty((0, dim))
@@ -267,7 +274,10 @@ class MeshGenerator:  # noqa: C901
             if PARALLEL:
                 r0m = comm.allreduce(r0m, op=MPI.MIN)
             p = np.vstack(
-                (pfix, p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],)
+                (
+                    pfix,
+                    p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
+                )
             )
             if PARALLEL:
                 # min x min y min z max x max y max z
@@ -336,7 +346,12 @@ class MeshGenerator:  # noqa: C901
                 dt.insert(recv.flatten().tolist())
                 p, t = self._get_topology(dt)
                 # remove entities will all vertices outside local block
-                p, t, inv = geometry.remove_external_entities(p, t, extent, dim=dim,)
+                p, t, inv = geometry.remove_external_entities(
+                    p,
+                    t,
+                    extent,
+                    dim=dim,
+                )
                 N = p.shape[0]
 
             # Remove vertices outside the domain
