@@ -12,6 +12,8 @@ build *SeismicMesh*:
     The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers. These packages should be installed at compile time by setuptools
 .. note ::
     Some users have experienced  problems with the `skfmm-fmm` Python package not being found. If this occurs, try uninstalling and then reinstalling this package after attempting installation of SeismicMesh.
+.. note :: 
+    On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
 
 * Pybind11 >= 2.5
 .. note ::
@@ -53,8 +55,8 @@ If installing on a cluster with a local installation of ``CGAL`` and ``Boost``, 
   -DMPFR_INCLUDE_DIR=+/PATH/TO/MPFR/include
 
 
-Compilation
--------------
+Compilation by source
+----------------------
 
 After installing all dependencies, perform the two steps in the main directory in the order that they appear below::
 
@@ -63,6 +65,8 @@ $  pip install -e .
 
 .. note ::
     If you do not have administrative rights on your system, add the flag ``--user`` to end of the second command
+.. note :: 
+    It's highly recommended to just use pip to install (after installing CGAL): pip install SeismicMesh
 
 Testing
 -------
