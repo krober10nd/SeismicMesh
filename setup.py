@@ -83,6 +83,8 @@ with open("README.rst", "r") as fh:
 
 setup(
     name="SeismicMesh",
+    license = "GPL-3.0-or-later",
+    license_file = "LICENSE.txt"
     url="https://github.com/krober10nd/SeismicMesh",
     version="1.2.42",
     author="Keith Roberts",
