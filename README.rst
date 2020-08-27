@@ -60,16 +60,15 @@ For more detailed information about installation and requirements see:
 Example 
 ===========
 
-The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel. For example in 3D...
+The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel. 
 
-.. warning::
-    First, to run this code below you must download the benchmark 3D EAGE velocity model from `here <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`_
+**WARNING: To run the code snippet below you must download the 3D EAGE seismic velocity model from** `here <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`_ 
 
 
 .. figure:: https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg
    :width: 30 %
 
-   The result of running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
+   Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
 
 .. code-block:: python
 
