@@ -16,21 +16,25 @@ rank = comm.Get_rank()
 
 def example_3D():
 
-    # The velocity model was downloaded from here:
-    # https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
+    if rank == 0:
+        # The velocity model was downloaded from here:
+        # https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
 
-    # Dimensions of model
-    nx, ny, nz = 676, 676, 210
+        # Dimensions of model
+        nx, ny, nz = 676, 676, 210
 
-    path = "velocity_models/Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
-    # Extract Saltf@@ from SALTF.ZIP
-    zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
+        path = "velocity_models/Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
+        # Extract Saltf@@ from SALTF.ZIP
+        zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
 
-    # Load data
-    with open(path + "Saltf@@", "r") as file:
-        vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
-        vp = vp.reshape(nx, ny, nz, order="F")
-        vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+        # Load data
+        with open(path + "Saltf@@", "r") as file:
+            vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+            vp = vp.reshape(nx, ny, nz, order="F")
+            vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+    else:
+        vp = np.zeros(shape=(1, 1, 1))
+        vp[:] = 1500.0
 
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-4200, 0, 0, 13520, 0, 13520)

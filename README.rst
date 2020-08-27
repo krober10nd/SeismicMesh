@@ -96,6 +96,9 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
             vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
             vp = vp.reshape(nx, ny, nz, order="F")
             vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
+    else: 
+        vp = np.zeros(shape=(1, 1, 1))
+        vp[:] = 1500.0
 
     # The domain is defined (in this case) as a cube and domain extents are provided in meters
 
