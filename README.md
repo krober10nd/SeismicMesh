@@ -1,4 +1,5 @@
 [![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/par3d.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d)
+[![CodeCov](https://codecov.io/gh/krober10nd/SeismicMesh/branch/par3d/graph/badge.svg)](https://codecov.io/gh/krober10nd/SeismicMesh)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square)](https://pypi.org/pypi/SeismicMesh/)
 [![PyPi downloads](https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square)](https://pypistats.org/packages/SeismicMesh)
