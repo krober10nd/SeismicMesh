@@ -82,7 +82,7 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
 
     """
     Build a mesh of the BP2004 benchmark velocity model in serial or parallel
-    Takes roughly 1 minute with 2 processors and less than blank GB of RAM.
+    Takes roughly 1 minute with 2 processors and less than 1 GB of RAM.
     """
 
     # Name of SEG-Y file containg velocity model.
