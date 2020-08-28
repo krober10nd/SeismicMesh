@@ -1,22 +1,12 @@
-![image](https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d.svg?style=shield%0A%20%20%20%20%20:target:%20https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d)
+[![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/par3d.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
+[![PyPI pyversions](https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square)](https://pypi.org/pypi/SeismicMesh/)
+[![PyPi downloads](https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square)](https://pypistats.org/packages/SeismicMesh)
+[![ReadTheDocs](https://readthedocs.org/projects/seismicmesh/badge/?version=par3d)](https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d)
+[![Zenodo](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
+[![PyPi]( https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
+[![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-![image](https://codecov.io/gh/krober10nd/SeismicMesh/branch/par3d/graph/badge.svg%0A%20:target:%20https://codecov.io/gh/krober10nd/SeismicMesh)
-
-![image](https://img.shields.io/badge/code%20style-black-000000.svg%0A%20%20%20%20%20:target:%20https://github.com/ambv/black)
-
-![image](http://www.repostatus.org/badges/latest/active.svg%0A%20:target:%20http://www.repostatus.org/#active)
-
-![image](https://readthedocs.org/projects/seismicmesh/badge/?version=par3d%0A%20%20%20%20%20:target:%20https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d)
-
-![image](https://img.shields.io/badge/License-GPLv3-blue.svg%0A%20:target:%20https://www.gnu.org/licenses/gpl-3.0)
-
-[![image](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
-
-[![image](https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square)](https://pypi.org/pypi/SeismicMesh)
-
-[![image](https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
-
-[![image](https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square)](https://pypistats.org/packages/seismicmesh)
 
 [SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
 ==================================================================================================
@@ -59,7 +49,7 @@ velocity data has been interpolated onto the vertices of the mesh using
 a different program with linear
 interpolation.](https://user-images.githubusercontent.com/18619644/91577721-82722c80-e91f-11ea-82f2-519687722e7b.jpg)
 
-``` {.sourceCode .python}
+```python
 from mpi4py import MPI
 import meshio
 
@@ -128,7 +118,7 @@ velocity data has been interpolated onto the vertices of the mesh using
 a different program with linear
 interpolation.](https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg)
 
-``` {.sourceCode .python}
+```python
 import numpy as np
 import zipfile
 
