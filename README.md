@@ -118,6 +118,7 @@ velocity data has been interpolated onto the vertices of the mesh using
 a different program with linear
 interpolation.](https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg)
 
+<!--exdown-skip-->
 ```python
 import numpy as np
 import zipfile

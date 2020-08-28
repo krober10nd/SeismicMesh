@@ -77,14 +77,16 @@ def example_3D():
         # Write to disk (see meshio package for more details)
         meshio.write_points_cells(
             "EAGE_Salt.vtk",
-            points / 1000.0,
+            points[:, [1, 2, 0]] / 1000.0,
             [("tetra", cells)],
         )
 
         # Write to gmsh22 format (quite slow)
+        # NOTE: SeismicMesh outputs assumes the domain is (z,x,y) so for visualization
+        # in ParaView, we swap the axes so it appears as in the (x,y,z) plane.
         meshio.write_points_cells(
             "EAGE_Salt.msh",
-            points / 1000,
+            points[:, [1, 2, 0]] / 1000,
             [("tetra", cells)],
             file_format="gmsh22",
             binary=False,

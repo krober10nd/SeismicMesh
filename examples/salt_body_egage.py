@@ -67,6 +67,11 @@ points, cells = mshgen.build(max_iter=50)
 points, cells = mshgen.build(points=points, mesh_improvement=True)
 
 # Write the mesh to disk
+# NOTE: SeismicMesh outputs assumes the domain is (z,x,y) so for visualization
+# in ParaView, we swap the axes so it appears as in the (x,y,z) plane.
 meshio.write_points_cells(
-    "eage_salt_body.vtk", points / 1000.0, [("tetra", cells)], file_format="vtk"
+    "eage_salt_body.vtk",
+    points[:, [1, 2, 0]] / 1000.0,
+    [("tetra", cells)],
+    file_format="vtk",
 )
