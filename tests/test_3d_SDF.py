@@ -1,6 +1,7 @@
-import pytest
 import os
+
 import numpy as np
+import pytest
 
 import SeismicMesh
 from SeismicMesh.geometry import (

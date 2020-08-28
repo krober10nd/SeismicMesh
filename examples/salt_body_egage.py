@@ -1,6 +1,7 @@
-import numpy as np
 import zipfile
+
 import meshio
+import numpy as np
 
 import SeismicMesh
 from SeismicMesh.geometry import (

@@ -1,14 +1,14 @@
 import os
-import re
-import sys
 import platform
+import re
 import subprocess
-
-from setuptools.command.build_ext import build_ext
+import sys
 from distutils.version import LooseVersion
 
+from setuptools.command.build_ext import build_ext
+
 try:
-    from setuptools import setup, Extension
+    from setuptools import Extension, setup
 except ImportError:
     print("Setuptools is required to build!")
 

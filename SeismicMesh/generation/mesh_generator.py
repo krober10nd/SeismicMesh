@@ -19,11 +19,8 @@ import time
 import numpy as np
 from mpi4py import MPI
 
+from .. import decomp, geometry, migration
 from . import utils as mutils
-from .. import decomp
-from .. import migration
-from .. import geometry
-
 from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 

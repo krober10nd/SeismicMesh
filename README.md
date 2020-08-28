@@ -100,7 +100,7 @@ if rank == 0:
     # in ParaView, we swap the axes so it appears as in the (x,z) plane.
     meshio.write_points_cells(
         "BP2004.vtk",
-        points[:,[0,1]]/ 1000,
+        points[:, [0, 1]] / 1000,
         [("triangle", facets)],
         file_format="vtk",
     )
@@ -186,7 +186,10 @@ points, cells = mshgen.build(max_iter=75, axis=1)
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 
 points, cells = mshgen.build(
-    points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
+    points=points,
+    mesh_improvement=True,
+    max_iter=50,
+    min_dh_bound=5,
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
@@ -196,7 +199,9 @@ if rank == 0:
     # NOTE: SeismicMesh outputs assumes the domain is (z,x,y) so for visualization
     # in ParaView, we swap the axes so it appears as in the (x,y,z) plane.
     meshio.write_points_cells(
-        "EAGE_Salt.vtk", points[:,[1,2,0]]/ 1000.0, [("tetra", cells)],
+        "EAGE_Salt.vtk",
+        points[:, [1, 2, 0]] / 1000.0,
+        [("tetra", cells)],
     )
 ```
 

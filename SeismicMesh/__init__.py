@@ -6,12 +6,9 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 
-from .sizing import MeshSizeFunction, ReadSegy
+from . import decomp, geometry, migration, plots
 from .generation import MeshGenerator
-from . import decomp
-from . import geometry
-from . import migration
-from . import plots
+from .sizing import MeshSizeFunction, ReadSegy
 
 __all__ = [
     "geometry",

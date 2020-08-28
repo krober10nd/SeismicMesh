@@ -1,33 +1,33 @@
-from .signed_distance_functions import dblock, drectangle, dintersect
+from .cpp.fast_geometry import (
+    calc_3x3determinant,
+    calc_4x4determinant,
+    calc_circumsphere_grad,
+    calc_dihedral_angles,
+    calc_volume_grad,
+)
+from .signed_distance_functions import dblock, dintersect, drectangle
 from .utils import (
+    SignedDistanceFunctionGenerator,
     calc_re_ratios,
+    delete_boundary_entities,
     doAnyOverlap,
-    linter,
-    laplacian2,
-    vertex_to_entities,
-    remove_external_entities,
-    unique_rows,
     fixmesh,
-    simpvol,
-    simpqual,
+    get_boundary_edges,
+    get_boundary_entities,
+    get_boundary_facets,
+    get_boundary_vertices,
     get_centroids,
     get_edges,
     get_facets,
-    get_boundary_entities,
-    get_boundary_vertices,
-    get_boundary_edges,
     get_winded_boundary_edges,
-    get_boundary_facets,
-    delete_boundary_entities,
+    laplacian2,
+    linter,
+    remove_external_entities,
+    simpqual,
+    simpvol,
+    unique_rows,
+    vertex_to_entities,
     vtInEntity3,
-)
-from .utils import SignedDistanceFunctionGenerator
-from .cpp.fast_geometry import (
-    calc_volume_grad,
-    calc_circumsphere_grad,
-    calc_3x3determinant,
-    calc_4x4determinant,
-    calc_dihedral_angles,
 )
 
 __all__ = [

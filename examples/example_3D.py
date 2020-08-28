@@ -1,7 +1,7 @@
-import numpy as np
 import zipfile
 
 import meshio
+import numpy as np
 from mpi4py import MPI
 
 import SeismicMesh

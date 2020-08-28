@@ -1,14 +1,11 @@
+import meshio
 import numpy as np
 from mpi4py import MPI
 
-import meshio
-
 import SeismicMesh
-
 from SeismicMesh.geometry import (
     SignedDistanceFunctionGenerator as SdfGen,
 )  # import the tool used to generate the SDF
-
 
 comm = MPI.COMM_WORLD
 size = comm.Get_size()

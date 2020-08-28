@@ -1,16 +1,14 @@
-from mpi4py import MPI
-import scipy.sparse as spsparse
-from scipy.interpolate import RegularGridInterpolator
-import scipy.ndimage
-import scipy as sp
 import numpy as np
+import scipy as sp
+import scipy.ndimage
+import scipy.sparse as spsparse
 import skfmm
-
-from . import signed_distance_functions as sdf
-
-from .cpp import fast_geometry as gutils
+from mpi4py import MPI
+from scipy.interpolate import RegularGridInterpolator
 
 from ..generation.cpp import c_cgal
+from . import signed_distance_functions as sdf
+from .cpp import fast_geometry as gutils
 
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant

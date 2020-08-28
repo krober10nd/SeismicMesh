@@ -1,6 +1,5 @@
-import numpy as np
-
 import matplotlib.pyplot as plt
+import numpy as np
 
 
 def dh_angles_hist(dh_angles):

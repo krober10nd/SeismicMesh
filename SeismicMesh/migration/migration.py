@@ -1,11 +1,11 @@
-import numpy as np
 import copy
+
+import numpy as np
 from mpi4py import MPI
 from scipy.interpolate import RegularGridInterpolator
 
-from .cpp import cpputils
-
 from .. import geometry
+from .cpp import cpputils
 
 """
 Migration routines for moving things during parallel Delaunay
