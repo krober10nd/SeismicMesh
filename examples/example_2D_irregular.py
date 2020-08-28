@@ -74,17 +74,22 @@ def example_2D_Irregular():
 
     if rank == 0:
 
-        # Write the mesh as a vtk format for visualization in Paraview
+        # Write the mesh as a vtk format for visualization in ParaView
+
+        # NOTE: SeismicMesh outputs assumes (z,x) so for visualization
+        # in ParaView we swap the axes so it appears as in the (x,z) plane
+
         meshio.write_points_cells(
             "Irregular2D.vtk",
-            points / 1000,
+            points[:, [1, 0]] / 1000,
             [("triangle", facets)],
             file_format="vtk",
         )
+
         # Write to gmsh22 format (quite slow) used by many numerical solvers
         meshio.write_points_cells(
             "Irregular2D.msh",
-            points / 1000,
+            points[:, [1, 0]] / 1000,
             [("triangle", facets)],
             file_format="gmsh22",
             binary=False,

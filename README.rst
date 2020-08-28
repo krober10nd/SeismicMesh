@@ -68,7 +68,7 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
 .. figure:: https://user-images.githubusercontent.com/18619644/91577721-82722c80-e91f-11ea-82f2-519687722e7b.jpg
    :width: 30 %
 
-    Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
+   Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh using a different program with linear interpolation.
 
 .. code-block:: python
 
@@ -116,23 +116,25 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
     points, facets = mshgen.build(axis=1)
 
     if rank == 0:
-        # Write the mesh as a vtk format for visualization in Paraview
+        # Write the mesh in a vtk format for visualization in ParaView
+        # NOTE: SeismicMesh outputs assumes the domain is (z,x) so for visualization
+        # in ParaView, we swap the axes so it appears as in the (x,z) plane.
         meshio.write_points_cells(
             "BP2004.vtk",
-            points / 1000,
+            points[:,[0,1]]/ 1000,
             [("triangle", facets)],
             file_format="vtk",
         )
 
 **WARNING: To run the code snippet below you must download the 3D EAGE seismic velocity model from (WARNING: File is ~500 MB)** `here <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`_
 
-**WARNING: Computationaly demanding!! Running this example requires around 8 GB of RAM due to the 3D nature of the problem and the domain size.**
+**WARNING: Computationaly demanding! Running this example requires around 8 GB of RAM due to the 3D nature of the problem and the domain size.**
 
 
 .. figure:: https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg
    :width: 30 %
 
-   Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
+   Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh using a different program with linear interpolation.
 
 .. code-block:: python
 
@@ -204,11 +206,14 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
         points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
     )
 
-    # Meshes can be written quickly to disk using meshio and visualized with Paraview::
+    # Meshes can be written quickly to disk using meshio and visualized with ParaView::
 
     if rank == 0:
+
+        # NOTE: SeismicMesh outputs assumes the domain is (z,x,y) so for visualization
+        # in ParaView, we swap the axes so it appears as in the (x,y,z) plane.
         meshio.write_points_cells(
-            "EAGE_Salt.vtk", points / 1000.0, [("tetra", cells)],
+            "EAGE_Salt.vtk", points[:,[1,2,0]]/ 1000.0, [("tetra", cells)],
         )
 
 

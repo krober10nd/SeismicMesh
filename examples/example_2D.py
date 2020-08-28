@@ -54,16 +54,21 @@ def example_2D():
     if rank == 0:
 
         # Write the mesh as a vtk format for visualization in Paraview
+
+        # NOTE: SeismicMesh outputs assumes (z,x) so for visualization
+        # in ParaView we swap the axes so it appears as in the (x,z) plane
+
         meshio.write_points_cells(
             "BP2004.vtk",
-            points / 1000,
+            points[:, [1, 0]] / 1000,
             [("triangle", facets)],
             file_format="vtk",
         )
+
         # Write to gmsh22 format (quite slow) used by many numerical solvers
         meshio.write_points_cells(
             "BP2004.msh",
-            points / 1000,
+            points[:, [1, 0]] / 1000,
             [("triangle", facets)],
             file_format="gmsh22",
             binary=False,
