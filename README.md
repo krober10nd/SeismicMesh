@@ -45,10 +45,7 @@ seismic velocity model and then you must uncompress it (e.g., gunzip).
 This file can be downloaded from**
 [here](http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz)
 
-![Above shows the mesh from running the code below. Note, the seismic
-velocity data has been interpolated onto the vertices of the mesh using
-a different program with linear
-interpolation.](https://user-images.githubusercontent.com/18619644/91577721-82722c80-e91f-11ea-82f2-519687722e7b.jpg)
+![Above shows the mesh in ParaView that results from running the code below](https://user-images.githubusercontent.com/18619644/91606181-004a2e00-e948-11ea-83a4-e5ce05c7d82f.png)
 
 ```python
 from mpi4py import MPI
@@ -114,10 +111,7 @@ seismic velocity model from (WARNING: File is \~500 MB)**
 around 8 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
-![Above shows the mesh from running the code below. Note, the seismic
-velocity data has been interpolated onto the vertices of the mesh using
-a different program with linear
-interpolation.](https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg)
+![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/91606008-c5e09100-e947-11ea-97e2-58e4b2f23d2b.jpg)
 
 <!--exdown-skip-->
 ```python
