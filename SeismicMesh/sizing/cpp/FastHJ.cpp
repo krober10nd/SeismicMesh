@@ -83,14 +83,15 @@ std::vector<double> limgrad(const std::vector<int> &dims, const double &elen,
 
     //------------------------- convergence
     if (aidx.empty()) {
-      //std::cout << "INFO: Converged in " << iter << " iterations." << std::endl;
+      // std::cout << "INFO: Converged in " << iter << " iterations." <<
+      // std::endl;
       break;
     }
 
     for (std::size_t i = 0; i < aidx.size(); i++) {
 
       //----- map triply indexed to singly indexed
-      int inod = aidx[i]  + 1; // add one to match 1-based indexing
+      int inod = aidx[i] + 1; // add one to match 1-based indexing
 
       //----- calculate the i,j,k position
       int ipos, jpos, kpos;
@@ -146,17 +147,16 @@ std::vector<double> limgrad(const std::vector<int> &dims, const double &elen,
         }
       }
     }
-    //std::cout << "ITER: " << iter << std::endl;
+    // std::cout << "ITER: " << iter << std::endl;
   }
   return ffun_s;
 }
 
 PYBIND11_MODULE(FastHJ, m) {
 
-    m.doc() = "pybind11 module for gradient limiting a scalar field";
+  m.doc() = "pybind11 module for gradient limiting a scalar field";
 
-    m.def("limgrad", &limgrad,
-      "The function which gradient limits a scalar field reshaped to a vector.");
+  m.def("limgrad", &limgrad,
+        "The function which gradient limits a scalar field reshaped to a "
+        "vector.");
 }
-
-

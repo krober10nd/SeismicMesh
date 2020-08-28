@@ -26,6 +26,7 @@ format:
 	isort -rc SeimicMesh/ examples/*.py tests/*.py
 	black SeismicMesh/ examples/*.py tests/*.py
 	blacken-docs README.md
+	clang-format -i SeismicMesh/generation/cpp/*.cpp SeismicMesh/migration/cpp/*.cpp SeismicMesh/sizing/cpp/*.cpp SeismicMesh/geometry/cpp/*.cpp
 
 black:
 	black .
