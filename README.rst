@@ -63,7 +63,7 @@ Example
 The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel.
 
 
-**WARNING: To run the code snippet below you must download the 2D BP2004 seismic velocity model from and then you must uncompress it** `here <>`_
+**WARNING: To run the code snippet below you must download the 2D BP2004 seismic velocity model from and then you must uncompress it** `here <http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz>`_
 .. figure::
     :width: 30 %
 
@@ -82,8 +82,6 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
     """
     Build a mesh of the BP2004 benchmark velocity model in serial or parallel
     Takes roughly 1 minute with 2 processors and less than blank GB of RAM.
-
-    The velocity model can be downloaded from here: https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
     """
 
     # Name of SEG-Y file containg velocity model.
