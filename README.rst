@@ -63,11 +63,12 @@ Example
 The user can quickly build quality 2D/3D meshes from seismic velocity models in serial/parallel.
 
 
-**WARNING: To run the code snippet below you must download the 2D BP2004 seismic velocity model from and then you must uncompress it** `here <http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz>`_
+**WARNING: To run the code snippet below you must download the 2D BP2004 seismic velocity model from and then you must uncompress it (e.g., gunzip)** `here <http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz>`_
+
 .. figure:: https://user-images.githubusercontent.com/18619644/91577721-82722c80-e91f-11ea-82f2-519687722e7b.jpg
    :width: 30 %
 
- Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
+    Above shows the mesh from running the code below. Note, the seismic velocity data has been interpolated onto the vertices of the mesh.
 
 .. code-block:: python
 
