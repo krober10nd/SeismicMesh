@@ -15,14 +15,13 @@
 
 import warnings
 
-from mpi4py import MPI
-import numpy as np
-from scipy.interpolate import RegularGridInterpolator
-from scipy import ndimage
 import h5py
 import matplotlib.pyplot as plt
-
+import numpy as np
 import segyio
+from mpi4py import MPI
+from scipy import ndimage
+from scipy.interpolate import RegularGridInterpolator
 
 from ..geometry import signed_distance_functions as sdf
 from .cpp import limgrad

@@ -1,10 +1,10 @@
-import pathlib
-import requests
 import gzip
+import pathlib
 import shutil
 
 import exdown
 import pytest
+import requests
 
 this_dir = pathlib.Path(__file__).resolve().parent
 

@@ -1,11 +1,10 @@
 from .migration import (
-    enqueue,
     aggregate,
+    enqueue,
     exchange,
     localize_points,
     localize_sizing_function,
 )
-
 
 __all__ = [
     "enqueue",

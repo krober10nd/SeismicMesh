@@ -1,5 +1,5 @@
-from mpi4py import MPI
 import meshio
+from mpi4py import MPI
 
 import SeismicMesh
 
