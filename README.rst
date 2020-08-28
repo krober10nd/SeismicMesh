@@ -124,7 +124,7 @@ The user can quickly build quality 2D/3D meshes from seismic velocity models in 
             file_format="vtk",
         )
 
-**WARNING: To run the code snippet below you must download the 3D EAGE seismic velocity model from (WARNING: File is ~500 MB and > 8 GB RAM)** `here <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`_
+**WARNING: To run the code snippet below you must download the 3D EAGE seismic velocity model from (WARNING: File is ~500 MB and ~ 8 GB RAM)** `here <https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz>`_
 
 
 .. figure:: https://user-images.githubusercontent.com/18619644/91485472-4be5d480-e881-11ea-9abf-75ae2fb6b2b1.jpg
