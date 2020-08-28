@@ -97,7 +97,7 @@ if rank == 0:
     # in ParaView, we swap the axes so it appears as in the (x,z) plane.
     meshio.write_points_cells(
         "BP2004.vtk",
-        points[:,[0,1]]/ 1000,
+        points[:,[1,0]]/ 1000,
         [("triangle", facets)],
         file_format="vtk",
     )
