@@ -2,10 +2,10 @@
    Persson, PO. Engineering with Computers (2006) 22: 95.
    https://doi.org/10.1007/s00366-006-0014-1 kjr, usp, 2019
 */
+#include <pybind11/complex.h>
+#include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
-#include <pybind11/numpy.h>
-#include <pybind11/complex.h>
 
 #include <algorithm>
 #include <array>
@@ -61,8 +61,8 @@ std::vector<int> findIndices(const std::vector<int> &A, const int value) {
 
 // solve the Hamilton-Jacobi equation
 std::vector<double> c_limgrad(const std::vector<int> &dims, const double &elen,
-                            const double &dfdx, const int &imax,
-                            const std::vector<double> &ffun) {
+                              const double &dfdx, const int &imax,
+                              const std::vector<double> &ffun) {
 
   assert(dims[0] > 0 && dims[1] > 0 && dims[2] > 0);
 
@@ -156,21 +156,18 @@ std::vector<double> c_limgrad(const std::vector<int> &dims, const double &elen,
   return ffun_s;
 }
 
-
 // Python wrapper
-py::array limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
-                    const double elen,
-                    const double dfdx,
-                    const int imax,
-                    py::array_t<double, py::array::c_style | py::array::forcecast> ffun)
-{
-  int num_points = ffun.size() ;
+py::array
+limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
+        const double elen, const double dfdx, const int imax,
+        py::array_t<double, py::array::c_style | py::array::forcecast> ffun) {
+  int num_points = ffun.size();
 
-  std::vector<double>  cffun(num_points);
-  std::vector<int>  cdims(4);
+  std::vector<double> cffun(num_points);
+  std::vector<int> cdims(4);
 
   std::memcpy(cffun.data(), ffun.data(), num_points * sizeof(double));
-  std::memcpy(cdims.data(), dims.data(), 4*sizeof(int));
+  std::memcpy(cdims.data(), dims.data(), 4 * sizeof(int));
 
   std::vector<double> sffun = c_limgrad(cdims, elen, dfdx, imax, cffun);
 
@@ -180,8 +177,8 @@ py::array limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> di
 
   // return 2-D NumPy array
   return py::array(
-      py::buffer_info(sffun.data(), /* data as contiguous array  */
-                      sizeof(double),     /* size of one scalar        */
+      py::buffer_info(sffun.data(),   /* data as contiguous array  */
+                      sizeof(double), /* size of one scalar        */
                       py::format_descriptor<double>::format(), /* data type */
                       2,      /* number of dimensions      */
                       shape,  /* shape of the matrix       */
@@ -198,9 +195,9 @@ PYBIND11_MODULE(FastHJ, m) {
         "vector.");
 }
 =======
-  m.doc() = "pybind11 module for gradient limiting a scalar field";
+m.doc() = "pybind11 module for gradient limiting a scalar field";
 
-  m.def("limgrad", &limgrad,
-        "The function which gradient limits a scalar field reshaped to a "
-        "vector.");
+m.def("limgrad", &limgrad,
+      "The function which gradient limits a scalar field reshaped to a "
+      "vector.");
 }
