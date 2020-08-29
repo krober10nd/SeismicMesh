@@ -157,7 +157,6 @@ std::vector<double> c_limgrad(const std::vector<int> &dims, const double &elen,
 }
 
 
-
 // Python wrapper
 py::array limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
                     const double elen,
@@ -192,6 +191,13 @@ py::array limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> di
 
 PYBIND11_MODULE(FastHJ, m) {
 
+  m.doc() = "pybind11 module for gradient limiting a scalar field";
+
+  m.def("limgrad", &limgrad,
+        "The function which gradient limits a scalar field reshaped to a "
+        "vector.");
+}
+=======
   m.doc() = "pybind11 module for gradient limiting a scalar field";
 
   m.def("limgrad", &limgrad,
