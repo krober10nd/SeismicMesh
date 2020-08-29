@@ -530,30 +530,31 @@ class MeshSizeFunction:
 
     def GetDomainMatrices(self):
         """ Accessor to private method"""
-        zg, xg = self.__CreateDomainMatrices()
-        return zg, xg
+        if self.dim == 2:
+            zg, xg = self.__CreateDomainMatrices()
+            return zg, xg
+        elif self.dim == 3:
+            zg, xg, yg = self.__CreateDomainMatrices()
+            return zg, xg, yg
 
     def hj(self, fun, elen, imax):
         """Call-back to the cpp gradient limiter code """
         _dim = self.dim
         _nz = self.nz
         _nx = self.nx
+        _ny = 1
         if _dim == 3:
             _ny = self.ny
         _grade = self.grade
 
-        ffun = fun.flatten("F")
-        ffun_list = ffun.tolist()
+        sz = (_nz, _nx, _ny)
+
+        fun = fun.flatten("F")
+        tmp = limgrad([*sz], elen, _grade, imax, fun)
         if _dim == 2:
-            tmp = limgrad([_nz, _nx, 1], elen, _grade, imax, ffun_list)
+            return np.reshape(tmp, (_nz, _nx), "F")
         if _dim == 3:
-            tmp = limgrad([_nz, _nx, _ny], elen, _grade, imax, ffun_list)
-        tmp = np.asarray(tmp)
-        if _dim == 2:
-            fun_s = np.reshape(tmp, (_nz, _nx), "F")
-        if _dim == 3:
-            fun_s = np.reshape(tmp, (_nz, _nx, _ny), "F")
-        return fun_s
+            return np.reshape(tmp, (_nz, _nx, _ny), "F")
 
     def WriteVelocityModel(self, ofname, comm=None):
         """Writes a velocity model as a hdf5 file for use in Spyro """

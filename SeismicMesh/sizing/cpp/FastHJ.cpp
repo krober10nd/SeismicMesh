@@ -4,6 +4,8 @@
 */
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
+#include <pybind11/numpy.h>
+#include <pybind11/complex.h>
 
 #include <algorithm>
 #include <array>
@@ -18,6 +20,8 @@
 #include <chrono>
 
 #define EPS 1e-9
+
+namespace py = pybind11;
 
 // for column major order with 1-based indexing
 int sub2ind(const int row, const int col, const int zpos, const int nrows,
@@ -56,7 +60,7 @@ std::vector<int> findIndices(const std::vector<int> &A, const int value) {
 }
 
 // solve the Hamilton-Jacobi equation
-std::vector<double> limgrad(const std::vector<int> &dims, const double &elen,
+std::vector<double> c_limgrad(const std::vector<int> &dims, const double &elen,
                             const double &dfdx, const int &imax,
                             const std::vector<double> &ffun) {
 
@@ -150,6 +154,40 @@ std::vector<double> limgrad(const std::vector<int> &dims, const double &elen,
     // std::cout << "ITER: " << iter << std::endl;
   }
   return ffun_s;
+}
+
+
+
+// Python wrapper
+py::array limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
+                    const double elen,
+                    const double dfdx,
+                    const int imax,
+                    py::array_t<double, py::array::c_style | py::array::forcecast> ffun)
+{
+  int num_points = ffun.size() ;
+
+  std::vector<double>  cffun(num_points);
+  std::vector<int>  cdims(4);
+
+  std::memcpy(cffun.data(), ffun.data(), num_points * sizeof(double));
+  std::memcpy(cdims.data(), dims.data(), 4*sizeof(int));
+
+  std::vector<double> sffun = c_limgrad(cdims, elen, dfdx, imax, cffun);
+
+  ssize_t sodble = sizeof(double);
+  std::vector<ssize_t> shape = {num_points, 1};
+  std::vector<ssize_t> strides = {sodble, sodble};
+
+  // return 2-D NumPy array
+  return py::array(
+      py::buffer_info(sffun.data(), /* data as contiguous array  */
+                      sizeof(double),     /* size of one scalar        */
+                      py::format_descriptor<double>::format(), /* data type */
+                      2,      /* number of dimensions      */
+                      shape,  /* shape of the matrix       */
+                      strides /* strides for each axis     */
+                      ));
 }
 
 PYBIND11_MODULE(FastHJ, m) {
