@@ -194,10 +194,3 @@ PYBIND11_MODULE(FastHJ, m) {
         "The function which gradient limits a scalar field reshaped to a "
         "vector.");
 }
-=======
-m.doc() = "pybind11 module for gradient limiting a scalar field";
-
-m.def("limgrad", &limgrad,
-      "The function which gradient limits a scalar field reshaped to a "
-      "vector.");
-}
