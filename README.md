@@ -107,8 +107,8 @@ if rank == 0:
 seismic velocity model from (WARNING: File is \~500 MB)**
 [here](https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz)
 
-**WARNING: Computationaly demanding! Running this example requires
-around 8 GB of RAM due to the 3D nature of the problem and the domain
+**WARNING: Computationaly demanding! Running this example takes around 5 minutes in serial and requires
+around 2 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
 ![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/91606008-c5e09100-e947-11ea-97e2-58e4b2f23d2b.jpg)
