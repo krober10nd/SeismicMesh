@@ -164,10 +164,10 @@ limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
   int num_points = ffun.size();
 
   std::vector<double> cffun(num_points);
-  std::vector<int> cdims(4);
+  std::vector<int> cdims(3);
 
   std::memcpy(cffun.data(), ffun.data(), num_points * sizeof(double));
-  std::memcpy(cdims.data(), dims.data(), 4 * sizeof(int));
+  std::memcpy(cdims.data(), dims.data(), 3 * sizeof(int));
 
   std::vector<double> sffun = c_limgrad(cdims, elen, dfdx, imax, cffun);
 
