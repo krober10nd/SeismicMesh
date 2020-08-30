@@ -16,11 +16,11 @@ jobs:
     steps:
       - checkout
       - run: sudo apt install -y libcgal-dev python-pybind11 cmake mpich libhdf5-dev
-      - run: pip install . --user
+      - run: pip install .[test] --user
       - run: pip install pytest pytest-cov pybind11
       - run:
-          command: pytest
-          working_directory: test/
+             pip install tox
+             tox
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2

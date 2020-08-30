@@ -34,7 +34,7 @@ include_directories (${MIGRATION_SRCE} ${GENERATION_SRCE} ${SIZING_SRC} ${GEOMET
 find_package(pybind11)
 message(STATUS "Found pybind11 v${pybind11_VERSION}: ${pybind11_INCLUDE_DIRS}")
 
-add_subdirectory(pybind11)
+#add_subdirectory(pybind11)
 pybind11_add_module(cpputils ${SOURCES}  "${MIGRATION_SRCE}/cpputils.cpp")
 pybind11_add_module(FastHJ ${SOURCES} "${SIZING_SRCE}/FastHJ.cpp")
 pybind11_add_module(c_cgal ${SOURCES} "${GENERATION_SRCE}/delaunay.cpp")
