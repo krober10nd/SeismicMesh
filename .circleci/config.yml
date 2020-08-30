@@ -21,8 +21,8 @@ jobs:
       - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
+      - run: sudo apt install -y python-pybind11
       - run: pip install . --user
-      - run: pip install pytest pytest-cov pybind11
       - run:
              pip install tox && tox
       - run: bash <(curl -s https://codecov.io/bash)
