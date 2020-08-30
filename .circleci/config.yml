@@ -15,18 +15,12 @@ jobs:
       - image: circleci/python:3
     steps:
       - checkout
-      - run: sudo apt install -y cmake
-      - run: sudo apt-get install libboost-all-dev
-      - run: sudo apt-get install libmpfr-dev
-      - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
-      - run: sudo apt install -y libhdf5-dev
-      - run: sudo apt install -y mpich
-      - run: git submodule sync
-      - run: git submodule update --init
-      - run: pip install .[test] --user
-      - run: pip3 install -U pytest pytest-cov --user
+      - run: sudo apt install -y libcgal-dev python-pybind11 cmake mpich libhdf5-dev
+      - run: pip install . --user
+      - run: pip install pytest pytest-cov pybind11
       - run:
-          command: cd tests && py.test --cov SeismicMesh -m "serial" #&& mpirun -np 2 pytest --cov -m "parallel" .
+          command: pytest
+          working_directory: test/
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
