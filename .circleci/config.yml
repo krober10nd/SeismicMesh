@@ -23,7 +23,7 @@ jobs:
       - run: sudo apt install -y mpich
       - run: git submodule sync
       - run: git submodule update --init
-      - run: pip install . --user
+      - run: pip install .[test] --user
       - run: pip3 install -U pytest pytest-cov --user
       - run:
           command: cd tests && py.test --cov SeismicMesh -m "serial" #&& mpirun -np 2 pytest --cov -m "parallel" .
