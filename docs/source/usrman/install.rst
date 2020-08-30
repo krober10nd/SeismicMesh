@@ -39,15 +39,14 @@ build *SeismicMesh*:
 Compilation by source
 ----------------------
 
-After installing all dependencies, perform the two steps in the main directory in the order that they appear below::
+After installing all dependencies, perform ::
 
-$  git submodule update --init --recursive
 $  pip install -e .
 
 .. note ::
-    If you do not have administrative rights on your system, add the flag ``--user`` to end of the second command
+    If you do not have administrative rights on your system, add the flag ``--user`` to the command above.
 
-.. note ::
+.. warning ::
     The preferred method of installation is: pip install SeismicMesh
 
 Testing
@@ -60,13 +59,12 @@ Testing is accomplished with `pytest`. The `pytest` package can be installed lik
 .. note ::
     If you do not have administrative rights on your system, add the flag ``--user`` to end of the pip command.
 
-To test the installation, serial and parallel capabilites, you can use `pytest` from the `test/` directory::
+To test the installation, serial and parallel capabilites, you can use `pytest`::
 
-$ cd tests/
 $ pytest -m "serial" .
 $ mpirun -np 2 pytest -m "parallel" .
 
-Clusters
+Installation on Clusters
 -------------
 
 .. note::

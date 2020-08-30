@@ -21,12 +21,10 @@ jobs:
       - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
-      - run: git submodule sync
-      - run: git submodule update --init
+      - run: sudo apt install -y python-pybind11
       - run: pip install . --user
-      - run: pip3 install -U pytest pytest-cov --user
       - run:
-          command: cd tests && py.test --cov SeismicMesh -m "serial" #&& mpirun -np 2 pytest --cov -m "parallel" .
+             pip install tox && tox
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
