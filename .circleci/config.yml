@@ -22,7 +22,7 @@ jobs:
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y mpich
       - run: sudo apt install -y python-pybind11
-      - run: pip install
+      - run: pip install . --user
       - run: pip install pytest pytest-cov pybind11
       - run:
              pip install tox
