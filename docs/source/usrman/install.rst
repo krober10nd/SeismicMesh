@@ -51,17 +51,13 @@ $  pip install -e .
 Testing
 -------
 
-Testing is accomplished with `pytest`. The `pytest` package can be installed like so::
+Testing is accomplished with `tox`. The `tox` package can be installed like so::
 
-    pip install pytest
+    pip install tox
 
-.. note ::
-    If you do not have administrative rights on your system, add the flag ``--user`` to end of the pip command.
+To test the installation, serial and parallel capabilites, you can use `tox` from the top directory of the package::
 
-To test the installation, serial and parallel capabilites, you can use `pytest`::
-
-$ pytest -m "serial" .
-$ mpirun -np 2 pytest -m "parallel" .
+$ tox
 
 Installation on Clusters
 -------------
