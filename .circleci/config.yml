@@ -12,7 +12,7 @@ jobs:
   build:
     working_directory: ~/working
     docker:
-      - image: circleci/python:3
+      - image: ubuntu:18.04
     steps:
       - checkout
       - run: sudo apt install -y cmake
@@ -20,7 +20,6 @@ jobs:
       - run: sudo apt-get install libmpfr-dev
       - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
-      - run: sudo apt install -y mpich
       - run: sudo apt install -y libopenmpi libopenmpi-dev openmpi-bin
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
