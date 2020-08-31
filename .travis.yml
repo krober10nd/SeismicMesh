@@ -10,7 +10,11 @@ before_install:
     - sudo apt install -y mpich
     - sudo apt install -y python3-pybind11
 install:
-    - pip install .
+    - pwd
+    - ls
+    - pip install -e .
 script:
     - pip install tox
     - tox
+after_success:
+  - codecov
