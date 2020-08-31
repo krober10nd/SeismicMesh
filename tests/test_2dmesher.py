@@ -15,11 +15,20 @@ def test_2dmesher():
     hmin = 100
     grade = 0.005
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, velocity_grid=vp, hmin=hmin
+        bbox=(-10e3, 0, 0, 10e3),
+        grade=grade,
+        grad=50.0,
+        wl=wl,
+        velocity_grid=vp,
+        hmin=hmin,
     )
     ef = ef.build()
+    ef.plot()
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, facets = mshgen.build(max_iter=100)
+    ef.WriteVelocityModel("testing")
+    ef.SaveMeshSizeFunctionOptions("sizingOpts")
+    ef.plot()
     # should have: 7690 vertices and 15045 cells
     assert np.abs(len(points) - 7690) < 20
     assert np.abs(len(facets) - 15045) < 20

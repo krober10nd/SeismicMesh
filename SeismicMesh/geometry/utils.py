@@ -157,7 +157,7 @@ class SignedDistanceFunctionGenerator:
                 )
 
 
-def calc_re_ratios(vertices, entities):
+def calc_re_ratios(vertices, entities, dim=2):
     """Calculate radius edge ratios--mesh quality metric
 
     :param vertices: point coordinates of the mesh vertices'
@@ -165,26 +165,36 @@ def calc_re_ratios(vertices, entities):
     :param entities: mesh connectivity table
     :type entities: numpy.ndarray[int x (dim + 1)]
 
-    :return: dihedral angles: array of radius-to-edge ratios
-    :rtype: dihedral angles: numpy.ndarray[float64 x 1]
+    :return: ce_ratios: array of radius-to-edge ratios
+    :rtype: ce_ratios: numpy.ndarray[float64 x 1]
     """
     # circumradius/shortest edge length
-    bars = np.concatenate(
-        [
-            entities[:, [0, 1]],
-            entities[:, [1, 2]],
-            entities[:, [2, 0]],
-            entities[:, [0, 3]],
-            entities[:, [1, 3]],
-            entities[:, [2, 3]],
-        ]
-    )
+    if dim == 2:
+        bars = np.concatenate(
+            [entities[:, [0, 1]], entities[:, [1, 2]], entities[:, [2, 0]]]
+        )
+    elif dim == 3:
+        bars = np.concatenate(
+            [
+                entities[:, [0, 1]],
+                entities[:, [1, 2]],
+                entities[:, [2, 0]],
+                entities[:, [0, 3]],
+                entities[:, [1, 3]],
+                entities[:, [2, 3]],
+            ]
+        )
+    else:
+        raise ValueError("Dimension invalid")
     barvec = vertices[bars[:, 0]] - vertices[bars[:, 1]]
     L = np.sqrt((barvec ** 2).sum(1))
-    L = np.reshape(L, (6, len(entities)))
+    L = np.reshape(L, (3 * (dim - 1), len(entities)))
     # min edge length i every tetra
     minL = np.amin(L, axis=0)
-    cc = c_cgal.circumballs3(vertices[entities.flatten()])
+    if dim == 2:
+        cc = c_cgal.circumballs2(vertices[entities.flatten()])
+    elif dim == 3:
+        cc = c_cgal.circumballs3(vertices[entities.flatten()])
     r = cc[:, -1]
     return np.sqrt(r) / minL
 
