@@ -16,7 +16,6 @@ build *SeismicMesh*:
     On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
 
 * Pybind11 >= 2.5
-    If building by source, pybind11 is shipped as a submodule. If this case, you do not need to install. You can activate it below when performing the installation by source.
 
 * C++ compiler (GNU or Intel) with support for std++14 or newer.
 
