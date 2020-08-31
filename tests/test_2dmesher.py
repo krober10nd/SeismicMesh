@@ -15,7 +15,7 @@ def test_2dmesher():
     hmin = 100
     grade = 0.005
     ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, velocity_grid=vp, hmin=hmin
+        bbox=(-10e3, 0, 0, 10e3), grade=grade, grad=50.0, wl=wl, velocity_grid=vp, hmin=hmin
     )
     ef = ef.build()
     ef.plot()

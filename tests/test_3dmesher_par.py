@@ -27,13 +27,10 @@ def test_3dpar_mesher():
     hmin = 50
     freq = 4
     grade = 0.15
-    nz, nx, ny = 20, 10, 10
     ef = SeismicMesh.MeshSizeFunction(
         bbox=(-2e3, 0, 0, 1e3, 0, 1e3),
-        nx=nx,
-        ny=ny,
-        nz=nz,
         grade=grade,
+        grad=50.0,
         freq=freq,
         wl=wl,
         velocity_grid=vp,

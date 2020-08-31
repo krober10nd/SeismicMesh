@@ -25,6 +25,7 @@ def test_3dmesher():
     ef = SeismicMesh.MeshSizeFunction(
         bbox=(-2e3, 0, 0, 1e3, 0, 1e3),
         grade=grade,
+        grad=hmin,
         freq=freq,
         wl=wl,
         velocity_grid=vp,
