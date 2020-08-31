@@ -1,0 +1,15 @@
+language: python
+python:
+    - 3.6
+before_install:
+    - sudo apt-get install libboost-all-dev
+    - sudo apt-get install libmpfr-dev
+    - git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
+    - sudo apt install -y libhdf5-dev
+    - sudo apt install -y mpich
+    - sudo apt install -y python-pybind11
+install:
+    - pip install .
+script:
+    - pip install tox
+    - tox
