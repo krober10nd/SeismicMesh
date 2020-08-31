@@ -1,3 +1,4 @@
+dist: bionic
 language: python
 python:
     - 3.6
@@ -7,7 +8,7 @@ before_install:
     - git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
     - sudo apt install -y libhdf5-dev
     - sudo apt install -y mpich
-    - sudo apt-get update && sudo apt install -y python3-pybind11
+    - sudo apt install -y python3-pybind11
 install:
     - pip install .
 script:
