@@ -260,7 +260,6 @@ class MeshGenerator:  # noqa: C901
                 ].astype(float)
                 p = p.reshape(dim, -1).T
 
-            # quit()
             # 2. Remove points outside the region, apply the rejection method
             p = p[fd(p) < geps]  # Keep only d<0 points
             r0 = fh(p)
@@ -296,8 +295,6 @@ class MeshGenerator:  # noqa: C901
                 # send points to each subdomain
                 p, extents = migration.localize_points(blocks, extents, comm, dim)
                 extent = extents[rank]
-                np.savetxt("init" + str(rank) + ".txt", p, delimiter=",")
-
             else:
                 p = _points
 
@@ -418,7 +415,6 @@ class MeshGenerator:  # noqa: C901
                 barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
                 L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
                 L[L == 0] = np.finfo(float).eps
-                comm.barrier()
                 hbars = fh(p[bars].sum(1) / 2)
                 L0 = (
                     hbars
