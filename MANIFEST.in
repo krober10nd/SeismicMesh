@@ -4,6 +4,6 @@ include SeismicMesh/migration/cpp/*.cpp
 include SeismicMesh/sizing/cpp/*.cpp
 
 include tox.ini
+include pytest.ini
 include README.md LICENSE.txt
 global-include CMakeLists.txt
-
