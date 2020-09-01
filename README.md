@@ -12,16 +12,16 @@
 [SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
 ==================================================================================================
 
-*SeismicMesh* enables the generation of potentially large (O(1e6 to 1e7) cells) 2D/3D triangular meshes that are intended for acoustic and elastic wave propagators discretized 
-with the finite element method. It builds these meshes directly from seismic velocity models such as [SEG-y files](https://en.wikipedia.org/wiki/SEG-Y) using simple Python scripts.
+*SeismicMesh* enables the generation of 2D/3D triangular meshes that are intended for acoustic and elastic wave propagators discretized 
+with the finite element method. Meshes are built from seismic velocity models containd in [SEG-y files](https://en.wikipedia.org/wiki/SEG-Y) using short Python scripts.
 
-A [mesh sizing function module](https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction) is provided to map variations in seismic velocities from a seismic velocity model to triangular mesh sizes. The sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and the Courant number can be bounded above by a constant amongst other capabilities. *SeismicMesh* is an open source tool everyone can use that perhaps just knows a little Python and aren't very familiar with other mesh generation tools out there like [gmsh](https://gmsh.info/) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html).
+A 2D/3D [mesh sizing function module](https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction) is provided to map variations in seismic velocities from a seismic velocity model to triangular mesh sizes. The sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and the Courant number can be bounded above by a constant (amongst other capabilities). 
 
-Capabilites are provided to perform both 2D and 3D triangular meshing in either serial or distributed memory parallel using the message passing interface. In 3D mesh generation, we provide a simple interface to a mesh improvement method ([sliver removal](https://hal.inria.fr/inria-00430202/document)) to ensure a minimum quality bound can be enforced and the mesh thus will remain numerically stable when simulation is attempted (with an explicit timestepping scheme).
+Both 2D and 3D triangular meshing in either serial or distributed memory parallel using the message passing interface is possible. In 3D mesh generation, we provide a mesh improvement method ([sliver removal](https://hal.inria.fr/inria-00430202/document)) to ensure a minimum quality bound can be enforced and the mesh thus will remain numerically stable when simulation is attempted.
 
-With that said, the mesh generation approach provided in this package can be operated stanadlone and is based off modifications to the [DistMesh](http://persson.berkeley.edu/distmesh/) algorithm. In its most basic operation, *SeismicMesh* can mesh *any* domain that can be defined by a [signed distance function](https://en.wikipedia.org/wiki/Signed_distance_function#:~:text=In%20mathematics%20and%20its%20applications,whether%20x%20is%20in%20%CE%A9.) with mesh sizes that follow variations described by a user-defined [mesh sizing function](http://persson.berkeley.edu/pub/persson05qualmesh.pdf)
+With that said, the mesh generation approach provided in this package can be operated stanadlone (e.g., independent of the sizing function class) as it is based off modifications to the [DistMesh](http://persson.berkeley.edu/distmesh/) algorithm. Thus in its most basic operation, *SeismicMesh* can mesh *any* domain that can be defined by a [signed distance function](https://en.wikipedia.org/wiki/Signed_distance_function#:~:text=In%20mathematics%20and%20its%20applications,whether%20x%20is%20in%20%CE%A9.) with mesh sizes that follow variations described by a user-defined [mesh sizing function](http://persson.berkeley.edu/pub/persson05qualmesh.pdf)
 
-SeismicMesh is distributed under GPL3. More details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/par3d/paper/paper.md).
+*SeismicMesh* is distributed under the GPL3 licesne and more details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/par3d/paper/paper.md).
 
 Installation
 ============
