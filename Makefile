@@ -25,8 +25,8 @@ clean:
 	@rm -rf dist/
 
 format:
-	isort -rc SeimicMesh/ examples/*.py tests/*.py
-	black SeismicMesh/ examples/*.py tests/*.py
+	isort -rc SeimicMesh/ examples/*.py test/*.py
+	black SeismicMesh/ examples/*.py test/*.py
 	blacken-docs README.md
 	clang-format -i SeismicMesh/generation/cpp/*.cpp SeismicMesh/migration/cpp/*.cpp SeismicMesh/sizing/cpp/*.cpp SeismicMesh/geometry/cpp/*.cpp
 
@@ -34,6 +34,6 @@ black:
 	black .
 
 lint:
-	isort --check . SeismicMesh/ setup.py examples/*.py tests/*.py
-	black --check SeismicMesh/ setup.py examples/*.py tests/*.py
-	flake8 setup.py SeismicMesh/ examples/*.py tests/*.py
+	isort --check . SeismicMesh/ setup.py examples/*.py test/*.py
+	black --check SeismicMesh/ setup.py examples/*.py test/*.py
+	flake8 setup.py SeismicMesh/ examples/*.py test/*.py

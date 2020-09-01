@@ -3,7 +3,7 @@ include SeismicMesh/geometry/cpp/*.cpp
 include SeismicMesh/migration/cpp/*.cpp
 include SeismicMesh/sizing/cpp/*.cpp
 
-include README.rst LICENSE 
-global-include CMakeLists.txt 
-recursive-include pybind11/include *.h
+include tox.ini
+include README.md LICENSE.txt
+global-include CMakeLists.txt
 
