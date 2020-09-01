@@ -7,3 +7,21 @@ include tox.ini
 include pytest.ini
 include README.md LICENSE.txt
 global-include CMakeLists.txt
+
+include *.md
+include *.txt
+include *.yml
+include Makefile
+recursive-include docs *.bat
+recursive-include docs *.py
+recursive-include docs *.jpg
+recursive-include docs *.png
+recursive-include docs *.rst
+recursive-include docs *.txt
+recursive-include docs Makefile
+recursive-include paper *.bib
+recursive-include paper *.jpg
+recursive-include paper *.md
+recursive-include test *.bin
+recursive-include test *.segy
+recursive-include test *.txt
