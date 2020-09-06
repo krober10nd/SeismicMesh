@@ -33,7 +33,7 @@ def example_2D():
         hmin=75.0,
         grade=0.15,
         domain_ext=1e3,
-        padstyle="linear_ramp",
+        pad_style="linear_ramp",
     )
 
     # Build mesh size function

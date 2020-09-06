@@ -54,7 +54,7 @@ SDF = SdfGen(
     bbox=bbox,
     field=vp,
     min_threshold=3500,
-    gridspacing=(20.0, 20.0, 20.0),
+    grid_spacing=(20.0, 20.0, 20.0),
     narrow=1000,
 ).SDF
 
