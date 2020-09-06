@@ -18,7 +18,7 @@ def example_2D():
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
     # Read in it
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
 
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-12e3, 0, 0, 67e3)

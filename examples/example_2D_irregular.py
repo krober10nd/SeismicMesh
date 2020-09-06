@@ -26,7 +26,7 @@ def example_2D_Irregular():
 
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/velocity.segy"
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
 
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-8e3, 2e3, 0, 25e3)

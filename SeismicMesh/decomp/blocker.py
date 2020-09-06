@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def blocker(points, rank, nblocks, axis=0):
+def blocker(points, rank, num_blocks, axis=0):
     """Decompose point coordinates into # of blocks
     Blocks are orientated parallel to axis and have two neighbors
     above and below/left and right to the block depending on axis.
@@ -10,62 +10,62 @@ def blocker(points, rank, nblocks, axis=0):
     EPS = np.finfo(float).eps
 
     assert dim > 2 or dim < 3, "dimensions of points are wrong"
-    assert num_points // nblocks > 1, "too few points for chosen nblocks"
+    assert num_points // num_blocks > 1, "too few points for chosen num_blocks"
 
-    xlims = points[:, 0].min() - EPS, points[:, 0].max() + EPS
-    ylims = points[:, 1].min() - EPS, points[:, 1].max() + EPS
+    x_lims = points[:, 0].min() - EPS, points[:, 0].max() + EPS
+    y_lims = points[:, 1].min() - EPS, points[:, 1].max() + EPS
     if dim > 2:
-        zlims = points[:, 2].min() - EPS, points[:, 2].max() + EPS
+        z_lims = points[:, 2].min() - EPS, points[:, 2].max() + EPS
 
     if axis == 0:
         if dim == 2:
             xx, yy = np.meshgrid(
-                np.linspace(*xlims, 1, endpoint=False),
-                np.linspace(*ylims, nblocks, endpoint=False),
+                np.linspace(*x_lims, 1, endpoint=False),
+                np.linspace(*y_lims, num_blocks, endpoint=False),
             )
 
-            dx = (xlims[1] - xlims[0]) / 1
-            dy = (ylims[1] - ylims[0]) / nblocks
+            dx = (x_lims[1] - x_lims[0]) / 1
+            dy = (y_lims[1] - y_lims[0]) / num_blocks
         elif dim == 3:
             xx, yy, zz = np.meshgrid(
-                np.linspace(*xlims, 1, endpoint=False),
-                np.linspace(*ylims, nblocks, endpoint=False),
-                np.linspace(*zlims, 1, endpoint=False),
+                np.linspace(*x_lims, 1, endpoint=False),
+                np.linspace(*y_lims, num_blocks, endpoint=False),
+                np.linspace(*z_lims, 1, endpoint=False),
             )
 
-            dx = (xlims[1] - xlims[0]) / 1
-            dy = (ylims[1] - ylims[0]) / nblocks
-            dz = (zlims[1] - zlims[0]) / 1
+            dx = (x_lims[1] - x_lims[0]) / 1
+            dy = (y_lims[1] - y_lims[0]) / num_blocks
+            dz = (z_lims[1] - z_lims[0]) / 1
 
     elif axis == 1:
         if dim == 2:
             xx, yy = np.meshgrid(
-                np.linspace(*xlims, nblocks, endpoint=False),
-                np.linspace(*ylims, 1, endpoint=False),
+                np.linspace(*x_lims, num_blocks, endpoint=False),
+                np.linspace(*y_lims, 1, endpoint=False),
             )
 
-            dx = (xlims[1] - xlims[0]) / nblocks
-            dy = (ylims[1] - ylims[0]) / 1
+            dx = (x_lims[1] - x_lims[0]) / num_blocks
+            dy = (y_lims[1] - y_lims[0]) / 1
         elif dim == 3:
             xx, yy, zz = np.meshgrid(
-                np.linspace(*xlims, nblocks, endpoint=False),
-                np.linspace(*ylims, 1, endpoint=False),
-                np.linspace(*zlims, 1, endpoint=False),
+                np.linspace(*x_lims, num_blocks, endpoint=False),
+                np.linspace(*y_lims, 1, endpoint=False),
+                np.linspace(*z_lims, 1, endpoint=False),
             )
 
-            dx = (xlims[1] - xlims[0]) / nblocks
-            dy = (ylims[1] - ylims[0]) / 1
-            dz = (zlims[1] - zlims[0]) / 1
+            dx = (x_lims[1] - x_lims[0]) / num_blocks
+            dy = (y_lims[1] - y_lims[0]) / 1
+            dz = (z_lims[1] - z_lims[0]) / 1
     elif axis == 2:
         xx, yy, zz = np.meshgrid(
-            np.linspace(*xlims, 1, endpoint=False),
-            np.linspace(*ylims, nblocks, endpoint=False),
-            np.linspace(*zlims, nblocks, endpoint=False),
+            np.linspace(*x_lims, 1, endpoint=False),
+            np.linspace(*y_lims, num_blocks, endpoint=False),
+            np.linspace(*z_lims, num_blocks, endpoint=False),
         )
 
-        dx = (xlims[1] - xlims[0]) / 1
-        dy = (ylims[1] - ylims[0]) / 1
-        dz = (zlims[1] - zlims[0]) / nblocks
+        dx = (x_lims[1] - x_lims[0]) / 1
+        dy = (y_lims[1] - y_lims[0]) / 1
+        dz = (z_lims[1] - z_lims[0]) / num_blocks
 
     blocks = []
     block_extents = []

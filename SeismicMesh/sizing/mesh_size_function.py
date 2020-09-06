@@ -27,7 +27,7 @@ from ..geometry import signed_distance_functions as sdf
 from .cpp import limgrad
 
 
-def ReadSegy(fname):
+def read_segy(fname):
     """Read a velocity model from a SEG-y file"""
     with segyio.open(fname, ignore_geometry=True) as f:
         nz, nx = len(f.samples), len(f.trace)

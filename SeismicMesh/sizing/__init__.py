@@ -1,3 +1,3 @@
-from .mesh_size_function import MeshSizeFunction, ReadSegy
+from .mesh_size_function import MeshSizeFunction, read_segy
 
-__all__ = ["MeshSizeFunction", "ReadSegy"]
+__all__ = ["MeshSizeFunction", "read_segy"]

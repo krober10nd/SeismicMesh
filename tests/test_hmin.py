@@ -9,7 +9,7 @@ import SeismicMesh
 @pytest.mark.serial
 def test_hmin():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     hmin = 100
     ef = SeismicMesh.MeshSizeFunction(
         bbox=(-1e3, 0, 0, 1e3), wl=5, velocity_grid=vp, hmin=hmin

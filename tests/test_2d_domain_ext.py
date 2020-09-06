@@ -10,7 +10,7 @@ import SeismicMesh
 def test_2d_domain_ext():
 
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     wl = 5
     freq = 10
     hmin = 100
