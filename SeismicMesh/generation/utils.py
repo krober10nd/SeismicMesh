@@ -4,7 +4,7 @@ import numpy as np
 import scipy.sparse as spsparse
 
 
-def closestNumber(n, m):
+def closest_number(n, m):
     # Find the quotient
     q = int(n / m)
 
@@ -92,11 +92,6 @@ def dense(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...), but instead returning a
     dense array.
-
-    Usage
-    -----
-    >>> shape = (m, n)
-    >>> A = dense(I, J, S, shape, dtype)
     """
 
     # Advanced usage: allow J and S to be scalars.

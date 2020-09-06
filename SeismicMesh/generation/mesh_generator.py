@@ -219,7 +219,7 @@ class MeshGenerator:  # noqa: C901
             raise Exception("Mesh improvement currently on works in 3D")
 
         L0mult = 1 + 0.4 / 2 ** (dim - 1)
-        deltat = 0.1
+        delta_t = 0.1
         geps = 1e-1 * h0
         deps = np.sqrt(np.finfo(np.double).eps) * h0
         min_dh_bound *= math.pi / 180
@@ -286,7 +286,7 @@ class MeshGenerator:  # noqa: C901
                 p = None
                 if rank == 0:
                     blocks, extents = decomp.blocker(
-                        points=_points, rank=rank, nblocks=size, axis=_axis
+                        points=_points, rank=rank, num_blocks=size, axis=_axis
                     )
                 else:
                     blocks = None
@@ -369,23 +369,23 @@ class MeshGenerator:  # noqa: C901
                 num_move = 0
                 # calculate dihedral angles in mesh
                 dh_angles = geometry.calc_dihedral_angles(p, t)
-                outOfBounds = np.argwhere(
+                out_of_bounds = np.argwhere(
                     (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
                 )
-                eleNums = np.floor(outOfBounds / 6).astype("int")
-                eleNums, ix = np.unique(eleNums, return_index=True)
+                ele_nums = np.floor(out_of_bounds / 6).astype("int")
+                ele_nums, ix = np.unique(ele_nums, return_index=True)
 
                 if count % nscreen == 0:
                     print(
                         "On rank: "
                         + str(rank)
                         + " There are "
-                        + str(len(eleNums))
+                        + str(len(ele_nums))
                         + " slivers...",
                         flush=True,
                     )
 
-                move = t[eleNums, 0]
+                move = t[ele_nums, 0]
                 num_move = move.size
                 if num_move == 0:
                     print("Termination reached...No slivers detected!", flush=True)
@@ -393,10 +393,10 @@ class MeshGenerator:  # noqa: C901
                     return p, t
 
                 p0, p1, p2, p3 = (
-                    p[t[eleNums, 0], :],
-                    p[t[eleNums, 1], :],
-                    p[t[eleNums, 2], :],
-                    p[t[eleNums, 3], :],
+                    p[t[ele_nums, 0], :],
+                    p[t[ele_nums, 1], :],
+                    p[t[ele_nums, 2], :],
+                    p[t[ele_nums, 3], :],
                 )
 
                 # perturb vector is based on INCREASING circumsphere's radius
@@ -438,9 +438,9 @@ class MeshGenerator:  # noqa: C901
 
                 if PARALLEL:
                     if count < max_iter - 1:
-                        p += deltat * Ftot
+                        p += delta_t * Ftot
                 else:
-                    p += deltat * Ftot  # Update node positions
+                    p += delta_t * Ftot  # Update node positions
 
             else:
                 # no movement if mesh improvement (from forces)
@@ -449,9 +449,6 @@ class MeshGenerator:  # noqa: C901
             # 7. Bring outside points back to the boundary
             d = fd(p)
             ix = d > 0  # Find points outside (d>0)
-
-            # if PARALLEL and count is max_iter - 2:
-            #   enforce_sdf = False
 
             if ix.any() and enforce_sdf:
 
@@ -466,7 +463,7 @@ class MeshGenerator:  # noqa: C901
                 p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
 
             if count % nscreen == 0 and rank == 0 and not mesh_improvement:
-                maxdp = deltat * np.sqrt((Ftot ** 2).sum(1)).max()
+                maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
 
             # 8. Number of iterations reached
             if count == max_iter - 1:
