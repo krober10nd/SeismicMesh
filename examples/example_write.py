@@ -23,10 +23,10 @@ def example_write():
     ef = ef.build()
 
     # Write it to an hdf5 file for later use.
-    ef.WriteVelocityModel("BP2004")
+    ef.write_velocity_model("BP2004")
 
     # Save your mesh size function options.
-    ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
+    ef.save_mesh_size_function_options("BP2004_SizingFunction")
 
 
 if __name__ == "__main__":

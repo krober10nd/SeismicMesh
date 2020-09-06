@@ -11,7 +11,7 @@ rank = comm.Get_rank()
 def example_2D():
     """
     Build a mesh of the BP2004 benchmark velocity model in serial or parallel
-    Takes roughly 1 minute with 2 processors.
+    Takes roughly 1 minute with 2 cores.
     The velocity model can be downloaded from here: https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
     """
 
@@ -40,7 +40,7 @@ def example_2D():
     ef = ef.build()
 
     # Write to disk for later use
-    ef.WriteVelocityModel("BP2004_w1KM_EXT")
+    ef.write_velocity_model("BP2004_w1KM_EXT")
 
     # Visualize the mesh size function
     ef.plot()

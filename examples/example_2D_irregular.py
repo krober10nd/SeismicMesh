@@ -18,8 +18,9 @@ if size > 1:
 def example_2D_Irregular():
     """
     Build a 2D mesh of a benchmark velocity  model of a Monuntainous thrust region.
-    Builds in serial. Demonstrates how to ensure the topography of the free surface is respected
-    in the mesh.
+    Demonstrates how to ensure the topography of the free surface is respected in the mesh.
+
+    Builds only in serial as the SDF is not parallelized here.
 
     Velocity model was downloaded from here: https://wiki.seg.org/wiki/1994_BP_migration_from_topography
     """
@@ -47,7 +48,7 @@ def example_2D_Irregular():
     ef = ef.build()
 
     # Write to disk for later use
-    ef.WriteVelocityModel("Irregular2D")
+    ef.write_velocity_model("Irregular2D")
 
     # Visualize the mesh size function
     ef.plot()
@@ -60,7 +61,7 @@ def example_2D_Irregular():
         bbox=bbox,
         field=vp2,
         min_threshold=4000.0,
-        gridspacing=(10.0, 15.0),
+        grid_spacing=(10.0, 15.0),
     ).SDF
 
     # Construct a mesh generator object
