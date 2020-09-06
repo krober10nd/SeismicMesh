@@ -21,7 +21,7 @@ def test_ptin():
     queryIn = (0.5, 0.5, 1.0)  # should be in
     queryOut = (0.0, 0.0, 1.0)  # should be out
 
-    isIn = SeismicMesh.geometry.utils.vtInEntity3(
+    isIn = SeismicMesh.geometry.utils.vertex_in_entity3(
         queryIn,
         (
             *points[cells[0][0], 0:3],
@@ -32,7 +32,7 @@ def test_ptin():
     )
     assert isIn != 0
 
-    isIn = SeismicMesh.geometry.utils.vtInEntity3(
+    isIn = SeismicMesh.geometry.utils.vertex_in_entity3(
         queryOut,
         (
             *points[cells[0][0], 0:3],

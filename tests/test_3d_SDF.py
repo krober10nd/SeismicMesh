@@ -40,7 +40,7 @@ def test_3dmesher():
         bbox=bbox,
         field=vp,
         min_threshold=2000.0,
-        gridspacing=(100.0, 100.0, 100.0),
+        grid_spacing=(100.0, 100.0, 100.0),
     ).SDF
 
     mshgen = SeismicMesh.MeshGenerator(fh=ef.fh, fd=SDF, hmin=hmin, bbox=bbox)

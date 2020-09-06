@@ -389,7 +389,7 @@ class MeshGenerator:  # noqa: C901
                 num_move = move.size
                 if num_move == 0:
                     print("Termination reached...No slivers detected!", flush=True)
-                    p, t, _ = geometry.fixmesh(p, t, dim=dim, delunused=True)
+                    p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
                     return p, t
 
                 p0, p1, p2, p3 = (

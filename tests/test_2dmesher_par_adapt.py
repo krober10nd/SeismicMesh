@@ -39,7 +39,7 @@ def test_2dpar_mesher_adapt():
         meshio.write_points_cells(
             "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk"
         )
-        area = SeismicMesh.geometry.simpvol(points / 1000, cells)
+        area = SeismicMesh.geometry.simp_vol(points / 1000, cells)
         assert np.abs(100 - np.sum(area)) < 0.50  # km2
 
 
