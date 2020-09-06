@@ -32,7 +32,7 @@ def test_3dmesher():
         hmin=hmin,
     )
     ef = ef.build()
-    ef.WriteVelocityModel("foo3d")
+    ef.write_velocity_model("foo3d")
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, cells = mshgen.build(nscreen=1, max_iter=50, seed=0)
     print(len(points), len(cells))

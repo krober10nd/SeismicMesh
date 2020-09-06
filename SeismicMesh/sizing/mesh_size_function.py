@@ -288,8 +288,6 @@ class MeshSizeFunction:
         assert value == "edge" or value == "constant" or value == "linear_ramp"
         self.__pad_style = value
 
-    # ---PUBLIC METHODS---#
-
     def build(self, comm=None):  # noqa: C901
 
         """Builds the isotropic mesh size function according
@@ -304,7 +302,7 @@ class MeshSizeFunction:
             size = 1
 
         if rank == 0:
-            self.__ReadVelocityModel()
+            self._read_velocity_model()
             _vp = self.velocity_grid
 
             _bbox = self.bbox
@@ -331,8 +329,10 @@ class MeshSizeFunction:
 
             if _dim == 2:
                 hh_m = np.zeros(shape=(_nz, _nx), dtype=np.float32) + _hmin
-            if _dim == 3:
+            elif _dim == 3:
                 hh_m = np.zeros(shape=(_nz, _nx, _ny), dtype=np.float32) + _hmin
+            else:
+                raise ValueError("Dimension not supported")
 
             if _wl > 0:
                 if rank == 0:
@@ -364,6 +364,8 @@ class MeshSizeFunction:
                     win_sqr_mean = ndimage.uniform_filter(
                         _vp ** 2, (win_rows, win_cols, win_cols2)
                     )
+                else:
+                    raise ValueError("Dimension not supported.")
                 win_var = win_sqr_mean - win_mean ** 2
                 # normalize variance to [0,1]
                 win_var /= np.amax(win_var)
@@ -399,13 +401,13 @@ class MeshSizeFunction:
                 if rank == 0:
                     # TODO: grader needs to consider varying constant resolution by dimension
                     print("Enforcing mesh gradation in sizing function...", flush=True)
-                    hh_m = self.hj(hh_m, _width / _nx, 10000)
+                    hh_m = self._hamilton_jacobi(hh_m, _width / _nx, 10000)
 
             # Domain extension
             # edit the bbox to reflect the new domain size
             if _domain_ext > 0:
-                self = self.__CreateDomainExtension()  # edit the bbox
-                hh_m = self.__EditMeshSizeFunction(
+                self = self._create_domain_extension()  # edit the bbox
+                hh_m = self._edit_mesh_size_function(
                     hh_m, rank
                 )  # edit the sizing function
 
@@ -414,10 +416,11 @@ class MeshSizeFunction:
                 print("Building a gridded interpolant...", flush=True)
 
             if _dim == 2:
-                z_vec, x_vec = self.__CreateDomainVectors()
-
-            if _dim == 3:
-                z_vec, x_vec, y_vec = self.__CreateDomainVectors()
+                z_vec, x_vec = self._create_domain_vectors()
+            elif _dim == 3:
+                z_vec, x_vec, y_vec = self._create_domain_vectors()
+            else:
+                raise ValueError("Dimension not supported")
 
             assert np.all(hh_m > 0.0), "Mesh size_function must be strictly positive."
 
@@ -425,10 +428,13 @@ class MeshSizeFunction:
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec), hh_m, bounds_error=False, fill_value=None
                 )
-            if _dim == 3:
+            elif _dim == 3:
                 self.interpolant = RegularGridInterpolator(
                     (z_vec, x_vec, y_vec), hh_m, bounds_error=False, fill_value=None
                 )
+            else:
+                raise ValueError("Dimension not supported")
+
             # Python can't bcast pickles so this is done after in parallel
             if size == 1:
                 # create a mesh size function interpolant
@@ -448,40 +454,14 @@ class MeshSizeFunction:
 
                 if _dim == 2:
                     self.fd = lambda p: fdd(p)
-                if _dim == 3:
+                elif _dim == 3:
                     self.fd = lambda p: fdd2(p)
+                else:
+                    raise ValueError("Dimension not supported")
 
-        # if parallel
+        # if parallel call
         if size > 1:
             self._construct_lambdas(comm)
-        return self
-
-    def _construct_lambdas(self, comm):
-        """
-        Build lambda fields (for parallel only) for
-        SDF and mesh size function
-        """
-        self.bbox = comm.bcast(self.bbox, 0)
-
-        _dim = self.dim
-        _bbox = self.bbox
-
-        # create a mesh size function interpolant
-        self.fh = lambda p: self.interpolant(p)
-
-        def fdd(p):
-            return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
-
-        def fdd2(p):
-            return sdf.dblock(
-                p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5]
-            )
-
-        # create a signed distance function
-        if _dim == 2:
-            self.fd = lambda p: fdd(p)
-        if _dim == 3:
-            self.fd = lambda p: fdd2(p)
         return self
 
     def plot(self, stride=5, comm=None):
@@ -495,7 +475,7 @@ class MeshSizeFunction:
             _depth = self.depth
 
             if _dim == 2:
-                zg, xg = self.__CreateDomainMatrices()
+                zg, xg = self._create_domain_matrices()
                 sz1z, sz1x = zg.shape
                 _zg = np.reshape(zg, (-1, 1))
                 _xg = np.reshape(xg, (-1, 1))
@@ -525,38 +505,10 @@ class MeshSizeFunction:
                 # ax.set_ylim(-_depth, 0)
                 plt.show()
             elif _dim == 3:
-                print("visualization in 3D not yet supported!")
-        return None
+                print("Visualization in 3D (not yet) supported!")
+        return ax
 
-    def GetDomainMatrices(self):
-        """ Accessor to private method"""
-        if self.dim == 2:
-            zg, xg = self.__CreateDomainMatrices()
-            return zg, xg
-        elif self.dim == 3:
-            zg, xg, yg = self.__CreateDomainMatrices()
-            return zg, xg, yg
-
-    def hj(self, fun, elen, imax):
-        """Call-back to the cpp gradient limiter code """
-        _dim = self.dim
-        _nz = self.nz
-        _nx = self.nx
-        _ny = 1
-        if _dim == 3:
-            _ny = self.ny
-        _grade = self.grade
-
-        sz = (_nz, _nx, _ny)
-
-        fun = fun.flatten("F")
-        tmp = limgrad([*sz], elen, _grade, imax, fun)
-        if _dim == 2:
-            return np.reshape(tmp, (_nz, _nx), "F")
-        if _dim == 3:
-            return np.reshape(tmp, (_nz, _nx, _ny), "F")
-
-    def WriteVelocityModel(self, ofname, comm=None):
+    def write_velocity_model(self, ofname, comm=None):
         """Writes a velocity model as a hdf5 file for use in Spyro """
         comm = comm or MPI.COMM_WORLD
         if comm.rank == 0:
@@ -590,7 +542,7 @@ class MeshSizeFunction:
                     _vp = np.pad(
                         _vp, ((nnz, 0), (nnx, nnx)), "linear_ramp", end_values=(mx, mx)
                     )
-            if _dim == 3:
+            elif _dim == 3:
                 if _pad_style == "edge":
                     _vp = np.pad(_vp, ((nnz, 0), (nnx, nnx), (nnx, nnx)), "edge")
                 elif _pad_style == "linear_ramp":
@@ -609,7 +561,6 @@ class MeshSizeFunction:
                         constant_values=(mx, mx),
                     )
 
-            print(_vp.shape)
             _nz += nnz  # only bottom
             _nx += nnx * 2  # left and right
             if _dim == 3:
@@ -625,7 +576,7 @@ class MeshSizeFunction:
                     f.attrs["shape"] = (_nz, _nx, _ny)
                 f.attrs["units"] = "m/s"
 
-    def SaveMeshSizeFunctionOptions(self, ofname):
+    def save_mesh_size_function_options(self, ofname):
         " Save your mesh size function options as a hdf5 file" ""
         ofname += ".hdf5"
         print("Saving mesh size function options " + ofname)
@@ -648,14 +599,16 @@ class MeshSizeFunction:
 
     # ---PRIVATE METHODS---#
 
-    def __ReadVelocityModel(self):
+    def _read_velocity_model(self):
         """Parses a numpy.ndarray velocity model"""
         # nz, nx, ny and spacingZ, and spacingX
-        sd = self.dim
-        if sd == 2:
+        _dim = self.dim
+        if _dim == 2:
             self.nz, self.nx = self.velocity_grid.shape
-        elif sd == 3:
+        elif _dim == 3:
             self.nz, self.nx, self.ny = self.velocity_grid.shape
+        else:
+            raise ValueError("Dimension not supported")
         self.spacingZ = self.depth / self.nz
         self.spacingX = self.width / self.nx
 
@@ -663,7 +616,7 @@ class MeshSizeFunction:
             print("Converting model velocities to m-s...")
             self.velocity_grid *= 1e3
 
-    def __CreateDomainVectors(self):
+    def _create_domain_vectors(self):
         """ it is what it is """
         _dim = self.dim
         _nz = self.nz
@@ -696,21 +649,25 @@ class MeshSizeFunction:
                 _bbox[4] - _domain_ext, _bbox[5] + _domain_ext, _ny, dtype=np.float32
             )
             return zvec, xvec, yvec
+        else:
+            raise ValueError("Dimension not supported")
 
-    def __CreateDomainMatrices(self):
+    def _create_domain_matrices(self):
         _dim = self.dim
         if _dim == 2:
-            zvec, xvec = self.__CreateDomainVectors()
+            zvec, xvec = self._create_domain_vectors()
             zg, xg = np.meshgrid(zvec, xvec, indexing="ij")
             return zg, xg
         elif _dim == 3:
-            zvec, xvec, yvec = self.__CreateDomainVectors()
+            zvec, xvec, yvec = self._create_domain_vectors()
             xg, yg, zg = np.meshgrid(
                 xvec, yvec, zvec, indexing="ij", sparse=True, copy=False
             )
             return zg, xg, yg
+        else:
+            raise ValueError("Dimension not supported.")
 
-    def __EditMeshSizeFunction(self, hh_m, rank):
+    def _edit_mesh_size_function(self, hh_m, rank):
         """ Edits sizing function to support domain extension of variable width """
         _domain_ext = self.domain_ext
         _dim = self.dim
@@ -747,7 +704,7 @@ class MeshSizeFunction:
                 )
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
-        if _dim == 3:
+        elif _dim == 3:
             mx = np.amax(hh_m)
             if _pad_style == "edge":
                 hh_m = np.pad(hh_m, ((nnz, 0), (nnx, nnx), (nnx, nnx)), "edge")
@@ -763,8 +720,10 @@ class MeshSizeFunction:
                 raise ValueError("3D pad style currently not supported yet")
             hh_m = np.where(hh_m > _hmax, _hmax, hh_m)
             return hh_m
+        else:
+            raise ValueError("Dimension not supported")
 
-    def __CreateDomainExtension(self):
+    def _create_domain_extension(self):
         """Edit bbox to reflect domain extension"""
         _dim = self.dim
         _bbox = self.bbox
@@ -777,7 +736,7 @@ class MeshSizeFunction:
                     _bbox[2] - _domain_ext,
                     _bbox[3] + _domain_ext,
                 )
-            if _dim == 3:
+            elif _dim == 3:
                 bbox_new = (
                     _bbox[0] - _domain_ext,
                     _bbox[1],
@@ -786,10 +745,74 @@ class MeshSizeFunction:
                     _bbox[4] - _domain_ext,
                     _bbox[5] + _domain_ext,
                 )
+            else:
+                raise ValueError("Dimension not supported")
 
             self.bbox = bbox_new
             self.width = bbox_new[3] - bbox_new[2]
             self.depth = bbox_new[1] - bbox_new[0]
             if _dim == 3:
                 self.length = bbox_new[5] - bbox_new[4]
+        return self
+
+    def _get_domain_matrices(self):
+        """ Accessor to private method"""
+        if self.dim == 2:
+            zg, xg = self._create_domain_matrices()
+            return zg, xg
+        elif self.dim == 3:
+            zg, xg, yg = self._create_domain_matrices()
+            return zg, xg, yg
+        else:
+            raise ValueError("Dimension not supported")
+
+    def _hamilton_jacobi(self, fun, elen, imax):
+        """Call-back to the cpp gradient limiter code """
+        _dim = self.dim
+        _nz = self.nz
+        _nx = self.nx
+        _ny = 1
+        if _dim == 3:
+            _ny = self.ny
+        _grade = self.grade
+
+        sz = (_nz, _nx, _ny)
+
+        fun = fun.flatten("F")
+        tmp = limgrad([*sz], elen, _grade, imax, fun)
+        if _dim == 2:
+            return np.reshape(tmp, (_nz, _nx), "F")
+        elif _dim == 3:
+            return np.reshape(tmp, (_nz, _nx, _ny), "F")
+        else:
+            raise ValueError("Dimension not supported")
+
+    def _construct_lambdas(self, comm):
+        """
+        Build lambda fields (for parallel only) for
+        SDF and mesh size function
+        """
+        self.bbox = comm.bcast(self.bbox, 0)
+
+        _dim = self.dim
+        _bbox = self.bbox
+
+        # create a mesh size function interpolant
+        self.fh = lambda p: self.interpolant(p)
+
+        def fdd(p):
+            return sdf.drectangle(p, _bbox[0], _bbox[1], _bbox[2], _bbox[3])
+
+        def fdd2(p):
+            return sdf.dblock(
+                p, _bbox[0], _bbox[1], _bbox[2], _bbox[3], _bbox[4], _bbox[5]
+            )
+
+        # create a signed distance function
+        if _dim == 2:
+            self.fd = lambda p: fdd(p)
+        elif _dim == 3:
+            self.fd = lambda p: fdd2(p)
+        else:
+            raise ValueError("Dimension not supported")
         return self

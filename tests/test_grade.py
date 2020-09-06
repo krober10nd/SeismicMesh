@@ -36,7 +36,7 @@ def test_grade():
     ef = ef.build()
 
     fh = ef.fh
-    zg, xg = ef.GetDomainMatrices()
+    zg, xg = ef._get_domain_matrices()
     nz, nx = zg.shape
     _zg = np.reshape(zg, (nz * nx, 1))
     _xg = np.reshape(xg, (nz * nx, 1))

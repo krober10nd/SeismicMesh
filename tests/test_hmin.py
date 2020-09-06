@@ -17,7 +17,7 @@ def test_hmin():
     ef = ef.build()
 
     fh = ef.fh
-    zg, xg = ef.GetDomainMatrices()
+    zg, xg = ef._get_domain_matrices()
     sz1z, sz1x = zg.shape
     sz2 = sz1z * sz1x
     _zg = np.reshape(zg, (sz2, 1))

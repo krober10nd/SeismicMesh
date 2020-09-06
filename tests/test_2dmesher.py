@@ -26,8 +26,8 @@ def test_2dmesher():
     ef.plot()
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, facets = mshgen.build(max_iter=100)
-    ef.WriteVelocityModel("testing")
-    ef.SaveMeshSizeFunctionOptions("sizingOpts")
+    ef.write_velocity_model("testing")
+    ef.save_mesh_size_function_options("sizingOpts")
     ef.plot()
     # should have: 7690 vertices and 15045 cells
     assert np.abs(len(points) - 7690) < 20

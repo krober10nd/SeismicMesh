@@ -12,10 +12,10 @@
 [SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
 ==================================================================================================
 
-*SeismicMesh* is a tool to generate 2D/3D triangular meshes that are used for acoustic and elastic wave propagators discretized 
+*SeismicMesh* is a tool to generate 2D/3D triangular meshes that are used for acoustic and elastic wave propagators discretized
 with the finite element method. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities. Seismic P-wave/S-wave data are typically provided on [regular Cartesian grids for global and regional domains](https://ds.iris.edu/spud/earthmodel).
 
-Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength. 
+Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength.
 
 Thus in this work we provide an approach to build large scale 2D/3D mesh sizing functions with the [mesh sizing function module](https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction). This tool maps variations in seismic velocities from a seismic velocity model to triangular mesh sizes. Importantly, the sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and an estimate of the [Courant number](https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition) can be bounded above by a constant--amongst other capabilities--which are important considerations for accurate and successful simulations with finite elements. Our sizing functions are defined on the same regular Cartesian grids as the original seismic velocity model bypassing the need for the user to create their own sizing function on a triangular mesh. Their structured nature also enables efficient performance.
 
@@ -73,7 +73,7 @@ Takes roughly 1 minute with 2 processors and less than 1 GB of RAM.
 # Name of SEG-Y file containg velocity model.
 fname = "vel_z6.25m_x12.5m_exact.segy"
 # Read in it
-vp = SeismicMesh.ReadSegy(fname)
+vp = SeismicMesh.read_segy(fname)
 
 # Bounding box describing domain extents (corner coordinates)
 bbox = (-12000, 0.0, 0.0, 67000.0)
@@ -88,7 +88,7 @@ ef = SeismicMesh.MeshSizeFunction(
     hmin=75.0,
     grade=0.15,
     domain_ext=1e3,
-    padstyle="linear_ramp",
+    pad_style="linear_ramp",
 )
 
 # Build mesh size function
@@ -106,7 +106,7 @@ if rank == 0:
     # in ParaView, we swap the axes so it appears as in the (x,z) plane.
     meshio.write_points_cells(
         "BP2004.vtk",
-        points[:,[1,0]]/ 1000,
+        points[:, [1, 0]] / 1000,
         [("triangle", facets)],
         file_format="vtk",
     )
