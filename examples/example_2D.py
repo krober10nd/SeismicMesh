@@ -11,14 +11,14 @@ rank = comm.Get_rank()
 def example_2D():
     """
     Build a mesh of the BP2004 benchmark velocity model in serial or parallel
-    Takes roughly 1 minute with 2 processors.
+    Takes roughly 1 minute with 2 cores.
     The velocity model can be downloaded from here: https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
     """
 
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
     # Read in it
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
 
     # Bounding box describing domain extents (corner coordinates)
     bbox = (-12e3, 0, 0, 67e3)
@@ -33,14 +33,14 @@ def example_2D():
         hmin=75.0,
         grade=0.15,
         domain_ext=1e3,
-        padstyle="linear_ramp",
+        pad_style="linear_ramp",
     )
 
     # Build mesh size function
     ef = ef.build()
 
     # Write to disk for later use
-    ef.WriteVelocityModel("BP2004_w1KM_EXT")
+    ef.write_velocity_model("BP2004_w1KM_EXT")
 
     # Visualize the mesh size function
     ef.plot()

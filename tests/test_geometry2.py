@@ -22,7 +22,7 @@ def test_geometry2():
     wedges = geo.get_winded_boundary_edges(cells)
     assert np.allclose(wedges, [[0, 1], [1, 3], [2, 3], [0, 2]])
 
-    intersections = geo.doAnyOverlap(points, cells, dim=2)
+    intersections = geo.do_any_overlap(points, cells, dim=2)
     assert len(intersections) == 0
 
     # test Laplacian2

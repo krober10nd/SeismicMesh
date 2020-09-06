@@ -15,8 +15,8 @@ dete = gutils.calc_4x4determinant
 
 
 class SignedDistanceFunctionGenerator:
-    """Tool used to build signed distance functions
-    from seismic velocity models.
+    """A tool that can be used to build
+    signed distance functions from seismic velocity models.
     """
 
     def __init__(  # noqa: ignore=C901
@@ -25,7 +25,7 @@ class SignedDistanceFunctionGenerator:
         min_threshold=1487,
         max_threshold=99999.0,
         bbox=None,
-        gridspacing=None,
+        grid_spacing=None,
         method="union",
         narrow=0.0,
         comm=None,
@@ -40,8 +40,8 @@ class SignedDistanceFunctionGenerator:
         :param max_threshold: seismic velocity max. threshold (default=99999 m/s) for which all values < threshold will be meshed
         :param bbox: bounding box containing domain extents.
         :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
-        :param gridspacing: space between points of seismic velocity model in meters, required
-        :type gridspacing: tuple with size (dim)
+        :param grid_spacing: space between points of seismic velocity model in meters, required
+        :type grid_spacing: tuple with size (dim)
         :param method: method used to combine subsection with bounding box. Currently only the default==union.
         :type method: string, optional
         :param narrow: only calculate SDF within a region close to the isocontour default=0.0 i.e., calc'ed everywhere
@@ -56,7 +56,7 @@ class SignedDistanceFunctionGenerator:
         self.min_threshold = min_threshold
         self.max_threshold = max_threshold
         self.bbox = bbox
-        self.gridspacing = gridspacing
+        self.grid_spacing = grid_spacing
         self.method = method
         self.narrow_band = narrow
         self.flip = flip
@@ -79,8 +79,8 @@ class SignedDistanceFunctionGenerator:
             dim = int(len(bbox) / 2)
             if dim < 2 or dim > 3:
                 raise ValueError("dimension is invalid, is bbox specified correctly?")
-            if gridspacing is None or len(gridspacing) < (dim - 1):
-                raise ValueError("gridspacing must be larger than 0.")
+            if grid_spacing is None or len(grid_spacing) < (dim - 1):
+                raise ValueError("grid_spacing must be larger than 0.")
 
             if dim == 2:
                 nz, nx = self.field.shape
@@ -94,7 +94,7 @@ class SignedDistanceFunctionGenerator:
                 )
             ] = -1
             # call fast marching method
-            d = skfmm.distance(phi, [*self.gridspacing], narrow=self.narrow_band)
+            d = skfmm.distance(phi, [*self.grid_spacing], narrow=self.narrow_band)
             if self.narrow_band > 0:
                 d[d > self.narrow_band] = self.narrow_band
                 d[d < -self.narrow_band] = -self.narrow_band
@@ -186,8 +186,8 @@ def calc_re_ratios(vertices, entities, dim=2):
         )
     else:
         raise ValueError("Dimension invalid")
-    barvec = vertices[bars[:, 0]] - vertices[bars[:, 1]]
-    L = np.sqrt((barvec ** 2).sum(1))
+    bar_vec = vertices[bars[:, 0]] - vertices[bars[:, 1]]
+    L = np.sqrt((bar_vec ** 2).sum(1))
     L = np.reshape(L, (3 * (dim - 1), len(entities)))
     # min edge length i every tetra
     minL = np.amin(L, axis=0)
@@ -239,7 +239,7 @@ def remove_external_entities(vertices, entities, extent, dim=2):
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
     entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new, entities_new, jx = fixmesh(vertices, entities_new, dim=dim)
+    vertices_new, entities_new, jx = fix_mesh(vertices, entities_new, dim=dim)
     return vertices_new, entities_new, jx
 
 
@@ -319,7 +319,7 @@ def unique_rows(A, return_index=False, return_inverse=False):
             return B
 
 
-def simpvol(p, t):
+def simp_vol(p, t):
     """Signed volumes of the simplex elements in the mesh.
 
     :param p: point coordinates of mesh
@@ -348,7 +348,7 @@ def simpvol(p, t):
         raise NotImplementedError
 
 
-def fixmesh(p, t, ptol=2e-13, dim=2, delunused=False):
+def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
     """Remove duplicated/unused vertices and entities and
        ensure orientation of entities is CCW.
 
@@ -360,8 +360,8 @@ def fixmesh(p, t, ptol=2e-13, dim=2, delunused=False):
     :type ptol: float64, optional
     :param dim: dimension of mesh
     :type dim: int, optional
-    :param delunused: flag to delete disjoint vertices.
-    :type delunused: bool, optional
+    :param delete_unused: flag to delete disjoint vertices.
+    :type delete_unused: bool, optional
 
     :return: p: updated point coordinates of mesh
     :rtype: numpy.ndarray[float64 x dim]
@@ -381,20 +381,20 @@ def fixmesh(p, t, ptol=2e-13, dim=2, delunused=False):
     t = unique_rows(t)
 
     # delete disjoint vertices
-    if delunused:
+    if delete_unused:
         pix, _, jx = np.unique(t, return_index=True, return_inverse=True)
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
         pix = ix[pix]
 
     # entity orientation is CCW
-    flip = simpvol(p, t) < 0
+    flip = simp_vol(p, t) < 0
     t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
 
-def simpqual(p, t):
+def simp_qual(p, t):
     """Simplex quality radius-to-edge ratio
 
     :param p: vertex coordinates of mesh
@@ -510,6 +510,8 @@ def get_boundary_vertices(entities, dim=2):
         b = get_boundary_edges(entities)
     elif dim == 3:
         b = get_boundary_facets(entities)
+    else:
+        raise ValueError("Dimension not supported.")
     indices = np.unique(b.reshape(-1))
     return indices
 
@@ -566,7 +568,7 @@ def get_boundary_facets(entities):
     return boundary_facets
 
 
-def delete_boundary_entities(vertices, entities, dim=2, minqual=0.10):
+def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
     """Delete boundary entities with poor geometric quality (i.e., < min. quality)
 
     :param vertices: vertex coordinates of mesh
@@ -575,25 +577,25 @@ def delete_boundary_entities(vertices, entities, dim=2, minqual=0.10):
     :type entities: numpy.ndarray[int x (dim+1)]
     :param dim: dimension of the mesh
     :type dim: int, optional
-    :param minqual: minimum geometric quality to consider "poor" quality
-    :type minqual: float64, optional
+    :param min_qual: minimum geometric quality to consider "poor" quality
+    :type min_qual: float64, optional
 
     :return: vertices: updated vertex array of mesh
     :rtype: numpy.ndarray[int x dim]
     :return: entities: update mesh connectivity
     :rtype: numpy.ndarray[int x (dim+1)]
     """
-    qual = simpqual(vertices, entities)
+    qual = simp_qual(vertices, entities)
     bele = get_boundary_entities(vertices, entities, dim=dim)
     qualBou = qual[bele]
-    delete = qualBou < minqual
+    delete = qualBou < min_qual
     print(
         "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
         flush=True,
     )
     delete = np.argwhere(delete == 1)
     entities = np.delete(entities, bele[delete], axis=0)
-    vertices, entities, _ = fixmesh(vertices, entities, delunused=True, dim=dim)
+    vertices, entities, _ = fix_mesh(vertices, entities, delete_unused=True, dim=dim)
     return vertices, entities
 
 
@@ -642,6 +644,9 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
     :return: entities: updated mesh connectivity
     :rtype: numpy.ndarray[int x (dim+1)]
     """
+    if vertices.ndim != 2:
+        raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
+
     eps = np.finfo(float).eps
 
     n = len(vertices)
@@ -685,7 +690,7 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
     return vertices, entities
 
 
-def isManifold(vertices, entities, dim=2):
+def is_manifold(vertices, entities, dim=2):
     """Determine if mesh is manifold by checking for the following:
     1. A boundary edge should be a member of one entity
     2. A non-boundary edge should be a member of two entities
@@ -698,7 +703,7 @@ def isManifold(vertices, entities, dim=2):
     :param dim: dimension of the mesh
     :type dim: int, optional
 
-    :return: isManifold: flag to indicate if the mesh has a manifold boundary.
+    :return: is_manifold: flag to indicate if the mesh has a manifold boundary.
     :rtype: bool.
     """
     bedges = get_boundary_edges(entities, dim=dim)
@@ -708,7 +713,7 @@ def isManifold(vertices, entities, dim=2):
     return True
 
 
-def vtInEntity2(vertex, entity):
+def vertex_in_entity2(vertex, entity):
     """
     Does the 2D vertex lie in the entity defined by vertices (x1,y1,x2,y2,x3,y3)?
 
@@ -717,7 +722,7 @@ def vtInEntity2(vertex, entity):
     :param entity: connectivity of an entity
     :type entity: numpy.ndarray[int x (dim+1)]
 
-    :return: vtInEntity2: logical flag indicating if it is or isn't.
+    :return: vertex_in_entity2: logical flag indicating if it is or isn't.
     :rtype: bool
     """
     (x, y) = vertex
@@ -733,7 +738,7 @@ def vtInEntity2(vertex, entity):
     return 0 <= a and a <= 1 and 0 <= b and b <= 1 and 0 <= c and c <= 1
 
 
-def vtInEntity3(vertex, entity):
+def vertex_in_entity3(vertex, entity):
     """
     Does the 3D vertex lie in the entity defined by vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)?
 
@@ -742,7 +747,7 @@ def vtInEntity3(vertex, entity):
     :param entity: connectivity of an entity
     :type entity: numpy.ndarray[int x (dim+1)]
 
-    :return: vtInEntity3: logical flag indicating if it is or isn't.
+    :return: vertex_in_entity3: logical flag indicating if it is or isn't.
     :rtype: bool
     """
     (x, y, z) = vertex
@@ -796,7 +801,7 @@ def get_centroids(vertices, entities, dim=2):
     return vertices[entities].sum(1) / (dim + 1)
 
 
-def doAnyOverlap(vertices, entities, dim=2):
+def do_any_overlap(vertices, entities, dim=2):
     """
     Check if any entities connected to boundary of the mesh overlap
     ignoring self-intersections. This routine checks only the 1-ring around
@@ -835,7 +840,7 @@ def doAnyOverlap(vertices, entities, dim=2):
                 # does this centroid live inside another neighboring face?
                 x1, x2, x3 = vertices[entities[ele, :], 0]
                 y1, y2, y3 = vertices[entities[ele, :], 1]
-                if vtInEntity2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
+                if vertex_in_entity2((cent[0], cent[1]), (x1, y1, x2, y2, x3, y3)):
                     # centroid ie is inside face iee
                     print(
                         "Alert: entity "
@@ -852,7 +857,7 @@ def doAnyOverlap(vertices, entities, dim=2):
                 x1, x2, x3, x4 = vertices[entities[ele], 0]
                 y1, y2, y3, y4 = vertices[entities[ele], 1]
                 z1, z2, z3, z4 = vertices[entities[ele], 2]
-                if vtInEntity3(
+                if vertex_in_entity3(
                     (cent[0], cent[1], cent[2]),
                     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4),
                 ):
@@ -871,7 +876,7 @@ def doAnyOverlap(vertices, entities, dim=2):
     return intersections
 
 
-def linter(vertices, entities, dim=2, minqual=0.10):
+def linter(vertices, entities, dim=2, min_qual=0.10):
     """Remove and check mesh for geometric and toplogical defects.
 
     :param vertex: vertex coordinates of mesh
@@ -880,8 +885,8 @@ def linter(vertices, entities, dim=2, minqual=0.10):
     :type entities: numpy.ndarray[int x (dim+1)]
     :param dim: dimension of mesh
     :type dim: int, optional
-    :param minqual: minimum geometric quality to consider "poor" quality
-    :type minqual: float64, optional
+    :param min_qual: minimum geometric quality to consider "poor" quality
+    :type min_qual: float64, optional
 
     :return vertices: updated mesh vertices
     :rtype: numpy.ndarray[float64 x dim]
@@ -889,34 +894,30 @@ def linter(vertices, entities, dim=2, minqual=0.10):
     :rtype: numpy.ndarray[int x (dim+1)]
     """
     print("Performing mesh linting...", flush=True)
-    qual = simpqual(vertices, entities)
+    qual = simp_qual(vertices, entities)
     # determine if there's degenerate overlapping elements
-    # import time
-
-    # t1 = time.time()
-    # intersections = doAnyOverlap(vertices, entities, dim=dim)
+    intersections = do_any_overlap(vertices, entities, dim=dim)
     # delete the lower quality in the pair
-    # Delete = []
-    # For intersect in intersections:
-    #    ix = [i for i in intersect]
-    #    sel = np.argmin(qual[ix])
-    #    delete = np.append(delete, intersect[sel])
-    # Delete = np.unique(delete)
-    # Print("Deleting " + str(len(delete)) + " overlapped entities", flush=True)
-    # Entities = np.delete(entities, delete, axis=0)
-    # Print(time.time() - t1)
+    delete = np.array([], dtype=int)
+    for intersect in intersections:
+        ix = [i for i in intersect]
+        sel = np.argmin(qual[ix])
+        delete = np.append(delete, intersect[sel])
+    delete = np.unique(delete)
+    print("Deleting " + str(len(delete)) + " overlapped entities", flush=True)
+    entities = np.delete(entities, delete, axis=0)
 
     # clean up
-    vertices, entities, _ = fixmesh(vertices, entities, delunused=True)
+    vertices, entities, _ = fix_mesh(vertices, entities, delete_unused=True)
     # delete remaining low quality boundary elements
     if dim == 2:
         vertices, entities = delete_boundary_entities(
-            vertices, entities, minqual=minqual
+            vertices, entities, min_qual=min_qual
         )
         # check for non-manifold boundaries and alert
-        _ = isManifold(vertices, entities)
+        _ = is_manifold(vertices, entities)
     # calculate final minimum simplex quality
-    qual = simpqual(vertices, entities)
+    qual = simp_qual(vertices, entities)
     minimum_quality = np.amin(qual)
     print(
         "There are "

@@ -14,7 +14,7 @@ rank = comm.Get_rank()
 @pytest.mark.parallel
 def test_2dpar_mesher_adapt():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     wl = 5
     hmin = 100
     grade = 0.005
@@ -39,7 +39,7 @@ def test_2dpar_mesher_adapt():
         meshio.write_points_cells(
             "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk"
         )
-        area = SeismicMesh.geometry.simpvol(points / 1000, cells)
+        area = SeismicMesh.geometry.simp_vol(points / 1000, cells)
         assert np.abs(100 - np.sum(area)) < 0.50  # km2
 
 

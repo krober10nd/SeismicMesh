@@ -8,11 +8,11 @@
 
 from . import decomp, geometry, migration
 from .generation import MeshGenerator
-from .sizing import MeshSizeFunction, ReadSegy
+from .sizing import MeshSizeFunction, read_segy
 
 __all__ = [
     "geometry",
-    "ReadSegy",
+    "read_segy",
     "MeshSizeFunction",
     "MeshGenerator",
     "decomp",

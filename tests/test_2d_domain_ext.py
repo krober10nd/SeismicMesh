@@ -10,7 +10,7 @@ import SeismicMesh
 def test_2d_domain_ext():
 
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     wl = 5
     freq = 10
     hmin = 100
@@ -39,7 +39,7 @@ def test_2d_domain_ext():
         bbox=(-10e3, 0, 0, 10e3),
         grade=grade,
         domain_ext=500,
-        padstyle="constant",
+        pad_style="constant",
         wl=wl,
         freq=freq,
         velocity_grid=vp,
@@ -57,7 +57,7 @@ def test_2d_domain_ext():
         bbox=(-10e3, 0, 0, 10e3),
         grade=grade,
         domain_ext=2000,
-        padstyle="linear_ramp",
+        pad_style="linear_ramp",
         wl=wl,
         freq=freq,
         velocity_grid=vp,

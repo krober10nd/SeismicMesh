@@ -32,6 +32,7 @@ def test_3dmesher():
         hmin=hmin,
     )
     ef = ef.build()
+    ef.write_velocity_model("foo3d")
     mshgen = SeismicMesh.MeshGenerator(ef)
     points, cells = mshgen.build(nscreen=1, max_iter=50, seed=0)
     print(len(points), len(cells))
@@ -41,6 +42,17 @@ def test_3dmesher():
     assert np.abs(len(cells) - 90552) < 600
 
     points, cells = mshgen.build(points=points, mesh_improvement=True)
+
+    import meshio
+
+    meshio.write_points_cells("food3D.vtk", points, [("tetra", cells)])
+    meshio.write_points_cells(
+        "foo3d.msh",
+        points / 1000.0,
+        [("tetra", cells)],
+        file_format="gmsh22",
+        binary=False,
+    )
 
 
 if __name__ == "__main__":

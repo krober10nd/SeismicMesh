@@ -103,7 +103,9 @@ def aggregate(points, faces, comm, size, rank, dim=2):
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces, ix = geometry.fixmesh(gpoints, gfaces, delunused=True, dim=dim)
+        upoints, ufaces, ix = geometry.fix_mesh(
+            gpoints, gfaces, delete_unused=True, dim=dim
+        )
         return upoints, ufaces
     else:
         return True, True

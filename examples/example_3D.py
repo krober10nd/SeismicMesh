@@ -50,14 +50,14 @@ def example_3D():
         hmin=150,
         hmax=5e3,
         domain_ext=250,
-        padstyle="linear_ramp",
+        pad_style="linear_ramp",
     )
 
     # Build mesh size function (in parallel)
     ef = ef.build()
 
     # Write to disk for later use
-    ef.WriteVelocityModel("EAGE_Salt")
+    ef.write_velocity_model("EAGE_Salt")
 
     # Construct a mesh generator object
     mshgen = SeismicMesh.MeshGenerator(ef)

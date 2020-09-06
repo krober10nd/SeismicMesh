@@ -60,7 +60,7 @@ def test_3dpar_mesher():
         #    "foo3D_V3.vtk", points, [("tetra", cells)],
         # )
 
-        vol = SeismicMesh.geometry.simpvol(points / 1000, cells)
+        vol = SeismicMesh.geometry.simp_vol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
         print(len(points), len(cells))
         assert np.abs(9220 - len(points)) < 1000

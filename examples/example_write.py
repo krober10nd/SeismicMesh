@@ -4,7 +4,7 @@ import SeismicMesh
 def example_write():
     # Name of SEG-Y file containg velocity model.
     fname = "velocity_models/vel_z6.25m_x12.5m_exact.segy"
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     bbox = (-12e3, 0, 0, 67e3)
 
     # Construct mesh sizing object from velocity model
@@ -23,10 +23,10 @@ def example_write():
     ef = ef.build()
 
     # Write it to an hdf5 file for later use.
-    ef.WriteVelocityModel("BP2004")
+    ef.write_velocity_model("BP2004")
 
     # Save your mesh size function options.
-    ef.SaveMeshSizeFunctionOptions("BP2004_SizingFunction")
+    ef.save_mesh_size_function_options("BP2004_SizingFunction")
 
 
 if __name__ == "__main__":

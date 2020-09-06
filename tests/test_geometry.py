@@ -52,7 +52,7 @@ def test_geometry3D():
     boundary_vertices = geo.get_boundary_vertices(cells, dim=3)
     assert len(boundary_vertices) == 8
 
-    vol = geo.simpvol(points, cells)
+    vol = geo.simp_vol(points, cells)
     assert np.sum(vol) == 8.0
 
 

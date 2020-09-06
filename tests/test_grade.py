@@ -25,7 +25,7 @@ def CheckGrade(hh, nz, nx, elen):
 @pytest.mark.serial
 def test_grade():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.ReadSegy(fname)
+    vp = SeismicMesh.read_segy(fname)
     wl = 5
     hmin = 10
     grade = 0.005
@@ -36,7 +36,7 @@ def test_grade():
     ef = ef.build()
 
     fh = ef.fh
-    zg, xg = ef.GetDomainMatrices()
+    zg, xg = ef._get_domain_matrices()
     nz, nx = zg.shape
     _zg = np.reshape(zg, (nz * nx, 1))
     _xg = np.reshape(xg, (nz * nx, 1))
