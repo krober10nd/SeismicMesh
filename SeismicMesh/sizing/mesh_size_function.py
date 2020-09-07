@@ -44,6 +44,9 @@ opts = {
     "pad_style": "edge",
     "domain_ext": 0.0,
     "units": "m-s",
+    "nz": None,
+    "nx": None,
+    "ny": None,
 }
 
 
@@ -61,7 +64,14 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank == 0:
-        vp, nz, nx, ny = _read_velocity_model(filename)
+        opts.update(kwargs)
+
+        vp, nz, nx, ny = _read_velocity_model(
+            filename=filename,
+            nz=opts["nz"],
+            nx=opts["nx"],
+            ny=opts["ny"],
+        )
 
         if opts["units"] == "km-s":
             vp *= 1000.0
@@ -73,8 +83,6 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
             dim = 3
         else:
             raise ValueError("Dimension not supported")
-
-        opts.update(kwargs)
 
         cell_size = _initialize_sizing_function(dim, opts["hmin"], nz, nx, ny)
 
@@ -92,16 +100,20 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "pad_style",
                 "domain_ext",
                 "units",
+                "nz",
+                "nx",
+                "ny",
             }:
                 pass
             else:
                 raise ValueError(
                     "Option %s with parameter %s not recognized " % (key, kwargs[key])
                 )
-        cell_size = np.minimum(
-            _wavelength_sizing(vp, opts["wl"], opts["freq"]),
-            _gradient_sizing(vp, opts["grad"]),
-        )
+        if np.any([opts["wl"] > 0, opts["grad"] > 0]):
+            cell_size = np.minimum(
+                _wavelength_sizing(vp, opts["wl"], opts["freq"]),
+                _gradient_sizing(vp, opts["grad"]),
+            )
 
         cell_size = _enforce_courant_sizing(
             vp, cell_size, opts["cr_max"], opts["dt"], opts["space_order"]
@@ -311,7 +323,7 @@ def _get_vectors(dim, bbox, nz, nx, ny=None):
     if dim == 2:
         return zvec, xvec
     elif dim == 3:
-        yvec = np.linspace(bbox[4], bbox[5], ny, dtype=np.float32return)
+        yvec = np.linspace(bbox[4], bbox[5], ny, dtype=np.float32)
         return zvec, xvec, yvec
     else:
         raise ValueError("Dimension not supported")
@@ -381,14 +393,25 @@ def _pad_it(array, padding, style, extra):
     return array
 
 
-def _read_velocity_model(filename):
+def _read_velocity_model(filename, nz=None, nx=None, ny=None):
     """Read a velocity model"""
     if filename.endswith(".segy"):
         return _read_segy(filename)
-    # elif filename.endswith('.bin'):
-
     else:
-        raise ValueError("Filename" + filename + " not recognized.")
+        return _read_bin(filename, nz, nx, ny)
+
+
+def _read_bin(filename, nz, nx, ny):
+    """Read a velocity model from a binary"""
+    if (nz is None) or (nx is None) or (ny is None):
+        raise ValueError(
+            "Please specify the number of grid points in each dimension (e.g., `nz`, `nx`, `ny`)..."
+        )
+    with open(filename, "r") as file:
+        print("Reading binary file: " + filename)
+        vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+        vp = vp.reshape(nx, ny, nz, order="F")
+        return np.flipud(vp.transpose((2, 0, 1))), nz, nx, ny  # z, x and then y
 
 
 def _read_segy(filename):
@@ -408,9 +431,9 @@ def _read_segy(filename):
 def _initialize_sizing_function(dim, hmin, nz, nx, ny=None):
     """initialize a sizing function grid"""
     if dim == 2:
-        cell_size = np.zeros(shape=(nz, nx), dtype=np.float32) + hmin
+        cell_size = np.full((nz, nx), hmin, dtype=float)
     elif dim == 3:
-        cell_size = np.zeros(shape=(nz, nx, ny), dtype=np.float32) + hmin
+        cell_size = np.full((nz, nx, ny), hmin, dtype=float)
     else:
         raise ValueError("Dimension not supported")
     return cell_size

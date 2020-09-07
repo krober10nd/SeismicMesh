@@ -8,12 +8,18 @@
 
 from . import decomp, geometry, migration
 from .generation import MeshGenerator
-from .sizing import MeshSizeFunction, read_segy
+from .sizing import (
+    get_sizing_function_from_segy,
+    write_velocity_model,
+    plot_sizing_function,
+)
+
 
 __all__ = [
     "geometry",
-    "read_segy",
-    "MeshSizeFunction",
+    "get_sizing_function_from_segy",
+    "write_velocity_model",
+    "plot_sizing_function",
     "MeshGenerator",
     "decomp",
     "migration",
