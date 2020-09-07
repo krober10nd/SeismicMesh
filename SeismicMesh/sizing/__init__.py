@@ -9,5 +9,3 @@ __all__ = [
     "write_velocity_model",
     "plot_sizing_function",
 ]
-
-#

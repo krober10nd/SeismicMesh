@@ -173,7 +173,7 @@ ef = SeismicMesh.MeshSizeFunction(
     hmin=150,
     hmax=5e3,
     domain_ext=250,
-    padstyle="linear_ramp",
+    pad_style="linear_ramp",
 )
 
 ef = ef.build()
