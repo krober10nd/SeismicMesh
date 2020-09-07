@@ -7,7 +7,7 @@
 #  see <http://www.gnu.org/licenses/>.
 
 from . import decomp, geometry, migration
-from .generation import MeshGenerator
+from .generation import generate_mesh
 from .sizing import (
     get_sizing_function_from_segy,
     write_velocity_model,
@@ -20,7 +20,7 @@ __all__ = [
     "get_sizing_function_from_segy",
     "write_velocity_model",
     "plot_sizing_function",
-    "MeshGenerator",
+    "generate_mesh",
     "decomp",
     "migration",
 ]
