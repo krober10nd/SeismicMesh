@@ -124,13 +124,13 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
         # Add ghost points to perform Delaunay in parallel.
         if comm.size > 1:
-            p, t, inv, recv_ix = _add_ghost_vertices(p, t, extents, comm)
+            p, t, inv, recv_ix = _add_ghost_vertices(p, t, dt, extents, comm)
 
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
         # Compute the forces on the bars
-        Ftot = _compute_forces(p, t, fh)
+        Ftot = _compute_forces(p, t, fh, h0)
 
         Ftot[:nfix] = 0  # Force = 0 at fixed points
 
@@ -150,7 +150,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
             break
 
         if comm.size > 1:
-            # Delete ghost points
+            # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
             comm.barrier()
 
@@ -205,9 +205,10 @@ def _get_bars(t):
     return bars
 
 
-def _compute_forces(p, t, fh):
+def _compute_forces(p, t, fh, h0):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.ndim
+    L0mult, _, _, _ = _distmesh_params(h0, dim)
     N = p.shape[0]
     bars = _get_bars(t)
     barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -230,7 +231,7 @@ def _compute_forces(p, t, fh):
     return Ftot
 
 
-def _add_ghost_vertices(p, t, extents, comm):
+def _add_ghost_vertices(p, t, dt, extents, comm):
     """Parallel Delauany triangulation requires ghost vertices
     to be added each meshing iteration to maintain Delaunay-hood
     """
@@ -279,6 +280,7 @@ def _deps_vec(dim, deps, i):
 
 def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
     """Form initial point set to mesh with"""
+    _, _, geps, _ = _distmesh_params(h0, dim)
     if comm.size > 1:
         # Localize mesh size function grid.
         fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
@@ -302,18 +304,19 @@ def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
             p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
         )
     )
-    extents = form_extents(p, h0, comm)
+    extents = _form_extents(p, h0, comm)
     return p, extents
 
 
 def _form_extents(p, h0, comm):
+    dim = p.ndim
     _axis = opts["axis"]
     if comm.size > 1:
         # min x min y min z max x max y max z
         extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
         extent[_axis] -= h0
         extent[_axis + dim] += h0
-        return [comm.bcast(extent, r) for r in range(size)]
+        return [comm.bcast(extent, r) for r in range(comm.size)]
     else:
         return []
 
@@ -343,6 +346,7 @@ def _unpack_pfix(dim, opts, comm):
 
 
 def _distmesh_params(dim, h0):
+    """These parameters originate from the original DistMesh"""
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = 0.1
     geps = 1e-1 * h0
@@ -351,7 +355,7 @@ def _distmesh_params(dim, h0):
 
 
 def _select_cgal_dim(dim):
-    """select back-end CGAL call"""
+    """Select back-end CGAL Delaunay call"""
     if dim == 2:
         return DT2
     elif dim == 3:
