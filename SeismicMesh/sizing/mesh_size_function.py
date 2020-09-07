@@ -98,8 +98,10 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 raise ValueError(
                     "Option %s with parameter %s not recognized " % (key, kwargs[key])
                 )
-        cell_size = _wavelength_sizing(vp, opts["wl"], opts["freq"])
-        cell_size = np.minimum(cell_size, _gradient_sizing(vp, opts["grad"]))
+        cell_size = np.minimum(
+            _wavelength_sizing(vp, opts["wl"], opts["freq"]),
+            _gradient_sizing(vp, opts["grad"]),
+        )
 
         cell_size = _enforce_courant_sizing(
             vp, cell_size, opts["cr_max"], opts["dt"], opts["space_order"]
