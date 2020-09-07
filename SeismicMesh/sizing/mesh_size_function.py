@@ -128,7 +128,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         print("Enforcing minimum element size of " + str(opts["hmin"]))
         cell_size[cell_size < opts["hmin"]] = opts["hmin"]
 
-        print("Enforcing minimum element size of " + str(opts["hmax"]))
+        print("Enforcing maximum element size of " + str(opts["hmax"]))
         cell_size[cell_size > opts["hmax"]] = opts["hmax"]
 
         sizing_function = _build_sizing_function(cell_size, vp, bbox)
