@@ -25,7 +25,7 @@ from . import utils as mutils
 from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
-__all__ = ["generate_mesh"]
+__all__ = ["improve_mesh", "generate_mesh"]
 
 opts = {
     "nscreen": 1,
@@ -34,7 +34,140 @@ opts = {
     "perform_checks": False,
     "pfix": None,
     "axis": 1,
+    "min_dh_bound": 10.0,
+    "max_dh_bound": 170.0,
+    "points": None,
 }
+
+
+def improve_mesh(points, bbox, signed_distance_function, h0, comm=None, **kwargs):
+    """Improve an existing 3D mesh by removing degenerate elements called
+    slivers
+
+
+    """
+    comm = comm or MPI.COMM_WORLD
+    if comm.size > 1:
+        raise NotImplementedError("Sliver removal only works in serial for now")
+
+    opts.update(kwargs)
+    _parse_kwargs(kwargs)
+
+    dim = points.ndim
+    if dim == 2:
+        raise Exception("Mesh improvement currently on works in 3D")
+
+    if not isinstance(signed_distance_function, collections.Callable):
+        raise ValueError("`signed_distance_function` is not a function!")
+    fd = signed_distance_function
+
+    if opts["max_iter"] < 0:
+        raise ValueError("`max_iter` must be > 0")
+    max_iter = opts["max_iter"]
+
+    geps = 1e-1 * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
+    min_dh_bound = opts["min_dh_bound"] * math.pi / 180
+    max_dh_bound = opts["max_dh_bound"] * math.pi / 180
+
+    DT = _select_cgal_dim(dim)
+
+    p = points
+
+    N = len(p)
+
+    print(
+        "Commencing sliver removal with %d vertices on rank %d." % (N, comm.rank),
+        flush=True,
+    )
+
+    count = 0
+    pold = None
+    nscreen = opts["nscreen"]
+
+    while True:
+
+        start = time.time()
+
+        # Using CGAL's incremental Delaunay triangulation capabilities.
+        if count == 0:
+            dt = DT()
+            dt.insert(p.flatten().tolist())
+        else:
+            to_move = np.where(_dist(p, pold) > 0)[0]
+            dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
+
+        # Get the current topology of the triangulation
+        p, t = _get_topology(dt)
+
+        pold = p.copy()
+
+        N = p.shape[0]
+
+        # Remove points outside the domain
+        t = _remove_triangles_outside(p, t, fd, geps)
+
+        # Sliver removal
+        if count != (max_iter - 1):
+            num_move = 0
+            # calculate dihedral angles in mesh
+            dh_angles = geometry.calc_dihedral_angles(p, t)
+            out_of_bounds = np.argwhere(
+                (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
+            )
+            ele_nums = np.floor(out_of_bounds / 6).astype("int")
+            ele_nums, ix = np.unique(ele_nums, return_index=True)
+
+            if count % nscreen == 0:
+                print(
+                    "On rank: "
+                    + str(comm.rank)
+                    + " There are "
+                    + str(len(ele_nums))
+                    + " slivers...",
+                    flush=True,
+                )
+
+            move = t[ele_nums, 0]
+            num_move = move.size
+            if num_move == 0:
+                print("Termination reached...no slivers detected!", flush=True)
+                p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+                return p, t
+
+            p0, p1, p2, p3 = (
+                p[t[ele_nums, 0], :],
+                p[t[ele_nums, 1], :],
+                p[t[ele_nums, 2], :],
+                p[t[ele_nums, 3], :],
+            )
+
+            # perturb vector is based on INCREASING circumsphere's radius
+            perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+            perturb[np.isinf(perturb)] = 1.0
+
+            # normalize perturbation vector
+            perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+            perturb /= perturb_norm[:, None]
+
+            # perturb % of local mesh size
+            p[move] += 0.10 * h0 * perturb
+
+        # Bring outside points back to the boundary
+        p = _project_points_back(p, fd, deps)
+
+        # Number of iterations reached, stop.
+        if count == (max_iter - 1):
+            p, t = _termination(p, t, opts, comm)
+            break
+
+        count += 1
+
+        end = time.time()
+        if comm.rank == 0 and count % nscreen == 0:
+            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+
+    return p, t
 
 
 def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kwargs):
@@ -52,20 +185,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
     # check call was correct
     opts.update(kwargs)
-    for key in kwargs:
-        if key in {
-            "nscreen",
-            "max_iter",
-            "seed",
-            "perform_checks",
-            "pfix",
-            "axis",
-        }:
-            pass
-        else:
-            raise ValueError(
-                "Option %s with parameter %s not recognized " % (key, kwargs[key])
-            )
+    _parse_kwargs(kwargs)
 
     # check bbox shape
     dim = int(len(bbox) / 2)
@@ -166,6 +286,23 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
     return p, t
 
 
+def _parse_kwargs(kwargs):
+    for key in kwargs:
+        if key in {
+            "nscreen",
+            "max_iter",
+            "seed",
+            "perform_checks",
+            "pfix",
+            "axis",
+        }:
+            pass
+        else:
+            raise ValueError(
+                "Option %s with parameter %s not recognized " % (key, kwargs[key])
+            )
+
+
 def _display_progress(p, t, count, nscreen, maxdp, comm):
     """print progress"""
     print(
@@ -176,7 +313,7 @@ def _display_progress(p, t, count, nscreen, maxdp, comm):
 
 
 def _termination(p, t, opts, comm):
-    """Shut it down"""
+    """Shut it down when reacing `max_iter`"""
     dim = p.ndim
     if comm.rank == 0:
         print("Termination reached...maximum number of iterations reached.", flush=True)
@@ -274,8 +411,30 @@ def _deps_vec(dim, deps, i):
     return a
 
 
-def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
-    """Form initial point set to mesh with"""
+def _user_defined_points(fh, h0, bbox, points, comm, opts):
+    """If the user has supplied initial points"""
+    dim = points.ndim
+    if comm.size > 1:
+        # Domain decompose and localize points
+        p = None
+        if comm.rank == 0:
+            blocks, extents = decomp.blocker(
+                points=points, rank=comm.rank, num_blocks=comm.size, axis=opts["axis"]
+            )
+        else:
+            blocks = None
+            extents = None
+        fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
+        # send points to each subdomain
+        p, extents = migration.localize_points(blocks, extents, comm, dim)
+    else:
+        p = points
+        extents = None
+    return fh, p, extents
+
+
+def _generate_initial_points(h0, dim, bbox, fh, fd, pfix, comm, opts):
+    """User did not specify initial points"""
     _, _, geps, _ = _distmesh_params(h0, dim)
     if comm.size > 1:
         # Localize mesh size function grid.
@@ -301,6 +460,18 @@ def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
         )
     )
     extents = _form_extents(p, h0, comm)
+    return fh, p, extents
+
+
+def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
+    """Form initial point set to mesh with"""
+    points = opts["points"]
+    if points is None:
+        fh, p, extents = _generate_initial_points(
+            h0, dim, bbox, fh, fd, pfix, comm, opts
+        )
+    else:
+        fh, p, extents = _user_defined_points(fh, h0, points, comm, opts)
     return fh, p, extents
 
 
