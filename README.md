@@ -60,10 +60,9 @@ This file can be downloaded from**
 from mpi4py import MPI
 import meshio
 
-import SeismicMesh
+from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
 
 comm = MPI.COMM_WORLD
-rank = comm.Get_rank()
 
 """
 Build a mesh of the BP2004 benchmark velocity model in serial or parallel
@@ -72,42 +71,42 @@ Takes roughly 1 minute with 2 processors and less than 1 GB of RAM.
 
 # Name of SEG-Y file containg velocity model.
 fname = "vel_z6.25m_x12.5m_exact.segy"
-# Read in it
-vp = SeismicMesh.read_segy(fname)
 
 # Bounding box describing domain extents (corner coordinates)
 bbox = (-12000, 0.0, 0.0, 67000.0)
 
+# Desired minimum mesh size in domain
+hmin = 75.0
+
 # Construct mesh sizing object from velocity model
-ef = SeismicMesh.MeshSizeFunction(
-    bbox=bbox,
-    velocity_grid=vp,
-    freq=2,
+ef, bbox = get_sizing_function_from_segy(
+    fname,
+    bbox,
+    hmin=hmin,
     wl=10,
+    freq=2,
     dt=0.001,
-    hmin=75.0,
     grade=0.15,
     domain_ext=1e3,
-    pad_style="linear_ramp",
+    pad_style="edge",
 )
 
-# Build mesh size function
-ef = ef.build()
+def rectangle(p):
+    return geometry.drectangle(p, *bbox)
 
-# Construct a mesh generator object
-mshgen = SeismicMesh.MeshGenerator(ef)
 
-# Build the mesh
-points, facets = mshgen.build(axis=1)
+points, cells = generate_mesh(
+    bbox=bbox, signed_distance_function=rectangle, cell_size=ef, h0=hmin
+)
 
-if rank == 0:
+if comm.rank == 0:
     # Write the mesh in a vtk format for visualization in ParaView
     # NOTE: SeismicMesh outputs assumes the domain is (z,x) so for visualization
     # in ParaView, we swap the axes so it appears as in the (x,z) plane.
     meshio.write_points_cells(
         "BP2004.vtk",
         points[:, [1, 0]] / 1000,
-        [("triangle", facets)],
+        [("triangle", cells)],
         file_format="vtk",
     )
 ```
@@ -124,80 +123,72 @@ size.**
 
 <!--exdown-skip-->
 ```python
-import numpy as np
-import zipfile
-
 from mpi4py import MPI
+import zipfile
 import meshio
 
-import SeismicMesh
+from SeismicMesh import (
+    get_sizing_function_from_segy,
+    generate_mesh,
+    sliver_removal,
+    geometry,
+)
 
 comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
-
-
-if rank == 0:
-    # Dimensions of model (number of grid points in z, x, and y)
-    nx, ny, nz = 676, 676, 210
-
-    path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
-    # Extract Saltf@@ from SALTF.ZIP
-    zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
-
-    # Load data into a numpy array
-    with open(path + "Saltf@@", "r") as file:
-        vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
-        vp = vp.reshape(nx, ny, nz, order="F")
-        vp = np.flipud(vp.transpose((2, 0, 1)))  # z, x and then y
-else:
-    vp = np.zeros(shape=(1, 1, 1))
-    vp[:] = 1500.0
-
-# The domain is defined (in this case) as a cube and domain extents are provided in meters
 
 # Bounding box describing domain extents (corner coordinates)
 bbox = (-4200, 0, 0, 13520, 0, 13520)
+
+# Desired minimum mesh size in domain.
+hmin = 150.0
+
+# This file is in a big Endian binary format, so we must tell the program the shape of the velocity model.
+if comm.rank == 0:
+    path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
+    # Extract binary file Saltf@@ from SALTF.ZIP
+    zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
+
+fname = path + "Saltf@@"
+
+# Dimensions of model (number of grid points in z, x, and y)
+nx, ny, nz = 676, 676, 210
 
 # A graded sizing function is created from the velocity model along with a signed distance function by passing
 # the velocity grid that we created above. More details for the :class:`MeshSizeFunction` can be found here
 # https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction
 
-ef = SeismicMesh.MeshSizeFunction(
-    bbox=bbox,
-    velocity_grid=vp,
+ef, bbox = get_sizing_function_from_segy(
+    fname,
+    bbox,
+    hmin=hmin,
     dt=0.001,
     freq=2,
     wl=5,
     grade=0.25,
-    hmin=150,
     hmax=5e3,
     domain_ext=250,
     pad_style="linear_ramp",
+    nz=nz,
+    nx=nx,
+    ny=ny,
 )
 
-ef = ef.build()
 
-# The user then calls the mesh generator
+def cube(p):
+    return geometry.dblock(p, *bbox)
 
-# Construct a mesh generator object
-mshgen = SeismicMesh.MeshGenerator(ef)
 
-# Build the mesh
-points, cells = mshgen.build(max_iter=75, axis=1)
+points, cells = generate_mesh(
+    bbox=bbox, h0=hmin, cell_size=ef, signed_distance_function=cube
+)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
-
-points, cells = mshgen.build(
-    points=points,
-    mesh_improvement=True,
-    max_iter=50,
-    min_dh_bound=5,
+points, cells = sliver_removal(
+    points=points, bbox=bbox, h0=hmin, signed_distance_function=cube
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
-
-if rank == 0:
+if comm.rank == 0:
 
     # NOTE: SeismicMesh outputs assumes the domain is (z,x,y) so for visualization
     # in ParaView, we swap the axes so it appears as in the (x,y,z) plane.
