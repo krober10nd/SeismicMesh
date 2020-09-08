@@ -4,44 +4,50 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
-import SeismicMesh
+from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
 
 comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
 
 
 @pytest.mark.parallel
 def test_2dpar_mesher_adapt():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    vp = SeismicMesh.read_segy(fname)
+    bbox = (-10e3, 0.0, 0.0, 10e3)
     wl = 5
+    freq = 5
     hmin = 100
     grade = 0.005
-    ef = SeismicMesh.MeshSizeFunction(
-        bbox=(-10e3, 0, 0, 10e3), grade=grade, wl=wl, velocity_grid=vp, hmin=hmin
+    ef, bbox = get_sizing_function_from_segy(
+        fname,
+        bbox,
+        hmin=hmin,
+        wl=wl,
+        freq=freq,
+        grade=grade,
     )
-    ef = ef.build()
 
-    mshgen = SeismicMesh.MeshGenerator(ef)
-    points, cells = mshgen.build(max_iter=20)
+    def rectangle(p):
+        return geometry.drectangle(p, *bbox)
 
+    points, cells = generate_mesh(
+        cell_size=ef, bbox=bbox, h0=hmin, signed_distance_function=rectangle
+    )
     points = comm.bcast(points, 0)
 
     # pass the points and restart with a different axis
-    points, cells = mshgen.build(
-        points=points, max_iter=20, axis=1, perform_checks=True
+    points, cells = generate_mesh(
+        points=points,
+        cell_size=ef,
+        bbox=bbox,
+        h0=hmin,
+        signed_distance_function=rectangle,
     )
 
-    if rank == 0:
+    if comm.rank == 0:
         import meshio
 
         meshio.write_points_cells(
             "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk"
         )
-        area = SeismicMesh.geometry.simp_vol(points / 1000, cells)
+        area = geometry.simp_vol(points / 1000, cells)
         assert np.abs(100 - np.sum(area)) < 0.50  # km2
-
-
-if __name__ == "__main__":
-    test_2dpar_mesher_adapt()

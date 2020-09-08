@@ -15,6 +15,7 @@
 
 import math
 import time
+import warnings
 
 import numpy as np
 from mpi4py import MPI
@@ -46,8 +47,9 @@ def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwar
 
     """
     comm = comm or MPI.COMM_WORLD
-    if comm.size > 1:
-        raise NotImplementedError("Sliver removal only works in serial for now")
+    if comm.rank > 0:
+        warnings.warn("Sliver removal only works in serial for now")
+        return True, True
 
     opts.update(kwargs)
     _parse_kwargs(kwargs)
@@ -298,6 +300,7 @@ def _parse_kwargs(kwargs):
             "perform_checks",
             "pfix",
             "axis",
+            "points",
         }:
             pass
         else:
@@ -471,7 +474,7 @@ def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
             h0, geps, dim, bbox, fh, fd, pfix, comm, opts
         )
     else:
-        fh, p, extents = _user_defined_points(fh, h0, points, comm, opts)
+        fh, p, extents = _user_defined_points(fh, h0, bbox, points, comm, opts)
     return fh, p, extents
 
 

@@ -49,7 +49,6 @@ def test_3dmesher():
         signed_distance_function=cube,
         cell_size=ef,
         h0=hmin,
-        perform_checks=False,
     )
 
     points, cells = sliver_removal(
