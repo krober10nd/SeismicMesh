@@ -5,7 +5,7 @@ from .cpp.fast_geometry import (
     calc_dihedral_angles,
     calc_volume_grad,
 )
-from .signed_distance_functions import dblock, dintersect, drectangle
+from .signed_distance_functions import dblock, dintersect, drectangle, dcircle
 from .utils import (
     SignedDistanceFunctionGenerator,
     calc_re_ratios,
@@ -39,6 +39,7 @@ __all__ = [
     "calc_4x4determinant",
     "dblock",
     "drectangle",
+    "dcircle",
     "dintersect",
     "calc_dihedral_angles",
     "do_any_overlap",

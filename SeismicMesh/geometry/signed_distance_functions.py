@@ -1,6 +1,11 @@
 import numpy as np
 
 
+def dcircle(p, xc, yc, r):
+    """Signed distance to circle centered at xc, yc with radius r."""
+    return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
+
+
 def drectangle(p, x1, x2, y1, y2):
     min = np.minimum
     """Signed distance function for rectangle with corners (x1,y1), (x2,y1),

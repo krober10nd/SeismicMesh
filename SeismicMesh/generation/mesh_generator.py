@@ -210,13 +210,17 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
     np.random.seed(opts["seed"])
 
-    L0mult, delta_t, geps, deps = _distmesh_params(dim, h0)
+    """These parameters originate from the original DistMesh"""
+    L0mult = 1 + 0.4 / 2 ** (dim - 1)
+    delta_t = 0.1
+    geps = 1e-1 * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
 
     DT = _select_cgal_dim(dim)
 
     pfix, nfix = _unpack_pfix(dim, opts, comm)
 
-    fh, p, extents = _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm)
+    fh, p, extents = _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm)
 
     N = p.shape[0]
 
@@ -248,7 +252,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
         t = _remove_triangles_outside(p, t, fd, geps)
 
         # Compute the forces on the bars
-        Ftot = _compute_forces(p, t, fh, h0)
+        Ftot = _compute_forces(p, t, fh, h0, L0mult)
 
         Ftot[:nfix] = 0  # Force = 0 at fixed points
 
@@ -331,16 +335,15 @@ def _get_bars(t):
     bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
     if dim == 3:
         bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
-        bars = mutils.unique_rows(
-            np.ascontiguousarray(bars, dtype=np.uint32)
-        )  # Bars as node pairs
+    bars = mutils.unique_rows(
+        np.ascontiguousarray(bars, dtype=np.uint32)
+    )  # Bars as node pairs
     return bars
 
 
-def _compute_forces(p, t, fh, h0):
+def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
-    L0mult, _, _, _ = _distmesh_params(h0, dim)
     N = p.shape[0]
     bars = _get_bars(t)
     barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
@@ -392,22 +395,21 @@ def _remove_triangles_outside(p, t, fd, geps):
 def _project_points_back(p, fd, deps):
     """Project points outsidt the domain back within"""
     dim = p.shape[1]
+
     d = fd(p)
     ix = d > 0  # Find points outside (d>0)
     if ix.any():
-        dgrads = [
-            (fd(p[ix] + _deps_vec(dim, deps, i)) - d[ix]) / deps for i in range(dim)
-        ]
+
+        def _deps_vec(i):
+            a = [0] * dim
+            a[i] = deps
+            return a
+
+        dgrads = [(fd(p[ix] + _deps_vec(i)) - d[ix]) / deps for i in range(dim)]
         dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
         p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
     return p
-
-
-def _deps_vec(dim, deps, i):
-    a = [0] * dim
-    a[i] = deps
-    return a
 
 
 def _user_defined_points(fh, h0, bbox, points, comm, opts):
@@ -432,9 +434,8 @@ def _user_defined_points(fh, h0, bbox, points, comm, opts):
     return fh, p, extents
 
 
-def _generate_initial_points(h0, dim, bbox, fh, fd, pfix, comm, opts):
+def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
     """User did not specify initial points"""
-    _, _, geps, _ = _distmesh_params(h0, dim)
     if comm.size > 1:
         # Localize mesh size function grid.
         fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
@@ -462,12 +463,12 @@ def _generate_initial_points(h0, dim, bbox, fh, fd, pfix, comm, opts):
     return fh, p, extents
 
 
-def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
+def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
     """Form initial point set to mesh with"""
     points = opts["points"]
     if points is None:
         fh, p, extents = _generate_initial_points(
-            h0, dim, bbox, fh, fd, pfix, comm, opts
+            h0, geps, dim, bbox, fh, fd, pfix, comm, opts
         )
     else:
         fh, p, extents = _user_defined_points(fh, h0, points, comm, opts)
@@ -509,15 +510,6 @@ def _unpack_pfix(dim, opts, comm):
         pfix = np.empty((0, dim))
         nfix = 0
     return pfix, nfix
-
-
-def _distmesh_params(dim, h0):
-    """These parameters originate from the original DistMesh"""
-    L0mult = 1 + 0.4 / 2 ** (dim - 1)
-    delta_t = 0.1
-    geps = 1e-1 * h0
-    deps = np.sqrt(np.finfo(np.double).eps) * h0
-    return L0mult, delta_t, geps, deps
 
 
 def _select_cgal_dim(dim):
