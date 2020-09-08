@@ -52,15 +52,55 @@ opts = {
 
 
 def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
-    """Build a mesh size function from a seismic velocity model.
+    r"""Build a mesh size function from a seismic velocity model.
 
-    :param filename: the name of a SEG-y file containing a velocity model
-    :type filename: string
-    :param bbox: bounding box containing domain extents.
+    :param filename:
+        The name of a SEG-y or binary file containing a seismic velocity model
+    :type filename: ``string``
+    :param bbox:
+        Bounding box containing domain extents.
     :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *hmin* (``float``) --
+          Minimum element size in the domain (default==150 m)
+        * *hmax* (``float``) --
+          Maximum element size in the domain (default==10,000 m)
+        * *wl* (``int``) --
+          Number of vertices per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 vertices)
+        * *freq* (``float``) --
+          𝑓𝑚𝑎𝑥 in hertz for which to estimate `wl` (default==2 Hertz)
+        * *grad* (``float``) --
+          Resolution in meters nearby sharp gradients in velociy (default==0 m)
+        * *grade* (``float``) --
+          Maximum allowable variation in mesh size in decimal percent (default==0.0)
+        * *space_order* (``int``) --
+          The polynomial order of the basis functions (default==1)
+        * *dt* (``float``) --
+          Theoretical maximum stable timestep in seconds given Courant number Cr (default==0.0 s)
+        * *cr_max* (``float``) --
+            `dt` is theoretically numerically stable with this Courant number.
+        * *pad_style* (``string``) --
+             The method (`edge`, `linear_ramp`, `constant`) to pad velocity in the domain extension region (default==None)
+        * *domain_extension* (``float``) --
+             The width of the domain extension in -z, +x, -x, +y, -y directions (default==0.0 m).
+        * *units* (``float``) --
+             The units of the seismic velocity model (default='m-s')
+        * *nz* (``int``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the z-direction in the velocity model.
+        * *ny* (``int``) --
+             TREQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
+        * *nx* (``int``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the x-direction in the velocity model.
+        * *byte_order* (``string``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
 
     :return: cell_size_function: a function that takes a point and gets a size
-    :rtype: a Python function object.
+    :rtype: a callable Python function object.
+    :param bbox: bounding box containing domain extents (modified if `domain_extension` is in use).
+    :rtype: ``tuple``
 
     """
     comm = comm or MPI.COMM_WORLD
