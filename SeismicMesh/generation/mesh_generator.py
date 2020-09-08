@@ -276,6 +276,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
         if comm.size > 1:
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
+            comm.barrier()
 
         # Show the user some progress so they know something is happening
         if count % nscreen == 0 and comm.rank == 0:
