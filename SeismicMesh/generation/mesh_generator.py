@@ -48,6 +48,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
     :rtype:
 
     """
+    comm = comm or MPI.COMM_WORLD
 
     # check call was correct
     opts.update(kwargs)
@@ -84,13 +85,11 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
     fd = signed_distance_function
 
     # check cell_size
-    if not isinstance(cell_size, collections.Callable):
+    if comm.rank == 0 and not isinstance(cell_size, collections.Callable):
         raise ValueError("`cell_size` must either be a function or a scalar")
     # TODO handle scalar sizing function
     else:
         fh = cell_size
-
-    comm = comm or MPI.COMM_WORLD
 
     np.random.seed(opts["seed"])
 
@@ -100,7 +99,7 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
     pfix, nfix = _unpack_pfix(dim, opts, comm)
 
-    p, extents = _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm)
+    fh, p, extents = _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm)
 
     N = p.shape[0]
 
@@ -152,13 +151,11 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
         if comm.size > 1:
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
-            comm.barrier()
-
-        if count % nscreen == 0:
-            maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
 
         # Show the user some progress so they know something is happening
-        _display_progress(p, t, count, nscreen, maxdp, comm)
+        if count % nscreen == 0 and comm.rank == 0:
+            maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
+            _display_progress(p, t, count, nscreen, maxdp, comm)
 
         count += 1
 
@@ -171,12 +168,11 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
 def _display_progress(p, t, count, nscreen, maxdp, comm):
     """print progress"""
-    if count % nscreen == 0 and comm.rank == 0:
-        print(
-            "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
-            % (count + 1, maxdp, len(p), len(t)),
-            flush=True,
-        )
+    print(
+        "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
+        % (count + 1, maxdp, len(p), len(t)),
+        flush=True,
+    )
 
 
 def _termination(p, t, opts, comm):
@@ -184,12 +180,12 @@ def _termination(p, t, opts, comm):
     dim = p.ndim
     if comm.rank == 0:
         print("Termination reached...maximum number of iterations reached.", flush=True)
-        if comm.size > 1:
-            # gather onto rank 0
-            p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
-        # perform linting if asked
-        if comm.rank == 0 and opts["perform_checks"]:
-            p, t = geometry.linter(p, t, dim=dim)
+    if comm.size > 1:
+        # gather onto rank 0
+        p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
+    # perform linting if asked
+    if comm.rank == 0 and opts["perform_checks"]:
+        p, t = geometry.linter(p, t, dim=dim)
     return p, t
 
 
@@ -305,7 +301,7 @@ def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
         )
     )
     extents = _form_extents(p, h0, comm)
-    return p, extents
+    return fh, p, extents
 
 
 def _form_extents(p, h0, comm):

@@ -33,7 +33,7 @@ __all__ = [
 # reasonable sizing function options go here
 opts = {
     "hmin": 150.0,
-    "hmax": 1000.0,
+    "hmax": 10000.0,
     "wl": 0,
     "freq": 2.0,
     "grad": 0.0,
@@ -132,8 +132,18 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         cell_size[cell_size > opts["hmax"]] = opts["hmax"]
 
         sizing_function = _build_sizing_function(cell_size, vp, bbox)
+    else:
+        # other cores
+        sizing_function = None
 
+    # agreement re the bbox
+    if comm.size > 1:
+        bbox = comm.bcast(bbox, 0)
+
+    if comm.rank == 0:
         return lambda p: sizing_function(p), bbox
+    else:
+        return None, bbox
 
 
 def write_velocity_model(ofname, vp, comm=None):
