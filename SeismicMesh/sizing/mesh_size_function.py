@@ -184,7 +184,11 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         bbox = comm.bcast(bbox, 0)
 
     if comm.rank == 0:
-        return lambda p: sizing_function(p), bbox
+
+        def sizing_fun(p):
+            return sizing_function(p)
+
+        return sizing_fun, bbox
     else:
         return None, bbox
 
