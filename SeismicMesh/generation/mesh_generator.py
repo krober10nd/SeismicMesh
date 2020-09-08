@@ -470,6 +470,7 @@ def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
     """Form initial point set to mesh with"""
     points = opts["points"]
     if points is None:
+        # def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
         fh, p, extents = _generate_initial_points(
             h0, geps, dim, bbox, fh, fd, pfix, comm, opts
         )
