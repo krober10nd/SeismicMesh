@@ -115,21 +115,21 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 _gradient_sizing(vp, opts["grad"]),
             )
 
-        cell_size = _enforce_courant_sizing(
-            vp, cell_size, opts["cr_max"], opts["dt"], opts["space_order"]
-        )
-
-        cell_size = _enforce_gradation_sizing(
-            cell_size, opts["grade"], (bbox[1] - bbox[0]) / nz
-        )
-
-        cell_size, vp, bbox = _build_domain_extension(cell_size, vp, bbox, opts)
-
         print("Enforcing minimum element size of " + str(opts["hmin"]))
         cell_size[cell_size < opts["hmin"]] = opts["hmin"]
 
         print("Enforcing maximum element size of " + str(opts["hmax"]))
         cell_size[cell_size > opts["hmax"]] = opts["hmax"]
+
+        cell_size = _enforce_courant_sizing(
+            vp, cell_size, opts["cr_max"], opts["dt"], opts["space_order"]
+        )
+
+        cell_size = _enforce_gradation_sizing(
+            cell_size, opts["grade"], (bbox[3] - bbox[2]) / nx
+        )
+
+        cell_size, vp, bbox = _build_domain_extension(cell_size, vp, bbox, opts)
 
         sizing_function = _build_sizing_function(cell_size, vp, bbox)
     else:

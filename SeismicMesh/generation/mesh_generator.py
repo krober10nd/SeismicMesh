@@ -15,7 +15,6 @@
 
 import math
 import time
-import collections
 
 import numpy as np
 from mpi4py import MPI
@@ -25,7 +24,7 @@ from . import utils as mutils
 from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
-__all__ = ["improve_mesh", "generate_mesh"]
+__all__ = ["sliver_removal", "generate_mesh"]
 
 opts = {
     "nscreen": 1,
@@ -40,7 +39,7 @@ opts = {
 }
 
 
-def improve_mesh(points, bbox, signed_distance_function, h0, comm=None, **kwargs):
+def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwargs):
     """Improve an existing 3D mesh by removing degenerate elements called
     slivers
 
@@ -57,7 +56,7 @@ def improve_mesh(points, bbox, signed_distance_function, h0, comm=None, **kwargs
     if dim == 2:
         raise Exception("Mesh improvement currently on works in 3D")
 
-    if not isinstance(signed_distance_function, collections.Callable):
+    if not callable(signed_distance_function):
         raise ValueError("`signed_distance_function` is not a function!")
     fd = signed_distance_function
 
@@ -198,12 +197,12 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
     max_iter = opts["max_iter"]
 
     # check signed_distance_function
-    if not isinstance(signed_distance_function, collections.Callable):
+    if not callable(signed_distance_function):
         raise ValueError("`signed_distance_function` is not a function!")
     fd = signed_distance_function
 
     # check cell_size
-    if comm.rank == 0 and not isinstance(cell_size, collections.Callable):
+    if comm.rank == 0 and not callable(cell_size):
         raise ValueError("`cell_size` must either be a function or a scalar")
     # TODO handle scalar sizing function
     else:

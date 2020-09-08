@@ -1,7 +1,7 @@
 from .cpp.c_cgal import circumballs2, circumballs3, delaunay2, delaunay3
 from .cpp.delaunay_class import DelaunayTriangulation
 from .cpp.delaunay_class3 import DelaunayTriangulation3
-from .mesh_generator import generate_mesh, improve_mesh
+from .mesh_generator import generate_mesh, sliver_removal
 
 __all__ = [
     "DelaunayTriangulation",
@@ -11,5 +11,5 @@ __all__ = [
     "circumballs2",
     "circumballs3",
     "generate_mesh",
-    "improve_mesh",
+    "sliver_removal",
 ]
