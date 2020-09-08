@@ -111,7 +111,7 @@ if comm.rank == 0:
     )
 ```
 
-**WARNING: To run the code snippet below you must download the 3D EAGE
+**WARNING: To run the code snippet below you must download (and uncompress) the 3D EAGE
 seismic velocity model from (WARNING: File is \~500 MB)**
 [here](https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz)
 
@@ -171,6 +171,7 @@ ef, bbox = get_sizing_function_from_segy(
     nz=nz,
     nx=nx,
     ny=ny,
+    byte_order="big"
 )
 
 
