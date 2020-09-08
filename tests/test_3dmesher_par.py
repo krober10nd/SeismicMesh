@@ -44,11 +44,19 @@ def test_3dmesher_par():
         return geometry.dblock(p, *bbox)
 
     points, cells = generate_mesh(
-        bbox=bbox, h0=hmin, cell_size=ef, signed_distance_function=cube
+        bbox=bbox,
+        h0=hmin,
+        cell_size=ef,
+        signed_distance_function=cube,
+        perform_checks=False,
     )
 
     points, cells = sliver_removal(
-        points=points, bbox=bbox, signed_distance_function=cube, h0=hmin
+        points=points,
+        bbox=bbox,
+        signed_distance_function=cube,
+        h0=hmin,
+        perform_checks=False,
     )
 
     if comm.rank == 0:

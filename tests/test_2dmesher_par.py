@@ -32,7 +32,7 @@ def test_2dmesher_par():
         cell_size=ef,
         h0=hmin,
         max_iter=100,
-        perform_checks=True,
+        perform_checks=False,
     )
 
     if comm.rank == 0:

@@ -30,7 +30,7 @@ def test_2dpar_mesher_adapt():
         return geometry.drectangle(p, *bbox)
 
     points, cells = generate_mesh(
-        cell_size=ef, bbox=bbox, h0=hmin, signed_distance_function=rectangle
+        cell_size=ef, bbox=bbox, h0=hmin, signed_distance_function=rectangle, perform_checks=False,
     )
     points = comm.bcast(points, 0)
 
@@ -41,6 +41,7 @@ def test_2dpar_mesher_adapt():
         bbox=bbox,
         h0=hmin,
         signed_distance_function=rectangle,
+        perform_checks=False,
     )
 
     if comm.rank == 0:

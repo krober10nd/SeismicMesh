@@ -35,7 +35,11 @@ def test_3dpar_mesher_adapt():
         return geometry.dblock(p, *bbox)
 
     points, cells = generate_mesh(
-        bbox=bbox, h0=hmin, cell_size=ef, signed_distance_function=cube
+        bbox=bbox,
+        h0=hmin,
+        cell_size=ef,
+        signed_distance_function=cube,
+        perform_checks=False,
     )
 
     points = comm.bcast(points, 0)
@@ -47,6 +51,7 @@ def test_3dpar_mesher_adapt():
         cell_size=ef,
         signed_distance_function=cube,
         axis=1,
+        perform_checks=False,
     )
 
     points = comm.bcast(points, 0)
@@ -58,6 +63,7 @@ def test_3dpar_mesher_adapt():
         cell_size=ef,
         signed_distance_function=cube,
         axis=2,
+        perform_checks=False,
     )
 
     if comm.rank == 0:

@@ -19,7 +19,7 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
     """
     rank = comm.Get_rank()
     size = comm.Get_size()
-    print(fh, h0, bbox, dim, axis, comm)
+    print(fh, h0, bbox, dim, axis, comm, flush=True)
     for r in range(0, size):
         _bbox = copy.deepcopy(bbox)
         if rank == 0:
@@ -31,8 +31,8 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
             grid = np.mgrid[
                 tuple(slice(min - 3 * h0, max + 3 * h0, h0) for min, max in _bbox)
             ].astype(float)
+            print(dim, flush=True)
             # interpolate global --> local sizing grid
-            print(dim)
             lh = fh(tuple(grid[d] for d in range(dim)))
             # updated grid vectors
             vecs = [np.arange(min - 3 * h0, max + 3 * h0, h0) for min, max in _bbox]
