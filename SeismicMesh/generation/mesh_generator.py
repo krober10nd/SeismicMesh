@@ -102,8 +102,6 @@ def improve_mesh(points, bbox, signed_distance_function, h0, comm=None, **kwargs
 
         pold = p.copy()
 
-        N = p.shape[0]
-
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 

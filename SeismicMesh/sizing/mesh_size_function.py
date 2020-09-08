@@ -146,22 +146,29 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         return None, bbox
 
 
-def write_velocity_model(ofname, vp, comm=None):
-    """Writes a velocity model as a hdf5 file
+def write_velocity_model(filename, comm=None, **kwargs):
+    """Reads and then writes a velocity model as a hdf5 file
 
-    :param ofname: filename to write
-    :type ofname: string
-    :param vp: array of velocity values
-    :type vp: 2d or 3d ndarray of floats
+    :param filename: filename of velocity model and used to write
+    :type filename: string
     :param comm: MPI communicator
     :type comm: MPI4py communicator
 
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank == 0:
-        ofname += ".hdf5"
-        print("Writing velocity model " + ofname, flush=True)
-        with h5py.File(ofname, "w") as f:
+        opts.update(kwargs)
+
+        vp, nz, nx, ny = _read_velocity_model(
+            filename=filename,
+            nz=opts["nz"],
+            nx=opts["nx"],
+            ny=opts["ny"],
+        )
+
+        filename += ".hdf5"
+        print("Writing velocity model " + filename, flush=True)
+        with h5py.File(filename, "w") as f:
             f.create_dataset("velocity_model", data=vp, dtype="f")
             f.attrs["shape"] = vp.shape
             f.attrs["units"] = "m/s"
@@ -305,7 +312,7 @@ def _enforce_gradation_sizing(cell_size, grade, elen):
     if dim == 2:
         return np.reshape(tmp, (sz[0], sz[1]), "F")
     elif dim == 3:
-        return np.reshape(tmp, (*sz), "F")
+        return np.reshape(tmp, (sz[0], sz[1], sz[2]), "F")
     else:
         raise ValueError("Dimension not supported")
 
