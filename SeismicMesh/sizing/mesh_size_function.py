@@ -260,7 +260,6 @@ def _wavelength_sizing(vp, wl=5, freq=2.0):
         + " vertices...",
         flush=True,
     )
-    print(np.amin(vp))
     return vp / (freq * wl)
 
 
@@ -400,8 +399,8 @@ def _build_domain_extension(cell_size, vp, bbox, opts):
         max_cell_size = np.amax(cell_size)
         max_vp = np.amax(vp)
 
-        cell_size = _pad_it(cell_size, padding, pad_style, [max_cell_size] * dim)
-        vp = _pad_it(vp, padding, pad_style, [max_vp] * dim)
+        cell_size = _pad_it(cell_size, padding, pad_style, [max_cell_size] * 2)
+        vp = _pad_it(vp, padding, pad_style, [max_vp] * 2)
 
     return cell_size, vp, bbox
 
