@@ -10,7 +10,7 @@ comm = MPI.COMM_WORLD
 
 
 @pytest.mark.parallel
-def test_3dpar_mesher_adapt():
+def test_3dmesher_par_adapt():
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     nz, nx, ny = 20, 10, 10
     bbox = (-2e3, 0.0, 0.0, 1e3, 0.0, 1e3)
@@ -77,3 +77,7 @@ def test_3dpar_mesher_adapt():
 
         vol = geometry.simp_vol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
+
+
+if __name__ == "__main__":
+    test_3dmesher_par_adapt()

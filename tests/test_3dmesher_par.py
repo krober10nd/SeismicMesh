@@ -73,3 +73,7 @@ def test_3dmesher_par():
         print(len(points), len(cells))
         assert np.abs(9220 - len(points)) < 1000
         assert np.abs(49156 - len(cells)) < 1000
+
+
+if __name__ == "__main__":
+    test_3dmesher_par()

@@ -10,7 +10,7 @@ comm = MPI.COMM_WORLD
 
 
 @pytest.mark.parallel
-def test_2dpar_mesher_adapt():
+def test_2dmesher_par_adapt():
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     bbox = (-10e3, 0.0, 0.0, 10e3)
     wl = 5
@@ -30,7 +30,11 @@ def test_2dpar_mesher_adapt():
         return geometry.drectangle(p, *bbox)
 
     points, cells = generate_mesh(
-        cell_size=ef, bbox=bbox, h0=hmin, signed_distance_function=rectangle, perform_checks=False,
+        cell_size=ef,
+        bbox=bbox,
+        h0=hmin,
+        signed_distance_function=rectangle,
+        perform_checks=False,
     )
     points = comm.bcast(points, 0)
 
@@ -52,3 +56,7 @@ def test_2dpar_mesher_adapt():
         )
         area = geometry.simp_vol(points / 1000, cells)
         assert np.abs(100 - np.sum(area)) < 0.50  # km2
+
+
+if __name__ == "__main__":
+    test_2dmesher_par_adapt()
