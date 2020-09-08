@@ -52,7 +52,7 @@ def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwar
     opts.update(kwargs)
     _parse_kwargs(kwargs)
 
-    dim = points.ndim
+    dim = points.shape[1]
     if dim == 2:
         raise Exception("Mesh improvement currently on works in 3D")
 
@@ -220,6 +220,8 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
 
     N = p.shape[0]
 
+    assert N > 0, "No vertices to mesh with!"
+
     count = 0
     print(
         "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
@@ -311,7 +313,7 @@ def _display_progress(p, t, count, nscreen, maxdp, comm):
 
 def _termination(p, t, opts, comm):
     """Shut it down when reacing `max_iter`"""
-    dim = p.ndim
+    dim = p.shape[1]
     if comm.rank == 0:
         print("Termination reached...maximum number of iterations reached.", flush=True)
     if comm.size > 1:
@@ -325,7 +327,7 @@ def _termination(p, t, opts, comm):
 
 def _get_bars(t):
     """Describe each bar by a unique pair of nodes"""
-    dim = t.ndim - 1
+    dim = t.shape[1] - 1
     bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
     if dim == 3:
         bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
@@ -337,7 +339,7 @@ def _get_bars(t):
 
 def _compute_forces(p, t, fh, h0):
     """Compute the forces on each edge based on the sizing function"""
-    dim = p.ndim
+    dim = p.shape[1]
     L0mult, _, _, _ = _distmesh_params(h0, dim)
     N = p.shape[0]
     bars = _get_bars(t)
@@ -365,7 +367,7 @@ def _add_ghost_vertices(p, t, dt, extents, comm):
     """Parallel Delauany triangulation requires ghost vertices
     to be added each meshing iteration to maintain Delaunay-hood
     """
-    dim = p.ndim
+    dim = p.shape[1]
     exports = migration.enqueue(extents, p, t, comm.rank, comm.size, dim=dim)
     recv = migration.exchange(comm, comm.rank, comm.size, exports, dim=dim)
     recv_ix = len(recv)
@@ -382,14 +384,14 @@ def _add_ghost_vertices(p, t, dt, extents, comm):
 
 def _remove_triangles_outside(p, t, fd, geps):
     """Remove vertices outside the domain"""
-    dim = p.ndim
+    dim = p.shape[1]
     pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
     return t[fd(pmid) < -geps]  # Keep interior triangles
 
 
 def _project_points_back(p, fd, deps):
     """Project points outsidt the domain back within"""
-    dim = p.ndim
+    dim = p.shape[1]
     d = fd(p)
     ix = d > 0  # Find points outside (d>0)
     if ix.any():
@@ -410,7 +412,7 @@ def _deps_vec(dim, deps, i):
 
 def _user_defined_points(fh, h0, bbox, points, comm, opts):
     """If the user has supplied initial points"""
-    dim = points.ndim
+    dim = points.shape[1]
     if comm.size > 1:
         # Domain decompose and localize points
         p = None
@@ -473,7 +475,7 @@ def _initialize_points(dim, bbox, fh, fd, h0, opts, pfix, comm):
 
 
 def _form_extents(p, h0, comm):
-    dim = p.ndim
+    dim = p.shape[1]
     _axis = opts["axis"]
     if comm.size > 1:
         # min x min y min z max x max y max z

@@ -47,6 +47,7 @@ opts = {
     "nz": None,
     "nx": None,
     "ny": None,
+    "byte_order": "byte_order",
 }
 
 
@@ -71,6 +72,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
             nz=opts["nz"],
             nx=opts["nx"],
             ny=opts["ny"],
+            byte_order=opts["byte_order"],
         )
 
         if opts["units"] == "km-s":
@@ -103,6 +105,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "nz",
                 "nx",
                 "ny",
+                "byte_order",
             }:
                 pass
             else:
@@ -146,11 +149,13 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         return None, bbox
 
 
-def write_velocity_model(filename, comm=None, **kwargs):
+def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
     """Reads and then writes a velocity model as a hdf5 file
 
     :param filename: filename of velocity model and used to write
     :type filename: string
+    :param ofname:
+    :type ofname:
     :param comm: MPI communicator
     :type comm: MPI4py communicator
 
@@ -159,16 +164,21 @@ def write_velocity_model(filename, comm=None, **kwargs):
     if comm.rank == 0:
         opts.update(kwargs)
 
+        if ofname is None:
+            warnings.warn("No output filename specified, name will be `filename`")
+            ofname = filename
+
         vp, nz, nx, ny = _read_velocity_model(
             filename=filename,
             nz=opts["nz"],
             nx=opts["nx"],
             ny=opts["ny"],
+            byte_order=opts["byte_order"],
         )
 
-        filename += ".hdf5"
-        print("Writing velocity model " + filename, flush=True)
-        with h5py.File(filename, "w") as f:
+        ofname += ".hdf5"
+        print("Writing velocity model: " + ofname, flush=True)
+        with h5py.File(ofname, "w") as f:
             f.create_dataset("velocity_model", data=vp, dtype="f")
             f.attrs["shape"] = vp.shape
             f.attrs["units"] = "m/s"
@@ -250,6 +260,7 @@ def _wavelength_sizing(vp, wl=5, freq=2.0):
         + " vertices...",
         flush=True,
     )
+    print(np.amin(vp))
     return vp / (freq * wl)
 
 
@@ -410,15 +421,15 @@ def _pad_it(array, padding, style, extra):
     return array
 
 
-def _read_velocity_model(filename, nz=None, nx=None, ny=None):
+def _read_velocity_model(filename, nz=None, nx=None, ny=None, byte_order=None):
     """Read a velocity model"""
     if filename.endswith(".segy"):
         return _read_segy(filename)
     else:
-        return _read_bin(filename, nz, nx, ny)
+        return _read_bin(filename, nz, nx, ny, byte_order)
 
 
-def _read_bin(filename, nz, nx, ny):
+def _read_bin(filename, nz, nx, ny, byte_order):
     """Read a velocity model from a binary"""
     if (nz is None) or (nx is None) or (ny is None):
         raise ValueError(
@@ -426,7 +437,12 @@ def _read_bin(filename, nz, nx, ny):
         )
     with open(filename, "r") as file:
         print("Reading binary file: " + filename)
-        vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+        if byte_order == "big":
+            vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+        elif byte_order == "little":
+            vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder("<"))
+        else:
+            raise ValueError("Please specify byte_order as either: little or big.")
         vp = vp.reshape(nx, ny, nz, order="F")
         return np.flipud(vp.transpose((2, 0, 1))), nz, nx, ny  # z, x and then y
 
