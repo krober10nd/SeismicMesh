@@ -416,9 +416,8 @@ def _project_points_back(p, fd, deps):
     return p
 
 
-def _user_defined_points(fh, h0, bbox, points, comm, opts):
+def _user_defined_points(dim, fh, h0, bbox, points, comm, opts):
     """If the user has supplied initial points"""
-    dim = points.shape[1]
     if comm.size > 1:
         # Domain decompose and localize points
         p = None
@@ -476,7 +475,7 @@ def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
             h0, geps, dim, bbox, fh, fd, pfix, comm, opts
         )
     else:
-        fh, p, extents = _user_defined_points(fh, h0, bbox, points, comm, opts)
+        fh, p, extents = _user_defined_points(dim, fh, h0, bbox, points, comm, opts)
     return fh, p, extents
 
 
