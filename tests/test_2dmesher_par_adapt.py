@@ -17,7 +17,7 @@ def test_2dmesher_par_adapt():
     freq = 5
     hmin = 100
     grade = 0.005
-    ef, bbox = get_sizing_function_from_segy(
+    ef = get_sizing_function_from_segy(
         fname,
         bbox,
         hmin=hmin,
