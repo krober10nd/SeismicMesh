@@ -194,14 +194,27 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
 
 
 def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
-    """Reads and then writes a velocity model as a hdf5 file
+    r"""Reads and then writes a velocity model as a hdf5 file
 
-    :param filename: filename of velocity model and used to write
-    :type filename: string
-    :param ofname:
-    :type ofname:
+    :param filename: filename of a velocity model (either .segy or .bin)
+    :type filename: `string`
+    :param ofname: filename of output hdf5 file
+    :type ofname: `string`, optional
     :param comm: MPI communicator
-    :type comm: MPI4py communicator
+    :type comm: MPI4py communicator, optional
+
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *nz* (``int``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the z-direction in the velocity model.
+        * *ny* (``int``) --
+             TREQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
+        * *nx* (``int``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the x-direction in the velocity model.
+        * *byte_order* (``string``) --
+             REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -231,14 +244,14 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
 def plot_sizing_function(cell_size_function, bbox, stride=1, comm=None):
     """Plot the mesh size function in 2D
 
-    :param cell_size_function: a function that takes a point and gives a size
-    :type cell_size_function: a function object
+    :param cell_size_function: a callable function that takes a point and gives a size
+    :type cell_size_function: a callable function object
     :param bbox: the domain extents to plot the function values
     :type bbox: a tuple of the corners of the domain
     :param stride: skip `stride` points to save on memory when plotting
-    :type stride: int, optional
+    :type stride: `int`, optional
     :param comm: MPI communicator
-    :type comm: MPI4py communicator
+    :type comm: MPI4py communicator, optional
 
     """
     comm = comm or MPI.COMM_WORLD

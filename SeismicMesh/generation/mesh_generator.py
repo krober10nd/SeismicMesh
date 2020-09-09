@@ -41,9 +41,45 @@ opts = {
 
 
 def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwargs):
-    """Improve an existing 3D mesh by removing degenerate elements called
-    slivers
+    r"""Improve an existing 3D mesh by removing degenerate elements called
+    commonly referred to as `slivers`.
 
+    :param points:
+        The name of a SEG-y or binary file containing a seismic velocity model
+    :type filename: ``string``
+    :param bbox:
+        Bounding box containing domain extents.
+    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+    :param signed_distance_function:
+        A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
+    :type signed_distance_function: A callable function.
+    :param h0:
+        The minimum element size in the domain
+    :type h0: `float`
+    :param comm:
+        MPI4py communicator
+    :type comm: MPI4py communicator object, optional
+
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *nscreen* (``float``) --
+            Output to the screen `nscreen` timestep. (default==1)
+        * *max_iter* (``float``) --
+            Maximum number of meshing iterations. (default==50)
+        * *seed* (``float`` or ``int``) --
+            Psuedo-random seed to initialize meshing points.
+        * *perform_checks* (`boolean`) --
+            Whether or not to perform mesh linting/mesh cleanup. (default==False)
+        * *pfix* (`array-like`) --
+            An array of points to constrain in the mesh. (default==None)
+        * *axis* (`int`) --
+            The axis to decompose the mesh (1,2, or 3). (default==1)
+        * *min_dh_bound* (`float`) --
+            The minimum allowable dihedral angle bound. (default==10 degrees)
+        * *max_dh_bound* (`float`) --
+            The maximum allowable dihedral angle bound. (default==170 degrees)
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -170,14 +206,46 @@ def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwar
 
 
 def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kwargs):
-    """Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
+    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
        and signed distance function `signed_distance_function`
 
+    :param bbox:
+        Bounding box containing domain extents.
+    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+    :param signed_distance_function:
+        A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
+    :type signed_distance_function: A callable function.
+    :param cell_size:
+        A callable function that takes a point and returns a mesh size.
+    :type cell_size: A callable function.
+    :param h0:
+        The minimum element size in the domain
+    :type h0: `float`
+    :param comm:
+        MPI4py communicator
+    :type comm: MPI4py communicator object, optional
 
-    :return: p:
-    :rtype:
-    :return: t:
-    :rtype:
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *nscreen* (``float``) --
+            Output to the screen `nscreen` timestep. (default==1)
+        * *max_iter* (``float``) --
+            Maximum number of meshing iterations. (default==50)
+        * *seed* (``float`` or ``int``) --
+            Psuedo-random seed to initialize meshing points.
+        * *perform_checks* (`boolean`) --
+            Whether or not to perform mesh linting/mesh cleanup. (default==False)
+        * *pfix* (`array-like`) --
+            An array of points to constrain in the mesh. (default==None)
+        * *axis* (`int`) --
+            The axis to decompose the mesh (1,2, or 3). (default==1)
+
+    :return: points: vertex coordinates of mesh
+    :rtype: points: (numpy.ndarray[`float` x dim])
+    :return: t: mesh connectivity table.
+    :rtype: t: numpy.ndarray[`int` x (dim + 1)]
 
     """
     comm = comm or MPI.COMM_WORLD

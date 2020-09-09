@@ -45,7 +45,7 @@ class SignedDistanceFunctionGenerator:
         :param method: method used to combine subsection with bounding box. Currently only the default==union.
         :type method: string, optional
         :param narrow: only calculate SDF within a region close to the isocontour default=0.0 i.e., calc'ed everywhere
-        :type narrow: float64, optional
+        :type narrow: `float`, optional
         :param comm: MPI4py communicator default==None
         :type comm: MPI4py communicator object, optional
         :param flip: Whether to flip the signed distance function or not (default=False)
@@ -161,12 +161,12 @@ def calc_re_ratios(vertices, entities, dim=2):
     """Calculate radius edge ratios--mesh quality metric
 
     :param vertices: point coordinates of the mesh vertices'
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity table
-    :type entities: numpy.ndarray[int x (dim + 1)]
+    :type entities: numpy.ndarray[`int` x (dim + 1)]
 
     :return: ce_ratios: array of radius-to-edge ratios
-    :rtype: ce_ratios: numpy.ndarray[float64 x 1]
+    :rtype: ce_ratios: numpy.ndarray[`float` x 1]
     """
     # circumradius/shortest edge length
     if dim == 2:
@@ -203,20 +203,20 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     """Remove entities with all dim+1 vertices outside block.
 
     :param vertices: point coordinates of mesh
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity
-    :type entities: numpy.ndarray[int x (dim + 1)]
+    :type entities: numpy.ndarray[`int` x (dim + 1)]
     :param extent: coords. of the local block extents
-    :type extent: numpy.ndarray[tuple(float64 x (2*dim))]
+    :type extent: numpy.ndarray[tuple(`float` x (2*dim))]
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: vertices_new: point coordinates of mesh w/ removed entities
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     :return: entities_new: mesh connectivity w/ removed entities
-    :rtype: numpy.ndarray[int x (dim +1)]
+    :rtype: numpy.ndarray[`int` x (dim +1)]
     :return: jx: mapping from old point indexing to new point indexing
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
     """
 
     if dim == 2:
@@ -247,18 +247,18 @@ def vertex_to_entities(vertices, entities, dim=2):
     """Determine which elements are connected to which vertices.
 
     :param vertices: point coordinates of mesh vertices
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity
-    :type entities: numpy.ndarray[int x (dim + 1)]
+    :type entities: numpy.ndarray[`int` x (dim + 1)]
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: vtoe: indices of entities connected to each vertex
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
 
     :return: vtoe_pointer: indices into `vtoe` such that vertex `v` is connected to
                           `vtoe[vtoe_pointer[v]:vtoe_pointer[v+1]]` entities
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
     """
     num_entities = len(entities)
 
@@ -283,18 +283,18 @@ def unique_rows(A, return_index=False, return_inverse=False):
     A = B[J,:] and B = A[I,:]
 
     :param  A: array of data
-    :type A: numpy.ndarray[int/float64 x N]
+    :type A: numpy.ndarray[`int`/`float` x N]
     :param return_index: whether to return the indices of unique data
-    :type return_index: bool, optional
+    :type return_index: `boolean`, optional
     :param return_inverse: whether to return the inverse mapping back to A from B.
-    :type return_inverse: bool, optional
+    :type return_inverse: `boolean`, optional
 
     :return: B: array of data with duplicates removed
-    :rtype: numpy.ndarray[int/float64 x N]
+    :rtype: numpy.ndarray[`int`/`float` x N]
     :return: I: array of indices to unique data B.
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
     :return: J: array of indices to A from B.
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
     """
     A = np.require(A, requirements="C")
     assert A.ndim == 2, "array must be 2-dim'l"
@@ -323,12 +323,12 @@ def simp_vol(p, t):
     """Signed volumes of the simplex elements in the mesh.
 
     :param p: point coordinates of mesh
-    :type p: numpy.ndarray[float64 x dim]
+    :type p: numpy.ndarray[`float` x dim]
     :param t: mesh connectivity
-    :type t: numpy.ndarray[int x (dim + 1)]
+    :type t: numpy.ndarray[`int` x (dim + 1)]
 
     :return: volume: signed volume of entity/simplex.
-    :rtype: numpy.ndarray[float64 x 1]
+    :rtype: numpy.ndarray[`float` x 1]
     """
 
     dim = p.shape[1]
@@ -353,20 +353,20 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
        ensure orientation of entities is CCW.
 
     :param p: point coordinates of mesh
-    :type p: numpy.ndarray[float64 x dim]
+    :type p: numpy.ndarray[`float` x dim]
     :param t: mesh connectivity
-    :type t: numpy.ndarray[int x (dim + 1)]
+    :type t: numpy.ndarray[`int` x (dim + 1)]
     :param ptol: point tolerance to detect duplicates
-    :type ptol: float64, optional
+    :type ptol: `float`, optional
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
     :param delete_unused: flag to delete disjoint vertices.
-    :type delete_unused: bool, optional
+    :type delete_unused: `boolean`, optional
 
     :return: p: updated point coordinates of mesh
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     :return: t: updated mesh connectivity
-    :rtype: numpy.ndarray[int x (dim+1)]
+    :rtype: numpy.ndarray[`int` x (dim+1)]
     """
 
     # duplicate vertices
@@ -398,12 +398,12 @@ def simp_qual(p, t):
     """Simplex quality radius-to-edge ratio
 
     :param p: vertex coordinates of mesh
-    :type p: numpy.ndarray[float64 x dim]
+    :type p: numpy.ndarray[`float` x dim]
     :param t: mesh connectivity
-    :type t: numpy.ndarray[int x (dim + 1)]
+    :type t: numpy.ndarray[`int` x (dim + 1)]
 
     :return: signed mesh quality: signed mesh quality (1.0 is perfect)
-    :rtype: numpy.ndarray[float64 x 1]
+    :rtype: numpy.ndarray[`float` x 1]
 
     """
     assert p.ndim == 2 and t.ndim == 2 and p.shape[1] + 1 == t.shape[1]
@@ -423,12 +423,12 @@ def get_edges(entities, dim=2):
     """Get the undirected edges of mesh in no order (NB: are repeated)
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: edges: the edges that make up the mesh
-    :rtype: numpy.ndarray[int x 2]
+    :rtype: numpy.ndarray[`int`x 2]
     """
 
     num_entities = len(entities)
@@ -446,12 +446,12 @@ def get_boundary_edges(entities, dim=2):
     """Get the boundary edges of the mesh. Boundary edges only appear (dim-1) times
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: boundary_edges: the edges that make up the boundary of the mesh
-    :rtype: numpy.ndarray[int x 2]
+    :rtype: numpy.ndarray[`int` x 2]
     """
     edges = get_edges(entities, dim=dim)
     edges = np.sort(edges, axis=1)
@@ -464,10 +464,10 @@ def get_winded_boundary_edges(entities):
     """Order the boundary edges of the mesh in a winding fashiono
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
 
     :return: boundary_edges: the edges that make up the boundary of the mesh in a winding order
-    :rtype: numpy.ndarray[int x 2]
+    :rtype: numpy.ndarray[`int` x 2]
     """
 
     boundary_edges = get_boundary_edges(entities)
@@ -499,12 +499,12 @@ def get_boundary_vertices(entities, dim=2):
     """Get the indices of the mesh representing boundary vertices.
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int `x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: indices: indices into the vertex array that are on the boundary.
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     """
     if dim == 2:
         b = get_boundary_edges(entities)
@@ -520,14 +520,14 @@ def get_boundary_entities(vertices, entities, dim=2):
     """Determine the entities that lie on the boundary of the mesh.
 
     :param vertices: vertex coordinates of mesh
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: bele: indices of entities on the boundary of the mesh.
-    :rtype: numpy.ndarray[int x 1]
+    :rtype: numpy.ndarray[`int` x 1]
     """
     boundary_vertices = get_boundary_vertices(entities, dim=dim)
     vtoe, ptr = vertex_to_entities(vertices, entities, dim=dim)
@@ -543,10 +543,10 @@ def get_facets(entities):
     """Gets the four facets of each tetrahedral.
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
 
     :return: facets: facets of a tetrahedral entity.
-    :rtype: numpy.ndarray[int x 4]
+    :rtype: numpy.ndarray[`int` x 4]
     """
     ix = [[0, 1, 3], [1, 2, 3], [2, 0, 3], [1, 2, 0]]
     return np.array(entities[:, ix]).reshape((len(entities) * 4, 3))
@@ -556,11 +556,13 @@ def get_boundary_facets(entities):
     """Get the facets that represent the boundary of a 3D mesh.
 
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
 
     :return: boundary_facets: facets on the boundary of a 3D mesh.
-    :rtype: numpy.ndarray[int x 4]
+    :rtype: numpy.ndarray[`int` x 4]
     """
+    if entities.shape[1] < 4:
+        raise ValueError("Only works for triangles")
     facets = get_facets(entities)
     facets = np.sort(facets, axis=1)
     unq, cnt = np.unique(facets, axis=0, return_counts=True)
@@ -572,18 +574,18 @@ def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
     """Delete boundary entities with poor geometric quality (i.e., < min. quality)
 
     :param vertices: vertex coordinates of mesh
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
     :param min_qual: minimum geometric quality to consider "poor" quality
-    :type min_qual: float64, optional
+    :type min_qual: `float`, optional
 
     :return: vertices: updated vertex array of mesh
-    :rtype: numpy.ndarray[int x dim]
+    :rtype: numpy.ndarray[`int` x dim]
     :return: entities: update mesh connectivity
-    :rtype: numpy.ndarray[int x (dim+1)]
+    :rtype: numpy.ndarray[`int` x (dim+1)]
     """
     qual = simp_qual(vertices, entities)
     bele = get_boundary_entities(vertices, entities, dim=dim)
@@ -602,11 +604,6 @@ def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
 def _sparse(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...)
-
-    Usage
-    -----
-    >>> shape = (m, n)
-    >>> A = sparse(I, J, S, shape, dtype)
     """
 
     # Advanced usage: allow J and S to be scalars.
@@ -631,18 +628,18 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
     with the goal to hopefully improve geometric entity quality.
 
     :param vertices: vertex coordinates of mesh
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param max_iter: maximum number of iterations to perform
-    :type max_iter: int, optional
+    :type max_iter: `int`, optional
     :param tol: iterations will cease when movement < tol
-    :type tol: float64, optional
+    :type tol: `float`, optional
 
     :return vertices: updated vertices of mesh
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     :return: entities: updated mesh connectivity
-    :rtype: numpy.ndarray[int x (dim+1)]
+    :rtype: numpy.ndarray[`int` x (dim+1)]
     """
     if vertices.ndim != 2:
         raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
@@ -697,14 +694,14 @@ def is_manifold(vertices, entities, dim=2):
     3. The number of boundary vertices == number of boundary edges
 
     :param vertices: vertex coordinates of mesh
-    :type vertices: numpy.ndarray[float64 x dim]
+    :type vertices: numpy.ndarray[`float` x dim]
     :param entities: the mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of the mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: is_manifold: flag to indicate if the mesh has a manifold boundary.
-    :rtype: bool.
+    :rtype: `boolean`.
     """
     bedges = get_boundary_edges(entities, dim=dim)
     if bedges.size != vertices[np.unique(bedges), :].size:
@@ -718,12 +715,12 @@ def vertex_in_entity2(vertex, entity):
     Does the 2D vertex lie in the entity defined by vertices (x1,y1,x2,y2,x3,y3)?
 
     :param vertex: vertex coordinates of mesh
-    :type vertex: numpy.ndarray[float64 x dim]
+    :type vertex: numpy.ndarray[`float` x dim]
     :param entity: connectivity of an entity
-    :type entity: numpy.ndarray[int x (dim+1)]
+    :type entity: numpy.ndarray[`int` x (dim+1)]
 
     :return: vertex_in_entity2: logical flag indicating if it is or isn't.
-    :rtype: bool
+    :rtype: `boolean`
     """
     (x, y) = vertex
     (x1, y1, x2, y2, x3, y3) = entity
@@ -743,12 +740,12 @@ def vertex_in_entity3(vertex, entity):
     Does the 3D vertex lie in the entity defined by vertices (x1,y1,z1,x2,y2,z2,x3,y3,z3)?
 
     :param vertex: vertex coordinates of mesh
-    :type vertex: numpy.ndarray[float64 x dim]
+    :type vertex: numpy.ndarray[`float` x dim]
     :param entity: connectivity of an entity
-    :type entity: numpy.ndarray[int x (dim+1)]
+    :type entity: numpy.ndarray[`int` x (dim+1)]
 
     :return: vertex_in_entity3: logical flag indicating if it is or isn't.
-    :rtype: bool
+    :rtype: `boolean`
     """
     (x, y, z) = vertex
     (x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4) = entity
@@ -789,14 +786,14 @@ def get_centroids(vertices, entities, dim=2):
     """Calculate the centroids of all the entities.
 
     :param vertex: vertex coordinates of mesh
-    :type vertex: numpy.ndarray[float64 x dim]
+    :type vertex: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: centroids of entities
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     """
     return vertices[entities].sum(1) / (dim + 1)
 
@@ -808,11 +805,11 @@ def do_any_overlap(vertices, entities, dim=2):
     each entity for potential intersections using barycentric coordinates.
 
     :param vertex: vertex coordinates of mesh
-    :type vertex: numpy.ndarray[float64 x dim]
+    :type vertex: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
 
     :return: intersections: a list of 2-tuple of entity indices that intersect
     :rtype: List[tuple(num_intersections x 2)]
@@ -880,18 +877,18 @@ def linter(vertices, entities, dim=2, min_qual=0.10):
     """Remove and check mesh for geometric and toplogical defects.
 
     :param vertex: vertex coordinates of mesh
-    :type vertex: numpy.ndarray[float64 x dim]
+    :type vertex: numpy.ndarray[`float` x dim]
     :param entities: mesh connectivity
-    :type entities: numpy.ndarray[int x (dim+1)]
+    :type entities: numpy.ndarray[`int` x (dim+1)]
     :param dim: dimension of mesh
-    :type dim: int, optional
+    :type dim: `int`, optional
     :param min_qual: minimum geometric quality to consider "poor" quality
-    :type min_qual: float64, optional
+    :type min_qual: `float`, optional
 
     :return vertices: updated mesh vertices
-    :rtype: numpy.ndarray[float64 x dim]
+    :rtype: numpy.ndarray[`float` x dim]
     :return: entities: updated mesh connectivity
-    :rtype: numpy.ndarray[int x (dim+1)]
+    :rtype: numpy.ndarray[`int` x (dim+1)]
     """
     print("Performing mesh linting...", flush=True)
     qual = simp_qual(vertices, entities)
