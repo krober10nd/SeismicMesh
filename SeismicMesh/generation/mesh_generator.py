@@ -48,6 +48,13 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     :param points:
         The name of a SEG-y or binary file containing a seismic velocity model
     :type filename: ``string``
+    :param domain:
+        Either a :class:`geometry` or a function that takes a point and returns the
+        signed nearest distance to the domain boundary Ω
+    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
+    :param cell_size:
+        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
+    :type cell_size: A :class:`cell_size` object or a function object.
     :param h0:
         The minimum element size in the domain
     :type h0: `float`
