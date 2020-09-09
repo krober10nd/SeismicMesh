@@ -6,6 +6,4 @@ matplotlib==3.3.1
 meshio==4.0.10
 h5py==2.3.1
 pybind11==2.5.0
-scikit-fmm==2019.1.30
 exdown==0.7.0
-scikit-build
