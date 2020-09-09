@@ -9,6 +9,7 @@ from SeismicMesh import (
     generate_mesh,
     sliver_removal,
     geometry,
+    Cube,
 )
 
 comm = MPI.COMM_WORLD
@@ -26,7 +27,8 @@ def test_3dmesher_par():
     freq = 4
     grade = 0.15
     grad = 50.0
-    ef, bbox = get_sizing_function_from_segy(
+    cube = Cube(bbox)
+    ef = get_sizing_function_from_segy(
         fname,
         bbox,
         hmin=hmin,
@@ -40,21 +42,17 @@ def test_3dmesher_par():
         byte_order="little",
     )
 
-    def cube(p):
-        return geometry.dblock(p, *bbox)
-
     points, cells = generate_mesh(
-        bbox=bbox,
         h0=hmin,
         cell_size=ef,
-        signed_distance_function=cube,
+        domain=ef,
         perform_checks=False,
     )
 
     points, cells = sliver_removal(
         points=points,
-        bbox=bbox,
-        signed_distance_function=cube,
+        domain=cube,
+        cell_size=ef,
         h0=hmin,
         perform_checks=False,
     )
