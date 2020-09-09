@@ -7,6 +7,7 @@
 #  see <http://www.gnu.org/licenses/>.
 
 from . import decomp, geometry, migration
+from .geometry import Circle, Cube, Rectangle
 from .generation import generate_mesh, sliver_removal
 from .sizing import (
     get_sizing_function_from_segy,
@@ -17,6 +18,9 @@ from .sizing import (
 
 __all__ = [
     "geometry",
+    "Rectangle",
+    "Cube",
+    "Circle",
     "get_sizing_function_from_segy",
     "write_velocity_model",
     "plot_sizing_function",

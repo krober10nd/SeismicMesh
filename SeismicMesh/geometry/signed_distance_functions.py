@@ -1,12 +1,46 @@
 import numpy as np
 
 
-def dcircle(p, xc, yc, r):
+class Circle:
+    def __init__(self, xc, yc, r):
+        self.xc = xc
+        self.yc = yc
+        self.r = r
+
+    def eval(self, x):
+        return _dcircle(x, self.xc, self.yc, self.r)
+
+
+class Rectangle:
+    def __init__(self, bbox):
+        self.x1 = bbox[0]
+        self.x2 = bbox[1]
+        self.y1 = bbox[2]
+        self.y2 = bbox[3]
+
+    def eval(self, x):
+        return _drectangle(x, self.x1, self.x2, self.y1, self.y2)
+
+
+class Cube:
+    def __init__(self, bbox):
+        self.x1 = bbox[0]
+        self.x2 = bbox[1]
+        self.y1 = bbox[2]
+        self.y2 = bbox[3]
+        self.z1 = bbox[4]
+        self.z2 = bbox[5]
+
+    def eval(self, x):
+        return _dblock(x, self.x1, self.x2, self.y1, self.y2, self.z1, self.z2)
+
+
+def _dcircle(p, xc, yc, r):
     """Signed distance to circle centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
 
 
-def drectangle(p, x1, x2, y1, y2):
+def _drectangle(p, x1, x2, y1, y2):
     min = np.minimum
     """Signed distance function for rectangle with corners (x1,y1), (x2,y1),
     (x1,y2), (x2,y2).
@@ -15,7 +49,7 @@ def drectangle(p, x1, x2, y1, y2):
     return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
 
 
-def dblock(p, x1, x2, y1, y2, z1, z2):
+def _dblock(p, x1, x2, y1, y2, z1, z2):
     min = np.minimum
     return -min(
         min(

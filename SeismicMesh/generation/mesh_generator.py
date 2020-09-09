@@ -41,16 +41,13 @@ opts = {
 }
 
 
-def sliver_removal(points, signed_distance_function, h0, comm=None, **kwargs):
+def sliver_removal(points, domain, h0, comm=None, **kwargs):
     r"""Improve an existing 3D mesh by removing degenerate elements called
     commonly referred to as `slivers`.
 
     :param points:
         The name of a SEG-y or binary file containing a seismic velocity model
     :type filename: ``string``
-    :param signed_distance_function:
-        A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
-    :type signed_distance_function: A callable function.
     :param h0:
         The minimum element size in the domain
     :type h0: `float`
@@ -92,9 +89,9 @@ def sliver_removal(points, signed_distance_function, h0, comm=None, **kwargs):
     if dim == 2:
         raise Exception("Mesh improvement currently on works in 3D")
 
-    if not callable(signed_distance_function):
-        raise ValueError("`signed_distance_function` is not a function!")
-    fd = signed_distance_function
+    if not callable(domain):
+        raise ValueError("`domain` is not a function!")
+    fd = domain
 
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
@@ -203,15 +200,17 @@ def sliver_removal(points, signed_distance_function, h0, comm=None, **kwargs):
     return p, t
 
 
-def generate_mesh(cell_size, signed_distance_function, h0, comm=None, **kwargs):
+def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
-       and signed distance function `signed_distance_function`
+       and signed distance function :class:`domain`
 
+    :param domain:
+        Either a :class:`geometry` or a function that takes a point and returns the
+        signed nearest distance to the domain boundary Ω
+    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle)
     :param cell_size:
         Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
-    :param signed_distance_function:
-        A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
-    :type signed_distance_function: A callable function.
+    :type cell_size:
     :param h0:
         The minimum element size in the domain
     :type h0: `float`
@@ -250,17 +249,13 @@ def generate_mesh(cell_size, signed_distance_function, h0, comm=None, **kwargs):
     opts.update(kwargs)
     _parse_kwargs(kwargs)
 
-    # unpack size function
-    if isinstance(cell_size, sizing.size_function):
-        bbox = cell_size.bbox
-        fh = cell_size.eval
-    elif callable(cell_size):
-        bbox = opts["bbox"]
-        fh = cell_size
-    else:
-        raise ValueError(
-            "`cell_size` must either be a function or a `cell_size` object"
-        )
+    # unpack domain
+    fd, bbox0 = _unpack_domain(domain)
+
+    fh, bbox1 = _unpack_sizing(cell_size)
+
+    # take maxmin of boxes
+    bbox = _minmax(bbox0, bbox1)
 
     if not isinstance(bbox, tuple):
         raise ValueError("`bbox` must be a tuple")
@@ -276,18 +271,6 @@ def generate_mesh(cell_size, signed_distance_function, h0, comm=None, **kwargs):
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
-
-    # check signed_distance_function
-    if not callable(signed_distance_function):
-        raise ValueError("`signed_distance_function` is not a function!")
-    fd = signed_distance_function
-
-    # check cell_size
-    if comm.rank == 0 and not callable(cell_size):
-        raise ValueError("`cell_size` must either be a function or a scalar")
-    # TODO handle scalar sizing function
-    else:
-        fh = cell_size
 
     np.random.seed(opts["seed"])
 
@@ -371,6 +354,48 @@ def generate_mesh(cell_size, signed_distance_function, h0, comm=None, **kwargs):
     return p, t
 
 
+def _minmax(bbox0, bbox1):
+    d = []
+    for i, (a, b) in enumerate(zip(bbox0, bbox1)):
+        a, b = (a, b)
+        if i % 2:
+            c = max(a, b)
+        else:
+            c = min(a, b)
+        d.append(c)
+    return tuple(d)
+
+
+def _unpack_sizing(cell_size):
+    if isinstance(cell_size, sizing.SizeFunction):
+        bbox = cell_size.bbox
+        fh = cell_size.eval
+    elif callable(cell_size):
+        bbox = opts["bbox"]
+        fh = cell_size
+    else:
+        raise ValueError(
+            "`cell_size` must either be a function or a `cell_size` object"
+        )
+    return fh, bbox
+
+
+def _unpack_domain(domain):
+    if isinstance(domain, geometry.Rectangle):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
+        fd = domain.eval
+    elif isinstance(domain, geometry.Cube):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
+        fd = domain.eval
+    elif callable(domain):
+        # get the bbox from the name value pairs or quit
+        bbox = opts["bbox"]
+        fd = domain
+    else:
+        raise ValueError("`domain` must be a function or a :class:`geometry` object")
+    return fd, bbox
+
+
 def _parse_kwargs(kwargs):
     for key in kwargs:
         if key in {
@@ -381,6 +406,8 @@ def _parse_kwargs(kwargs):
             "pfix",
             "axis",
             "points",
+            "domain",
+            "cell_size",
             "bbox",
         }:
             pass
