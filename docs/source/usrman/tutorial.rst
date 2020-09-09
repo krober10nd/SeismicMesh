@@ -18,23 +18,21 @@ Assuming you've coded a short Python script to call *SeismicMesh* (similar to wh
 
     python your_script.py
 
-Distributed memory parallelism can be used by first writing an extra import statement for  ``mpi4py`` (``import mpipy``) near your other imports and then writing the following three lines directly near the top of your script (after your other imports and before you call the *SeismicMesh* API)::
+Distributed memory parallelism can be used by first writing an extra import statement for  ``mpi4py`` (``import mpipy``) near your other imports and then writing the following one near the top of your script but after your other package imports and before you call the *SeismicMesh* API)::
 
     comm = MPI.COMM_WORLD
-    size = comm.Get_size()
-    rank = comm.Get_rank()
 
 .. note::
-   These lines have no effect on serial execution and its fine to leave them in if you intend to only use serial execution.
+   This line has no effect on serial execution and its fine to leave it in if you intend to only use serial execution.
 
-Parallel exeuction takes place by typing::
+Parallel execution takes place by typing by::
 
-    mpirun -np N python your_script.py
+    mpiexec -n N python your_script.py
 
-where `N` is the number of processors (e.g., 2,3,4 etc.)
+where `N` is the number of cores (e.g., 2,3,4 etc.)
 
 .. warning::
-    Oversubscribing the problem to too many processors will surely lead to problems and slow downs. Generally, keeping the minimum number of vertices per rank to between 20-50k/rank results in optimal performance.
+    Oversubscribing the mesh generation problem to too many cores will surely lead to problems and slow downs. In general, keeping the minimum number of vertices per rank to between 20-50k/rank results in optimal performance.
 
 
 Data for examples
@@ -63,33 +61,29 @@ The original data for the 3D example can be downloaded here::
 
 
 For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
-See example_3D.py for how to read in the binary into a numpy array.
+See example_3D.py for how to read in the binary into a Numpy array.
 
 
 File I/O and visualization of meshes
-------------------------
+--------------------------------------
 
-Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). Note that *SeismicMesh* makes the assumption that the first dimenion is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
+Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). Note that *SeismicMesh* makes the assumption that the first dimension is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
 
 Some things to know
 ---------------------
 
-In order to use these sizing functions, it is assumed you have a seismic velocity model
-defined on a structured grid as was mentioned in the overview section.
+.. warning ::
+    In order to use these mesh sizing functions, it is assumed you have a seismic velocity model
+    defined on a structured grid as was mentioned in the overview section.
 
 This seismic velocity model is passed to the *MeshSizeFunction* class along with the domain extents ::
 
-    import SeismicMesh
+    from SeismicMesh import get_sizing_function_from_segy
 
-    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
-    bbox = (-12e3, 0, 0, 67e3)
+    # Construct a mesh sizing function from a seismic velocity model
+    ef, bbox = get_sizing_function_from_segy(fname, bbox, other-args-go-here,...)
 
-    # Construct mesh sizing object from velocity model
-    ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox,
-        velocity_grid = vp,
-        other-args-go-here,...
-    )
+* The user specifies the filename `fname` of the seismic velocity model (e.g., either SEG-y or binary)
 
 * The user specifies the domain extents as a tuple of coordinates in meters representing the corners of the domain::
 
@@ -103,21 +97,14 @@ This seismic velocity model is passed to the *MeshSizeFunction* class along with
 
     bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
 
-.. note :: The program automatically generates the rectangle/cube domain geometry used during meshing if a *MeshSizeFunction* object is passed to the generator.
-
-
-.. warning::
-
-    All of the mesh size functions detailed below assume you pass the :mod:`bbox` and :mod:`fname` to the *MeshSizeFunction* class constructor.
-
-* If the user wants to define a mesh with an irregular boundary (other than a cube), then they will have to use the :class:`SignedDistanceFunctionGenerator` and pass a velocity interval range that represents the region of the domain they want meshed. See the section immeditately below for instructions on how to create and use a custom signed distance function from a seismic velocity model.
+* If the user wants to define a mesh with an irregular boundary (other than a cube), then they will have to use the :class:`SignedDistanceFunctionGenerator` and pass a velocity interval range that represents the region of the domain they want meshed. See the section immediately below for instructions on how to create and use a custom signed distance function from a seismic velocity model.
 
 Creating your own signed distance functions
 -----------------------------------------------
 
-Using the :class:`SignedDistanceFunctionGenerator` tool, the user can threshold their velocity model to produce a signed distance function which can then be used to mesh with. For example, in the case of an irregular free surface boundary in the 2D Foothills model, a SDF can be created by thresholding a modified velocity model. Specifically, we mesh the region of the domain with a P-wave velocity greater than 4,000 m/s::
+Using the function `signed_distance_function_generator`, the user can threshold their velocity model to produce a signed distance function which can then be used to mesh with. For example, in the case of an irregular free surface boundary in the 2D Foothills model, a SDF can be created by thresholding a modified velocity model. Specifically, we mesh the region of the domain with a P-wave velocity greater than 4,000 m/s::
 
-     # Bulid a signed distance function from the seismic velocity model
+     # Build a signed distance function from the seismic velocity model
      # Some pockets of velocity < 4000 exist, fill those in.
      vp2 = ef.vp.copy()
      vp2 = np.where(vp2 < 4000, 4001, vp2)
@@ -129,7 +116,7 @@ Using the :class:`SignedDistanceFunctionGenerator` tool, the user can threshold 
 
 The output of the call to the ``SdfGen`` gives a handle to a function object, which can be passed to the mesh generator as detailed below in the section describing how to call the mesh generator.
 
-Images shown below are the seismic P-wave velocity model for the foothills example and the resulting SDF from exeucting the code directly above. In this second image below, the color yellow indicates the region to-be-meshed and the greenish color indicates the region outside of the domain.
+Images shown below are the seismic P-wave velocity model for the foothills example and the resulting SDF from executing the code directly above. In this second image below, the color yellow indicates the region to-be-meshed and the greenish color indicates the region outside of the domain.
 
 .. image:: Foothills.png
 
@@ -143,7 +130,7 @@ Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing function retu
 .. note:
     Seismic velocity models often have different constant grid spacings in each dimension. The software considers this automatically based on the domain extents.
 
-The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh strategy is briefly described and psuedo-code regarding how to call the :class:`MeshSizeFunction` class constructor.
+The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh strategy is briefly described and psuedo code regarding how to call the :class:`MeshSizeFunction` class constructor.
 
 .. note :: The final mesh size map is taken as the minimum of all supplied sizing functions.
 
@@ -151,17 +138,12 @@ Wavelength-to-gridscale
 ^^^^^^^^^^^^^^^^^^^^^^^
 The highest frequency of the source wavelet :math:`f_{max}` and the smallest value of the velocity model :math:`v_{min}` define the shortest scale length of the problem since the shortest spatial wavelength :math:`\lambda_{min}` is equal to the :math:`\frac{v_{min}}{f_{max}}`. For marine domains, :math:`v_{min}` is approximately 1,484 m/s, which is the speed of sound in seawater, thus the finest mesh resolution is near the water layer.
 
-The user is able to specify the number of vertices per wavelength :math:`\alpha_{wl}` the peak source frequency :math:`f_{max}`. This sizing heuristic also  can be used to take into account varying polynomial orders for finite elements. For instance if using quadratic P=2 elements, :math:`\alpha_{wl}` can be safely be set to 5 to avoid excessive dispersion and dissipatation otherwise that would occur with P=1 elements::
-
-   bbox = (-12e3, 0, 0, 67e3)
-   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
+The user is able to specify the number of vertices per wavelength :math:`\alpha_{wl}` the peak source frequency :math:`f_{max}`. This sizing heuristic also  can be used to take into account varying polynomial orders for finite elements. For instance if using quadratic P=2 elements, :math:`\alpha_{wl}` can be safely be set to 5 to avoid excessive dispersion and dissipation otherwise that would occur with P=1 elements::
 
    # Construct mesh sizing object from velocity model
-   ef = SeismicMesh.MeshSizeFunction(
-       bbox=bbox,
-       velocity_grid = vp,
-       freq=2, # maximum source frequency
+   ef, bbox = get_sizing_function_from_segy(fname, bbox,
        wl=3, # :math:`\alpha_{wl}` number of grid points per wavelength
+       freq=2, # maximum source frequency for which the wavelength is calculated
    )
 
 
@@ -172,15 +154,7 @@ Resolving seismic velocity gradients
 Seismic domains are known for sharp gradients in material properties, such as seismic velocity. These sharp gradients lead to reflections and refractions in propagated waves, which are critical for successful imaging. Thus, finer mesh resolution can be deployed inversely proportional to the local standard deviation of P-wave velocity. The local standard deviation of seismic P-wave velocity is calculated in a sliding window around each point on the velocity model. The user chooses the mapping relationship between the local standard deviation of the seismic velocity model and the values of the corresponding mesh size nearby it. This parameter is referred to as the :math:`grad` and is specified in meters.
 For instance a :math:`grad` of 50 would imply that the largest gradient in seismic P-wave velocity is mapped to a minimum resolution of 50-m.::
 
-    import SeismicMesh
-
-    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
-    bbox = (-12e3, 0, 0, 67e3)
-
-    # Construct mesh sizing object from velocity model
-    ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox,
-        velocity_grid=vp,
+    ef, bbox = get_sizing_function_from_segy(fname, bbox,
         grad=50, # the desired mesh size in meters near the shaprest gradient in the domain
     )
 
@@ -208,15 +182,8 @@ For the linear acoustic wave equation assuming isotropic mesh resolution, the CF
 
 where :math:`h` is the diameter of the circumball that inscribes the element either calculated from :math:`f(h)` or from the actual mesh cells, :math:`dim` is the spatial dimension of the problem (2 or 3), :math:`\Delta t` is the intended simulation time step in seconds and :math:`v_p` is the local seismic P-wave velocity. The above equation can be rearranged to find the minimum mesh size possible for a given :math:`v_p` and :math:`\Delta t`, based on some user-defined value of :math:`Cr \leq 1`. If there are any violations of the CFL, they can bed edited before building the mesh so to satisfy that the maximum :math:`Cr` is less than some conservative threshold. We normally apply :math:`Cr = 0.5`, which provides a solid buffer but this can but this can be controlled by the user like the following::
 
-    import SeismicMesh
 
-    bbox = (-12e3, 0, 0, 67e3)
-    vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
-
-    # Construct mesh sizing object from velocity model
-    ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox,
-        velocity_grid=vp,
+    ef, bbox = get_sizing_function_from_segy(fname, bbox,
         cr=0.5, # maximum bounded Courant number to be bounded in the mesh sizing function
         dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
         ...
@@ -224,9 +191,7 @@ where :math:`h` is the diameter of the circumball that inscribes the element eit
 
 Further, the space order of the method (:math:`p`) can also be incorporated into the above formula to consider the higher spatial order that the simulation will use::
 
-    ef = SeismicMesh.MeshSizeFunction(
-        bbox=bbox,
-        velocity_grid=vp,
+    ef, bbox = get_sizing_function_from_segy(fname, bbox,
         cr=0.5, # maximum bounded Courant number :math:`Cr_{max}` in the mesh
         dt=0.001, # for the given :math:`\Delta t` of 0.001 seconds
         space_order = 2, # assume quadratic elements :math:`P=2`
@@ -249,14 +214,8 @@ A smoothness criteria is necessary to produce a mesh that can simulate physical 
 
 We adopt the method to smooth the mesh size function originally proposed by [grading]_. A smoother sizing function is congruent with a higher overall element quality but with more triangles in the mesh. Generally, setting :math:`0.2 \leq \alpha_g \leq 0.3` produces good results::
 
-   import SeismicMesh
-   bbox = (-12e3, 0, 0, 67e3)
-   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
-
-   # Construct mesh sizing object from velocity model
-   ef = SeismicMesh.MeshSizeFunction(
-       bbox=bbox,
-       velocity_grid=vp,
+   ef, bbox = get_sizing_function_from_segy(fname, bbox,
+       ...
        grade=0.15, # :math:`g` cell-to-cell size rate growth bound
        ...
    )
@@ -270,16 +229,9 @@ Domain extension
 
     It is assumed that the top side of the domain represents the free-surface thus no domain extension is applied there.
 
-In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undeseriable artifical reflections off the sides of the domain however. A common approach to avoid these artifical reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
+In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undesirable artificial reflections off the sides of the domain however. A common approach to avoid these artificial reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
-   import SeismicMesh
-   bbox = (-12e3, 0, 0, 67e3)
-   vp = np.ndarray([[data]]) # velocity model defined as numpy.ndarray
-
-   # Construct mesh sizing object from velocity model
-   ef = SeismicMesh.MeshSizeFunction(
-       bbox=bbox,
-       velocity_grid=vp,
+   ef, bbox = get_sizing_function_from_segy(fname, bbox,
        domain_extension=250, # domain will be extended by 250-m on all three sides
        ...
    )
@@ -294,10 +246,7 @@ In this domain extension region, mesh resolution can be adapted according to fol
 
 An example of the ``edge`` style is below::
 
-   # Construct mesh sizing object from velocity model
-   ef = SeismicMesh.MeshSizeFunction(
-       bbox=bbox,
-       velocity_grid=vp,
+   ef, bbox = get_sizing_function_from_segy(fname, bbox,
        domain_extension=250, # domain will be extended by 250-m on all three sides
        padstyle="edge", # velocity will be extends from values at the edges of the domain
        ...
@@ -310,6 +259,32 @@ An example of the ``edge`` style is below::
 .. image:: domainext.png
 
 
+Geometry
+---------
+
+*SeismicMesh* can mesh any domain defined by a signed distance function. We provide three basic domain shapes: a [rectangle](), a [cube/block](), or a [circle]().
+
+The user can build a rectangular 2D domain like so::
+
+    from SeismicMesh import geometry
+
+    def rectangle(points):
+        return geometry.drectangle(points, *bbox)
+
+Or a cube/block domain::
+
+    def rectangle(points):
+        return geometry.dblock(points, *bbox)
+
+Or a circle 2D domain::
+
+    def circle(points):
+	return geometry.dcircle(points, xc=0, yc=0, r=1) # circle centered at (0,0) with a radius of 1.0
+
+.. note::
+    A good reference for various signed distance functions can be found [here](https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm)
+
+
 
 Mesh generation
 -------------------------------------------
@@ -318,73 +293,40 @@ Mesh generation
     Connectivity is made approximately deterministic as each instance of mesh generation uses
     the same ``seed=0``. The user can specify the seed if they like.
 
-The user generates the mesh in either two ways: The user passes a mesh size function object like this::
+After building your signed distance function, call the ``generate_mesh`` function to generate the mesh::
 
-    # Construct a mesh generator object
-    mshgen = SeismicMesh.MeshGenerator(ef)
+    points, cells = generate_mesh(bbox=bbox, h0=minimum_mesh_size, cell_size=ef, signed_distance_function=rectangle)
 
-And then they call the ``build`` method specifying the number of iterations they want the generator to perform::
+You can change how many iterations are performed by altering the kwarg `max_iter`::
 
-    # Build the mesh
-    points, cells = mshgen.build(max_iter=75, axis=1)
+    points, cells = generate_mesh(bbox=bbox, h0=minimum_mesh_size, cell_size=ef, signed_distance_function=rectangle, max_iter=100)
 
 .. note :: Generally setting max_iter to between 50 to 100 iterations works best. By default it runs 50 iterations.
 
-.. note :: For parallel execution, the user can choose which axis (0, 1, or 2 (if 3D)) to decompose the domain.
 
-Or, the second way the user specified their own mesh size function ``f(h)`` and/or ``f(d)``::
+When executing in parallel, the user can optionally choose which axis (0, 1, or 2 [if 3D]) to decompose the domain::
 
-    # Example of a signed distance function for a cylinder in unit space.
-    def fd(p):
-        # sizing function of a cylinder in [-1., -1., -.1] x [1., 1., 1.]
-        r, z = np.sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
-        d1, d2, d3 = r - 1.0, z - 1.0, -z - 1.0
-        d4, d5 = np.sqrt(d1 ** 2 + d2 ** 2), np.sqrt(d1 ** 2 + d3 ** 2)
-        d = np.maximum.reduce([d1, d2, d3])
-        ix = (d1 > 0) * (d2 > 0)
-        d[ix] = d4[ix]
-        ix = (d1 > 0) * (d3 > 0)
-        d[ix] = d5[ix]
-        return d
+    points, cells = generate_mesh(bbox=bbox, h0=minimum_mesh_size, cell_size=ef, signed_distance_function=rectangle, axis=2)
 
 
-    # Example of an uniform resolution sizing function
-    def fh(p):
-        # note for parallel execution this logic is required
-        # since the decomposition of the sizing function passes a tuple to fh
-        if type(p) == tuple:
-            h = np.zeros_like(p[0]) + hmin
-        else:
-            h = np.zeros_like(p) + hmin
-        return h
-
-
-    # Construct mesh generator
-    mshgen = SeismicMesh.MeshGenerator(hmin=hmin, bbox=bbox, fd=fd, fh=fh)
-
-.. warning :: In this second way, the user *must* pass the arguments `hmin` the desired minimum resolution in the domain and the tuple of domain extents `bbox` to the mesh generator class constructor.
-
-And then they call the ``build`` method specifying the number of iterations they want the generator to perform::
-
-    # Build the mesh
-    points, cells = mshgen.build(max_iter=50)
-
-Mesh improvement
+Mesh improvement (*sliver* removal)
 -------------------------------------------
 
 
 3D *Sliver* removal
 ^^^^^^^^^^^^^^^^^^^^^^^
 
-If the intended usage of the mesh is for numerical simulation, it is strongly encouraged to execute the sliver removal method after generating a mesh in 3D like so::
+It is strongly encouraged to run the sliver removal method by passing the point of set of a previously generated mesh::
 
-    points, cells = mshgen.build(
-        points=points, mesh_improvement=True, max_iter=50, min_dh_bound=5,
+    points, cells = sliver_remova(
+        points=points, signed_distance_function=rectangle, h0=minimum_mesh_size, 
     )
 
-Note that here we pass it the points from the previous call to `build` and specify the flag ``mesh_improvement`` to *True*. The option ``min_dh_bound`` represents the target lower bound for the dihedral angle. By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to bulid the mesh, this algorithm will converge in 10-20 iterations.
+.. note:: Please remember to import this method at the top of your script (e.g., `from SeismicMesh import sliver_removal`)
 
-.. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already succesfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
+ By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
+
+.. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already successfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
 
 References

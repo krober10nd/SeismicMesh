@@ -22,6 +22,8 @@ from mpi4py import MPI
 from scipy import ndimage
 from scipy.interpolate import RegularGridInterpolator
 
+from .size_function import SizeFunction
+
 from .cpp import limgrad
 
 __all__ = [
@@ -42,7 +44,7 @@ opts = {
     "dt": 0.0,
     "cr_max": 1.0,
     "pad_style": "edge",
-    "domain_ext": 0.0,
+    "domain_pad": 0.0,
     "units": "m-s",
     "nz": None,
     "nx": None,
@@ -58,8 +60,8 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         The name of a SEG-y or binary file containing a seismic velocity model
     :type filename: ``string``
     :param bbox:
-        Bounding box containing domain extents.
-    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+        Bounding box containing domain extents of the velocity model contained in `filename`.
+    :type bbox: `tuple` with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
     :param \**kwargs:
         See below
 
@@ -77,33 +79,32 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         * *grade* (``float``) --
           Maximum allowable variation in mesh size in decimal percent (default==0.0)
         * *space_order* (``int``) --
-          The polynomial order of the basis functions (default==1)
+          Simulation will be attempted with a mesh using the polynomial order `space_order` of the basis functions (default==1)
         * *dt* (``float``) --
           Theoretical maximum stable timestep in seconds given Courant number Cr (default==0.0 s)
         * *cr_max* (``float``) --
-            `dt` is theoretically numerically stable with this Courant number.
+            The mesh simulated with this `dt` has this maximum Courant number (default==1.0)
         * *pad_style* (``string``) --
              The method (`edge`, `linear_ramp`, `constant`) to pad velocity in the domain extension region (default==None)
-        * *domain_extension* (``float``) --
-             The width of the domain extension in -z, +x, -x, +y, -y directions (default==0.0 m).
-        * *units* (``float``) --
+        * *domain_pad* (``float``) --
+             The width of the domain pad in -z, +x, -x, +y, -y directions (default==0.0 m).
+        * *units* (``string``) --
              The units of the seismic velocity model (default='m-s')
         * *nz* (``int``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the z-direction in the velocity model.
         * *ny* (``int``) --
-             TREQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
         * *nx* (``int``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the x-direction in the velocity model.
         * *byte_order* (``string``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
 
-    :return: cell_size_function: a function that takes a point and gets a size
-    :rtype: a callable Python function object.
-    :param bbox: bounding box containing domain extents (modified if `domain_extension` is in use).
-    :rtype: ``tuple``
+    :return: an object with a `obj.bbox` and an `obj.eval` method .
+    :rtype: a :class:`SizeFunction` object
 
     """
     comm = comm or MPI.COMM_WORLD
+    cell_size = None
     if comm.rank == 0:
         opts.update(kwargs)
 
@@ -140,7 +141,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "grad",
                 "grade",
                 "pad_style",
-                "domain_ext",
+                "domain_pad",
                 "units",
                 "nz",
                 "nx",
@@ -172,25 +173,15 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
             cell_size, opts["grade"], (bbox[3] - bbox[2]) / nx
         )
 
-        cell_size, vp, bbox = _build_domain_extension(cell_size, vp, bbox, opts)
+        cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, opts)
 
-        sizing_function = _build_sizing_function(cell_size, vp, bbox)
-    else:
-        # other cores
-        sizing_function = None
+        fh = _build_sizing_function(cell_size, vp, bbox)
 
     # agreement re the bbox
     if comm.size > 1:
         bbox = comm.bcast(bbox, 0)
 
-    if comm.rank == 0:
-
-        def sizing_fun(p):
-            return sizing_function(p)
-
-        return sizing_fun, bbox
-    else:
-        return None, bbox
+    return SizeFunction(bbox, fh)
 
 
 def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
@@ -241,13 +232,11 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             f.attrs["units"] = "m/s"
 
 
-def plot_sizing_function(cell_size_function, bbox, stride=1, comm=None):
+def plot_sizing_function(cell_size, stride=1, comm=None):
     """Plot the mesh size function in 2D
 
-    :param cell_size_function: a callable function that takes a point and gives a size
-    :type cell_size_function: a callable function object
-    :param bbox: the domain extents to plot the function values
-    :type bbox: a tuple of the corners of the domain
+    :param cell_size: a callable function that takes a point and gives a size
+    :type cell_size: a callable function object
     :param stride: skip `stride` points to save on memory when plotting
     :type stride: `int`, optional
     :param comm: MPI communicator
@@ -256,6 +245,13 @@ def plot_sizing_function(cell_size_function, bbox, stride=1, comm=None):
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank == 0:
+
+        if not isinstance(cell_size, SizeFunction):
+            raise ValueError("Can only plot a :class:`SizeFunction`")
+
+        bbox = cell_size.bbox
+        fh = cell_size.eval
+
         if len(bbox) != 4:
             raise ValueError("Visualization in 3D not supported")
 
@@ -264,7 +260,7 @@ def plot_sizing_function(cell_size_function, bbox, stride=1, comm=None):
             np.arange(bbox[2], bbox[3], 50.0),
             indexing="ij",
         )
-        cell_size = cell_size_function((zg, xg))
+        cell_size = fh((zg, xg))
 
         fig, ax = plt.subplots()
         plt.pcolormesh(
@@ -413,38 +409,38 @@ def _get_vectors(dim, bbox, nz, nx, ny=None):
         raise ValueError("Dimension not supported")
 
 
-def _build_domain_extension(cell_size, vp, bbox, opts):
+def _build_domain_pad(cell_size, vp, bbox, opts):
     """Building a domain extension"""
     dim = vp.ndim
-    domain_ext = opts["domain_ext"]
+    domain_pad = opts["domain_pad"]
     pad_style = opts["pad_style"]
-    if domain_ext < 0:
+    if domain_pad < 0:
         raise ValueError("Domain extension must be >= 0")
 
-    if domain_ext > 0:
-        print("Including a " + str(domain_ext) + " meter domain extension...")
+    if domain_pad > 0:
+        print("Including a " + str(domain_pad) + " meter domain extension...")
         if dim == 2:
             nz, nx, dz, dx = _get_dimensions(vp, bbox)
-            nnz = int(domain_ext / dz)
-            nnx = int(domain_ext / dx)
+            nnz = int(domain_pad / dz)
+            nnx = int(domain_pad / dx)
             bbox = (
-                bbox[0] - domain_ext,
+                bbox[0] - domain_pad,
                 bbox[1],
-                bbox[2] - domain_ext,
-                bbox[3] + domain_ext,
+                bbox[2] - domain_pad,
+                bbox[3] + domain_pad,
             )
         elif dim == 3:
             nz, nx, ny, dz, dx, dy = _get_dimensions(vp, bbox)
-            nnz = int(domain_ext / dz)
-            nnx = int(domain_ext / dx)
-            nny = int(domain_ext / dy)
+            nnz = int(domain_pad / dz)
+            nnx = int(domain_pad / dx)
+            nny = int(domain_pad / dy)
             bbox = (
-                bbox[0] - domain_ext,
+                bbox[0] - domain_pad,
                 bbox[1],
-                bbox[2] - domain_ext,
-                bbox[3] + domain_ext,
-                bbox[4] - domain_ext,
-                bbox[5] + domain_ext,
+                bbox[2] - domain_pad,
+                bbox[3] + domain_pad,
+                bbox[4] - domain_pad,
+                bbox[5] + domain_pad,
             )
 
         print("Using the pad_style: " + pad_style)

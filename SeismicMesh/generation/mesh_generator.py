@@ -21,6 +21,7 @@ import numpy as np
 from mpi4py import MPI
 
 from .. import decomp, geometry, migration
+from .. import sizing
 from . import utils as mutils
 from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
@@ -40,16 +41,13 @@ opts = {
 }
 
 
-def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwargs):
+def sliver_removal(points, signed_distance_function, h0, comm=None, **kwargs):
     r"""Improve an existing 3D mesh by removing degenerate elements called
     commonly referred to as `slivers`.
 
     :param points:
         The name of a SEG-y or binary file containing a seismic velocity model
     :type filename: ``string``
-    :param bbox:
-        Bounding box containing domain extents.
-    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
     :param signed_distance_function:
         A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
     :type signed_distance_function: A callable function.
@@ -205,19 +203,15 @@ def sliver_removal(points, bbox, signed_distance_function, h0, comm=None, **kwar
     return p, t
 
 
-def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kwargs):
+def generate_mesh(cell_size, signed_distance_function, h0, comm=None, **kwargs):
     r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
        and signed distance function `signed_distance_function`
 
-    :param bbox:
-        Bounding box containing domain extents.
-    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`
+    :param cell_size:
+        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
     :param signed_distance_function:
         A callable function that takes a point and returns the signed nearest distance to the domain boundary Ω.
     :type signed_distance_function: A callable function.
-    :param cell_size:
-        A callable function that takes a point and returns a mesh size.
-    :type cell_size: A callable function.
     :param h0:
         The minimum element size in the domain
     :type h0: `float`
@@ -229,6 +223,8 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
         See below
 
     :Keyword Arguments:
+        * *bbox* (``tuple``) --
+            Bounding box containing domain extents.
         * *nscreen* (``float``) --
             Output to the screen `nscreen` timestep. (default==1)
         * *max_iter* (``float``) --
@@ -253,6 +249,21 @@ def generate_mesh(bbox, signed_distance_function, h0, cell_size, comm=None, **kw
     # check call was correct
     opts.update(kwargs)
     _parse_kwargs(kwargs)
+
+    # unpack size function
+    if isinstance(cell_size, sizing.size_function):
+        bbox = cell_size.bbox
+        fh = cell_size.eval
+    elif callable(cell_size):
+        bbox = opts["bbox"]
+        fh = cell_size
+    else:
+        raise ValueError(
+            "`cell_size` must either be a function or a `cell_size` object"
+        )
+
+    if not isinstance(bbox, tuple):
+        raise ValueError("`bbox` must be a tuple")
 
     # check bbox shape
     dim = int(len(bbox) / 2)
@@ -370,6 +381,7 @@ def _parse_kwargs(kwargs):
             "pfix",
             "axis",
             "points",
+            "bbox",
         }:
             pass
         else:
