@@ -102,7 +102,7 @@ This seismic velocity model is passed to the *MeshSizeFunction* class along with
 Geometry
 ---------
 
-*SeismicMesh* can mesh any domain defined by a signed distance function. We provide three basic domain shapes: a Rectangle, a Cube, or a Circle.
+*SeismicMesh* can mesh any domain defined by a signed distance function. However, we provide three basic domain shapes: a Rectangle, a Cube, or a Circle.
 
 The user can build a rectangular 2D domain like so::
 
@@ -110,10 +110,10 @@ The user can build a rectangular 2D domain like so::
 
     rectangle = Rectangle(bbox)
     cube = Cube(bbox)
-    circle = Circle(circle)
+    circle = Circle(xc=0,yc=0,r=1) # center of (0,0) with a radius of 1.0
 
 .. note::
-    A good reference for various signed distance functions can be found [here](https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm)
+    A good reference for various signed distance functions can be found at: https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 
 
 
@@ -227,7 +227,7 @@ Domain extension
 In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undesirable artificial reflections off the sides of the domain however. A common approach to avoid these artificial reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
    ef = get_sizing_function_from_segy(fname, bbox,
-       domain_extension=250, # domain will be extended by 250-m on all three sides
+       domain_extension=250, # domain will be extended by 250-m on all three sides of the domain
        ...
    )
 
@@ -243,7 +243,7 @@ An example of the ``edge`` style is below::
 
    ef = get_sizing_function_from_segy(fname, bbox,
        domain_extension=250, # domain will be extended by 250-m on all three sides
-       padstyle="edge", # velocity will be extends from values at the edges of the domain
+       padstyle="edge", # velocity will be extended from values at the edges of the domain
        ...
    )
 
@@ -264,18 +264,18 @@ Mesh generation
 
 After building your signed distance function, call the ``generate_mesh`` function to generate the mesh::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin)
+    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin)
 
 You can change how many iterations are performed by altering the kwarg `max_iter`::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin, max_iter=100)
+    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin, max_iter=100)
 
 .. note :: Generally setting max_iter to between 50 to 100 iterations works best. By default it runs 50 iterations.
 
 
 When executing in parallel, the user can optionally choose which axis (0, 1, or 2 [if 3D]) to decompose the domain::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin, max_iter=100, axis=2)
+    points, cells = generate_mesh(domain=cube, cell_size=ef, h0=hmin, max_iter=100, axis=2)
 
 
 Mesh improvement (*sliver* removal)
@@ -288,12 +288,12 @@ Mesh improvement (*sliver* removal)
 It is strongly encouraged to run the sliver removal method by passing the point of set of a previously generated mesh::
 
     points, cells = sliver_removal(
-        points=points, domain=cube, h0=minimum_mesh_size,
+        points=points, domain=cube, h0=minimum_mesh_size, cell_size=ef
     )
 
 .. note:: Please remember to import this method at the top of your script (e.g., `from SeismicMesh import sliver_removal`)
 
- By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
+By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already successfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
