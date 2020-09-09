@@ -12,11 +12,9 @@ from SeismicMesh import (
 )
 
 comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
 
 
-@pytest.mark.parallel
+@pytest.mark.parallel3
 def test_3dmesher_par():
 
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")

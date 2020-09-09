@@ -7,11 +7,9 @@ from mpi4py import MPI
 from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
 
 comm = MPI.COMM_WORLD
-size = comm.Get_size()
-rank = comm.Get_rank()
 
 
-@pytest.mark.parallel
+@pytest.mark.parallel3
 def test_3dmesher_par_adapt():
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     nz, nx, ny = 20, 10, 10
@@ -41,6 +39,7 @@ def test_3dmesher_par_adapt():
         h0=hmin,
         cell_size=ef,
         signed_distance_function=cube,
+        max_iter=10,
         perform_checks=False,
     )
 
@@ -53,6 +52,7 @@ def test_3dmesher_par_adapt():
         cell_size=ef,
         signed_distance_function=cube,
         axis=1,
+        max_iter=10,
         perform_checks=False,
     )
 
@@ -65,6 +65,7 @@ def test_3dmesher_par_adapt():
         cell_size=ef,
         signed_distance_function=cube,
         axis=2,
+        max_iter=10,
         perform_checks=False,
     )
 
