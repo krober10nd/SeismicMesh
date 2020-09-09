@@ -2,8 +2,8 @@ include SeismicMesh/generation/cpp/*.cpp
 include SeismicMesh/geometry/cpp/*.cpp
 include SeismicMesh/migration/cpp/*.cpp
 include SeismicMesh/sizing/cpp/*.cpp
+include tests/*
 
-include README.rst LICENSE 
+include README.md LICENSE.txt 
 global-include CMakeLists.txt 
-recursive-include pybind11/include *.h
 
