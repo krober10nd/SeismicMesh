@@ -41,7 +41,7 @@ opts = {
 }
 
 
-def sliver_removal(points, domain, h0, comm=None, **kwargs):
+def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     r"""Improve an existing 3D mesh by removing degenerate elements called
     commonly referred to as `slivers`.
 
@@ -89,9 +89,16 @@ def sliver_removal(points, domain, h0, comm=None, **kwargs):
     if dim == 2:
         raise Exception("Mesh improvement currently on works in 3D")
 
-    if not callable(domain):
-        raise ValueError("`domain` is not a function!")
-    fd = domain
+    # unpack domain
+    fd, bbox0 = _unpack_domain(domain)
+
+    fh, bbox1 = _unpack_sizing(cell_size)
+
+    # take maxmin of boxes
+    bbox = _minmax(bbox0, bbox1)
+
+    if not isinstance(bbox, tuple):
+        raise ValueError("`bbox` must be a tuple")
 
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
@@ -207,10 +214,10 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     :param domain:
         Either a :class:`geometry` or a function that takes a point and returns the
         signed nearest distance to the domain boundary Ω
-    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle)
+    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
     :param cell_size:
         Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
-    :type cell_size:
+    :type cell_size: A :class:`cell_size` object or a function object.
     :param h0:
         The minimum element size in the domain
     :type h0: `float`

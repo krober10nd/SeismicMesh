@@ -32,13 +32,15 @@ def test_3dmesher_SDF():
 
     points, cells = generate_mesh(
         bbox=bbox,
-        signed_distance_function=cylinder,
+        domain=cylinder,
         h0=hmin,
         cell_size=EF,
         max_iter=100,
     )
 
-    points, cells = sliver_removal(points, bbox, cylinder, hmin)
+    points, cells = sliver_removal(
+        points=points, domain=cylinder, cell_size=EF, h0=hmin
+    )
 
     assert allclose(sum(geometry.simp_vol(points, cells)), 6.28, atol=hmin)
 

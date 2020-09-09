@@ -1,9 +1,5 @@
 import numpy as np
-import scipy as sp
-import scipy.ndimage
 import scipy.sparse as spsparse
-from mpi4py import MPI
-from scipy.interpolate import RegularGridInterpolator
 
 from ..generation.cpp import c_cgal
 from . import signed_distance_functions as sdf

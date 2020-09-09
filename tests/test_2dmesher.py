@@ -5,7 +5,7 @@ import pytest
 
 from SeismicMesh import (
     generate_mesh,
-    geometry,
+    Rectangle,
     get_sizing_function_from_segy,
     plot_sizing_function,
     write_velocity_model,
@@ -23,7 +23,8 @@ def test_2dmesher():
     hmax = 10e6
     grade = 0.005
     grad = 50.0
-    ef, bbox = get_sizing_function_from_segy(
+    rectangle = Rectangle(bbox)
+    ef = get_sizing_function_from_segy(
         fname,
         bbox=bbox,
         grade=grade,
@@ -33,17 +34,13 @@ def test_2dmesher():
         hmin=hmin,
         hmax=hmax,
     )
-    plot_sizing_function(ef, bbox)
+    plot_sizing_function(ef)
     write_velocity_model(fname)
 
-    def rectangle(p):
-        return geometry.drectangle(p, *bbox)
-
     points, cells = generate_mesh(
-        bbox=bbox,
-        signed_distance_function=rectangle,
-        cell_size=ef,
-        h0=hmin,
+        rectangle,
+        ef,
+        hmin,
         perform_checks=True,
     )
     # should have: 7690 vertices and 15045 cells

@@ -60,7 +60,7 @@ This file can be downloaded from**
 from mpi4py import MPI
 import meshio
 
-from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
+from SeismicMesh import get_sizing_function_from_segy, generate_mesh, Rectangle
 
 comm = MPI.COMM_WORLD
 
@@ -78,8 +78,10 @@ bbox = (-12000, 0.0, 0.0, 67000.0)
 # Desired minimum mesh size in domain
 hmin = 75.0
 
+rectangle = Rectangle(bbox)
+
 # Construct mesh sizing object from velocity model
-ef, bbox = get_sizing_function_from_segy(
+ef = get_sizing_function_from_segy(
     fname,
     bbox,
     hmin=hmin,
@@ -87,17 +89,11 @@ ef, bbox = get_sizing_function_from_segy(
     freq=2,
     dt=0.001,
     grade=0.15,
-    domain_ext=1e3,
+    domain_pad=1e3,
     pad_style="edge",
 )
 
-def rectangle(p):
-    return geometry.drectangle(p, *bbox)
-
-
-points, cells = generate_mesh(
-    bbox=bbox, signed_distance_function=rectangle, cell_size=ef, h0=hmin
-)
+points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin)
 
 if comm.rank == 0:
     # Write the mesh in a vtk format for visualization in ParaView
@@ -131,7 +127,7 @@ from SeismicMesh import (
     get_sizing_function_from_segy,
     generate_mesh,
     sliver_removal,
-    geometry,
+    Cube,
 )
 
 comm = MPI.COMM_WORLD
@@ -153,11 +149,13 @@ fname = path + "Saltf@@"
 # Dimensions of model (number of grid points in z, x, and y)
 nx, ny, nz = 676, 676, 210
 
+cube = Cube(bbox)
+
 # A graded sizing function is created from the velocity model along with a signed distance function by passing
 # the velocity grid that we created above. More details for the :class:`MeshSizeFunction` can be found here
 # https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction
 
-ef, bbox = get_sizing_function_from_segy(
+ef = get_sizing_function_from_segy(
     fname,
     bbox,
     hmin=hmin,
@@ -166,7 +164,7 @@ ef, bbox = get_sizing_function_from_segy(
     wl=5,
     grade=0.25,
     hmax=5e3,
-    domain_ext=250,
+    domain_pad=250,
     pad_style="linear_ramp",
     nz=nz,
     nx=nx,
@@ -174,18 +172,11 @@ ef, bbox = get_sizing_function_from_segy(
     byte_order="big"
 )
 
-
-def cube(p):
-    return geometry.dblock(p, *bbox)
-
-
-points, cells = generate_mesh(
-    bbox=bbox, h0=hmin, cell_size=ef, signed_distance_function=cube
-)
+points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(
-    points=points, bbox=bbox, h0=hmin, signed_distance_function=cube
+    points=points, bbox=bbox, h0=hmin, domain=cube, cell_size=ef
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::

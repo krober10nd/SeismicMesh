@@ -6,7 +6,7 @@ import pytest
 from SeismicMesh import (
     generate_mesh,
     sliver_removal,
-    geometry,
+    Cube,
     get_sizing_function_from_segy,
     write_velocity_model,
 )
@@ -22,7 +22,8 @@ def test_3dmesher():
     hmin = 50
     grade = 0.005
     bbox = (-2e3, 0.0, 0.0, 1e3, 0, 1e3)
-    ef, bbox = get_sizing_function_from_segy(
+    cube = Cube(bbox)
+    ef = get_sizing_function_from_segy(
         fname,
         bbox,
         grade=grade,
@@ -34,26 +35,22 @@ def test_3dmesher():
         nx=10,
         ny=10,
         byte_order="little",
-        domain_ext=0.0,
+        domain_pad=0.0,
     )
 
     write_velocity_model(
         fname, nz=20, nx=10, ny=10, byte_order="little", ofname="testing"
     )
 
-    def cube(p):
-        return geometry.dblock(p, *bbox)
-
     points, cells = generate_mesh(
-        bbox=bbox,
-        signed_distance_function=cube,
+        domain=cube,
         cell_size=ef,
         h0=hmin,
+        max_iter=25,
+        perform_checks=False,
     )
 
-    points, cells = sliver_removal(
-        points=points, bbox=bbox, signed_distance_function=cube, h0=hmin
-    )
+    points, cells = sliver_removal(points=points, cell_size=ef, domain=cube, h0=hmin)
     print(len(points), len(cells))
     allclose([len(points), len(cells)], [16459, 89240], atol=100)
 

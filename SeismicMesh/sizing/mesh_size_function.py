@@ -105,6 +105,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     """
     comm = comm or MPI.COMM_WORLD
     cell_size = None
+
     if comm.rank == 0:
         opts.update(kwargs)
 
@@ -176,6 +177,10 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, opts)
 
         fh = _build_sizing_function(cell_size, vp, bbox)
+    else:
+
+        def fh(p):
+            return 1
 
     # agreement re the bbox
     if comm.size > 1:

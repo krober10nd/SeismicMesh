@@ -1,4 +1,4 @@
-from numpy import allclose, sum
+from numpy import allclose, sum, sqrt, array
 import pytest
 
 from SeismicMesh import generate_mesh, geometry
@@ -11,7 +11,8 @@ def test_2dmesher_SDF():
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
     def circle(p):
-        return geometry.dcircle(p, 0.0, 0.0, 1.0)
+        """Signed distance to circle centered at xc, yc with radius r."""
+        return sqrt(((p - array([0, 0])) ** 2).sum(-1)) - 1
 
     def EF(p):
         d = circle(p)
@@ -19,7 +20,7 @@ def test_2dmesher_SDF():
 
     points, cells = generate_mesh(
         bbox=bbox,
-        signed_distance_function=circle,
+        domain=circle,
         h0=hmin,
         cell_size=EF,
         max_iter=100,

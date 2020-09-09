@@ -4,7 +4,12 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
-from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
+from SeismicMesh import (
+    get_sizing_function_from_segy,
+    generate_mesh,
+    Rectangle,
+    geometry,
+)
 
 comm = MPI.COMM_WORLD
 
@@ -19,18 +24,15 @@ def test_2dmesher_par():
     hmin = 75
     grade = 0.005
 
-    ef, bbox = get_sizing_function_from_segy(
+    rectangle = Rectangle(bbox)
+    ef = get_sizing_function_from_segy(
         fname, bbox, hmin=hmin, wl=wl, freq=freq, grade=grade
     )
 
-    def rectangle(p):
-        return geometry.drectangle(p, *bbox)
-
     points, cells = generate_mesh(
-        bbox=bbox,
-        signed_distance_function=rectangle,
-        cell_size=ef,
-        h0=hmin,
+        rectangle,
+        ef,
+        hmin,
         max_iter=100,
         perform_checks=False,
     )
