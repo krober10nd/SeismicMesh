@@ -60,3 +60,7 @@ def test_3dmesher():
     # import meshio
 
     # meshio.write_points_cells("foo3D.vtk", points, [("tetra", cells)])
+
+
+if __name__ == "__main__":
+    test_3dmesher()

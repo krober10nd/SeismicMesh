@@ -5,7 +5,7 @@ from SeismicMesh import geometry as geo
 
 
 @pytest.mark.serial
-def test_geometry3D():
+def test_geometry():
 
     # tetraheadrals in a unit cube with l, w, h of 2 units
     points = np.array(
@@ -57,4 +57,4 @@ def test_geometry3D():
 
 
 if __name__ == "__main__":
-    test_geometry3D()
+    test_geometry()

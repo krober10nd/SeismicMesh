@@ -7,6 +7,8 @@ from mpi4py import MPI
 from SeismicMesh import get_sizing_function_from_segy, generate_mesh, geometry
 
 comm = MPI.COMM_WORLD
+size = comm.Get_size()
+rank = comm.Get_rank()
 
 
 @pytest.mark.parallel

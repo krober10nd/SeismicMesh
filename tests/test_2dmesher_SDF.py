@@ -5,7 +5,7 @@ from SeismicMesh import generate_mesh, geometry
 
 
 @pytest.mark.serial
-def test_2d_SDF():
+def test_2dmesher_SDF():
     """Unit circle"""
     hmin = 0.2
     bbox = (-1.0, 1.0, -1.0, 1.0)
@@ -37,3 +37,7 @@ def test_2d_SDF():
         [("triangle", cells)],
         file_format="vtk",
     )
+
+
+if __name__ == "__main__":
+    test_2dmesher_SDF()

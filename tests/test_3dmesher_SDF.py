@@ -5,7 +5,7 @@ from SeismicMesh import generate_mesh, sliver_removal, geometry
 
 
 @pytest.mark.serial
-def test_3d_SDF():
+def test_3dmesher_SDF():
     """Unit cylinder"""
 
     hmin = 0.10
@@ -53,3 +53,7 @@ def test_3d_SDF():
         [("tetra", cells)],
         file_format="vtk",
     )
+
+
+if __name__ == "__main__":
+    test_3dmesher_SDF()

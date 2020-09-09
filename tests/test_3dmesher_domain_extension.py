@@ -21,7 +21,7 @@ from SeismicMesh import (
         ("constant", [1406, 6622]),
     ),
 )
-def test_3dmesher_domain_ext(style_answer):
+def test_3dmesher_domain_extension(style_answer):
     style, answer = style_answer
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     wl = 5
@@ -69,3 +69,7 @@ def test_3dmesher_domain_ext(style_answer):
     import meshio
 
     meshio.write_points_cells("foo3D" + style + ".vtk", points, [("tetra", cells)])
+
+
+if __name__ == "__main__":
+    test_3dmesher_domain_extension()

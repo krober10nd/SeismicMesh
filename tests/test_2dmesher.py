@@ -58,3 +58,7 @@ def test_2dmesher():
     #    [("triangle", cells)],
     #    file_format="vtk",
     # )
+
+
+if __name__ == "__main__":
+    test_2dmesher()

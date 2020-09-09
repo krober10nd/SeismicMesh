@@ -21,7 +21,7 @@ from SeismicMesh import (
         ("constant", [9440, 18563]),
     ),
 )
-def test_2dmesher_domain_ext(style_answer):
+def test_2dmesher_domain_extension(style_answer):
     style, answer = style_answer
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     bbox = (-10e3, 0.0, 0.0, 10e3)
@@ -58,3 +58,7 @@ def test_2dmesher_domain_ext(style_answer):
     )
     print(len(points), len(cells))
     assert allclose([len(points), len(cells)], answer, atol=100)
+
+
+if __name__ == "__main__":
+    test_2dmesher_domain_extension()
