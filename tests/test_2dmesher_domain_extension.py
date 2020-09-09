@@ -13,8 +13,16 @@ from SeismicMesh import (
 
 
 @pytest.mark.serial
-def test_2dmesher():
-
+@pytest.mark.parametrize(
+    "style_answer",
+    (
+        ("linear_ramp", [7671, 14996]),
+        ("edge", [7673, 15000]),
+        ("constant", [7671, 14996]),
+    ),
+)
+def test_2dmesher_domain_extension(style_answer):
+    style, answer = style_answer
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
     bbox = (-10e3, 0.0, 0.0, 10e3)
     wl = 5
@@ -33,6 +41,8 @@ def test_2dmesher():
         freq=freq,
         hmin=hmin,
         hmax=hmax,
+        pad_style=style,
+        domain_pad=1e3,
     )
     plot_sizing_function(ef)
     write_velocity_model(fname)
@@ -43,19 +53,9 @@ def test_2dmesher():
         hmin,
         perform_checks=True,
     )
-    # should have: 7690 vertices and 15045 cells
     print(len(points), len(cells))
-    allclose([len(points), len(cells)], [7690, 15045], atol=100)
-
-    # import meshio
-
-    # meshio.write_points_cells(
-    #    "blah.vtk",
-    #    points[:, [1, 0]] / 1000,
-    #    [("triangle", cells)],
-    #    file_format="vtk",
-    # )
+    assert allclose([len(points), len(cells)], answer, atol=100)
 
 
 if __name__ == "__main__":
-    test_2dmesher()
+    test_2dmesher_domain_extension()

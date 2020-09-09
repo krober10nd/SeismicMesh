@@ -60,7 +60,7 @@ To test the installation, serial and parallel capabilites, you can use `tox` fro
 $ tox
 
 Installation on Clusters
--------------
+--------------------------
 
 .. note::
     Make sure the CXX environment variable points to your intended compiler!

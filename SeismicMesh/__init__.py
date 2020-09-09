@@ -7,14 +7,25 @@
 #  see <http://www.gnu.org/licenses/>.
 
 from . import decomp, geometry, migration
-from .generation import MeshGenerator
-from .sizing import MeshSizeFunction, read_segy
+from .geometry import Circle, Cube, Rectangle
+from .generation import generate_mesh, sliver_removal
+from .sizing import (
+    get_sizing_function_from_segy,
+    write_velocity_model,
+    plot_sizing_function,
+)
+
 
 __all__ = [
     "geometry",
-    "read_segy",
-    "MeshSizeFunction",
-    "MeshGenerator",
+    "Rectangle",
+    "Cube",
+    "Circle",
+    "get_sizing_function_from_segy",
+    "write_velocity_model",
+    "plot_sizing_function",
+    "generate_mesh",
+    "sliver_removal",
     "decomp",
     "migration",
 ]

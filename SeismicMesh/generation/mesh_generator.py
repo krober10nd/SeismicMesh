@@ -15,487 +15,638 @@
 
 import math
 import time
+import warnings
 
 import numpy as np
 from mpi4py import MPI
 
 from .. import decomp, geometry, migration
+from .. import sizing
 from . import utils as mutils
 from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
+__all__ = ["sliver_removal", "generate_mesh"]
 
-class MeshGenerator:  # noqa: C901
-    """Class constructor for :class:`MeshGenerator`. User can also register their callbacks to
-    the sizing function :math:`f(h)` and signed distance function `f(d)` manually.
+opts = {
+    "nscreen": 1,
+    "max_iter": 50,
+    "seed": 0,
+    "perform_checks": False,
+    "pfix": None,
+    "axis": 1,
+    "min_dh_bound": 10.0,
+    "max_dh_bound": 170.0,
+    "points": None,
+}
 
-    :param SizingFunction: A :class:`MeshSizeFunction` object with populated fields and callbacks to `fd` and `fh`.
-    :type SizingFunction:  A :class:`MeshSizeFunction` class object. Required if no `fd` or `fh` are passed.
-    :param fd: A function that accepts an array of points and returns the signed distance to the boundary of the domain.
-    :type fd: A function object, optional if no :class:`SizingFunction` is passed
-    :param fh: A call-back function that accepts an array of points and returns an array of desired triangular mesh sizes close by to each point in the passed array.
-    :type fh: A function object, optional if no :class:`SizingFunction` is passed.
-    :param bbox: bounding box containing domain extents.
-    :type bbox: tuple with size (2*dim). For example, in 2D `(zmin, zmax, xmin, xmax)`. Optional if no :class:`SizingFunction` is passed.
-    :param hmin: minimum triangular edgelength populating the domain in meters.
-    :type hmin: float64,optional if no :class:`SizingFunction` is passed.
-    :param pfix: points that you wish you constrain in location.
-    :type pfix: nested list [num_fixed_points x dim], optional
 
-    :return: object populated with meta-data.
-    :rtype: :class:`MeshGenerator` object
+def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
+    r"""Improve an existing 3D mesh by removing degenerate elements called
+    commonly referred to as `slivers`.
+
+    :param points:
+        The name of a SEG-y or binary file containing a seismic velocity model
+    :type filename: ``string``
+    :param domain:
+        Either a :class:`geometry` or a function that takes a point and returns the
+        signed nearest distance to the domain boundary Ω
+    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
+    :param cell_size:
+        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
+    :type cell_size: A :class:`cell_size` object or a function object.
+    :param h0:
+        The minimum element size in the domain
+    :type h0: `float`
+    :param comm:
+        MPI4py communicator
+    :type comm: MPI4py communicator object, optional
+
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *nscreen* (``float``) --
+            Output to the screen `nscreen` timestep. (default==1)
+        * *max_iter* (``float``) --
+            Maximum number of meshing iterations. (default==50)
+        * *seed* (``float`` or ``int``) --
+            Psuedo-random seed to initialize meshing points.
+        * *perform_checks* (`boolean`) --
+            Whether or not to perform mesh linting/mesh cleanup. (default==False)
+        * *pfix* (`array-like`) --
+            An array of points to constrain in the mesh. (default==None)
+        * *axis* (`int`) --
+            The axis to decompose the mesh (1,2, or 3). (default==1)
+        * *min_dh_bound* (`float`) --
+            The minimum allowable dihedral angle bound. (default==10 degrees)
+        * *max_dh_bound* (`float`) --
+            The maximum allowable dihedral angle bound. (default==170 degrees)
+
     """
+    comm = comm or MPI.COMM_WORLD
+    if comm.rank > 0:
+        warnings.warn("Sliver removal only works in serial for now")
+        return True, True
 
-    def __init__(
-        self,
-        SizingFunction=None,
-        fd=None,
-        fh=None,
-        bbox=None,
-        hmin=None,
-        pfix=None,
-    ):
-        self.SizingFunction = SizingFunction
-        self.fd = fd
-        self.fh = fh
-        self.bbox = bbox
-        self.hmin = hmin
-        self.pfix = pfix
+    opts.update(kwargs)
+    _parse_kwargs(kwargs)
 
-    # SETTERS AND GETTERS
-    @property
-    def SizingFunction(self):
-        return self.__SizingFunction
+    dim = points.shape[1]
+    if dim == 2:
+        raise Exception("Mesh improvement currently on works in 3D")
 
-    @SizingFunction.setter
-    def SizingFunction(self, value):
-        self.__SizingFunction = value
+    # unpack domain
+    fd, bbox0 = _unpack_domain(domain)
 
-    @property
-    def fd(self):
-        return self.__fd
+    fh, bbox1 = _unpack_sizing(cell_size)
 
-    @fd.setter
-    def fd(self, value):
-        self.__fd = value
+    # take maxmin of boxes
+    bbox = _minmax(bbox0, bbox1)
 
-    @property
-    def fh(self):
-        return self.__fh
+    if not isinstance(bbox, tuple):
+        raise ValueError("`bbox` must be a tuple")
 
-    @fh.setter
-    def fh(self, value):
-        self.__fh = value
+    if opts["max_iter"] < 0:
+        raise ValueError("`max_iter` must be > 0")
+    max_iter = opts["max_iter"]
 
-    @property
-    def bbox(self):
-        return self.__bbox
+    geps = 1e-1 * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
+    min_dh_bound = opts["min_dh_bound"] * math.pi / 180
+    max_dh_bound = opts["max_dh_bound"] * math.pi / 180
 
-    @bbox.setter
-    def bbox(self, value):
-        if value is None:
-            self.__bbox = value
+    DT = _select_cgal_dim(dim)
+
+    p = points
+
+    N = len(p)
+
+    print(
+        "Commencing sliver removal with %d vertices on rank %d." % (N, comm.rank),
+        flush=True,
+    )
+
+    count = 0
+    pold = None
+    nscreen = opts["nscreen"]
+
+    while True:
+
+        start = time.time()
+
+        # Using CGAL's incremental Delaunay triangulation capabilities.
+        if count == 0:
+            dt = DT()
+            dt.insert(p.flatten().tolist())
         else:
-            assert (
-                len(value) >= 4 and len(value) <= 6
-            ), "bbox has wrong number of values. either 4 or 6."
-            self.__bbox = value
+            to_move = np.where(_dist(p, pold) > 0)[0]
+            dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
 
-    @property
-    def hmin(self):
-        return self.__hmin
+        # Get the current topology of the triangulation
+        p, t = _get_topology(dt)
 
-    @hmin.setter
-    def hmin(self, value):
-        self.__hmin = value
+        pold = p.copy()
 
-    @property
-    def pfix(self):
-        return self.__pfix
+        # Remove points outside the domain
+        t = _remove_triangles_outside(p, t, fd, geps)
 
-    @pfix.setter
-    def pfix(self, value):
-        self.__pfix = value
-
-    ### PRIVATE METHODS ###
-    def _get_topology(self, dt):
-        """ Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
-        p = dt.get_finite_vertices()
-        t = dt.get_finite_cells()
-        return p, t
-
-    ### PUBLIC METHODS ###
-    def build(  # noqa: ignore=C901
-        self,
-        SizingFunction=None,
-        points=None,
-        max_iter=50,
-        nscreen=1,
-        seed=0,
-        comm=None,
-        axis=0,
-        perform_checks=False,
-        mesh_improvement=False,
-        min_dh_bound=10,
-        max_dh_bound=170,
-        enforce_sdf=True,
-    ):
-        """
-         Using callbacks to a sizing function and signed distance field build a simplical mesh.
-
-        :param max_iter: maximum number of iterations (default==50)
-        :type max_iter: int, optional
-        :param nscreen: output to screen every nscreen iterations (default==1)
-        :type nscreen: int, optional
-        :param seed: Random seed to ensure results are deterministic (default==0)
-        :type seed: int, optional
-        :param points: initial point distribution to commence mesh generation (default==None)
-        :type points: numpy.ndarray[num_points x dimension], optional
-        :param comm: communicator for parallel execution (default==None)
-        :type comm: MPI4py communicator object generated when initializing MPI environment, optional.
-        :param axis: axis to decomp the domain wrt for parallel execution (default==0)
-        :type axis: int, required if parallel.
-        :param perform_checks: run serial mesh linting (default==False)
-        :type perform_checks: logical, optional
-        :param min_dh_bound: minimum dihedral angle allowed (default=5)
-        :type min_dh_bound: float64, optional
-        :param mesh_improvement: run 3D sliver perturbation mesh improvement (default=False)
-        :type mesh_improvement: logical, optional
-        :type enforce_sdf: whether to enforce domain boundaries with SDF (default=True)
-        :param enforce_sdf: logical, optional
-
-        :return: vertices of simplical mesh
-        :rtype: numpy.ndarray[num_points x dimension]
-        :return: cells of simplicial mesh
-        :rtype: numpy.ndarray[num_cells x (dimension + 1)]
-        """
-        comm = comm or MPI.COMM_WORLD
-        if self.SizingFunction is not None:
-            # if :class:`SizingFunction` is passed, grab that data.
-            _ef = self.SizingFunction
-            fh = _ef.interpolant
-            fd = _ef.fd
-            bbox = _ef.bbox
-            h0 = _ef.hmin
-        else:
-            # else it had to have been passed to constructor
-            fh = self.fh
-            fd = self.fd
-            bbox = self.bbox
-            h0 = self.hmin
-
-        _pfix = self.pfix
-        _axis = axis
-        _points = points
-
-        # configure parallel computing env.
-        if comm.size > 1:
-            PARALLEL = True
-            rank = comm.Get_rank()
-            size = comm.Get_size()
-        else:
-            PARALLEL = False
-            rank = 0
-            size = 1
-
-        if mesh_improvement and comm.size > 1:
-            PARALLEL = False
-            if rank > 0:
-                # all ranks exit!
-                return True, True
-
-        if mesh_improvement and points is None:
-            raise Exception("Mesh improvement requires an initial point set.")
-
-        # set random seed to ensure deterministic results for mesh generator
-        if rank == 0:
-            print("Setting psuedo-random number seed to " + str(seed), flush=True)
-        np.random.seed(seed)
-
-        dim = int(len(bbox) / 2)
-        bbox = np.array(bbox).reshape(-1, 2)
-
-        if mesh_improvement and dim == 2:
-            raise Exception("Mesh improvement currently on works in 3D")
-
-        L0mult = 1 + 0.4 / 2 ** (dim - 1)
-        delta_t = 0.1
-        geps = 1e-1 * h0
-        deps = np.sqrt(np.finfo(np.double).eps) * h0
-        min_dh_bound *= math.pi / 180
-        max_dh_bound *= math.pi / 180
-
-        # select back-end CGAL call
-        if dim == 2:
-            DT = DT2
-        elif dim == 3:
-            DT = DT3
-
-        if _pfix is not None:
-            if PARALLEL:
-                raise Exception("Fixed points are not yet supported in parallel.")
-            else:
-                pfix = np.array(_pfix, dtype="d")
-                nfix = len(pfix)
-            if rank == 0:
-                print(
-                    "Constraining " + str(nfix) + " fixed points..",
-                    flush=True,
-                )
-        else:
-            pfix = np.empty((0, dim))
-            nfix = 0
-
-        if _points is None:
-            # If the user has NOT supplied points
-            if PARALLEL:
-                # 1a. Localize mesh size function grid.
-                fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
-                # 1b. Create initial points in parallel in local box owned by rank
-                p = mutils.make_init_points(bbox, rank, size, _axis, h0, dim)
-            else:
-                # 1. Create initial distribution in bounding box (equilateral triangles)
-                p = np.mgrid[
-                    tuple(slice(min, max + h0, h0) for min, max in bbox)
-                ].astype(float)
-                p = p.reshape(dim, -1).T
-
-            # 2. Remove points outside the region, apply the rejection method
-            p = p[fd(p) < geps]  # Keep only d<0 points
-            r0 = fh(p)
-            r0m = r0.min()
-            # Make sure decimation occurs uniformly accross ranks
-            if PARALLEL:
-                r0m = comm.allreduce(r0m, op=MPI.MIN)
-            p = np.vstack(
-                (
-                    pfix,
-                    p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
-                )
+        # Sliver removal
+        if count != (max_iter - 1):
+            num_move = 0
+            # calculate dihedral angles in mesh
+            dh_angles = geometry.calc_dihedral_angles(p, t)
+            out_of_bounds = np.argwhere(
+                (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
             )
-            if PARALLEL:
-                # min x min y min z max x max y max z
-                extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-                extent[_axis] -= h0
-                extent[_axis + dim] += h0
-                extents = [comm.bcast(extent, r) for r in range(size)]
-        else:
-            # If the user has supplied initial points
-            if PARALLEL:
-                # Domain decompose and localize points
-                p = None
-                if rank == 0:
-                    blocks, extents = decomp.blocker(
-                        points=_points, rank=rank, num_blocks=size, axis=_axis
-                    )
-                else:
-                    blocks = None
-                    extents = None
-                fh = migration.localize_sizing_function(fh, h0, bbox, dim, _axis, comm)
-                # send points to each subdomain
-                p, extents = migration.localize_points(blocks, extents, comm, dim)
-                extent = extents[rank]
-            else:
-                p = _points
+            ele_nums = np.floor(out_of_bounds / 6).astype("int")
+            ele_nums, ix = np.unique(ele_nums, return_index=True)
 
-        N = len(p)
-
-        count = 0
-        print(
-            "Commencing mesh generation with %d vertices on rank %d." % (N, rank),
-            flush=True,
-        )
-
-        def dist(p1, p2):
-            return np.sqrt(((p1 - p2) ** 2).sum(1))
-
-        pold = None
-        while True:
-
-            # 3. (Re)-triangulation by the Delaunay algorithm
-            start = time.time()
-
-            # Using CGAL's incremental Delaunay triangulation capabilities.
-            if not mesh_improvement:
-                dt = DT()
-                dt.insert(p.flatten().tolist())
-            else:
-                if count == 0:
-                    dt = DT()
-                    dt.insert(p.flatten().tolist())
-                else:
-                    to_move = np.where(dist(p, pold) > 0)[0]
-                    dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
-
-            # Get the current topology of the triangulation
-            p, t = self._get_topology(dt)
-
-            pold = p.copy()
-
-            N = p.shape[0]
-
-            if PARALLEL:
-                exports = migration.enqueue(extents, p, t, rank, size, dim=dim)
-                recv = migration.exchange(comm, rank, size, exports, dim=dim)
-                recv_ix = len(recv)
-                dt.insert(recv.flatten().tolist())
-                p, t = self._get_topology(dt)
-                # remove entities will all vertices outside local block
-                p, t, inv = geometry.remove_external_entities(
-                    p,
-                    t,
-                    extent,
-                    dim=dim,
-                )
-                N = p.shape[0]
-
-            # Remove vertices outside the domain
-            pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
-            t = t[fd(pmid) < -geps]  # Keep interior triangles
-
-            # 4. Describe each bar by a unique pair of nodes
-            bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
-            if dim == 3:
-                bars = np.concatenate(
-                    (bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
-                )
-
-            bars = mutils.unique_rows(
-                np.ascontiguousarray(bars, dtype=np.uint32)
-            )  # Bars as node pairs
-
-            # Sliver removal
-            if mesh_improvement and count != (max_iter - 1):
-                num_move = 0
-                # calculate dihedral angles in mesh
-                dh_angles = geometry.calc_dihedral_angles(p, t)
-                out_of_bounds = np.argwhere(
-                    (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
-                )
-                ele_nums = np.floor(out_of_bounds / 6).astype("int")
-                ele_nums, ix = np.unique(ele_nums, return_index=True)
-
-                if count % nscreen == 0:
-                    print(
-                        "On rank: "
-                        + str(rank)
-                        + " There are "
-                        + str(len(ele_nums))
-                        + " slivers...",
-                        flush=True,
-                    )
-
-                move = t[ele_nums, 0]
-                num_move = move.size
-                if num_move == 0:
-                    print("Termination reached...No slivers detected!", flush=True)
-                    p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
-                    return p, t
-
-                p0, p1, p2, p3 = (
-                    p[t[ele_nums, 0], :],
-                    p[t[ele_nums, 1], :],
-                    p[t[ele_nums, 2], :],
-                    p[t[ele_nums, 3], :],
-                )
-
-                # perturb vector is based on INCREASING circumsphere's radius
-                perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-                perturb[np.isinf(perturb)] = 1.0
-
-                # normalize perturbation vector
-                perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
-                perturb /= perturb_norm[:, None]
-
-                # perturb % of local mesh size
-                p[move] += 0.10 * h0 * perturb
-
-            if not mesh_improvement:
-                # 6. Move mesh points based on bar lengths L and forces F
-                barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
-                L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
-                L[L == 0] = np.finfo(float).eps
-                hbars = fh(p[bars].sum(1) / 2)
-                L0 = (
-                    hbars
-                    * L0mult
-                    * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
-                )
-                F = L0 - L
-                F[F < 0] = 0  # Bar forces (scalars)
-                Fvec = (
-                    F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
-                )  # Bar forces (x,y components)
-
-                Ftot = mutils.dense(
-                    bars[:, [0] * dim + [1] * dim],
-                    np.repeat([list(range(dim)) * 2], len(F), axis=0),
-                    np.hstack((Fvec, -Fvec)),
-                    shape=(N, dim),
-                )
-
-                Ftot[:nfix] = 0  # Force = 0 at fixed points
-
-                if PARALLEL:
-                    if count < max_iter - 1:
-                        p += delta_t * Ftot
-                else:
-                    p += delta_t * Ftot  # Update node positions
-
-            else:
-                # no movement if mesh improvement (from forces)
-                maxdp = 0.0
-
-            # 7. Bring outside points back to the boundary
-            d = fd(p)
-            ix = d > 0  # Find points outside (d>0)
-
-            if ix.any() and enforce_sdf:
-
-                def deps_vec(i):
-                    a = [0] * dim
-                    a[i] = deps
-                    return a
-
-                dgrads = [(fd(p[ix] + deps_vec(i)) - d[ix]) / deps for i in range(dim)]
-                dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
-                dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
-                p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
-
-            if count % nscreen == 0 and rank == 0 and not mesh_improvement:
-                maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
-
-            # 8. Number of iterations reached
-            if count == max_iter - 1:
-                if rank == 0:
-                    print(
-                        "Termination reached...maximum number of iterations reached.",
-                        flush=True,
-                    )
-                if PARALLEL:
-                    p, t = migration.aggregate(p, t, comm, size, rank, dim=dim)
-                if rank == 0 and perform_checks:
-                    p, t = geometry.linter(p, t, dim=dim)
-                break
-
-            # 9. Delete ghost points
-            if PARALLEL:
-                p = np.delete(p, inv[-recv_ix::], axis=0)
-                comm.barrier()
-
-            if count % nscreen == 0 and rank == 0:
-                if PARALLEL:
-                    print("On rank 0: ", flush=True)
+            if count % nscreen == 0:
                 print(
-                    "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
-                    % (count + 1, maxdp, len(p), len(t)),
+                    "On rank: "
+                    + str(comm.rank)
+                    + " There are "
+                    + str(len(ele_nums))
+                    + " slivers...",
                     flush=True,
                 )
 
-            count += 1
+            move = t[ele_nums, 0]
+            num_move = move.size
+            if num_move == 0:
+                print("Termination reached...no slivers detected!", flush=True)
+                p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+                return p, t
 
-            end = time.time()
-            if rank == 0 and count % nscreen == 0:
-                print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+            p0, p1, p2, p3 = (
+                p[t[ele_nums, 0], :],
+                p[t[ele_nums, 1], :],
+                p[t[ele_nums, 2], :],
+                p[t[ele_nums, 3], :],
+            )
 
-        return p, t
+            # perturb vector is based on INCREASING circumsphere's radius
+            perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+            perturb[np.isinf(perturb)] = 1.0
+
+            # normalize perturbation vector
+            perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+            perturb /= perturb_norm[:, None]
+
+            # perturb % of local mesh size
+            p[move] += 0.10 * h0 * perturb
+
+        # Bring outside points back to the boundary
+        p = _project_points_back(p, fd, deps)
+
+        # Number of iterations reached, stop.
+        if count == (max_iter - 1):
+            p, t = _termination(p, t, opts, comm)
+            break
+
+        count += 1
+
+        end = time.time()
+        if comm.rank == 0 and count % nscreen == 0:
+            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+
+    return p, t
+
+
+def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
+    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
+       and signed distance function :class:`domain`
+
+    :param domain:
+        Either a :class:`geometry` or a function that takes a point and returns the
+        signed nearest distance to the domain boundary Ω
+    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
+    :param cell_size:
+        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
+    :type cell_size: A :class:`cell_size` object or a function object.
+    :param h0:
+        The minimum element size in the domain
+    :type h0: `float`
+    :param comm:
+        MPI4py communicator
+    :type comm: MPI4py communicator object, optional
+
+    :param \**kwargs:
+        See below
+
+    :Keyword Arguments:
+        * *bbox* (``tuple``) --
+            Bounding box containing domain extents.
+        * *nscreen* (``float``) --
+            Output to the screen `nscreen` timestep. (default==1)
+        * *max_iter* (``float``) --
+            Maximum number of meshing iterations. (default==50)
+        * *seed* (``float`` or ``int``) --
+            Psuedo-random seed to initialize meshing points.
+        * *perform_checks* (`boolean`) --
+            Whether or not to perform mesh linting/mesh cleanup. (default==False)
+        * *pfix* (`array-like`) --
+            An array of points to constrain in the mesh. (default==None)
+        * *axis* (`int`) --
+            The axis to decompose the mesh (1,2, or 3). (default==1)
+
+    :return: points: vertex coordinates of mesh
+    :rtype: points: (numpy.ndarray[`float` x dim])
+    :return: t: mesh connectivity table.
+    :rtype: t: numpy.ndarray[`int` x (dim + 1)]
+
+    """
+    comm = comm or MPI.COMM_WORLD
+
+    # check call was correct
+    opts.update(kwargs)
+    _parse_kwargs(kwargs)
+
+    # unpack domain
+    fd, bbox0 = _unpack_domain(domain)
+
+    fh, bbox1 = _unpack_sizing(cell_size)
+
+    # take maxmin of boxes
+    bbox = _minmax(bbox0, bbox1)
+
+    if not isinstance(bbox, tuple):
+        raise ValueError("`bbox` must be a tuple")
+
+    # check bbox shape
+    dim = int(len(bbox) / 2)
+    bbox = np.array(bbox).reshape(-1, 2)
+
+    # check h0
+    if h0 < 0:
+        raise ValueError("`h0` must be > 0")
+
+    if opts["max_iter"] < 0:
+        raise ValueError("`max_iter` must be > 0")
+    max_iter = opts["max_iter"]
+
+    np.random.seed(opts["seed"])
+
+    """These parameters originate from the original DistMesh"""
+    L0mult = 1 + 0.4 / 2 ** (dim - 1)
+    delta_t = 0.1
+    geps = 1e-1 * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
+
+    DT = _select_cgal_dim(dim)
+
+    pfix, nfix = _unpack_pfix(dim, opts, comm)
+
+    fh, p, extents = _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm)
+
+    N = p.shape[0]
+
+    assert N > 0, "No vertices to mesh with!"
+
+    count = 0
+    print(
+        "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
+        flush=True,
+    )
+
+    nscreen = opts["nscreen"]
+    while True:
+
+        start = time.time()
+
+        # (Re)-triangulation by the Delaunay algorithm
+        dt = DT()
+        dt.insert(p.flatten().tolist())
+
+        # Get the current topology of the triangulation
+        p, t = _get_topology(dt)
+
+        # Add ghost points to perform Delaunay in parallel.
+        if comm.size > 1:
+            p, t, inv, recv_ix = _add_ghost_vertices(p, t, dt, extents, comm)
+
+        # Remove points outside the domain
+        t = _remove_triangles_outside(p, t, fd, geps)
+
+        # Compute the forces on the bars
+        Ftot = _compute_forces(p, t, fh, h0, L0mult)
+
+        Ftot[:nfix] = 0  # Force = 0 at fixed points
+
+        # Last timestep in parallel, we don't move points
+        if comm.size > 1:
+            if count < max_iter - 1:
+                p += delta_t * Ftot
+        else:
+            p += delta_t * Ftot  # Update positions
+
+        # Bring outside points back to the boundary
+        p = _project_points_back(p, fd, deps)
+
+        # Number of iterations reached, stop.
+        if count == (max_iter - 1):
+            p, t = _termination(p, t, opts, comm)
+            break
+
+        if comm.size > 1:
+            # If continuing on, delete ghost points
+            p = np.delete(p, inv[-recv_ix::], axis=0)
+            comm.barrier()
+
+        # Show the user some progress so they know something is happening
+        if count % nscreen == 0 and comm.rank == 0:
+            maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
+            _display_progress(p, t, count, nscreen, maxdp, comm)
+
+        count += 1
+
+        end = time.time()
+        if comm.rank == 0 and count % nscreen == 0:
+            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+
+    return p, t
+
+
+def _minmax(bbox0, bbox1):
+    d = []
+    for i, (a, b) in enumerate(zip(bbox0, bbox1)):
+        a, b = (a, b)
+        if i % 2:
+            c = max(a, b)
+        else:
+            c = min(a, b)
+        d.append(c)
+    return tuple(d)
+
+
+def _unpack_sizing(cell_size):
+    if isinstance(cell_size, sizing.SizeFunction):
+        bbox = cell_size.bbox
+        fh = cell_size.eval
+    elif callable(cell_size):
+        bbox = opts["bbox"]
+        fh = cell_size
+    else:
+        raise ValueError(
+            "`cell_size` must either be a function or a `cell_size` object"
+        )
+    return fh, bbox
+
+
+def _unpack_domain(domain):
+    if isinstance(domain, geometry.Rectangle):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
+        fd = domain.eval
+    elif isinstance(domain, geometry.Cube):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
+        fd = domain.eval
+    elif callable(domain):
+        # get the bbox from the name value pairs or quit
+        bbox = opts["bbox"]
+        fd = domain
+    else:
+        raise ValueError("`domain` must be a function or a :class:`geometry` object")
+    return fd, bbox
+
+
+def _parse_kwargs(kwargs):
+    for key in kwargs:
+        if key in {
+            "nscreen",
+            "max_iter",
+            "seed",
+            "perform_checks",
+            "pfix",
+            "axis",
+            "points",
+            "domain",
+            "cell_size",
+            "bbox",
+        }:
+            pass
+        else:
+            raise ValueError(
+                "Option %s with parameter %s not recognized " % (key, kwargs[key])
+            )
+
+
+def _display_progress(p, t, count, nscreen, maxdp, comm):
+    """print progress"""
+    print(
+        "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
+        % (count + 1, maxdp, len(p), len(t)),
+        flush=True,
+    )
+
+
+def _termination(p, t, opts, comm):
+    """Shut it down when reacing `max_iter`"""
+    dim = p.shape[1]
+    if comm.rank == 0:
+        print("Termination reached...maximum number of iterations reached.", flush=True)
+    if comm.size > 1:
+        # gather onto rank 0
+        p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
+    # perform linting if asked
+    if comm.rank == 0 and opts["perform_checks"]:
+        p, t = geometry.linter(p, t, dim=dim)
+    return p, t
+
+
+def _get_bars(t):
+    """Describe each bar by a unique pair of nodes"""
+    dim = t.shape[1] - 1
+    bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    if dim == 3:
+        bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
+    bars = mutils.unique_rows(
+        np.ascontiguousarray(bars, dtype=np.uint32)
+    )  # Bars as node pairs
+    return bars
+
+
+def _compute_forces(p, t, fh, h0, L0mult):
+    """Compute the forces on each edge based on the sizing function"""
+    dim = p.shape[1]
+    N = p.shape[0]
+    bars = _get_bars(t)
+    barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
+    L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
+    L[L == 0] = np.finfo(float).eps
+    hbars = fh(p[bars].sum(1) / 2)
+    L0 = hbars * L0mult * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
+    F = L0 - L
+    F[F < 0] = 0  # Bar forces (scalars)
+    Fvec = (
+        F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
+    )  # Bar forces (x,y components)
+
+    Ftot = mutils.dense(
+        bars[:, [0] * dim + [1] * dim],
+        np.repeat([list(range(dim)) * 2], len(F), axis=0),
+        np.hstack((Fvec, -Fvec)),
+        shape=(N, dim),
+    )
+    return Ftot
+
+
+def _add_ghost_vertices(p, t, dt, extents, comm):
+    """Parallel Delauany triangulation requires ghost vertices
+    to be added each meshing iteration to maintain Delaunay-hood
+    """
+    dim = p.shape[1]
+    exports = migration.enqueue(extents, p, t, comm.rank, comm.size, dim=dim)
+    recv = migration.exchange(comm, comm.rank, comm.size, exports, dim=dim)
+    recv_ix = len(recv)
+    dt.insert(recv.flatten().tolist())
+    p, t = _get_topology(dt)
+    p, t, inv = geometry.remove_external_entities(
+        p,
+        t,
+        extents[comm.rank],
+        dim=dim,
+    )
+    return p, t, inv, recv_ix
+
+
+def _remove_triangles_outside(p, t, fd, geps):
+    """Remove vertices outside the domain"""
+    dim = p.shape[1]
+    pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
+    return t[fd(pmid) < -geps]  # Keep interior triangles
+
+
+def _project_points_back(p, fd, deps):
+    """Project points outsidt the domain back within"""
+    dim = p.shape[1]
+
+    d = fd(p)
+    ix = d > 0  # Find points outside (d>0)
+    if ix.any():
+
+        def _deps_vec(i):
+            a = [0] * dim
+            a[i] = deps
+            return a
+
+        dgrads = [(fd(p[ix] + _deps_vec(i)) - d[ix]) / deps for i in range(dim)]
+        dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+        dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
+        p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
+    return p
+
+
+def _user_defined_points(dim, fh, h0, bbox, points, comm, opts):
+    """If the user has supplied initial points"""
+    if comm.size > 1:
+        # Domain decompose and localize points
+        p = None
+        if comm.rank == 0:
+            blocks, extents = decomp.blocker(
+                points=points, rank=comm.rank, num_blocks=comm.size, axis=opts["axis"]
+            )
+        else:
+            blocks = None
+            extents = None
+        fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
+        # send points to each subdomain
+        p, extents = migration.localize_points(blocks, extents, comm, dim)
+    else:
+        p = points
+        extents = None
+    return fh, p, extents
+
+
+def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
+    """User did not specify initial points"""
+    if comm.size > 1:
+        # Localize mesh size function grid.
+        fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
+        # Create initial points in parallel in local box owned by rank
+        p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
+    else:
+        # Create initial distribution in bounding box (equilateral triangles)
+        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(float)
+        p = p.reshape(dim, -1).T
+
+    # Remove points outside the region, apply the rejection method
+    p = p[fd(p) < geps]  # Keep only d<0 points
+    r0 = fh(p)
+    r0m = r0.min()
+    # Make sure decimation occurs uniformly accross ranks
+    if comm.size > 1:
+        r0m = comm.allreduce(r0m, op=MPI.MIN)
+    p = np.vstack(
+        (
+            pfix,
+            p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
+        )
+    )
+    extents = _form_extents(p, h0, comm)
+    return fh, p, extents
+
+
+def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
+    """Form initial point set to mesh with"""
+    points = opts["points"]
+    if points is None:
+        # def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
+        fh, p, extents = _generate_initial_points(
+            h0, geps, dim, bbox, fh, fd, pfix, comm, opts
+        )
+    else:
+        fh, p, extents = _user_defined_points(dim, fh, h0, bbox, points, comm, opts)
+    return fh, p, extents
+
+
+def _form_extents(p, h0, comm):
+    dim = p.shape[1]
+    _axis = opts["axis"]
+    if comm.size > 1:
+        # min x min y min z max x max y max z
+        extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
+        extent[_axis] -= h0
+        extent[_axis + dim] += h0
+        return [comm.bcast(extent, r) for r in range(comm.size)]
+    else:
+        return []
+
+
+def _dist(p1, p2):
+    """Euclidean distance between two sets of points"""
+    return np.sqrt(((p1 - p2) ** 2).sum(1))
+
+
+def _unpack_pfix(dim, opts, comm):
+    """Unpack fixed points"""
+    if opts["pfix"] is not None:
+        if comm.size > 1:
+            raise Exception("Fixed points are not yet supported in parallel.")
+        else:
+            pfix = np.array(opts["pfix"], dtype="d")
+            nfix = len(pfix)
+        if comm.rank == 0:
+            print(
+                "Constraining " + str(nfix) + " fixed points..",
+                flush=True,
+            )
+    else:
+        pfix = np.empty((0, dim))
+        nfix = 0
+    return pfix, nfix
+
+
+def _select_cgal_dim(dim):
+    """Select back-end CGAL Delaunay call"""
+    if dim == 2:
+        return DT2
+    elif dim == 3:
+        return DT3
+
+
+def _get_topology(dt):
+    """ Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
+    p = dt.get_finite_vertices()
+    t = dt.get_finite_cells()
+    return p, t

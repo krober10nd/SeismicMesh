@@ -13,13 +13,20 @@ from SeismicMesh import (
 
 
 @pytest.mark.serial
-def test_3dmesher():
-
+@pytest.mark.parametrize(
+    "style_answer",
+    (
+        ("linear_ramp", [1388, 6592]),
+        ("edge", [1383, 6545]),
+        ("constant", [1406, 6622]),
+    ),
+)
+def test_3dmesher_domain_extension(style_answer):
+    style, answer = style_answer
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
-
-    wl = 10
+    wl = 5
     freq = 2
-    hmin = 50
+    hmin = 150
     grade = 0.005
     bbox = (-2e3, 0.0, 0.0, 1e3, 0, 1e3)
     cube = Cube(bbox)
@@ -35,7 +42,8 @@ def test_3dmesher():
         nx=10,
         ny=10,
         byte_order="little",
-        domain_pad=0.0,
+        domain_pad=200,
+        pad_style=style,
     )
 
     write_velocity_model(
@@ -46,18 +54,17 @@ def test_3dmesher():
         domain=cube,
         cell_size=ef,
         h0=hmin,
-        max_iter=25,
         perform_checks=False,
     )
 
-    points, cells = sliver_removal(points=points, cell_size=ef, domain=cube, h0=hmin)
+    points, cells = sliver_removal(points=points, domain=cube, cell_size=ef, h0=hmin)
     print(len(points), len(cells))
-    allclose([len(points), len(cells)], [16459, 89240], atol=100)
+    allclose([len(points), len(cells)], answer, atol=100)
 
-    # import meshio
+    import meshio
 
-    # meshio.write_points_cells("foo3D.vtk", points, [("tetra", cells)])
+    meshio.write_points_cells("foo3D" + style + ".vtk", points, [("tetra", cells)])
 
 
 if __name__ == "__main__":
-    test_3dmesher()
+    test_3dmesher_domain_extension()
