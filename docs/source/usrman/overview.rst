@@ -43,20 +43,6 @@ Software architecture
 
 The software is implemented in a mixed language environment (Python and C++). The Python language is used for the API while computationally expensive operations are performed in C++. The two languages are linked together with *pybind11* and installation is carried out using *cmake*. The Computational Geometry Algorithms Library [cgal]_ is used to perform geometric operations that use floating point arithmetic to avoid numerical precision issues. Besides this, several common Python packages: *Numpy*, *Scipy*, *MeshIO*, *SegyIO*, and *MPI4py* are used.
 
-The code is partitioned into two main classes. A typical workflow consists of two steps: first calling the *MeshSizeFunction* class followed by calling the *MeshGenerator* class.
-
-*MeshSizeFunction*
-^^^^^^^^^^^^^^^^^^^^^^^
-
-This convenience class creates a mesh size function :math:`f(h)` and defines the domain through a signed distance function :math:`f(d)` assuming the domain is a rectangle/cube. The user passes a number of arguments to the class. Specific arguments are detailed in the code API section of this website.
-
-*MeshGeneration*
-^^^^^^^^^^^^^^^^^^^^^^^
-
-This class takes as input a *MeshSizeFunction* object and it constructs a simplicial mesh in either serial or parallel outputting points and simplices. Additionally, it has support a mesh improvement strategy [slivers]_ aimed at removing degenerate elements that are ubiqituous in 3D Delaunay mesh generation methods.
-
-.. note ::
-    However, it can also accept a user-defined signed distance function and user-defined mesh sizing function.
 
 Inputs
 -------------------------------------------
