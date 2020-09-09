@@ -45,7 +45,7 @@ def test_3dmesher_par():
     points, cells = generate_mesh(
         h0=hmin,
         cell_size=ef,
-        domain=ef,
+        domain=cube,
         perform_checks=False,
     )
 
