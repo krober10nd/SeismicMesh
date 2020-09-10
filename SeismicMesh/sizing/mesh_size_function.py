@@ -85,7 +85,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         * *cr_max* (``float``) --
             The mesh simulated with this `dt` has this maximum Courant number (default==1.0)
         * *pad_style* (``string``) --
-             The method (`edge`, `linear_ramp`, `constant`) to pad velocity in the domain extension region (default==None)
+             The method (`edge`, `linear_ramp`, `constant`) to pad velocity in the domain pad region (default==None)
         * *domain_pad* (``float``) --
              The width of the domain pad in -z, +x, -x, +y, -y directions (default==0.0 m).
         * *units* (``string``) --
@@ -99,7 +99,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         * *byte_order* (``string``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
 
-    :return: an object with a `obj.bbox` and an `obj.eval` method .
+    :return: a :class:`SizeFunction` object with a `obj.bbox` field and an `obj.eval` method.
     :rtype: a :class:`SizeFunction` object
 
     """

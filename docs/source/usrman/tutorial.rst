@@ -4,13 +4,11 @@
 
     Under construction. Contributions very welcome!
 
-Tutorial
+Basics
 ========
 
 *SeismicMesh* supports the generation of both 2D and 3D meshes in
-either serial or parallel from seismic velocity models. It also supports the generation of
-complex mesh sizing functions that are relevant to seismological applications.
-
+either serial or parallel from seismic velocity models.
 
 Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial/parallel and 2D/3D is identical.
 
@@ -35,48 +33,34 @@ where `N` is the number of cores (e.g., 2,3,4 etc.)
     Oversubscribing the mesh generation problem to too many cores will surely lead to problems and slow downs. In general, keeping the minimum number of vertices per rank to between 20-50k/rank results in optimal performance.
 
 
-Data for examples
+Example data
 -------------------
 
 .. note::
     Users should create a directory called `velocity_models` and place their seismic velocity models there.
 
 
-Data for this 2D tutorial can be downloaded for the BP2004 benchmark model::
+A 2D model (BP2004)::
 
     wget http://s3.amazonaws.com/open.source.geoscience/open_data/bpvelanal2004/vel_z6.25m_x12.5m_exact.segy.gz
 
-and for the irregular free surface example here::
-
-    wget http://s3.amazonaws.com/open.source.geoscience/open_data/bpmodel94/velocity.segy.gz
-
-For more details about these two models, see the following link::
-
-    https://wiki.seg.org/wiki/2004_BP_velocity_estimation_benchmark_model
-    https://wiki.seg.org/wiki/1994_BP_migration_from_topography
-
-The original data for the 3D example can be downloaded here::
+A 3D model (EAGE Salt)::
 
     https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz
-
-
-For more details about this 3D data, see the following link: https://wiki.seg.org/wiki/SEG/EAGE_Salt_and_Overthrust_Models
-See example_3D.py for how to read in the binary into a Numpy array.
 
 
 File I/O and visualization of meshes
 --------------------------------------
 
-Meshes are written to disk in a variety of formats using the Python package `MeshIO` (https://pypi.org/project/meshio/). Note that *SeismicMesh* makes the assumption that the first dimension is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
+Meshes can be written to disk in a variety of formats using the Python package `meshio` (https://pypi.org/project/meshio/).
+
+.. warning::
+    Note that *SeismicMesh* makes the assumption that the first dimension is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
 
 Some things to know
 ---------------------
 
-.. warning ::
-    In order to use these mesh sizing functions, it is assumed you have a seismic velocity model
-    defined on a structured grid as was mentioned in the overview section.
-
-This seismic velocity model is passed to the *MeshSizeFunction* class along with the domain extents ::
+This seismic velocity model is passed to the `get_sizing_function_from_segy` along with the domain extents ::
 
     from SeismicMesh import get_sizing_function_from_segy
 
@@ -85,7 +69,7 @@ This seismic velocity model is passed to the *MeshSizeFunction* class along with
 
 * The user specifies the filename `fname` of the seismic velocity model (e.g., either SEG-y or binary)
 
-* The user specifies the domain extents as a tuple of coordinates in meters representing the corners of the domain::
+* The user specifies the domain extents of the *velocity model* as a tuple of coordinates in meters representing the corners of the domain::
 
 .. math::
 
@@ -97,35 +81,31 @@ This seismic velocity model is passed to the *MeshSizeFunction* class along with
 
     bbox = (z_{min}, z_{max}, x_{min}, x_{max}, y_{min}, y_{max})`
 
-* If the user wants to define a mesh with an irregular boundary (other than a cube), then they will have to use the :class:`SignedDistanceFunctionGenerator` and pass a velocity interval range that represents the region of the domain they want meshed. See the section immediately below for instructions on how to create and use a custom signed distance function from a seismic velocity model.
-
 Geometry
 ---------
 
-*SeismicMesh* can mesh any domain defined by a signed distance function. We provide three basic domain shapes: a Rectangle, a Cube, or a Circle.
+*SeismicMesh* can mesh any domain defined by a signed distance function. However, we provide some basic domain shapes: a Rectangle, a Cube, or a Circle.
 
-The user can build a rectangular 2D domain like so::
+For example::
 
     from SeismicMesh import Rectangle, Cube, Circle
 
     rectangle = Rectangle(bbox)
     cube = Cube(bbox)
-    circle = Circle(circle)
+    circle = Circle(xc=0,yc=0,r=1) # center of (0,0) with a radius of 1.0
 
 .. note::
-    A good reference for various signed distance functions can be found [here](https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm)
+    A good reference for various signed distance functions can be found at: https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
 
 
 
 Mesh size function
 -------------------------------------------
 
-Given a coordinate in :math:`R^n` where :math:`n= 2,3`, the sizing function returns the desired mesh size :mod:`h` near to that point. The mesh sizing capability provides is a convenience class that helps draft new meshes in a consistent and repeatable manner directly from available seismic velocity models. The sizing map is built on a Cartesian grid, which simplifies implementation details especially in regard to distributed memory parallelism. Furthermore, seismic velocity models are available on structured grids and thus the same grid can be used to build the sizing map on.
-
 .. note:
     Seismic velocity models often have different constant grid spacings in each dimension. The software considers this automatically based on the domain extents.
 
-The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh strategy is briefly described and psuedo code regarding how to call the :class:`MeshSizeFunction` class constructor.
+The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh sizing strategy is briefly described and psuedo code is provided.
 
 .. note :: The final mesh size map is taken as the minimum of all supplied sizing functions.
 
@@ -158,8 +138,6 @@ For instance a :math:`grad` of 50 would imply that the largest gradient in seism
 .. note:
 
     The mapping of the local standard deviation of the gradient of seismic velocity is normalized to an interval of :math:`[0,1]` so that the largest gradient is assigned the mesh resolution indicated by :math`grad` and all other grad-to-mesh-sizes are associated using a linear relationship (with a slope of 1 and y-intercept of 0).
-
-
 
 
 Courant-Friedrichs-Lewey (CFL) condition
@@ -217,33 +195,33 @@ We adopt the method to smooth the mesh size function originally proposed by [gra
 
 .. image:: ExGrade3D.jpg
 
-Domain extension
+Domain padding
 ^^^^^^^^^^^^^^^^^^^
 
 .. note::
 
-    It is assumed that the top side of the domain represents the free-surface thus no domain extension is applied there.
+    It is assumed that the top side of the domain represents the free-surface thus no domain padding applied there.
 
-In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undesirable artificial reflections off the sides of the domain however. A common approach to avoid these artificial reflections is to extend the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
+In seismology applications, the goal is often to model the propagation of an elastic or acoustic wave through an infinite domain. However, this is obviously not possible so the domain is approximated by a finite region of space. This can lead to undesirable artificial reflections off the sides of the domain however. A common approach to avoid these artificial reflections is to pad the domain and enforce absorbing boundary conditions in this extension. In terms of meshing to take this under consideration, the user has the option to specify a domain extension of variable width on all three sides of the domain like so::
 
    ef = get_sizing_function_from_segy(fname, bbox,
-       domain_extension=250, # domain will be extended by 250-m on all three sides
+       domain_pad=250, # domain will be pad by 250-m on all three sides of the domain
        ...
    )
 
-In this domain extension region, mesh resolution can be adapted according to following three different styles.
+In this domain pad, mesh resolution can be adapted according to following three different styles.
 
- * ``Linear`` - extends the seismic velocities on the edges of the domain linearly into the domain extension.
+ * ``Linear`` - pads the seismic velocities on the edges of the domain linearly increasing into the domain pad.
 
- * ``Constant`` - places a constant velocity of the users selection in the domain extension.
+ * ``Constant`` - places a constant velocity of the users selection in the domain pad.
 
- * ``Edge`` - extends the seismic velocity about the domain boundary so that velocity profile is identical to its edge values.
+ * ``Edge`` - pads the seismic velocity about the domain boundary so that velocity profile is identical to its edge values.
 
 An example of the ``edge`` style is below::
 
    ef = get_sizing_function_from_segy(fname, bbox,
-       domain_extension=250, # domain will be extended by 250-m on all three sides
-       padstyle="edge", # velocity will be extends from values at the edges of the domain
+       domain_pad=250, # domain will be extended by 250-m on all three sides
+       padstyle="edge", # velocity will be extend from values at the edges of the domain
        ...
    )
 
@@ -262,20 +240,24 @@ Mesh generation
     Connectivity is made approximately deterministic as each instance of mesh generation uses
     the same ``seed=0``. The user can specify the seed if they like.
 
-After building your signed distance function, call the ``generate_mesh`` function to generate the mesh::
+After building your signed distance function and sizing function, call the ``generate_mesh`` function to generate the mesh::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin)
+    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin)
+
+.. note::
+    `ef` is a sizing function created using get_sizing_function_from_segy
 
 You can change how many iterations are performed by altering the kwarg `max_iter`::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin, max_iter=100)
+    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin, max_iter=100)
 
-.. note :: Generally setting max_iter to between 50 to 100 iterations works best. By default it runs 50 iterations.
-
+.. note :: Generally setting max_iter to between 50 to 100 iterations produces a high quality triangulation. By default it runs 50 iterations.
 
 When executing in parallel, the user can optionally choose which axis (0, 1, or 2 [if 3D]) to decompose the domain::
 
-    points, cells = generate_mesh(domain=domain, cell_size=ef, h0=hmin, max_iter=100, axis=2)
+    points, cells = generate_mesh(domain=cube, cell_size=ef, h0=hmin, max_iter=100, axis=2)
+
+.. note :: Generally axis=1 works the best in 2D or 3D since typically mesh sizes increase in size from the free surface to the depths of the model. In this situation, the computational load tends to be better balanced. 
 
 
 Mesh improvement (*sliver* removal)
@@ -288,12 +270,12 @@ Mesh improvement (*sliver* removal)
 It is strongly encouraged to run the sliver removal method by passing the point of set of a previously generated mesh::
 
     points, cells = sliver_removal(
-        points=points, domain=cube, h0=minimum_mesh_size,
+        points=points, domain=cube, h0=minimum_mesh_size, cell_size=ef
     )
 
 .. note:: Please remember to import this method at the top of your script (e.g., `from SeismicMesh import sliver_removal`)
 
- By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
+By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already successfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 

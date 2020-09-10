@@ -49,12 +49,11 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
         The name of a SEG-y or binary file containing a seismic velocity model
     :type filename: ``string``
     :param domain:
-        Either a :class:`geometry` or a function that takes a point and returns the
-        signed nearest distance to the domain boundary Ω
-    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
+        A function that takes a point and returns the signed nearest distance to the domain boundary Ω
+    :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
     :param cell_size:
-        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
-    :type cell_size: A :class:`cell_size` object or a function object.
+        A function that can evalulate a point and return a mesh size.
+    :type cell_size: A :class:`SizeFunction` object or a function object.
     :param h0:
         The minimum element size in the domain
     :type h0: `float`
@@ -70,8 +69,6 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
             Output to the screen `nscreen` timestep. (default==1)
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
-        * *seed* (``float`` or ``int``) --
-            Psuedo-random seed to initialize meshing points.
         * *perform_checks* (`boolean`) --
             Whether or not to perform mesh linting/mesh cleanup. (default==False)
         * *pfix* (`array-like`) --
@@ -215,18 +212,16 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
 
 def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
-    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size`
-       and signed distance function :class:`domain`
+    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function :class:`domain`
 
     :param domain:
-        Either a :class:`geometry` or a function that takes a point and returns the
-        signed nearest distance to the domain boundary Ω
-    :type domain: A :class:`geometry` object (e.g., Rectangle, Cube, or Circle) or a function object.
+        A function that takes a point and returns the signed nearest distance to the domain boundary Ω.
+    :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
     :param cell_size:
         Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
     :type cell_size: A :class:`cell_size` object or a function object.
     :param h0:
-        The minimum element size in the domain
+        The minimum element size in the domain.
     :type h0: `float`
     :param comm:
         MPI4py communicator
@@ -237,13 +232,13 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
 
     :Keyword Arguments:
         * *bbox* (``tuple``) --
-            Bounding box containing domain extents.
+            Bounding box containing domain extents. REQUIRED IF NOT USING :class:`cell_size`
         * *nscreen* (``float``) --
             Output to the screen `nscreen` timestep. (default==1)
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *seed* (``float`` or ``int``) --
-            Psuedo-random seed to initialize meshing points.
+            Psuedo-random seed to initialize meshing points. (default==0)
         * *perform_checks* (`boolean`) --
             Whether or not to perform mesh linting/mesh cleanup. (default==False)
         * *pfix* (`array-like`) --

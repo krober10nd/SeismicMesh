@@ -32,6 +32,9 @@ build *SeismicMesh*:
 .. note ::
     CGAL requires Boost, MPFR and GMP. These packages may already be installed on your standard Linux box.
 
+.. warning ::
+    Make sure your package manager is downloading CGAL >= 5.0 otherwise you will not be able to install *SeismicMesh
+
 
 
 
@@ -46,7 +49,7 @@ $  pip install -e .
     If you do not have administrative rights on your system, add the flag ``--user`` to the command above.
 
 .. warning ::
-    The preferred method of installation is: pip install SeismicMesh
+    With this said, the preferred method of installation using pypi: pip install SeismicMesh
 
 Testing
 -------
@@ -65,7 +68,7 @@ Installation on Clusters
 .. note::
     Make sure the CXX environment variable points to your intended compiler!
 
-If installing on a cluster by source with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.py`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
+If installing on a cluster by source with a local installation of ``CGAL`` and ``Boost``, you'll need to edit ``setup.cfg`` with the CMake arguments so to point the installation to the correct directories. Namely, in ``setup.py`` you'll have to edit the list called ``cmake_args`` to include ::
 
   -DCMAKE_CXX_COMPILER=+/PATH/TO/CPPCOMPILER
 
