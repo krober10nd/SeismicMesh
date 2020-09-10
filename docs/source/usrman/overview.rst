@@ -2,7 +2,7 @@ Overview
 ========
 
 
-This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. The main advantage of triangular meshes over cubes or rectangles is their ability to cost-effectively resolve variable material properties. These meshes are suitable for acoustic and elastic numerical wave propagators. A focus is placed on parallel unstructured mesh generation capabilities. A simple application program interfaces (API) written in Python enables the user to call parallel meshing algorithms that can be scaled up on distributed memory clusters.
+This software aims to create end-to-end workflows (e.g., from seismic velocity model to simulation ready mesh) to build quality two- and three-dimensional (2D and 3D) unstructured triangular and tetrahedral meshes for seismic domains. The main advantage of triangular meshes over cubes or rectangles is their ability to cost-effectively resolve variable material properties. These genereated meshes are suitable for acoustic and elastic numerical wave propagators and a focus is placed on parallel unstructured mesh generation capabilities. A simple application program interfaces (API) written in Python enables the user to call parallel meshing algorithms that can be scaled up on distributed memory clusters.
 
 *SeismicMesh* is currently being used to generate simplical meshes in 2D and 3D for acoustic and elastic wave propagators written using a Domain Specific Language called *Firedrake* [firedrake]_. These type of numerical simulations are used in Full Waveform Inversion, Reverse Time Migration, and Time Travel Tomography applications.
 
@@ -49,16 +49,15 @@ Inputs
 
 Seismic velocity model
 ^^^^^^^^^^^^^^^^^^^^^^^^
-.. note ::
-    The only required input file to generate a mesh is a velocity model defined as a numpy.ndarray grid containing velocity data at each grid point.
 
-* A velocity model is a regular Cartesian grid of values with potentially varying grid spacing in each dimension. *SeismicMesh* expects the
-  velocity model to be a numpy.ndarray and orientated so z is the first dimension, x is the second, (and y if in 3D is the 3rd dimension of the array).
-  Please make sure the velocity model grid is orientated in this format otherwise you will experience undeseriable results!
+A seismic velocity model is defined on an axis-aligned regular Cartesian grid in either 2D or 3D containing scalar values (typically the P-wave velocity speed at each grid point).
 
+Currently, *SeismicMesh* can read seismic velocity models from SEG-y files or in binary format.
 
 Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Given a point :math:`x`, the signed distance function returns the :math:`d` distance to the boundary of the domain :math:`∂ \Omega`.
 
 Let :math:`\Omega ⊂ D ∈ R^N` be the domain in :math:`N` dimensions. The boundary of the domain to-be-meshed is represented as the 0-level set of a continuous function:
 
@@ -68,17 +67,14 @@ such that:
 
 :math:`\Omega := {x ∈ D, φ(x) < 0}`
 
-where :math:`φ : D × R+ → R` is Lipschitz continuous and called the level set function. If we assume :math:`|∇φ(·)| = 0` on the set :math:`{x ∈ D, φ(x) = 0}`, then we have :math:`∂ \Omega = {x ∈ D, φ(x) = 0}` i.e., the boundary :math:`∂ \Omega` is the 0-level set of :math:`φ(·)`. The property that :math:`|∇φ(·)| = 0` is satisfied if :math:`φ(·)` is a signed distance function. Given a point :math:`x`, the signed distance function returns the :math:`d` distance to the :math:`∂ \Omega`.
-
-.. note ::
-    We provide tools to generate :math:`φ(·)` from isocontours of a velocity model. These contours can be used with the Fast Marching Method to generate a signed distance function. This makes meshing irregular geometries such as the free-surface significantly more automatic by-passing the explicit geometry tracing step.
+where :math:`φ : D × R+ → R` is Lipschitz continuous and called the level set function. If we assume :math:`|∇φ(·)| = 0` on the set :math:`{x ∈ D, φ(x) = 0}`, then we have :math:`∂ \Omega = {x ∈ D, φ(x) = 0}` i.e., the boundary :math:`∂ \Omega` is the 0-level set of :math:`φ(·)`. The property that :math:`|∇φ(·)| = 0` is satisfied if :math:`φ(·)` is a signed distance function.
 
 Mesh sizing function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`. In our case, we store a discrete version of :math:`f(h)` as a bi-linear gridded interpolant and query :math:`f(h)` during execution.
+Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`.
 
-The purpose of the :class:`MeshSizeFunction` class is to build this map directly from the seismic velocity model provided.
+The purpose of `get_sizing_function_from_segy` to build this function  directly from the seismic velocity model provided.
 
 
 *DistMesh* algorithm
@@ -104,7 +100,7 @@ Mesh adaptation
 3D *Sliver* removal
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-3D Delaunay mesh genration algorithms form degenerate elements called *slivers*. If any *sliver* exists in a 3D mesh, the FEM solution can become numerically unstable and the results unusable. Fortunately, this problem does not occur in 2D and, in 2D, a high quality mesh free of degenerate elements is easily achieved. To tackle this problem in 3D, a method similar to that of [slivers]_ was implemented. This algorithm aims at removing *slivers* while preserving the triangulation sizing distribution and domain boundary.
+3D Delaunay mesh genration algorithms form degenerate elements called *slivers*. If any *sliver* exists in a 3D mesh, the numerical solution can become unstable. Fortunately, this problem does not occur in 2D and, in 2D, a high quality mesh free of degenerate elements is easily achieved. To tackle this problem in 3D, a method similar to that of [slivers]_ was implemented. This algorithm aims at removing *slivers* while preserving the triangulation sizing distribution and domain boundary.
 
 The *sliver* removal technique fits well within the *DistMesh* framework. For example, like the mesh generation approach, the algorithm operates iteratively. Each meshing iteration, it perturbs *only* vertices associated with *slivers* so that the circumspheres' radius of the *sliver* tetrahedral increases rapidly (i.e.., gradient ascent of the circumsphere radius) [slivers]_. The method operates on an existing mesh that ideally already has a high-mesh quality and is efficient since it uses CGAL's incremental Delaunay capabilities. The perturbation of a vertex of the *sliver* leads to a local combinational change in the nearby mesh connectivity to maintain Delaunayhood and almost always destroys the *sliver* in lieu of elements with larger dihedral angles.
 
