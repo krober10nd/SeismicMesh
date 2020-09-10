@@ -15,7 +15,7 @@ Routines to perform geometrical/topological operations and calculate things on m
 ---------------------------------------------
 
 Function to build a :math:`f(h)` mesh sizing function from a seismic velocity model.
-Assumes the domain can be represented by a rectange (2D) or cube (3D) and thus builds a :math:`f(d)` accordingly.
+Assumes the domain can be represented by a rectangle (2D) or cube (3D) and thus builds a :math:`f(d)` accordingly.
 
 .. automodule:: SeismicMesh.sizing
     :members:
