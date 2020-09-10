@@ -107,6 +107,7 @@ Mesh size function
 
 The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh sizing strategy is briefly described and pseudo code is provided.
 
+
 .. note :: The final mesh size map is taken as the minimum of all supplied sizing functions.
 
 Wavelength-to-gridscale
@@ -258,6 +259,7 @@ When executing in parallel, the user can optionally choose which axis (0, 1, or 
     points, cells = generate_mesh(domain=cube, cell_size=ef, h0=hmin, max_iter=100, axis=2)
 
 .. note :: Generally axis=1 works the best in 2D or 3D since typically mesh sizes increase in size from the free surface to the depths of the model. In this situation, the computational load tends to be better balanced.
+
 
 
 Mesh improvement (*sliver* removal)
