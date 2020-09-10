@@ -16,7 +16,7 @@ Assuming you've coded a short Python script to call *SeismicMesh* (similar to wh
 
     python your_script.py
 
-Distributed memory parallelism can be used by first writing an extra import statement for  ``mpi4py`` (``import mpipy``) near your other imports and then writing the following one near the top of your script but after your other package imports and before you call the *SeismicMesh* API)::
+Distributed memory parallelism can be used by first writing an extra import statement for  ``mpi4py`` (``import mpi4py``) near your other imports. Following this write the following line near the top of your script before you call the *SeismicMesh* API)::
 
     comm = MPI.COMM_WORLD
 
@@ -105,7 +105,8 @@ Mesh size function
 .. note:
     Seismic velocity models often have different constant grid spacings in each dimension. The software considers this automatically based on the domain extents.
 
-The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh sizing strategy is briefly described and psuedo code is provided.
+The notion of an adequate mesh size is determined by a combination of the physics of acoustic/elastic wave propagation, the desired numerical accuracy of the solution (e.g., spatial polynomial order, timestepping method, etc.), and allowable computational cost of the model amongst other things. In the following sub-sections, each available mesh sizing strategy is briefly described and pseudo code is provided.
+
 
 .. note :: The final mesh size map is taken as the minimum of all supplied sizing functions.
 
@@ -130,7 +131,7 @@ Seismic domains are known for sharp gradients in material properties, such as se
 For instance a :math:`grad` of 50 would imply that the largest gradient in seismic P-wave velocity is mapped to a minimum resolution of 50-m.::
 
     ef = get_sizing_function_from_segy(fname, bbox,
-        grad=50, # the desired mesh size in meters near the shaprest gradient in the domain
+        grad=50, # the desired mesh size in meters near the sharpest gradient in the domain
     )
 
 .. image:: SlopeStrat3D.jpg
@@ -257,7 +258,8 @@ When executing in parallel, the user can optionally choose which axis (0, 1, or 
 
     points, cells = generate_mesh(domain=cube, cell_size=ef, h0=hmin, max_iter=100, axis=2)
 
-.. note :: Generally axis=1 works the best in 2D or 3D since typically mesh sizes increase in size from the free surface to the depths of the model. In this situation, the computational load tends to be better balanced. 
+.. note :: Generally axis=1 works the best in 2D or 3D since typically mesh sizes increase in size from the free surface to the depths of the model. In this situation, the computational load tends to be better balanced.
+
 
 
 Mesh improvement (*sliver* removal)
