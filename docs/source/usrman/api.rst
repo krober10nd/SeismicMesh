@@ -3,7 +3,7 @@ Modules
 
 Here we document the public API
 
-*SeimsicMesh.Geometry*
+*SeimsicMesh.geometry*
 -------------------------------
 
 Routines to perform geometrical/topological operations and calculate things on meshes.
