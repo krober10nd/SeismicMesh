@@ -237,7 +237,6 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
         pix, _, jx = np.unique(t, return_index=True, return_inverse=True)
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
-        pix = ix[pix]
 
     # entity orientation is CCW
     flip = simp_vol(p, t) < 0
