@@ -25,6 +25,7 @@ def calc_re_ratios(vertices, entities, dim=2):
         bars = np.concatenate(
             [entities[:, [0, 1]], entities[:, [1, 2]], entities[:, [2, 0]]]
         )
+        cc = c_cgal.circumballs2(vertices[entities.flatten()])
     elif dim == 3:
         bars = np.concatenate(
             [
@@ -36,18 +37,15 @@ def calc_re_ratios(vertices, entities, dim=2):
                 entities[:, [2, 3]],
             ]
         )
+        cc = c_cgal.circumballs3(vertices[entities.flatten()])
     else:
         raise ValueError("Dimension invalid")
+    r = cc[:, -1]
     bar_vec = vertices[bars[:, 0]] - vertices[bars[:, 1]]
     L = np.sqrt((bar_vec ** 2).sum(1))
     L = np.reshape(L, (3 * (dim - 1), len(entities)))
     # min edge length i every tetra
     minL = np.amin(L, axis=0)
-    if dim == 2:
-        cc = c_cgal.circumballs2(vertices[entities.flatten()])
-    elif dim == 3:
-        cc = c_cgal.circumballs3(vertices[entities.flatten()])
-    r = cc[:, -1]
     return np.sqrt(r) / minL
 
 
@@ -237,7 +235,6 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
         pix, _, jx = np.unique(t, return_index=True, return_inverse=True)
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
-        pix = ix[pix]
 
     # entity orientation is CCW
     flip = simp_vol(p, t) < 0

@@ -40,7 +40,6 @@ __all__ = [
     "Circle",
     "drectangle",
     "dblock",
-    "dintersect",
     "calc_dihedral_angles",
     "do_any_overlap",
     "linter",
