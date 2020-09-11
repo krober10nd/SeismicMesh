@@ -9,7 +9,8 @@ def blocker(points, rank, num_blocks, axis=0):
     num_points, dim = points.shape
     EPS = np.finfo(float).eps
 
-    assert dim > 2 or dim < 3, "dimensions of points are wrong"
+    if dim < 2 or dim > 3: 
+        raise ValueError("Dimensions of points are not supported")
     assert num_points // num_blocks > 1, "too few points for chosen num_blocks"
 
     x_lims = points[:, 0].min() - EPS, points[:, 0].max() + EPS
