@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://github.com/krober10nd/SeismicMesh"><img alt="SeismicMesh" src="https://user-images.githubusercontent.com/18619644/92964244-28f31d00-f44a-11ea-9aa0-3d8ed0a1b60e.jpg" width="40%"></a>
+  <p align="center">Create high-quality 2D/3D meshes from seismic velocity models.</p>
+</p>
+
+
 [![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/par3d.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d)
 [![CodeCov](https://codecov.io/gh/krober10nd/SeismicMesh/branch/par3d/graph/badge.svg)](https://codecov.io/gh/krober10nd/SeismicMesh)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
