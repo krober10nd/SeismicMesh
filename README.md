@@ -168,7 +168,7 @@ ef = get_sizing_function_from_segy(
     dt=0.001,
     freq=2,
     wl=5,
-    grade=0.25,
+    grade=0.15,
     hmax=5e3,
     domain_pad=250,
     pad_style="linear_ramp",
@@ -178,7 +178,7 @@ ef = get_sizing_function_from_segy(
     byte_order="big"
 )
 
-points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef)
+points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(
