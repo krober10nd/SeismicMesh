@@ -42,11 +42,11 @@ opts = {
 
 
 def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
-    r"""Improve an existing 3D mesh by removing degenerate elements called
+    r"""Improve an existing 3D mesh by removing degenerate elements
     commonly referred to as `slivers`.
 
     :param points:
-        The name of a SEG-y or binary file containing a seismic velocity model
+        An array of points that describe the vertices of an existing (higher-quality) mesh.
     :type filename: ``string``
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
