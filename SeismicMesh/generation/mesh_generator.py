@@ -42,11 +42,11 @@ opts = {
 
 
 def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
-    r"""Improve an existing 3D mesh by removing degenerate elements called
+    r"""Improve an existing 3D mesh by removing degenerate elements
     commonly referred to as `slivers`.
 
     :param points:
-        The name of a SEG-y or binary file containing a seismic velocity model
+        An array of points that describe the vertices of an existing (higher-quality) mesh.
     :type filename: ``string``
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
@@ -100,6 +100,10 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
     # take maxmin of boxes
     bbox = _minmax(bbox0, bbox1)
+
+    # rebuild the Rectangle or cube if domain padding
+    if bbox0 != bbox1:
+        fd = geometry.Cube(bbox).eval
 
     if not isinstance(bbox, tuple):
         raise ValueError("`bbox` must be a tuple")
@@ -271,6 +275,16 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
 
     # check bbox shape
     dim = int(len(bbox) / 2)
+
+    # rebuild the Rectangle or Cube if domain padding
+    if bbox0 != bbox1:
+        if dim == 2:
+            tmp = geometry.Rectangle(bbox)
+        elif dim == 3:
+            tmp = geometry.Cube(bbox)
+
+        fd = tmp.eval
+
     bbox = np.array(bbox).reshape(-1, 2)
 
     # check h0
@@ -446,6 +460,8 @@ def _termination(p, t, opts, comm):
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
+    elif comm.rank == 0:
+        p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
     return p, t
 
 

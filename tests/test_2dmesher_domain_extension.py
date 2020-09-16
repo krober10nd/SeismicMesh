@@ -16,9 +16,9 @@ from SeismicMesh import (
 @pytest.mark.parametrize(
     "style_answer",
     (
-        ("linear_ramp", [7671, 14996]),
-        ("edge", [7673, 15000]),
-        ("constant", [7671, 14996]),
+        ("linear_ramp", [9440, 18532]),
+        ("edge", [9769, 19154]),
+        ("constant", [9440, 18532]),
     ),
 )
 def test_2dmesher_domain_extension(style_answer):
@@ -45,7 +45,7 @@ def test_2dmesher_domain_extension(style_answer):
         domain_pad=1e3,
     )
     plot_sizing_function(ef)
-    write_velocity_model(fname)
+    write_velocity_model(fname, bbox=bbox)
 
     points, cells = generate_mesh(
         rectangle,

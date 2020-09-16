@@ -47,7 +47,7 @@ def test_3dmesher_domain_extension(style_answer):
     )
 
     write_velocity_model(
-        fname, nz=20, nx=10, ny=10, byte_order="little", ofname="testing"
+        fname, nz=20, nx=10, ny=10, byte_order="little", ofname="testing", bbox=bbox
     )
 
     points, cells = generate_mesh(
