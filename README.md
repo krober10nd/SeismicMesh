@@ -145,8 +145,8 @@ bbox = (-4200, 0, 0, 13520, 0, 13520)
 hmin = 150.0
 
 # This file is in a big Endian binary format, so we must tell the program the shape of the velocity model.
+path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
 if comm.rank == 0:
-    path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
     # Extract binary file Saltf@@ from SALTF.ZIP
     zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
 
