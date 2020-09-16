@@ -209,11 +209,3 @@ Learn the basics about the program and the application domain.
 
 [Tutorials](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html) -
 Tutorials that will guide you through the main features.
-
-Testing
-=======
-
-To run the SeismicMesh unit tests (and turn off plots), check out this repository and type
-```
-MPLBACKEND=Agg pytest --maxfail=1
-```
