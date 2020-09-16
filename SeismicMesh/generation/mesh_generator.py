@@ -460,7 +460,7 @@ def _termination(p, t, opts, comm):
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
-    else:
+    elif comm.rank == 0:
         p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
     return p, t
 
