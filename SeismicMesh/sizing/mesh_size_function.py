@@ -229,6 +229,11 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             byte_order=opts["byte_order"],
         )
 
+        if opts["domain_pad"] > 0.0:
+            print("Adding a domain pad to the velocity model...")
+            tmp = vp
+            _, vp, _ = _build_domain_pad(tmp, vp, opts["bbox"], opts)
+
         ofname += ".hdf5"
         print("Writing velocity model: " + ofname, flush=True)
         with h5py.File(ofname, "w") as f:
