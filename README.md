@@ -197,13 +197,13 @@ if comm.rank == 0:
     )
 ```
 
-The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the code below!
+**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the code below!**
 
 ![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
 
 ```python
 from mpi4py import MPI
-from numpy import maximum, sqrt, zeros_like
+from numpy import array, maximum, sqrt, zeros_like
 import meshio
 
 from SeismicMesh import generate_mesh, sliver_removal
@@ -229,12 +229,12 @@ def cylinder(p):
 
 
 def fh(p):
-    # NOTE: for parallel execution this logic is required
+    # Note: for parallel execution this logic is required
     # since the decomposition of the sizing function passes a tuple to fh
     if type(p) == tuple:
         h = zeros_like(p[0]) + hmin
     else:
-        h = zeros_like(p) + hmin
+        h = array([hmin] * len(p))
     return h
 
 
@@ -258,7 +258,6 @@ if comm.rank == 0:
         [("tetra", cells)],
         file_format="vtk",
     )
-
 ```
 
 More information
