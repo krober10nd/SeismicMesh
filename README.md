@@ -158,8 +158,8 @@ nx, ny, nz = 676, 676, 210
 cube = Cube(bbox)
 
 # A graded sizing function is created from the velocity model along with a signed distance function by passing
-# the velocity grid that we created above. More details for the :class:`MeshSizeFunction` can be found here
-# https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction
+# the velocity grid that we created above.
+# More details can be found here: https://seismicmesh.readthedocs.io/en/par3d/api.html
 
 ef = get_sizing_function_from_segy(
     fname,
@@ -195,6 +195,70 @@ if comm.rank == 0:
         points[:, [1, 2, 0]] / 1000.0,
         [("tetra", cells)],
     )
+```
+
+The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the code below!
+
+![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
+
+```python
+from mpi4py import MPI
+from numpy import maximum, sqrt, zeros_like
+import meshio
+
+from SeismicMesh import generate_mesh, sliver_removal
+
+comm = MPI.COMM_WORLD
+
+"""Mesh a unit cylinder"""
+
+hmin = 0.10
+bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
+
+
+def cylinder(p):
+    r, z = sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
+    d1, d2, d3 = r - 1.0, z - 1.0, -z - 1.0
+    d4, d5 = sqrt(d1 ** 2 + d2 ** 2), sqrt(d1 ** 2 + d3 ** 2)
+    d = maximum.reduce([d1, d2, d3])
+    ix = (d1 > 0) * (d2 > 0)
+    d[ix] = d4[ix]
+    ix = (d1 > 0) * (d3 > 0)
+    d[ix] = d5[ix]
+    return d
+
+
+def fh(p):
+    # NOTE: for parallel execution this logic is required
+    # since the decomposition of the sizing function passes a tuple to fh
+    if type(p) == tuple:
+        h = zeros_like(p[0]) + hmin
+    else:
+        h = zeros_like(p) + hmin
+    return h
+
+
+points, cells = generate_mesh(
+    bbox=bbox,
+    domain=cylinder,
+    h0=hmin,
+    cell_size=fh,
+    max_iter=100,
+)
+
+points, cells = sliver_removal(
+    points=points, domain=cylinder, cell_size=fh, h0=hmin, min_dh_angle_bound=5.0
+)
+
+
+if comm.rank == 0:
+    meshio.write_points_cells(
+        "Cylinder.vtk",
+        points,
+        [("tetra", cells)],
+        file_format="vtk",
+    )
+
 ```
 
 More information
