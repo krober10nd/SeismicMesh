@@ -432,6 +432,8 @@ def _parse_kwargs(kwargs):
             "domain",
             "cell_size",
             "bbox",
+            "min_dh_bound",
+            "max_dh_bound",
         }:
             pass
         else:
