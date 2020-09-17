@@ -37,7 +37,7 @@ Installation
 For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 [pybind11](https://github.com/pybind/pybind11):
 
-    sudo apt install libcgal-dev python-pybind11
+    sudo apt install libcgal-dev python3-pybind11
 
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
@@ -145,8 +145,8 @@ bbox = (-4200, 0, 0, 13520, 0, 13520)
 hmin = 150.0
 
 # This file is in a big Endian binary format, so we must tell the program the shape of the velocity model.
+path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
 if comm.rank == 0:
-    path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
     # Extract binary file Saltf@@ from SALTF.ZIP
     zipfile.ZipFile(path + "SALTF.ZIP", "r").extract("Saltf@@", path=path)
 
@@ -168,7 +168,7 @@ ef = get_sizing_function_from_segy(
     dt=0.001,
     freq=2,
     wl=5,
-    grade=0.25,
+    grade=0.15,
     hmax=5e3,
     domain_pad=250,
     pad_style="linear_ramp",
@@ -178,7 +178,7 @@ ef = get_sizing_function_from_segy(
     byte_order="big"
 )
 
-points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef)
+points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(

@@ -67,21 +67,21 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
 
     :Keyword Arguments:
         * *hmin* (``float``) --
-          Minimum element size in the domain (default==150 m)
+            Minimum element size in the domain (default==150 m)
         * *hmax* (``float``) --
-          Maximum element size in the domain (default==10,000 m)
+            Maximum element size in the domain (default==10,000 m)
         * *wl* (``int``) --
-          Number of vertices per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 vertices)
+            Number of vertices per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 vertices)
         * *freq* (``float``) --
-          𝑓𝑚𝑎𝑥 in hertz for which to estimate `wl` (default==2 Hertz)
+            𝑓𝑚𝑎𝑥 in hertz for which to estimate `wl` (default==2 Hertz)
         * *grad* (``float``) --
-          Resolution in meters nearby sharp gradients in velociy (default==0 m)
+            Resolution in meters nearby sharp gradients in velociy (default==0 m)
         * *grade* (``float``) --
-          Maximum allowable variation in mesh size in decimal percent (default==0.0)
+            Maximum allowable variation in mesh size in decimal percent (default==0.0)
         * *space_order* (``int``) --
-          Simulation will be attempted with a mesh using the polynomial order `space_order` of the basis functions (default==1)
+            Simulation will be attempted with a mesh using the polynomial order `space_order` of the basis functions (default==1)
         * *dt* (``float``) --
-          Theoretical maximum stable timestep in seconds given Courant number Cr (default==0.0 s)
+            Theoretical maximum stable timestep in seconds given Courant number Cr (default==0.0 s)
         * *cr_max* (``float``) --
             The mesh simulated with this `dt` has this maximum Courant number (default==1.0)
         * *pad_style* (``string``) --
@@ -206,11 +206,18 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
         * *nz* (``int``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the z-direction in the velocity model.
         * *ny* (``int``) --
-             TREQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
+             REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the y-direction in the velocity model.
         * *nx* (``int``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the x-direction in the velocity model.
         * *byte_order* (``string``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
+        * *bbox* (``tuple``) --
+             Coordinates of the velocity model's domain extents. Only required if padding the domain.
+        * *domain_pad* (``float``) --
+             Width of the domain pad in meters.
+        * *pad_style* (``string``) --
+             Type of padding.
+
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -228,6 +235,11 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             ny=opts["ny"],
             byte_order=opts["byte_order"],
         )
+
+        if opts["domain_pad"] > 0.0:
+            print("Adding a domain pad to the velocity model...")
+            tmp = vp
+            _, vp, _ = _build_domain_pad(tmp, vp, opts["bbox"], opts)
 
         ofname += ".hdf5"
         print("Writing velocity model: " + ofname, flush=True)

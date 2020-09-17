@@ -14,7 +14,7 @@ authors:
   - name: William J. Pringle
     affiliation: 2
 affiliations:
- - name: Reearch Center for Gas Innovation, Escola Politécnica da Universidade de São Paulo, São Paulo, Brazil.
+ - name: Research Center for Gas Innovation, Escola Politécnica da Universidade de São Paulo, São Paulo, Brazil.
    index: 1
  - name:  Dept. of Civil and Environmental Engineering and Earth Sciences, University of Notre Dame, 156 Fitzpatrick Hall, Notre Dame, IN, U.S.A.
    index: 2
