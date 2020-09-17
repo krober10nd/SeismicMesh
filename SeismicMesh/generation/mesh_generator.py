@@ -35,8 +35,8 @@ opts = {
     "perform_checks": False,
     "pfix": None,
     "axis": 1,
-    "min_dh_bound": 10.0,
-    "max_dh_bound": 170.0,
+    "min_dh_angle_bound": 10.0,
+    "max_dh_angle_bound": 170.0,
     "points": None,
 }
 
@@ -75,15 +75,16 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
             An array of points to constrain in the mesh. (default==None)
         * *axis* (`int`) --
             The axis to decompose the mesh (1,2, or 3). (default==1)
-        * *min_dh_bound* (`float`) --
+        * *min_dh_angle_bound* (`float`) --
             The minimum allowable dihedral angle bound. (default==10 degrees)
-        * *max_dh_bound* (`float`) --
+        * *max_dh_angle_bound* (`float`) --
             The maximum allowable dihedral angle bound. (default==170 degrees)
 
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank > 0:
-        warnings.warn("Sliver removal only works in serial for now")
+        if comm.rank == 1:
+            warnings.warn("Sliver removal only works in serial for now")
         return True, True
 
     opts.update(kwargs)
@@ -91,7 +92,8 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
     dim = points.shape[1]
     if dim == 2:
-        raise Exception("Mesh improvement currently on works in 3D")
+        if comm.rank == 0:
+            raise Exception("Mesh improvement currently on works in 3D")
 
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
@@ -111,11 +113,23 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
+    print("Will attempt " + str(max_iter) + " to bound the dihedral angles...")
 
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
-    min_dh_bound = opts["min_dh_bound"] * math.pi / 180
-    max_dh_bound = opts["max_dh_bound"] * math.pi / 180
+    min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
+    max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
+
+    print(
+        "Enforcing a min. dihedral bound of: "
+        + str(min_dh_bound * 180 / math.pi)
+        + " degrees..."
+    )
+    print(
+        "Enforcing a max. dihedral bound of: "
+        + str(max_dh_bound * 180 / math.pi)
+        + " degrees..."
+    )
 
     DT = _select_cgal_dim(dim)
 
@@ -432,6 +446,8 @@ def _parse_kwargs(kwargs):
             "domain",
             "cell_size",
             "bbox",
+            "min_dh_angle_bound",
+            "max_dh_angle_bound",
         }:
             pass
         else:
