@@ -25,11 +25,13 @@ def print_stats(angles, quality, extra_cols=None):
     )
 
     grid = tpl.subplot_grid((1, 4))
+    grid[0, 0].aprint("dihedral angles")
     grid[0, 0].hist(angles_hist, angles_bin_edges, bar_width=1, strip=True)
     grid[0, 1].aprint("min angle:     {:7.3f}".format(numpy.min(angles)))
     grid[0, 1].aprint("avg angle:     {:7.3f}".format(60))
     grid[0, 1].aprint("max angle:     {:7.3f}".format(numpy.max(angles)))
     grid[0, 1].aprint("std dev angle: {:7.3f}".format(numpy.std(angles)))
+    grid[0, 2].aprint("mesh quality metric")
     grid[0, 2].hist(q_hist, q_bin_edges, bar_width=1, strip=True)
     grid[0, 3].aprint("min quality: {:5.3f}".format(numpy.min(q)))
     grid[0, 3].aprint("avg quality: {:5.3f}".format(numpy.average(q)))
@@ -56,7 +58,7 @@ def run_cgal():
         cell_size=Field(),
         edge_size=HMIN,
     )
-    print(time.time() - t1)
+    print("Elapsed time is: " + str(time.time() - t1))
 
     mesh.write("cgal.vtk")
 
@@ -99,6 +101,8 @@ def run_SeismicMesh():
     )
     print(time.time() - t1)
 
+    print("Elapsed time is: " + str(time.time() - t1))
+
     if comm.rank == 0:
 
         plex = meshplex.MeshTetra(points, cells)
@@ -130,7 +134,7 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    if args.method == 'cgal':
+    if args.method == "cgal":
         run_cgal()
-    if args.method == 'sm':
+    if args.method == "sm":
         run_SeismicMesh()
