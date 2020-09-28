@@ -1,6 +1,7 @@
 Benchmarking
 ------------
-Here we compare *SeismicMesh* against well-established existing mesh generation approaches such as [CGAL](https://doc.cgal.org/latest/Mesh_3/) and [gmsh](https://gmsh.info/doc/texinfo/gmsh.html).
+Here we compare *SeismicMesh* against well-established existing mesh generation approaches such as [CGAL](https://doc.cgal.org/latest/Mesh_3/) and [gmsh](https://gmsh.info/doc/texinfo/gmsh.html). Specifically:
+
     * a comparison in mesh creation speed in terms of wall-clock time.
     * a comparison in cell quality.
     * a comparison of dihedral angle distributions.
