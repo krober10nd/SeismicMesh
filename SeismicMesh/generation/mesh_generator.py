@@ -352,30 +352,25 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
+        # Number of iterations reached, stop.
+        if count == (max_iter - 1):
+            p, t = _termination(p, t, opts, comm)
+            break
+
         # Compute the forces on the bars
         Ftot = _compute_forces(p, t, fh, h0, L0mult)
 
         Ftot[:nfix] = 0  # Force = 0 at fixed points
 
         # Last timestep in parallel, we don't move points
-        if comm.size > 1:
-            if count < max_iter - 1:
-                p += delta_t * Ftot
-        else:
-            p += delta_t * Ftot  # Update positions
+        p += delta_t * Ftot  # Update positions
 
         # Bring outside points back to the boundary
         p = _project_points_back(p, fd, deps)
 
-        # Number of iterations reached, stop.
-        if count == (max_iter - 1):
-            p, t = _termination(p, t, opts, comm)
-            break
-
         if comm.size > 1:
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
-            comm.barrier()
 
         # Show the user some progress so they know something is happening
         if count % nscreen == 0 and comm.rank == 0:
