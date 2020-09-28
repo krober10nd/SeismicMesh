@@ -313,7 +313,7 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
 
     """These parameters originate from the original DistMesh"""
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
-    delta_t = 0.1
+    delta_t = 0.2
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
 
