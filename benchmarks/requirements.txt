@@ -1,0 +1,4 @@
+meshplex==0.13.3
+pygalmesh==0.7.2
+termplotlib==0.3.2
+meshio==4.1.1
