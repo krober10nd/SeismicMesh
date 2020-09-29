@@ -47,7 +47,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
     :param points:
         An array of points that describe the vertices of an existing (higher-quality) mesh.
-    :type filename: ``string``
+    :type points: `np.ndarray`
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
     :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
@@ -476,18 +476,21 @@ def _termination(p, t, opts, comm):
     return p, t
 
 
+# @profile
 def _get_bars(t):
     """Describe each bar by a unique pair of nodes"""
     dim = t.shape[1] - 1
     bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
     if dim == 3:
         bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
-    bars = mutils.unique_rows(
-        np.ascontiguousarray(bars, dtype=np.uint32)
-    )  # Bars as node pairs
-    return bars
+    return geometry.unique_edges(bars)
+    # bars = mutils.unique_rows(
+    #    np.ascontiguousarray(bars, dtype=np.uint32)
+    # )  # Bars as node pairs
+    # return bars
 
 
+# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
