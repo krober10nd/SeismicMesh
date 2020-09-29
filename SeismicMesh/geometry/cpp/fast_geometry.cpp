@@ -10,6 +10,21 @@ namespace py = pybind11;
 
 using Ints = std::tuple<int,int>;
 
+template <typename T>
+std::vector<int> vectorSortIntPair(std::vector<T> v) {
+  std::sort(v.begin(), v.end());
+  auto iter = std::unique(v.begin(), v.end());
+  size_t len = iter - v.begin();
+  std::vector<int> outvec;
+  outvec.reserve(len*2);
+  for (auto i = v.begin(); i != iter; ++i) {
+    outvec.push_back(std::get<0>(*(i)));
+    outvec.push_back(std::get<1>(*(i)));
+  }
+  return outvec;
+}
+
+
 template<typename T>
 std::vector<T> constUniqueVectorSort(std::vector<T> v){
     std::sort(v.begin(),v.end());
@@ -40,7 +55,8 @@ py::array unique_edges(
   for(size_t i=0;i<cedges.size();i+=2)
      tl.emplace_back(cedges[i],cedges[i+1]);
 
-  auto u_edges = unpack(constUniqueVectorSort<Ints>(tl));
+  //auto u_edges = unpack(constUniqueVectorSort<Ints>(tl));
+  auto u_edges = vectorSortIntPair<Ints>(tl);
 
   int num_edges = u_edges.size();
 
