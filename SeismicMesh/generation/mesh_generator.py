@@ -113,7 +113,9 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
-    print("Will attempt " + str(max_iter) + " to bound the dihedral angles...")
+    print(
+        "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
+    )
 
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
@@ -217,7 +219,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
-            p, t = _termination(p, t, opts, comm)
+            p, t = _termination(p, t, opts, comm, sliver=True)
             break
 
         count += 1
@@ -357,13 +359,13 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
             p, t = _termination(p, t, opts, comm)
             break
 
-        # Compute the forces on the bars
+        # Compute the forces on the edges
         Ftot = _compute_forces(p, t, fh, h0, L0mult)
 
         Ftot[:nfix] = 0  # Force = 0 at fixed points
 
-        # Last timestep in parallel, we don't move points
-        p += delta_t * Ftot  # Update positions
+        # Update positions
+        p += delta_t * Ftot
 
         # Bring outside points back to the boundary
         p = _project_points_back(p, fd, deps)
@@ -460,12 +462,12 @@ def _display_progress(p, t, count, nscreen, maxdp, comm):
     )
 
 
-def _termination(p, t, opts, comm):
+def _termination(p, t, opts, comm, sliver=False):
     """Shut it down when reacing `max_iter`"""
     dim = p.shape[1]
     if comm.rank == 0:
         print("Termination reached...maximum number of iterations reached.", flush=True)
-    if comm.size > 1:
+    if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
     # perform linting if asked
@@ -476,31 +478,27 @@ def _termination(p, t, opts, comm):
     return p, t
 
 
-# @profile
-def _get_bars(t):
+def _get_edges(t):
     """Describe each bar by a unique pair of nodes"""
     dim = t.shape[1] - 1
-    bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    edges = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
     if dim == 3:
-        bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
-    return geometry.unique_edges(bars)
-    # bars = mutils.unique_rows(
-    #    np.ascontiguousarray(bars, dtype=np.uint32)
-    # )  # Bars as node pairs
-    # return bars
+        edges = np.concatenate(
+            (edges, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
+        )
+    return geometry.unique_edges(edges)
 
 
-# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
     N = p.shape[0]
-    bars = _get_bars(t)
-    barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
+    edges = _get_edges(t)
+    barvec = p[edges[:, 0]] - p[edges[:, 1]]  # List of bar vectors
     L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
     L[L == 0] = np.finfo(float).eps
-    hbars = fh(p[bars].sum(1) / 2)
-    L0 = hbars * L0mult * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
+    hedges = fh(p[edges].sum(1) / 2)
+    L0 = hedges * L0mult * ((L ** dim).sum() / (hedges ** dim).sum()) ** (1.0 / dim)
     F = L0 - L
     F[F < 0] = 0  # Bar forces (scalars)
     Fvec = (
@@ -508,7 +506,7 @@ def _compute_forces(p, t, fh, h0, L0mult):
     )  # Bar forces (x,y components)
 
     Ftot = mutils.dense(
-        bars[:, [0] * dim + [1] * dim],
+        edges[:, [0] * dim + [1] * dim],
         np.repeat([list(range(dim)) * 2], len(F), axis=0),
         np.hstack((Fvec, -Fvec)),
         shape=(N, dim),

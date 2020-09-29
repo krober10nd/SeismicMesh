@@ -27,13 +27,6 @@ def make_init_points(bbox, rank, size, axis, h0, dim):
     return points
 
 
-def unique_rows(ar):
-    ar_row_view = ar.view("|S%d" % (ar.itemsize * ar.shape[1]))
-    _, unique_row_indices = np.unique(ar_row_view, return_index=True)
-    ar_out = ar[unique_row_indices]
-    return ar_out
-
-
 def dense(Ix, J, S, shape=None, dtype=None):
     """
     Similar to MATLAB's SPARSE(I, J, S, ...), but instead returning a

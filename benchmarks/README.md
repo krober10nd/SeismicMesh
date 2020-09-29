@@ -13,42 +13,34 @@ Benchmarks
 
 The following set of benchmark problems are available in `benchmark.py`:
 
-    benchmark_uniform_cuboid: 1 # a simple box-type geometry with uniform mesh resolution
+    benchmark_cuboid: # a simple box-type geometry with linearly varying mesh resolution
+    benchmark_sphere: # a sphere with a ring of higher resolution in the center
 
-Run `python benchmark_uniform_cuboid.py --method METHODNAME` with `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh) to mesh and `sm` using SeismicMesh to mesh with.
+Run `python benchmark_cuboid.py --method METHODNAME` with `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh) to mesh and `sm` using SeismicMesh to mesh with.
 
 Expected output
 ---------------
+Using  [termplotlib](https://github.com/nschloe/termplotlib), the benchmarks produce the following output:
+
 ```
-$ python benchmarks/benchmark_uniform_cuboid.py --method sm
-Commencing mesh generation with 9261 vertices on rank 0.
-Iteration #1, max movement is 0.015040, there are 9261 vertices and 48000 cells
-     Elapsed wall-clock time 0.233844 :
-Iteration #11, max movement is 0.067096, there are 9261 vertices and 54648 cells
-     Elapsed wall-clock time 0.226372 :
-Iteration #21, max movement is 0.029739, there are 9261 vertices and 52903 cells
-Termination reached...maximum number of iterations reached.
-Will attempt 30 to bound the dihedral angles...
-Enforcing a min. dihedral bound of: 10.0 degrees...
-Enforcing a max. dihedral bound of: 170.0 degrees...
-Commencing sliver removal with 9260 vertices on rank 0.
-On rank: 0 There are 639 slivers...
-Termination reached...no slivers detected!
-8.290160179138184
-Elapsed time is: 8.290189027786255
-┌───────────────────────┬──────────────────────────┬────────────────────────────────────┬──────────────────────┐
-│                       │                          │                                    │                      │
-│  dihedral angles      │  min angle:      10.577  │  mesh quality metric               │  min quality: 0.179  │
-│               ▃█▄     │  avg angle:      60.000  │                           ▄█▁      │  avg quality: 0.777  │
-│              ▄███     │  max angle:      56.520  │                          ████      │  max quality: 0.996  │
-│              ████▃    │  std dev angle:   8.940  │                         ▆█████     │                      │
-│             ██████    │                          │                        ▆██████▁    │                      │
-│            ▆██████    │                          │                       ▄████████    │                      │
-│            ███████    │                          │                      ▄█████████    │                      │
-│           ████████▅   │                          │                     ▅██████████▃   │                      │
-│         ▃██████████   │                          │                   ▂▇████████████   │                      │
-│       ▃▆███████████   │                          │               ▂▃▅███████████████   │                      │
-│  ▃▅▆▇██████████████▃  │                          │  ▂▂▃▄▄▄▅▅▅▆▆▇███████████████████▇  │                      │
-│                       │                          │                                    │                      │
-└───────────────────────┴──────────────────────────┴────────────────────────────────────┴──────────────────────┘
+┌───────────────────────┬──────────────────────────────────────────┬────────────────────────────────────┬──────────────────────┐
+│                       │                                          │                                    │                      │
+│  SeismicMesh          │  Mesh creation time (seconds):     8.27  │  Number of vertices:        11510  │                      │
+│                       │                                          │  Number of cells:        62017     │                      │
+│                       │                                          │                                    │                      │
+├───────────────────────┼──────────────────────────────────────────┼────────────────────────────────────┼──────────────────────┤
+│                       │                                          │                                    │                      │
+│  dihedral angles      │  min angle:      10.584                  │  mesh quality metric               │  min quality: 0.137  │
+│                █▇     │  avg angle:      42.594                  │                            ▇█▅     │  avg quality: 0.801  │
+│               ███▃    │  max angle:      56.723                  │                           ████     │  max quality: 0.999  │
+│              ▄████    │  std dev angle:   8.393                  │                          █████▇    │                      │
+│              █████    │                                          │                         ▆██████    │                      │
+│             ▇█████    │                                          │                        ▄███████    │                      │
+│            ▂██████▂   │                                          │                       ▄████████▇   │                      │
+│           ▂████████   │                                          │                      ▄██████████   │                      │
+│          ▁█████████   │                                          │                    ▃▆███████████   │                      │
+│        ▂▅██████████   │                                          │                ▁▃▄▆█████████████▃  │                      │
+│  ▁▃▄▅▆█████████████▄  │                                          │  ▁▁▂▂▃▃▃▃▄▅▅▅▆▇██████████████████  │                      │
+│                       │                                          │                                    │                      │
+└───────────────────────┴──────────────────────────────────────────┴────────────────────────────────────┴──────────────────────┘
 ```

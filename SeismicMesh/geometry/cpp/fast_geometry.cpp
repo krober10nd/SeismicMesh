@@ -6,66 +6,69 @@
 #include <algorithm>
 #include <tuple>
 
+
+#include <iostream>
+#include <ctime>
+
 namespace py = pybind11;
 
-using Ints = std::tuple<int,int>;
+class Timer
+// https://stackoverflow.com/questions/1861294/how-to-calculate-execution-time-of-a-code-snippet-in-c
+{
+public:
+    Timer() { clock_gettime(CLOCK_REALTIME, &beg_); }
+
+    double elapsed() {
+        clock_gettime(CLOCK_REALTIME, &end_);
+        return end_.tv_sec - beg_.tv_sec +
+            (end_.tv_nsec - beg_.tv_nsec) / 1000000000.;
+    }
+
+    void reset() { clock_gettime(CLOCK_REALTIME, &beg_); }
+
+private:
+    timespec beg_, end_;
+};
 
 template <typename T>
-std::vector<int> vectorSortIntPair(std::vector<T> v) {
+std::vector<T> vectorSortIntArr(std::vector<std::array<T, 2>> v) {
+  //Timer tmr;
   std::sort(v.begin(), v.end());
+  //double t = tmr.elapsed();
+  //std::cout << t << std::endl;
+
+  //tmr.reset();
   auto iter = std::unique(v.begin(), v.end());
+  //t = tmr.elapsed();
+  //std::cout << t << std::endl;
+
   size_t len = iter - v.begin();
-  std::vector<int> outvec;
-  outvec.reserve(len*2);
+  std::vector<T> outvec;
+  outvec.reserve(len * 2);
   for (auto i = v.begin(); i != iter; ++i) {
-    outvec.push_back(std::get<0>(*(i)));
-    outvec.push_back(std::get<1>(*(i)));
+    outvec.push_back(i->at(0));
+    outvec.push_back(i->at(1));
   }
   return outvec;
-}
-
-
-template<typename T>
-std::vector<T> constUniqueVectorSort(std::vector<T> v){
-    std::sort(v.begin(),v.end());
-    auto iter = std::unique(v.begin(),v.end());
-    return std::vector<T>(v.begin(),iter);
-}
-
-template<typename T>
-std::vector<int> unpack(const std::vector<T> &v){
-    std::vector<int> out;
-    out.reserve(v.size()*2);
-    for(auto &a : v){
-        out.push_back(std::get<0>(a));
-        out.push_back(std::get<1>(a));
-    }
-    return out;
 }
 
 py::array unique_edges(
     py::array_t<int, py::array::c_style | py::array::forcecast> edges){
 
-  std::vector<Ints> tl;
-
   std::vector<int> cedges(edges.size());
   std::memcpy(cedges.data(), edges.data(), edges.size() * sizeof(int));
 
+  std::vector<std::array<int, 2>> tl;
   tl.reserve(cedges.size());
-  for(size_t i=0;i<cedges.size();i+=2)
-     tl.emplace_back(cedges[i],cedges[i+1]);
+  for(size_t i=0;i<cedges.size();i+=2){
+     tl.push_back({cedges[i], cedges[i+1]});
+  }
 
-  //auto u_edges = unpack(constUniqueVectorSort<Ints>(tl));
-  auto u_edges = vectorSortIntPair<Ints>(tl);
-
+  auto u_edges = vectorSortIntArr<int>(std::move(tl));
   int num_edges = u_edges.size();
-
   ssize_t sint = sizeof(int);
   std::vector<ssize_t> shape = {num_edges/2, 2};
   std::vector<ssize_t> strides = {sint * 2, sint};
-
-  // only keep unique part
-  // return 2-D NumPy array
   return py::array(
       py::buffer_info(u_edges.data(), /* data as contiguous array  */
                       sizeof(int),           /* size of one scalar        */
