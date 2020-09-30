@@ -25,7 +25,7 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 
 For example running `benchmark_sphere.py` produces the following output:
-
+```
 ┌───────────────────────────┬────────────────────────────────────────────────────┬────────────────────────────────────────────┬──────────────────────┐
 │                           │                                                    │                                            │                      │
 │  CGAL                     │  Mesh creation time (seconds):    15.84            │  Number of vertices:       108407          │                      │
@@ -66,9 +66,9 @@ For example running `benchmark_sphere.py` produces the following output:
 │      ▁▁▁▂▂▂▃▄▅█▉████████  │                                                    │           ▁▁▁▁▁▁▁▁▂▂▂▂▃▃▄▄▅▆█████████████  │                      │
 │                           │                                                    │                                            │                      │
 └───────────────────────────┴────────────────────────────────────────────────────┴────────────────────────────────────────────┴──────────────────────┘
-
+```
 and for `benchmark_cuboid.py`....
-
+```
 ┌───────────────────────────┬────────────────────────────────────────────────────┬────────────────────────────────────────────┬──────────────────────┐
 │                           │                                                    │                                            │                      │
 │  CGAL                     │  Mesh creation time (seconds):    11.47            │  Number of vertices:        32651          │                      │
@@ -109,7 +109,7 @@ and for `benchmark_cuboid.py`....
 │      ▁▁▁▂▂▃▃▄▆█▉████████  │                                                    │          ▁▁▁▁▁▁▁▁▂▂▂▂▂▃▃▄▄▅▆▇████████████  │                      │
 │                           │                                                    │                                            │                      │
 └───────────────────────────┴────────────────────────────────────────────────────┴────────────────────────────────────────────┴──────────────────────┘
-
+```
 ![Benchmark meshes: cuboid and sphere](https://user-images.githubusercontent.com/18619644/94724275-69023d00-0330-11eb-8b47-d6ede11f46cd.jpg)
 
 Notes
