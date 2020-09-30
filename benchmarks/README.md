@@ -1,4 +1,4 @@
-Benchmarking
+Performance
 ------------
 Here we compare `SeismicMesh` against well-established existing mesh generation approaches such as [CGAL](https://doc.cgal.org/latest/Mesh_3/) and [gmsh](https://gmsh.info/doc/texinfo/gmsh.html). Specifically:
 
