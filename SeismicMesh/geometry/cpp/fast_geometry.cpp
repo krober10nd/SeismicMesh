@@ -13,7 +13,6 @@
 namespace py = pybind11;
 
 class Timer
-// https://stackoverflow.com/questions/1861294/how-to-calculate-execution-time-of-a-code-snippet-in-c
 {
 public:
     Timer() { clock_gettime(CLOCK_REALTIME, &beg_); }
@@ -32,11 +31,8 @@ private:
 
 template <typename T>
 std::vector<T> vectorSortIntArr(std::vector<std::array<T, 2>> v) {
-  //Timer tmr;
   std::sort(v.begin(), v.end());
   //double t = tmr.elapsed();
-  //std::cout << t << std::endl;
-
   //tmr.reset();
   auto iter = std::unique(v.begin(), v.end());
   //t = tmr.elapsed();
@@ -59,12 +55,14 @@ py::array unique_edges(
   std::memcpy(cedges.data(), edges.data(), edges.size() * sizeof(int));
 
   std::vector<std::array<int, 2>> tl;
+
   tl.reserve(cedges.size());
   for(size_t i=0;i<cedges.size();i+=2){
-     tl.push_back({cedges[i], cedges[i+1]});
+     tl.push_back({std::min(cedges[i],cedges[i+1]),std::max(cedges[i],cedges[i+1])});
   }
 
   auto u_edges = vectorSortIntArr<int>(std::move(tl));
+
   int num_edges = u_edges.size();
   ssize_t sint = sizeof(int);
   std::vector<ssize_t> shape = {num_edges/2, 2};
