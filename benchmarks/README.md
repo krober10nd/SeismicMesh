@@ -1,4 +1,4 @@
-Benchmarking
+Performance
 ------------
 Here we compare `SeismicMesh` against well-established existing mesh generation approaches such as [CGAL](https://doc.cgal.org/latest/Mesh_3/) and [gmsh](https://gmsh.info/doc/texinfo/gmsh.html). Specifically:
 
@@ -115,4 +115,4 @@ and for `benchmark_cuboid.py`....
 Notes
 -----
 * For CGAL's mesh generator in 3D, all default quality options are assumed. A `cell_size` function is passed to create variable resolution.
-* SeismicMesh is run here in serial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using it [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics).
+* SeismicMesh is run here in serial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using its [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics).
