@@ -21,9 +21,11 @@ Run `python benchmark_cuboid.py --method METHODNAME` with `cgal` using [pygalmes
 Expected output
 ---------------
 
-Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge) in the cells and the cell quality. For example running `benchmark_sphere.py` produces the following output:
+Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge) in the cells and the cell quality.
 
-```
+
+For example running `benchmark_sphere.py` produces the following output:
+
 ┌───────────────────────────┬────────────────────────────────────────────────────┬────────────────────────────────────────────┬──────────────────────┐
 │                           │                                                    │                                            │                      │
 │  CGAL                     │  Mesh creation time (seconds):    15.84            │  Number of vertices:       108407          │                      │
@@ -64,7 +66,51 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 │      ▁▁▁▂▂▂▃▄▅█▉████████  │                                                    │           ▁▁▁▁▁▁▁▁▂▂▂▂▃▃▄▄▅▆█████████████  │                      │
 │                           │                                                    │                                            │                      │
 └───────────────────────────┴────────────────────────────────────────────────────┴────────────────────────────────────────────┴──────────────────────┘
-```
+
+and for `benchmark_cuboid.py`....
+
+┌───────────────────────────┬────────────────────────────────────────────────────┬────────────────────────────────────────────┬──────────────────────┐
+│                           │                                                    │                                            │                      │
+│  CGAL                     │  Mesh creation time (seconds):    11.47            │  Number of vertices:        32651          │                      │
+│                           │  Mesh creation speed (vertices/seconds):  2846.85  │  Number of cells:          180996          │                      │
+│                           │                                                    │                                            │                      │
+├───────────────────────────┼────────────────────────────────────────────────────┼────────────────────────────────────────────┼──────────────────────┤
+│                           │                                                    │                                            │                      │
+│  dihedral angles          │  min angle:      12.778                            │  mesh quality metric                       │  min quality: 0.198  │
+│                    ▅█     │  avg angle:      44.652                            │                                   ▃█▅      │  avg quality: 0.813  │
+│                    ██▂    │  max angle:      56.977                            │                                  ▂███▃     │  max quality: 0.999  │
+│                   ████    │  std dev angle:   6.610                            │                                  █████     │                      │
+│                   ████    │                                                    │                                 ▇█████▂    │                      │
+│                  █████    │                                                    │                                ▄███████    │                      │
+│                 ▁█████▁   │                                                    │                               ▃████████    │                      │
+│                 ███████   │                                                    │                              ▄█████████▅   │                      │
+│                ▆███████   │                                                    │                            ▁▅███████████   │                      │
+│              ▂▆▉███████   │                                                    │                         ▁▂▅█████████████   │                      │
+│         ▁▂▃▅▇██▉███████▃  │                                                    │               ▁▁▁▂▂▃▃▄▆▆█▉███████████████  │                      │
+│                           │                                                    │                                            │                      │
+└───────────────────────────┴────────────────────────────────────────────────────┴────────────────────────────────────────────┴──────────────────────┘
+┌───────────────────────────┬────────────────────────────────────────────────────┬────────────────────────────────────────────┬──────────────────────┐
+│                           │                                                    │                                            │                      │
+│  SeismicMesh              │  Mesh creation time (seconds):    28.50            │  Number of vertices:        45485          │                      │
+│                           │  Mesh creation speed (vertices/seconds):  1596.01  │  Number of cells:          260120          │                      │
+│                           │                                                    │                                            │                      │
+├───────────────────────────┼────────────────────────────────────────────────────┼────────────────────────────────────────────┼──────────────────────┤
+│                           │                                                    │                                            │                      │
+│  dihedral angles          │  min angle:      10.556                            │  mesh quality metric                       │  min quality: 0.149  │
+│                     █▅    │  avg angle:      45.937                            │                                      ▂█    │  avg quality: 0.859  │
+│                    ▃██    │  max angle:      56.926                            │                                      ███   │  max quality: 1.000  │
+│                    ███    │  std dev angle:   7.182                            │                                     ▅███   │                      │
+│                   ▁███▂   │                                                    │                                    ▂████   │                      │
+│                   █████   │                                                    │                                    █████   │                      │
+│                   █████   │                                                    │                                   ▆█████   │                      │
+│                  ██████   │                                                    │                                  ▅██████▄  │                      │
+│                 ▄██████   │                                                    │                                 ▅████████  │                      │
+│                ▄███████   │                                                    │                              ▁▄██████████  │                      │
+│      ▁▁▁▂▂▃▃▄▆█▉████████  │                                                    │          ▁▁▁▁▁▁▁▁▂▂▂▂▂▃▃▄▄▅▆▇████████████  │                      │
+│                           │                                                    │                                            │                      │
+└───────────────────────────┴────────────────────────────────────────────────────┴────────────────────────────────────────────┴──────────────────────┘
+
+![Benchmark meshes: cuboid and sphere](https://user-images.githubusercontent.com/18619644/94724275-69023d00-0330-11eb-8b47-d6ede11f46cd.jpg)
 
 Notes
 -----
