@@ -61,7 +61,7 @@ def run_cgal():
     num_cells = len(mesh.cells[1][1])
     num_vertices = len(mesh.points)
 
-    return angles, quality, elapsed, num_cells, num_vertices
+    return angles, quality, elapsed, num_vertices, num_cells
 
 
 def run_SeismicMesh():
@@ -109,7 +109,7 @@ def run_SeismicMesh():
     num_cells = len(cells)
     num_vertices = len(points)
 
-    return angles, quality, elapsed, num_cells, num_vertices
+    return angles, quality, elapsed, num_vertices, num_cells
 
 
 if __name__ == "__main__":
