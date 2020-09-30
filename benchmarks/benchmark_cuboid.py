@@ -10,6 +10,7 @@ import SeismicMesh
 from helpers import print_stats_3d
 
 HMIN = 0.025
+GRADE = HMIN / 3.0
 
 
 def run_gmsh():
@@ -20,7 +21,7 @@ def run_gmsh():
 def run_cgal():
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
-            return (1 - x[0]) * 0.04 + HMIN
+            return (1 - x[0]) * GRADE + HMIN
 
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
@@ -48,7 +49,7 @@ def run_SeismicMesh():
     cube = SeismicMesh.Cube(bbox)
 
     def fh(x):
-        return (1 - x[:, 0]) * 0.04 + HMIN
+        return (1 - x[:, 0]) * GRADE + HMIN
 
     t1 = time.time()
     points, cells = SeismicMesh.generate_mesh(

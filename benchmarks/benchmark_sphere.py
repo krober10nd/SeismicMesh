@@ -16,24 +16,24 @@ from helpers import print_stats_3d
 HMIN = 0.025
 
 
-def run_gmsh():
-    with pygmsh.occ.Geometry() as geom:
-        geom.add_ball([0.0, 0.0, 0.0], 1.0)
-
-        geom.set_mesh_size_callback(
-            lambda dim, tag, x, y, z: abs(sqrt(x ** 2 + y ** 2 + z ** 2) - 0.5) + HMIN
-        )
-        t1 = time.time()
-        mesh = pygmsh.generate_mesh(geom)
-        elapsed = time.time() - t1
-
-    mesh.write("gmsh_sphere.vtk")
-
-    plex = meshplex.MeshTetra(mesh.points, mesh.cells[1][1])
-    angles = plex.q_min_sin_dihedral_angles
-    quality = plex.q_radius_ratio
-
-    return angles, quality, elapsed
+#def run_gmsh():
+#    with pygmsh.occ.Geometry() as geom:
+#        geom.add_ball([0.0, 0.0, 0.0], 1.0)
+#
+#        geom.set_mesh_size_callback(
+#            lambda dim, tag, x, y, z: abs(sqrt(x ** 2 + y ** 2 + z ** 2) - 0.5) + HMIN
+#        )
+#        t1 = time.time()
+#        mesh = pygmsh.generate_mesh(geom)
+#        elapsed = time.time() - t1
+#
+#    mesh.write("gmsh_sphere.vtk")
+#
+#    plex = meshplex.MeshTetra(mesh.points, mesh.cells[1][1])
+#    angles = plex.q_min_sin_dihedral_angles
+#    quality = plex.q_radius_ratio
+#
+#    return angles, quality, elapsed
 
 
 def run_cgal():
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     else:
         a1, q1, t1, nv1, nc1 = run_cgal()
         a2, q2, t2, nv2, nc2 = run_SeismicMesh()
-        a3, q3, t3, nv3, nc3 = run_gmsh()
+        #a3, q3, t3, nv3, nc3 = run_gmsh()
         print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
         print_stats_3d(a2, q2, "SeismicMesh", t2, nv2, nc2)
-        print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
+        #print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)

@@ -504,7 +504,6 @@ def _compute_forces(p, t, fh, h0, L0mult):
     Fvec = (
         F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
     )  # Bar forces (x,y components)
-
     Ftot = mutils.dense(
         edges[:, [0] * dim + [1] * dim],
         np.repeat([list(range(dim)) * 2], len(F), axis=0),
