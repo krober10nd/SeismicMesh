@@ -1,5 +1,6 @@
 import time
 import argparse
+import numpy as np
 
 import meshplex
 import meshio
@@ -21,12 +22,16 @@ def run_gmsh():
 def run_cgal():
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
-            return (1 - x[0]) * GRADE + HMIN
+            h = (1 - x[0]) * GRADE + HMIN
+            # https://en.wikipedia.org/wiki/Equilateral_triangle#Circumradius,_inradius,_and_exradii
+            return h/1.1
 
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
         pygalmesh.Cuboid([0.0, 0.0, 0.0], [1.0, 1.0, 1.0]),
         cell_size=Field(),
+        facet_angle=30,
+        cell_radius_edge_ratio=2.0,
         edge_size=HMIN,
     )
     elapsed = time.time() - t1

@@ -16,7 +16,7 @@ from helpers import print_stats_3d
 HMIN = 0.025
 
 
-#def run_gmsh():
+# def run_gmsh():
 #    with pygmsh.occ.Geometry() as geom:
 #        geom.add_ball([0.0, 0.0, 0.0], 1.0)
 #
@@ -39,12 +39,15 @@ HMIN = 0.025
 def run_cgal():
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
-            return abs(numpy.sqrt(numpy.dot(x, x)) - 0.5) / 5 + HMIN
+            h = abs(numpy.sqrt(numpy.dot(x, x)) - 0.5) / 5 + HMIN
+            return h / 1.1
 
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
         pygalmesh.Ball([0.0, 0.0, 0.0], 1.0),
         cell_size=Field(),
+        facet_angle=30,
+        cell_radius_edge_ratio=2.0,
         edge_size=HMIN,
     )
     elapsed = time.time() - t1
@@ -137,7 +140,7 @@ if __name__ == "__main__":
     else:
         a1, q1, t1, nv1, nc1 = run_cgal()
         a2, q2, t2, nv2, nc2 = run_SeismicMesh()
-        #a3, q3, t3, nv3, nc3 = run_gmsh()
+        # a3, q3, t3, nv3, nc3 = run_gmsh()
         print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
         print_stats_3d(a2, q2, "SeismicMesh", t2, nv2, nc2)
-        #print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
+        # print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
