@@ -13,10 +13,10 @@ Benchmarks
 
 The following set of benchmark problems are available:
 
-    benchmark_cuboid: # a simple box-type geometry with linearly varying mesh resolution along the x-axis.
+    benchmark_cuboid: # a simple box-type geometry with nearly constant mesh resolution.
     benchmark_sphere: # a sphere with a ring of higher resolution near the center.
 
-Run `python benchmark_cuboid.py` to run all benchmarks for a particular domain (e.g., cuboid). Run `python benchmark_cuboid.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh) or `sm` to use `SeismicMesh`.
+Run `python benchmark_cuboid.py` to run all benchmarks for a particular domain (e.g., cuboid). Run `python benchmark_cuboid.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
 
 Results
 ---------------
@@ -24,10 +24,10 @@ Results
 Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge) in the cells and histograms of cell quality.
 
 
-![The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. Both mesh generation programs have been compiled with g++ v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0 and SeismicMesh v3.0.3](https://user-images.githubusercontent.com/18619644/94751279-89e18700-035e-11eb-9ddf-b42995e4a041.jpg)
+![The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. Mesh generation programs have been compiled with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.](![BENCHMARK](https://user-images.githubusercontent.com/18619644/94858172-03ce4a80-0409-11eb-89aa-4f59cf2b8161.jpg)
 
 
-Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which runs each problem 5 times and reports some statistic to the screen.
+Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
 
 ```python
 py.test --benchmark-max-time=360 benchmarks/benchmark_sphere.py
@@ -44,13 +44,6 @@ plugins: xdist-2.1.0, cov-2.10.1, benchmark-3.2.3, forked-1.3.0
 collected 3 items
 
 benchmarks/benchmark_sphere.py ...                                                                                                                                                                   [100%]
-
-============================================================================================= warnings summary =============================================================================================
-benchmarks/benchmark_sphere.py: 20 warnings
-  /Users/Keith/junk/SeismicMesh/SeismicMesh/geometry/utils.py:154: DeprecationWarning: Converting `np.character` to a dtype is deprecated. The current result is `np.dtype(np.str_)` which is not strictly correct. Note that `np.character` is generally deprecated and 'S1' should be used.
-    dtype = np.dtype((np.character, orig_dtype.itemsize * ncolumns))
-
--- Docs: https://docs.pytest.org/en/stable/warnings.html
 
 -------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------
 Name (time in s)          Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations
@@ -70,7 +63,7 @@ Legend:
 Notes
 -----
 * Mesh generation with `cgal` is accomplished via [pygalmesh](https://github.com/nschloe/pygalmesh)
-* For CGAL's mesh generator in 3D, all default quality options are assumed (facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is equivalent to the mesh size function in `SeismicMesh`.
-* Mesh generation with `gmsh` is accomplished via [pygmsh](https://github.com/nschloe/pygmsh) with all default options.
+* For CGAL's mesh generator, all default quality options are assumed (e.g., facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is approximately equivalent to the mesh size function in `SeismicMesh`.
+* Mesh generation with `gmsh` is accomplished via [pygmsh](https://github.com/nschloe/pygmsh) with all default options and, similar to `cgal`, an approximately equivalent cell-size function is passed.
 * For `SeimicMesh`, we perform both examples with 25 meshing iterations with a psuedo-timestep of 0.30 and then run the sliver removal implemention to bound the diheral angle to 10 degrees.
-* All programs here are executed in seqeuntial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) in `SeismicMesh`. Threading based parallelism can be employed with `gmsh` and `cgal` but these benchmarks have not been explored here.
+* All programs are executed in a seqeuntial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) in `SeismicMesh`. Threading based parallelism can be used with `gmsh` and `cgal` but these benchmarks have not been explored.

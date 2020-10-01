@@ -6,6 +6,7 @@ import meshplex
 import meshio
 
 import pygalmesh
+import pygmsh
 import SeismicMesh
 
 from helpers import print_stats_3d
@@ -14,9 +15,50 @@ HMIN = 0.025
 GRADE = HMIN / 3.0
 
 
-def run_gmsh():
+def test_seismic_mesh(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_SeismicMesh, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert np.amin(angles / np.pi * 180) > 10.0
 
-    return angles, quality, num_verts, num_cells
+
+def test_gmsh(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_gmsh, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert np.amin(angles / np.pi * 180) > 10.0
+
+
+def test_cgal(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_cgal, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert np.amin(angles / np.pi * 180) > 10.0
+
+
+def run_gmsh():
+    with pygmsh.geo.Geometry() as geom:
+        geom.add_box(0, 1, 0, 1, 0, 1, 1.0)
+
+        geom.set_mesh_size_callback(
+            lambda dim, tag, x, y, z: ((1 - x) * GRADE + HMIN) / 1.1
+        )
+        t1 = time.time()
+        mesh = geom.generate_mesh()
+        elapsed = time.time() - t1
+
+    mesh.write("gmsh_box.vtk")
+    points = mesh.points
+    cells = mesh.cells[2].data
+
+    num_cells = len(cells)
+    num_vertices = len(points)
+
+    plex = meshplex.MeshTetra(points, cells)
+    angles = plex.q_min_sin_dihedral_angles
+    quality = plex.q_radius_ratio
+
+    return angles, quality, elapsed, num_vertices, num_cells
 
 
 def run_cgal():
@@ -57,7 +99,13 @@ def run_SeismicMesh():
 
     t1 = time.time()
     points, cells = SeismicMesh.generate_mesh(
-        bbox=bbox, h0=HMIN, domain=cube, cell_size=fh, nscreen=10, max_iter=20, delta_t=0.3,
+        bbox=bbox,
+        h0=HMIN,
+        domain=cube,
+        cell_size=fh,
+        nscreen=10,
+        max_iter=25,
+        delta_t=0.3,
     )
     points, cells = SeismicMesh.sliver_removal(
         points=points,
@@ -98,7 +146,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
         required=False,
-        help="Run benchmark with method=('cgal','sm')",
+        help="Run benchmark with method=('cgal','sm', 'gmsh')",
     )
 
     args = parser.parse_args()
@@ -109,8 +157,13 @@ if __name__ == "__main__":
     elif args.method == "sm":
         a1, q1, t1, nv, nc = run_SeismicMesh()
         print_stats_3d(a1, q1, "SeismicMesh", t1, nv, nc)
+    elif args.method == "gmsh":
+        a1, q1, t1, nv, nc = run_gmsh()
+        print_stats_3d(a1, q1, "gmsh", t1, nv, nc)
     else:
         a1, q1, t1, nv1, nc1 = run_cgal()
         a2, q2, t2, nv2, nc2 = run_SeismicMesh()
+        a3, q3, t3, nv3, nc3 = run_gmsh()
         print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
         print_stats_3d(a2, q2, "SeismicMesh", t2, nv2, nc2)
+        print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
