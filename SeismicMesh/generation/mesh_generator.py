@@ -38,6 +38,7 @@ opts = {
     "min_dh_angle_bound": 10.0,
     "max_dh_angle_bound": 170.0,
     "points": None,
+    "delta_t": 0.20,
 }
 
 
@@ -192,7 +193,12 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
             move = t[ele_nums, 0]
             num_move = move.size
             if num_move == 0:
-                print("Termination reached...no slivers detected!", flush=True)
+                print(
+                    "Termination reached in "
+                    + str(count)
+                    + " iterations...no slivers detected!",
+                    flush=True,
+                )
                 p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
                 return p, t
 
@@ -231,6 +237,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     return p, t
 
 
+# @profile
 def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function :class:`domain`
 
@@ -265,6 +272,8 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
             An array of points to constrain in the mesh. (default==None)
         * *axis* (`int`) --
             The axis to decompose the mesh (1,2, or 3). (default==1)
+        * *delta_t* (`float`) --
+            Psuedo-timestep to control movement of points (default=0.10)
 
     :return: points: vertex coordinates of mesh
     :rtype: points: (numpy.ndarray[`float` x dim])
@@ -311,11 +320,9 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
 
-    np.random.seed(opts["seed"])
-
     """These parameters originate from the original DistMesh"""
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
-    delta_t = 0.2
+    delta_t = opts["delta_t"]
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
 
@@ -445,6 +452,7 @@ def _parse_kwargs(kwargs):
             "bbox",
             "min_dh_angle_bound",
             "max_dh_angle_bound",
+            "delta_t",
         }:
             pass
         else:
@@ -489,6 +497,7 @@ def _get_edges(t):
     return geometry.unique_edges(edges)
 
 
+# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
@@ -599,6 +608,7 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
     # Make sure decimation occurs uniformly accross ranks
     if comm.size > 1:
         r0m = comm.allreduce(r0m, op=MPI.MIN)
+    np.random.seed(opts["seed"])
     p = np.vstack(
         (
             pfix,

@@ -23,8 +23,7 @@ def run_cgal():
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
             h = (1 - x[0]) * GRADE + HMIN
-            # https://en.wikipedia.org/wiki/Equilateral_triangle#Circumradius,_inradius,_and_exradii
-            return h/1.1
+            return h / 1.1
 
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
@@ -58,7 +57,7 @@ def run_SeismicMesh():
 
     t1 = time.time()
     points, cells = SeismicMesh.generate_mesh(
-        bbox=bbox, h0=HMIN, domain=cube, cell_size=fh, nscreen=10, max_iter=30
+        bbox=bbox, h0=HMIN, domain=cube, cell_size=fh, nscreen=10, max_iter=20, delta_t=0.3,
     )
     points, cells = SeismicMesh.sliver_removal(
         points=points,
@@ -68,6 +67,7 @@ def run_SeismicMesh():
         cell_size=fh,
         min_dh_angle_bound=10,
         nscreen=10,
+        max_iter=50,
     )
     elapsed = time.time() - t1
 

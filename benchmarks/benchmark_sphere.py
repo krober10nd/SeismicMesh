@@ -16,24 +16,53 @@ from helpers import print_stats_3d
 HMIN = 0.025
 
 
-# def run_gmsh():
-#    with pygmsh.occ.Geometry() as geom:
-#        geom.add_ball([0.0, 0.0, 0.0], 1.0)
-#
-#        geom.set_mesh_size_callback(
-#            lambda dim, tag, x, y, z: abs(sqrt(x ** 2 + y ** 2 + z ** 2) - 0.5) + HMIN
-#        )
-#        t1 = time.time()
-#        mesh = pygmsh.generate_mesh(geom)
-#        elapsed = time.time() - t1
-#
-#    mesh.write("gmsh_sphere.vtk")
-#
-#    plex = meshplex.MeshTetra(mesh.points, mesh.cells[1][1])
-#    angles = plex.q_min_sin_dihedral_angles
-#    quality = plex.q_radius_ratio
-#
-#    return angles, quality, elapsed
+def test_seismic_mesh(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_SeismicMesh, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert numpy.amin(angles / numpy.pi * 180) > 10.0
+
+
+def test_gmsh(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_gmsh, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert numpy.amin(angles / numpy.pi * 180) > 10.0
+
+
+def test_cgal(benchmark):
+    angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
+        run_cgal, iterations=1, rounds=5, warmup_rounds=0
+    )
+    assert numpy.amin(angles / numpy.pi * 180) > 10.0
+
+
+def run_gmsh():
+    with pygmsh.occ.Geometry() as geom:
+        geom.add_ball([0.0, 0.0, 0.0], 1.0)
+
+        geom.set_mesh_size_callback(
+            lambda dim, tag, x, y, z: (
+                abs(sqrt(x ** 2 + y ** 2 + z ** 2) - 0.5) / 5 + HMIN
+            )
+            / 1.1
+        )
+        t1 = time.time()
+        mesh = geom.generate_mesh()
+        elapsed = time.time() - t1
+
+    # mesh.write("gmsh_sphere.vtk")
+    points = mesh.points
+    cells = mesh.cells[2].data
+
+    num_cells = len(cells)
+    num_vertices = len(points)
+
+    plex = meshplex.MeshTetra(points, cells)
+    angles = plex.q_min_sin_dihedral_angles
+    quality = plex.q_radius_ratio
+
+    return angles, quality, elapsed, num_vertices, num_cells
 
 
 def run_cgal():
@@ -52,7 +81,7 @@ def run_cgal():
     )
     elapsed = time.time() - t1
 
-    mesh.write("cgal_sphere.vtk")
+    # mesh.write("cgal_sphere.vtk")
 
     plex = meshplex.MeshTetra(mesh.points, mesh.cells[1][1])
     angles = plex.q_min_sin_dihedral_angles
@@ -83,7 +112,13 @@ def run_SeismicMesh():
 
     t1 = time.time()
     points, cells = SeismicMesh.generate_mesh(
-        bbox=bbox, h0=HMIN, domain=sphere, cell_size=fh, nscreen=10, max_iter=35
+        bbox=bbox,
+        h0=HMIN,
+        domain=sphere,
+        cell_size=fh,
+        nscreen=10,
+        max_iter=25,
+        delta_t=0.3,
     )
     points, cells = SeismicMesh.sliver_removal(
         points=points,
@@ -92,15 +127,16 @@ def run_SeismicMesh():
         domain=sphere,
         cell_size=fh,
         min_dh_angle_bound=10,
+        max_iter=50,
         nscreen=10,
     )
     elapsed = time.time() - t1
 
-    meshio.write_points_cells(
-        "SeismicMesh_sphere.vtk",
-        points,
-        [("tetra", cells)],
-    )
+    # meshio.write_points_cells(
+    #    "SeismicMesh_sphere.vtk",
+    #    points,
+    #    [("tetra", cells)],
+    # )
 
     plex = meshplex.MeshTetra(points, cells)
     angles = plex.q_min_sin_dihedral_angles
@@ -140,7 +176,7 @@ if __name__ == "__main__":
     else:
         a1, q1, t1, nv1, nc1 = run_cgal()
         a2, q2, t2, nv2, nc2 = run_SeismicMesh()
-        # a3, q3, t3, nv3, nc3 = run_gmsh()
+        a3, q3, t3, nv3, nc3 = run_gmsh()
         print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
         print_stats_3d(a2, q2, "SeismicMesh", t2, nv2, nc2)
-        # print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
+        print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)
