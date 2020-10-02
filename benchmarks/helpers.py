@@ -8,7 +8,9 @@ __all__ = ["print_stats_3d"]
 def print_stats_3d(
     angles, quality, method="not specified", elapsed=0.0, num_verts=0.0, num_cells=0.0
 ):
-    """https://github.com/nschloe/optimesh/blob/master/optimesh/helpers.py"""
+    """https://github.com/nschloe/optimesh/blob/master/optimesh/helpers.py
+    NTS: terminal dimension: 286x93, font size 11, Menlo Regular, Line spacing 0.8, Char. spacing 1.044
+    """
 
     angles = angles / numpy.pi * 180
     angles_hist, angles_bin_edges = numpy.histogram(
@@ -29,14 +31,12 @@ def print_stats_3d(
     grid[0, 1].aprint("Number of vertices:      {:7.0f}".format(num_verts))
     grid[0, 1].aprint("Number of cells:         {:7.0f}".format(num_cells))
 
-    grid[1, 0].aprint("dihedral angles")
     grid[1, 0].aprint("min angle:     {:7.3f}".format(numpy.min(angles)))
     grid[1, 0].aprint("avg angle:     {:7.3f}".format(numpy.mean(angles)))
     grid[1, 0].aprint("max angle:     {:7.3f}".format(numpy.max(angles)))
     grid[1, 0].aprint("std dev angle: {:7.3f}".format(numpy.std(angles)))
     grid[1, 0].hist(angles_hist, angles_bin_edges, grid=[15, 25])
 
-    grid[1, 1].aprint("mesh quality metric")
     grid[1, 1].aprint("min quality: {:5.3f}".format(numpy.min(q)))
     grid[1, 1].aprint("avg quality: {:5.3f}".format(numpy.average(q)))
     grid[1, 1].aprint("max quality: {:5.3f}".format(numpy.max(q)))

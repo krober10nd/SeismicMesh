@@ -13,10 +13,12 @@ Benchmarks
 
 The following set of benchmark problems are available:
 
-    benchmark_cuboid: # a simple box-type geometry with nearly constant mesh resolution.
+    benchmark_BP2004: # meshing the 2D BP2004 seismic velocity model
+    benchmark_EAGE: # meshing the 3D EAGE Salt velocity model
+    benchmark_circle: # a unit circle
     benchmark_sphere: # a sphere with a ring of higher resolution near the center.
 
-Run `python benchmark_cuboid.py` to run all benchmarks for a particular domain (e.g., cuboid). Run `python benchmark_cuboid.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
+Run `python benchmark_sphere.py` to run all benchmarks for a particular domain (e.g., sphere). Run `python benchmark_sphere.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
 
 Results
 ---------------
@@ -24,7 +26,7 @@ Results
 Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge) in the cells and histograms of cell quality.
 
 
-![The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. Mesh generation programs have been compiled with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.](![BENCHMARK](https://user-images.githubusercontent.com/18619644/94858172-03ce4a80-0409-11eb-89aa-4f59cf2b8161.jpg)
+![The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. Mesh generation programs have been compiled with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.]((https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:

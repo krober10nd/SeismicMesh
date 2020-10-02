@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
     if args.method == "cgal":
         a1, q1, t1, nv, nc = run_cgal()
-        print_stats_3d(a1, q1, "CGAL", t1, nv, nc)
+        print_stats_3d(a1, q1, "cgal", t1, nv, nc)
     elif args.method == "sm":
         a1, q1, t1, nv, nc = run_SeismicMesh()
         print_stats_3d(a1, q1, "SeismicMesh", t1, nv, nc)
