@@ -428,6 +428,9 @@ def _unpack_domain(domain):
     elif isinstance(domain, geometry.Cube):
         bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
         fd = domain.eval
+    elif isinstance(domain, geometry.Circle):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
+        fd = domain.eval
     elif callable(domain):
         # get the bbox from the name value pairs or quit
         bbox = opts["bbox"]
@@ -598,8 +601,9 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
         p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
     else:
         # Create initial distribution in bounding box (equilateral triangles)
-        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(float)
-        p = p.reshape(dim, -1).T
+        p = mutils.create_staggered_grid_2d(h0, bbox)
+        # p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(float)
+        # p = p.reshape(dim, -1).T
 
     # Remove points outside the region, apply the rejection method
     p = p[fd(p) < geps]  # Keep only d<0 points

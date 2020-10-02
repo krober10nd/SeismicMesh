@@ -6,6 +6,10 @@ class Circle:
         self.xc = xc
         self.yc = yc
         self.r = r
+        self.x1 = xc - r
+        self.x2 = xc + r
+        self.y1 = yc - r
+        self.y2 = yc + r
 
     def eval(self, x):
         return _dcircle(x, self.xc, self.yc, self.r)

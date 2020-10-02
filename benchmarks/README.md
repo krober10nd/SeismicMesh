@@ -15,7 +15,7 @@ The following set of benchmark problems are available:
 
     benchmark_BP2004: # meshing the 2D BP2004 seismic velocity model
     benchmark_EAGE: # meshing the 3D EAGE Salt velocity model
-    benchmark_circle: # a unit circle
+    benchmark_circle: # a uniform 2D mesh of a unit circle
     benchmark_sphere: # a sphere with a ring of higher resolution near the center.
 
 Run `python benchmark_sphere.py` to run all benchmarks for a particular domain (e.g., sphere). Run `python benchmark_sphere.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
@@ -26,7 +26,9 @@ Results
 Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) in the cells and histograms of cell quality.
 
 
-![The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. Mesh generation programs have been compiled with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.]((https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
+![Sphere with some variation in size internally.]((https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
+
+![Uniform cirlce.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg)
 
 The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. All mesh generation programs have been compiled similarly with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.
 
@@ -66,7 +68,7 @@ Legend:
 Notes
 -----
 * Mesh generation with `cgal` is accomplished via [pygalmesh](https://github.com/nschloe/pygalmesh)
-* For CGAL's mesh generator, all default quality options are assumed (e.g., facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is approximately equivalent to the mesh size function in `SeismicMesh`.
+* For CGAL's mesh generator, all default quality options are assumed (e.g., facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is approximately equivalent to the mesh size function in `SeismicMesh`. Note: in 2D we do not use Lloyd smoothing.
 * Mesh generation with `gmsh` is accomplished via [pygmsh](https://github.com/nschloe/pygmsh) with all default options and, similar to `cgal`, an approximately equivalent cell-size function is passed.
 * For `SeimicMesh`, we perform both examples with 25 meshing iterations with a psuedo-timestep of 0.30 and then run the sliver removal implemention to bound the diheral angle to 10 degrees.
 * All programs are executed in a seqeuntial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) in `SeismicMesh`. Threading based parallelism can be used with `gmsh` and `cgal` but these benchmarks have not been explored.
