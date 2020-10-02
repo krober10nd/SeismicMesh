@@ -28,7 +28,7 @@ The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Co
 Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) in the cells and histograms of cell quality.
 
 
-![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg){:height="50%" width="50%"}
+![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
 
 ![A 2D mesh of unit circle.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg){:height="50%" width="50%"}
 
@@ -66,10 +66,10 @@ Legend:
 ```
 
 
-Notes
------
+Details on experiments
+-----------------------
 * Mesh generation with `cgal` is accomplished via [pygalmesh](https://github.com/nschloe/pygalmesh)
-* For CGAL's mesh generator, all default quality options are assumed (e.g., facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is approximately equivalent to the mesh size function in `SeismicMesh`. Note: in 2D we do not use Lloyd smoothing.
+* For `cgal`'s 3D mesh generator, all default quality options are assumed (e.g., facet angle bound of 30 degrees and the radius edge bound 2--to their theoretical limit). A `cell_size` function is passed to create variable mesh resolution in a way that is approximately equivalent to the mesh size function in `SeismicMesh`. In 2D we do not use Lloyd smoothing and significantly increases mesh generation time.
 * Mesh generation with `gmsh` is accomplished via [pygmsh](https://github.com/nschloe/pygmsh) with all default options and, similar to `cgal`, an approximately equivalent cell-size function is passed.
-* For `SeimicMesh`, we perform both examples with 25 meshing iterations with a psuedo-timestep of 0.30 and then run the sliver removal implemention to bound the diheral angle to 10 degrees.
+* For `SeimicMesh`, we perform all examples with 25 meshing iterations with a psuedo-timestep of 0.30 and then run the sliver removal implemention to bound the diheral angle to 10 degrees in 3D and, in 2D, we delete any lower quality elements on the boundary (with a cell quality less than 10 percent).
 * All programs are executed in a seqeuntial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) in `SeismicMesh`. Threading based parallelism can be used with `gmsh` and `cgal` but these benchmarks have not been explored.

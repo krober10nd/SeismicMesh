@@ -72,9 +72,7 @@ def run_cgal():
     constraints = [[k, k + 1] for k in range(n - 1)] + [[n - 1, 0]]
 
     t1 = time.time()
-    mesh = pygalmesh.generate_2d(
-        points, constraints, cell_size=HMIN
-    )
+    mesh = pygalmesh.generate_2d(points, constraints, cell_size=HMIN)
     elapsed = time.time() - t1
 
     mesh.write("cgal_circle.vtk")
