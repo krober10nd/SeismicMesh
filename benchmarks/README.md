@@ -31,6 +31,8 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 ![A 2D mesh of the BP2004 seismic velocity model.](https://user-images.githubusercontent.com/18619644/95080555-a713ae00-06ee-11eb-9737-18befe89a580.jpg)
 
+![A 3D mesh of the EAGE seismic velocity model.](https://user-images.githubusercontent.com/18619644/95106894-89a30c00-070f-11eb-9aed-0c48629fe299.jpg)
+
 ![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
 
 ![A 2D mesh of unit circle.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg)
