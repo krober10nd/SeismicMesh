@@ -29,13 +29,13 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
 
-![A 2D mesh of the BP2004 seismic velocity model.](https://user-images.githubusercontent.com/18619644/95080555-a713ae00-06ee-11eb-9737-18befe89a580.jpg)
+<img src="https://user-images.githubusercontent.com/18619644/95080555-a713ae00-06ee-11eb-9737-18befe89a580.jpg" alt="A 2D mesh of the BP2004 seismic velocity model." width="500"/>
 
-![A 3D mesh of the EAGE seismic velocity model.](https://user-images.githubusercontent.com/18619644/95106894-89a30c00-070f-11eb-9aed-0c48629fe299.jpg)
+<img src="https://user-images.githubusercontent.com/18619644/95106894-89a30c00-070f-11eb-9aed-0c48629fe299.jpg" alt="A 3D mesh of the EAGE seismic velocity model." width="500"/>
 
-![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
+<img src="https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg" alt="A 3D mesh of a unit sphere with some variation in mesh size internally." width="500"/>
 
-![A 2D mesh of unit circle.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg)
+<img src="https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg" alt="A 2D mesh of unit circle." width="500"/>
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
