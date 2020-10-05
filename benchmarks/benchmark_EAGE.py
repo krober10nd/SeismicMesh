@@ -29,12 +29,14 @@ HMIN = 150.0
 def run_gmsh(ef):
     with pygmsh.geo.Geometry() as geom:
 
-        geom.add_box(-4200.0, 0.0, 0.0, 13520.0, 0.0, 13520.0, 1.0)
+        geom.add_box(-4200.0, 0.0, 0.0, 13520.0, 0.0, 13520.0, 150.0)
 
-        geom.set_mesh_size_callback(lambda dim, tag, x, y, z: (ef.eval([x, y, z])))
-
+        geom.set_mesh_size_callback(
+            lambda dim, tag, x, y, z: (ef.eval([x, y, z])) / 1.1
+        )
         gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
-        print("generating mesh")
+
+        print("generating mesh...")
         t1 = time.time()
         mesh = geom.generate_mesh()
         elapsed = time.time() - t1
