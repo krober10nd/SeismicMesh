@@ -19,21 +19,21 @@ def test_seismic_mesh(benchmark):
     quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
         run_SeismicMesh, iterations=1, rounds=5, warmup_rounds=0
     )
-    assert numpy.amin(quality) > 10.0
+    assert numpy.amin(quality) > 0.10
 
 
 def test_gmsh(benchmark):
     quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
         run_gmsh, iterations=1, rounds=5, warmup_rounds=0
     )
-    assert numpy.amin(quality) > 10.0
+    assert numpy.amin(quality) > 0.10
 
 
 def test_cgal(benchmark):
     quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
         run_cgal, iterations=1, rounds=5, warmup_rounds=0
     )
-    assert numpy.amin(quality) > 10.0
+    assert numpy.amin(quality) > 0.10
 
 
 def run_gmsh():
