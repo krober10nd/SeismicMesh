@@ -6,6 +6,7 @@ import numpy
 import meshplex
 import meshio
 import pygmsh
+import gmsh
 
 from SeismicMesh import (
     get_sizing_function_from_segy,
@@ -18,6 +19,9 @@ from SeismicMesh import (
 from helpers import print_stats_2d
 
 HMIN = 75.0
+
+
+gmsh.option.setNumber("Mesh.Algorithm", 5)
 
 
 def run_gmsh(ef):

@@ -4,7 +4,8 @@ import argparse
 import numpy
 
 import meshplex
-import meshio
+
+# import meshio
 
 import pygalmesh
 import pygmsh

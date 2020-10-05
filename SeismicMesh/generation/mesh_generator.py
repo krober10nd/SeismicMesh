@@ -601,9 +601,13 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
         p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
     else:
         # Create initial distribution in bounding box (equilateral triangles)
-        p = mutils.create_staggered_grid_2d(h0, bbox)
-        # p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(float)
-        # p = p.reshape(dim, -1).T
+        if dim == 2:
+            p = mutils.create_staggered_grid_2d(h0, bbox)
+        elif dim == 3:
+            p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(
+                float
+            )
+            p = p.reshape(dim, -1).T
 
     # Remove points outside the region, apply the rejection method
     p = p[fd(p) < geps]  # Keep only d<0 points
