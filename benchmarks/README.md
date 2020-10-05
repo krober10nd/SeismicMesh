@@ -29,7 +29,7 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
 
-![A 2D mesh of the BP2004 seismic velocity model.](https://user-images.githubusercontent.com/18619644/95080154-09b87a00-06ee-11eb-9992-9233d3056345.jpg)
+![A 2D mesh of the BP2004 seismic velocity model.](https://user-images.githubusercontent.com/18619644/95080555-a713ae00-06ee-11eb-9737-18befe89a580.jpg)
 
 ![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
 
