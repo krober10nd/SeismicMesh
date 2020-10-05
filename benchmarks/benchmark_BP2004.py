@@ -21,9 +21,6 @@ from helpers import print_stats_2d
 HMIN = 75.0
 
 
-gmsh.option.setNumber("Mesh.Algorithm", 5)
-
-
 def run_gmsh(ef):
     with pygmsh.geo.Geometry() as geom:
 
@@ -37,6 +34,8 @@ def run_gmsh(ef):
         )
 
         geom.set_mesh_size_callback(lambda dim, tag, x, y, z: (ef.eval([x, y])))
+        gmsh.option.setNumber("Mesh.Algorithm", 5)
+        gmsh.option.setNumber("Mesh.CharacteristicLengthExtendFromBoundary", 0)
 
         t1 = time.time()
         mesh = geom.generate_mesh()

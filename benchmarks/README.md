@@ -6,7 +6,7 @@ Here we compare `SeismicMesh` against well-established existing mesh generation 
     * a comparison in cell quality.
     * a comparison of dihedral angle distributions.
 
-where cell quality is defined as d * circumcircle_radius / incircle_radius (where d is 3 for tetrahedra). The value is between 0 and 1, where 1 is a perfectly symmetrical simplex.
+where cell quality is defined as d * circumcircle_radius / incircle_radius (where d is 2 for triangles and 3 for tetrahedra). The value is between 0 and 1, where 1 is a perfectly symmetrical simplex.
 
 Benchmarks
 ----------
@@ -27,10 +27,13 @@ The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Co
 
 Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) in the cells and histograms of cell quality.
 
+**NOTE: 2D mesh sizing functions are not supported by CGAL**
+
+![A 2D mesh of the BP2004 seismic velocity model.](https://user-images.githubusercontent.com/18619644/95080154-09b87a00-06ee-11eb-9992-9233d3056345.jpg)
 
 ![A 3D mesh of a unit sphere with some variation in mesh size internally.](https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg)
 
-![A 2D mesh of unit circle.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg){:height="50%" width="50%"}
+![A 2D mesh of unit circle.](https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg)
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
