@@ -67,21 +67,21 @@ ef = _build_sizing()
 
 def test_seismic_mesh(benchmark):
     angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
-        run_SeismicMesh(*ef), iterations=1, rounds=5, warmup_rounds=0
+        run_SeismicMesh, args=(ef), iterations=1, rounds=5, warmup_rounds=0
     )
     assert numpy.amin(angles / numpy.pi * 180) > 10.0
 
 
 def test_gmsh(benchmark):
     angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
-        run_gmsh(*ef), iterations=1, rounds=5, warmup_rounds=0
+        run_gmsh, args=(ef), iterations=1, rounds=5, warmup_rounds=0
     )
     assert numpy.amin(angles / numpy.pi * 180) > 10.0
 
 
 def test_cgal(benchmark):
     angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
-        run_cgal(ef), iterations=1, rounds=5, warmup_rounds=0
+        run_cgal, args=(ef), iterations=1, rounds=5, warmup_rounds=0
     )
     assert numpy.amin(angles / numpy.pi * 180) > 10.0
 
