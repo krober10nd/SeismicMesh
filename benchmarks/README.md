@@ -4,7 +4,7 @@ Here we compare `SeismicMesh` against well-established existing mesh generation 
 
     * a comparison in mesh creation speed in terms of wall-clock time and throughput.
     * a comparison in cell quality.
-    * a comparison of dihedral angle distributions.
+    * (for 3D) a comparison of minimum dihedral angle.
 
 where cell quality is defined as d * circumcircle_radius / incircle_radius (where d is 2 for triangles and 3 for tetrahedra). The value is between 0 and 1, where 1 is a perfectly symmetrical simplex.
 
@@ -25,11 +25,9 @@ Results
 
 The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. All mesh generation programs have been compiled similarly with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.
 
-Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of the normalized minimum sin of each cells' six [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) so that a perfect tetrahedra has a value of 1 and histograms of cell quality (which was described above).
+Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of each cells' minimum [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) and histograms of cell quality (which was described above).
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
-
-<img src="https://user-images.githubusercontent.com/18619644/95147383-fb527880-0756-11eb-8a62-b6be0488ecab.jpg" alt="Summary of all experiments." width="500"/>
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:

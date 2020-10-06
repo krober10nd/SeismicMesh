@@ -265,8 +265,12 @@ How does it compare to `gmsh` and `cgal`?
 
 * Performance in 2D and 3D of `SeismicMesh` is similar to both that of `gmsh` and `cgal`'s capabilities in terms of cell quality and mesh generation time.
 * Generally however, `gmsh` is the fastest to generate a mesh and produces the highest minimum cell qualities followed by `SeismicMesh` and then `cgal`.
-* `SeismicMesh` however tends to produce consistently higher median and mean cell qualities than either `gmsh` or `cgal`.
-* Head over to the `benchmarks` folder for more detailed information on these findings.
+* `SeismicMesh` however tends to produce consistently higher mean cell qualities than either `gmsh` or `cgal`.
+* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling robust numerical simulation.
+* Head over to the `benchmarks` folder for more detailed information on this experiment.
+
+![Summary of performance](https://user-images.githubusercontent.com/18619644/95204275-40f45d00-07ba-11eb-8dc4-f0b4f2ba2c78.jpg)
+
 
 
 More information
