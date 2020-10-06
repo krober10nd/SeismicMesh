@@ -29,7 +29,6 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
 
-
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
 
 ```python
