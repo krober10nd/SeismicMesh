@@ -15,8 +15,8 @@ The following set of benchmark problems are available:
 
     benchmark_BP2004: # meshing the 2D BP2004 seismic velocity model
     benchmark_EAGE: # meshing the 3D EAGE Salt velocity model
-    benchmark_circle: # a uniform 2D mesh of a unit circle
-    benchmark_sphere: # a sphere with a ring of higher resolution near the center.
+    benchmark_disk: # a uniform 2D mesh of a unit disk
+    benchmark_ball: # a unit ball with a ring of higher resolution near the center.
 
 Run `python benchmark_sphere.py` to run all benchmarks for a particular domain (e.g., sphere). Run `python benchmark_sphere.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
 
@@ -25,23 +25,17 @@ Results
 
 The computer used for benchmarking is a PC running MacOS with Dual-Core Intel Core i5 clocked at 2.00 GHz with 8GB of RAM. All mesh generation programs have been compiled similarly with gcc v8.3.0 with the -O3 option. These benchmarks have been done using CGAL v5.0, gmsh 4.7.0, and SeismicMesh v3.0.3. Each statistic is reported as the average of 5 executions.
 
-Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) in the cells and histograms of cell quality.
+Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https://github.com/nschloe/meshplex) to calculate some mesh statistics, the benchmarks produce histograms of the normalized minimum sin of each cells' six [dihedral angles](https://en.wikipedia.org/wiki/Dihedral_angle) so that a perfect tetrahedra has a value of 1 and histograms of cell quality (which was described above).
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
 
-<img src="https://user-images.githubusercontent.com/18619644/95080555-a713ae00-06ee-11eb-9737-18befe89a580.jpg" alt="A 2D mesh of the BP2004 seismic velocity model." width="500"/>
-
-<img src="https://user-images.githubusercontent.com/18619644/95106894-89a30c00-070f-11eb-9aed-0c48629fe299.jpg" alt="A 3D mesh of the EAGE seismic velocity model." width="500"/>
-
-<img src="https://user-images.githubusercontent.com/18619644/94877603-5f143300-0431-11eb-803c-addbaab5166b.jpg" alt="A 3D mesh of a unit sphere with some variation in mesh size internally." width="500"/>
-
-<img src="https://user-images.githubusercontent.com/18619644/94939196-27949d80-04a8-11eb-8d4e-fab093c30f7b.jpg" alt="A 2D mesh of unit circle." width="500"/>
+<img src="https://user-images.githubusercontent.com/18619644/95147383-fb527880-0756-11eb-8a62-b6be0488ecab.jpg" alt="Summary of all experiments." width="500"/>
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
 
 ```python
-py.test --benchmark-max-time=360 benchmarks/benchmark_sphere.py
+py.test --benchmark-max-time=360 benchmarks/benchmark_ball.py
 ```
 
 produces for example:
@@ -54,7 +48,7 @@ rootdir: /Users/Keith/junk/SeismicMesh, configfile: pytest.ini
 plugins: xdist-2.1.0, cov-2.10.1, benchmark-3.2.3, forked-1.3.0
 collected 3 items
 
-benchmarks/benchmark_sphere.py ...                                                                                                                                                                   [100%]
+benchmarks/benchmark_ball.py ...                                                                                                                                                                   [100%]
 
 -------------------------------------------------------------------------------- benchmark: 3 tests --------------------------------------------------------------------------------
 Name (time in s)          Min                Max               Mean            StdDev             Median               IQR            Outliers     OPS            Rounds  Iterations

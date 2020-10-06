@@ -62,7 +62,7 @@ def run_gmsh():
 
 def run_cgal():
 
-    n = 30
+    n = 50
     points = numpy.array(
         [
             [numpy.cos(alpha), numpy.sin(alpha)]

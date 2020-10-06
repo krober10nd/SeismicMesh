@@ -73,10 +73,10 @@ def print_stats_3d(
     grid[0, 1].aprint("Number of vertices:      {:7.0f}".format(num_verts))
     grid[0, 1].aprint("Number of cells:         {:7.0f}".format(num_cells))
 
-    grid[1, 0].aprint("min angle:     {:7.3f}".format(numpy.min(angles)))
-    grid[1, 0].aprint("avg angle:     {:7.3f}".format(numpy.mean(angles)))
-    grid[1, 0].aprint("max angle:     {:7.3f}".format(numpy.max(angles)))
-    grid[1, 0].aprint("std dev angle: {:7.3f}".format(numpy.std(angles)))
+    grid[1, 0].aprint("q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.min(angles)))
+    grid[1, 0].aprint("avg. q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.mean(angles)))
+    grid[1, 0].aprint("max q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.max(angles)))
+    grid[1, 0].aprint("std dev q_min_sin_dihedral_angles: {:7.3f}".format(numpy.std(angles)))
     grid[1, 0].hist(angles_hist, angles_bin_edges, grid=[15, 25])
 
     grid[1, 1].aprint("min quality: {:5.3f}".format(numpy.min(q)))
