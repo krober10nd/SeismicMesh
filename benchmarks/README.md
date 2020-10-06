@@ -29,7 +29,7 @@ Using [termplotlib](https://github.com/nschloe/termplotlib) and [meshplex](https
 
 **NOTE: 2D mesh sizing functions are not supported by CGAL**
 
-<img src="https://user-images.githubusercontent.com/18619644/95147383-fb527880-0756-11eb-8a62-b6be0488ecab.jpg" alt="Summary of all experiments." width="500"/>
+<img src="https://user-images.githubusercontent.com/18619644/95147383-fb527880-0756-11eb-8a62-b6be0488ecab.jpg" alt="Summary of all experiments." width="1000"/>
 
 
 Average speed statistics can be computed via [pytest-benchmark](https://pypi.org/project/pytest-benchmark/) which is set up to run each domain 5 times. For example:
