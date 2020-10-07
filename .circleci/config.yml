@@ -15,6 +15,8 @@ jobs:
       - image: circleci/python:3
     steps:
       - checkout
+      - run: python --version
+      - run: pip --version
       - run: sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
       - run: sudo apt install -y cmake
       - run: sudo apt-get install libboost-all-dev
