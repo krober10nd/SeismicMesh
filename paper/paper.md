@@ -33,35 +33,46 @@ Generating a high-geometric quality graded mesh for a geophysical domain represe
 
 # Statement of Need
 
-Self-contained automatic meshing workflows that incorporate geophysical data to generate unstructured meshes have been successful in several domains such as coastal ocean modeling [e.g., `OceanMesh2D` @roberts2019oceanmesh2d; `GMT` and `Terreno` @gorman2008systematic] and reservoir modeling [e.g., `MeshIT` @cacace2015meshit]. Besides generating a high-quality mesh, the distribution of elements must accurately represent physical features in the domain such as faults and non-conformities as depicted in geophysical datasets. Element distributions must be placed such that the stability requirements of the numerical solver are satisfied and feature smooth transitions in element size. These aspects motivate the development of a self-contained mesh generation program.
+Self-contained automatic meshing workflows that incorporate geophysical data to generate unstructured meshes have been successful in several domains such as coastal ocean modeling [e.g., `OceanMesh2D` @roberts2019oceanmesh2d; `GMT` and `Terreno` @gorman2008systematic] and reservoir modeling [e.g., `MeshIT` @cacace2015meshit]. Besides generating a high-quality mesh, the distribution of elements must accurately represent physical features in the domain such as faults and non-conformities. Element distributions must be placed such that the stability requirements of the numerical solver are satisfied and feature smooth transitions in element size. These aspects motivate the development of a self-contained mesh generation program.
 
-Parallel capabilities are necessary as well as tetrahedral meshes can become computationally expensive to generate. In acoustic and elastic wave propagation, a minimum number between 5 to 10 vertices per wavelength (~250-2000 m) of the source wavelet is applied to ensure the subsequent simulation is numerically accurate. For example, in a 3D mesh of a benchmark FWI model EAGE Salt [@doi:10.1190/1.1437283] this requires 507,862 cells when resolving a 2 Hz source frequency using 5 vertices per wavelength. The number of cells increases by a factor of approximately 8 (approximately 4,082,978 cells) as the source frequency is doubled.
+Parallel capabilities can be useful as well as tetrahedral meshes can become computationally expensive to generate. In acoustic and elastic wave propagation, a minimum number between 5 to 10 vertices per wavelength (~250-2000 m) of the source wavelet is applied to ensure the subsequent simulation is numerically accurate. For example, in a 3D mesh of a benchmark FWI model EAGE Salt [@doi:10.1190/1.1437283] this requires 507,862 cells when resolving a 2 Hz source frequency using 5 vertices per wavelength. The number of cells increases by a factor of approximately 8 (approximately 4,082,978 cells) as the source frequency is doubled.
 
 
 # Core functionality
 
-A schematic of `SeismicMesh` is shown in \autoref{fig:workflow}. The core functionality is as follows:
+  1. The creation of 2D/3D graded mesh size functions defined on axis-aligned regular Cartesian grids. These mesh sizing functions encode mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [see @SeismicMeshDocs for further details]. Mesh size function grading is accomplished using [@persson2006mesh].
 
-  1. The creation of 2D/3D graded mesh size functions defined on regular Cartesian grids. These mesh sizing functions contain mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [see @SeismicMeshDocs for further details]. Note that mesh size function grading is accomplished using [@persson2006mesh].
+  2. Distributed memory parallelism. The generation of potentially large (> 10 million cells) high-geometric quality triangular or tetrahedral meshes in either using distributed memory parallelism with mesh resolution following sizing functions.
 
-  2. Parallelism. The generation of potentially large (> 10 million cells) high-geometric quality triangular or tetrahedral meshes in either serial or using distributed memory parallelism. \autoref{fig:speedup} shows a peak speed-up of approximately 6.60 times using 11 cores when performing 50 meshing iterations to generate an approximately 4 million cell mesh. The usage of 11 cores reduces the generation time of this example from 20 minutes to approximately 2 wall-clock minutes.  The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz  (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+  3. An implementation of a 3D degenerate (i.e., sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric while preserving the domain structure. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
 
-  3. An implementation of a 3D degenerate (sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric while preserving the domain structure. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
+ Similar to other meshing programs such as `gmsh` [@doi:10.1002/nme.2579], `SeismicMesh` [@SeismicMeshDocs] enables both generation and improvement of simplical meshes through a Python scripting-based application programming interface.
 
-  4. The ability to represent irregular domains implicitly using signed distance functions.
+The mesh's domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary and can be particularly useful in geophysical domains.
 
- ![A schematic of `SeismicMesh`. On the right hand side, a P-wave seismic velocity in the Canadian Rockies is shown [@gray1995migration]. Note that mesh linting is a sequence of mesh improvement operations and checks that occur after mesh generation has ceased. \label{fig:workflow}](Workflow.jpg)
+# Parallelism
 
- Similar to other meshing programs such as `gmsh` [@doi:10.1002/nme.2579], `tetgen` [@si2015tetgen] and `mmg` [@mmg], `SeismicMesh` [@SeismicMeshDocs] provides both generation and improvement of meshes through a scripting-based application programming interface.
-
-Domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary. Geometries such as the free surface  boundary, seafloor, volcanoes, and salt-bodies are characterized by pronounced changes to seismic velocities making it possible to demarcate these regions by thresholding seismic velocity. Considering this, a capability is provided in to create signed distance functions from isocontours of seismic velocity using the Fast-Marching method [@sethian1996fast].
+A simplified version of the parallel Delaunay algorithm proposed by [ @peterka2014high] is implemented. \autoref{fig:speedup} shows a peak speed-up of approximately 6.60 times using 11 cores when performing 50 meshing iterations to generate an approximately 4 million cell mesh. The usage of 11 cores reduces the generation time of this example from 20 minutes to approximately 2 wall-clock minutes.  The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz  (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
 
 ![Speed-up (left-axis) as compared to the sequential version of the program and wall-clock time in minutes to generate a 3D mesh (approximately 4.6 M cells) for the EAGE Salt seismic velocity model. The panel on the right hand side shows the a slice through the center of the generated mesh. \label{fig:speedup}](Performance.jpg)
 
 
+# Performance Comparison
+
+The 2D/3D serial performance against `gmsh` and `cgal` [@cgal:rty-m3-20b, @cgal:r-ctm2-20b] in terms of mesh quality and creation time where mesh quality is defined as:
+
+:math::
+
+    d * r_{c} / r_[ic]
+
+where `d` is 2 for triangles and 3 for tetrahedra, `r_{c}` is the circumcircle radius and `i_c` is the circumcircle inradius. This quality metric is between 0 and 1, where 1 is a perfectly symmetrical simplex. For the analytical geometries (e.g. disk and ball) `gmsh` is the fastest to generate a mesh and then performance is approximately similar for both `SeismicMesh` and `cgal`. `gmsh` and `cgal` produce higher minimum cell qualities overall than `SeismicMesh` but importantly all generators are capable of producing sliver-free meshes. With that said, `SeismicMesh` produces higher mean cell qualities by about 5\% as compared to `gmsh` and `cgal`. For the two seismic meshes (e.g., BP2004 and EAGE), `SeismicMesh` is faster than `cgal` but slower than `gmsh` and the mesh quality similarly follows the results observed in the analytical cases. Interpolant-based mesh sizing functions significantly slow the mesh generation time of `gmsh` increasing its mesh generation time by a factor of 3x. The `DistMesh` algorithm used in `SeismicMesh` requires far less calls to the sizing function. For example in the EAGE benchmark, `gmsh` calls the sizing function 95,756 times whereas `DistMesh` calls it just 26 times.
+
+![The mesh creation time and resulting mesh quality for four bencmark problems studied. Two analytical problems a (disk and a ball) and two non-anlaytical problems with sizing functions defined via interpolants (BP2004 and EAGE). All quantities are annotated next to points in the color that matches the generator used. \label{fig:benchmark}](Benchmarks.jpg)
+
+
 # Ongoing and future applications
 
- Here are some future applications for this software:
+ Some future applications for this software:
 
  * `SeismicMesh` is being used by a group of researchers to build 2D/3D meshes for a seismological FEM model that has been developed in the Firedrake computing environment [@10.1145/2998441].
 
