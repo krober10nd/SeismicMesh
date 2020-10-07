@@ -1,3 +1,5 @@
+import math
+
 import numpy
 
 import termplotlib as tpl
@@ -53,8 +55,11 @@ def print_stats_3d(
     """https://github.com/nschloe/optimesh/blob/master/optimesh/helpers.py
     NTS: terminal dimension: 286x93, font size 11, Menlo Regular, Line spacing 0.8, Char. spacing 1.044
     """
-
-    angles = angles / numpy.pi * 180
+    # convert to dihedral angles in radians
+    const = 2 * math.sqrt(2) / 3
+    angles = numpy.arcsin(const * angles)
+    # convert to degrees
+    angles = 180 * angles / numpy.pi
     angles_hist, angles_bin_edges = numpy.histogram(
         angles, bins=numpy.linspace(0.0, 180.0, num=73, endpoint=True)
     )
@@ -73,10 +78,10 @@ def print_stats_3d(
     grid[0, 1].aprint("Number of vertices:      {:7.0f}".format(num_verts))
     grid[0, 1].aprint("Number of cells:         {:7.0f}".format(num_cells))
 
-    grid[1, 0].aprint("q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.min(angles)))
-    grid[1, 0].aprint("avg. q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.mean(angles)))
-    grid[1, 0].aprint("max q_min_sin_dihedral_angles:     {:7.3f}".format(numpy.max(angles)))
-    grid[1, 0].aprint("std dev q_min_sin_dihedral_angles: {:7.3f}".format(numpy.std(angles)))
+    grid[1, 0].aprint("min. dihedral angles:     {:7.3f}".format(numpy.min(angles)))
+    grid[1, 0].aprint("avg. dihedral angles:     {:7.3f}".format(numpy.mean(angles)))
+    grid[1, 0].aprint("max  dihedral angles:     {:7.3f}".format(numpy.max(angles)))
+    grid[1, 0].aprint("std dev. dihedral angles: {:7.3f}".format(numpy.std(angles)))
     grid[1, 0].hist(angles_hist, angles_bin_edges, grid=[15, 25])
 
     grid[1, 1].aprint("min quality: {:5.3f}".format(numpy.min(q)))
