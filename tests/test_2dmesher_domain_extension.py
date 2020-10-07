@@ -16,9 +16,9 @@ from SeismicMesh import (
 @pytest.mark.parametrize(
     "style_answer",
     (
-        ("linear_ramp", [9440, 18532]),
-        ("edge", [9769, 19154]),
-        ("constant", [9440, 18532]),
+        ("linear_ramp", [10789, 21219]),
+        ("edge", [11106, 21814]),
+        ("constant", [10789, 21219]),
     ),
 )
 def test_2dmesher_domain_extension(style_answer):
@@ -53,6 +53,11 @@ def test_2dmesher_domain_extension(style_answer):
         hmin,
         perform_checks=True,
     )
+    # import meshio
+
+    # meshio.write_points_cells(
+    #    "TEST.vtk", points, [("triangle", cells)], file_format="vtk"
+    # )
     print(len(points), len(cells))
     assert allclose([len(points), len(cells)], answer, atol=100)
 

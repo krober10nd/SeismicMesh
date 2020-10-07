@@ -4,6 +4,7 @@ from .cpp.fast_geometry import (
     calc_circumsphere_grad,
     calc_dihedral_angles,
     calc_volume_grad,
+    unique_edges,
 )
 from .signed_distance_functions import Rectangle, Cube, Circle, drectangle, dblock
 from .utils import (
@@ -60,4 +61,5 @@ __all__ = [
     "get_boundary_facets",
     "get_winded_boundary_edges",
     "vertex_in_entity3",
+    "unique_edges",
 ]

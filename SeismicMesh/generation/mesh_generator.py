@@ -38,6 +38,7 @@ opts = {
     "min_dh_angle_bound": 10.0,
     "max_dh_angle_bound": 170.0,
     "points": None,
+    "delta_t": 0.20,
 }
 
 
@@ -47,7 +48,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
     :param points:
         An array of points that describe the vertices of an existing (higher-quality) mesh.
-    :type filename: ``string``
+    :type points: `np.ndarray`
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
     :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
@@ -113,7 +114,9 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
-    print("Will attempt " + str(max_iter) + " to bound the dihedral angles...")
+    print(
+        "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
+    )
 
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
@@ -190,7 +193,12 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
             move = t[ele_nums, 0]
             num_move = move.size
             if num_move == 0:
-                print("Termination reached...no slivers detected!", flush=True)
+                print(
+                    "Termination reached in "
+                    + str(count)
+                    + " iterations...no slivers detected!",
+                    flush=True,
+                )
                 p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
                 return p, t
 
@@ -217,7 +225,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
-            p, t = _termination(p, t, opts, comm)
+            p, t = _termination(p, t, opts, comm, sliver=True)
             break
 
         count += 1
@@ -229,6 +237,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     return p, t
 
 
+# @profile
 def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function :class:`domain`
 
@@ -263,6 +272,8 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
             An array of points to constrain in the mesh. (default==None)
         * *axis* (`int`) --
             The axis to decompose the mesh (1,2, or 3). (default==1)
+        * *delta_t* (`float`) --
+            Psuedo-timestep to control movement of points (default=0.10)
 
     :return: points: vertex coordinates of mesh
     :rtype: points: (numpy.ndarray[`float` x dim])
@@ -309,11 +320,9 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
 
-    np.random.seed(opts["seed"])
-
     """These parameters originate from the original DistMesh"""
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
-    delta_t = 0.1
+    delta_t = opts["delta_t"]
     geps = 1e-1 * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
 
@@ -352,30 +361,25 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
-        # Compute the forces on the bars
-        Ftot = _compute_forces(p, t, fh, h0, L0mult)
-
-        Ftot[:nfix] = 0  # Force = 0 at fixed points
-
-        # Last timestep in parallel, we don't move points
-        if comm.size > 1:
-            if count < max_iter - 1:
-                p += delta_t * Ftot
-        else:
-            p += delta_t * Ftot  # Update positions
-
-        # Bring outside points back to the boundary
-        p = _project_points_back(p, fd, deps)
-
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             p, t = _termination(p, t, opts, comm)
             break
 
+        # Compute the forces on the edges
+        Ftot = _compute_forces(p, t, fh, h0, L0mult)
+
+        Ftot[:nfix] = 0  # Force = 0 at fixed points
+
+        # Update positions
+        p += delta_t * Ftot
+
+        # Bring outside points back to the boundary
+        p = _project_points_back(p, fd, deps)
+
         if comm.size > 1:
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
-            comm.barrier()
 
         # Show the user some progress so they know something is happening
         if count % nscreen == 0 and comm.rank == 0:
@@ -424,6 +428,9 @@ def _unpack_domain(domain):
     elif isinstance(domain, geometry.Cube):
         bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
         fd = domain.eval
+    elif isinstance(domain, geometry.Circle):
+        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
+        fd = domain.eval
     elif callable(domain):
         # get the bbox from the name value pairs or quit
         bbox = opts["bbox"]
@@ -448,6 +455,7 @@ def _parse_kwargs(kwargs):
             "bbox",
             "min_dh_angle_bound",
             "max_dh_angle_bound",
+            "delta_t",
         }:
             pass
         else:
@@ -465,12 +473,12 @@ def _display_progress(p, t, count, nscreen, maxdp, comm):
     )
 
 
-def _termination(p, t, opts, comm):
+def _termination(p, t, opts, comm, sliver=False):
     """Shut it down when reacing `max_iter`"""
     dim = p.shape[1]
     if comm.rank == 0:
         print("Termination reached...maximum number of iterations reached.", flush=True)
-    if comm.size > 1:
+    if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
     # perform linting if asked
@@ -481,36 +489,35 @@ def _termination(p, t, opts, comm):
     return p, t
 
 
-def _get_bars(t):
+def _get_edges(t):
     """Describe each bar by a unique pair of nodes"""
     dim = t.shape[1] - 1
-    bars = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
+    edges = np.concatenate([t[:, [0, 1]], t[:, [1, 2]], t[:, [2, 0]]])
     if dim == 3:
-        bars = np.concatenate((bars, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0)
-    bars = mutils.unique_rows(
-        np.ascontiguousarray(bars, dtype=np.uint32)
-    )  # Bars as node pairs
-    return bars
+        edges = np.concatenate(
+            (edges, t[:, [0, 3]], t[:, [1, 3]], t[:, [2, 3]]), axis=0
+        )
+    return geometry.unique_edges(edges)
 
 
+# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
     N = p.shape[0]
-    bars = _get_bars(t)
-    barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
+    edges = _get_edges(t)
+    barvec = p[edges[:, 0]] - p[edges[:, 1]]  # List of bar vectors
     L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
     L[L == 0] = np.finfo(float).eps
-    hbars = fh(p[bars].sum(1) / 2)
-    L0 = hbars * L0mult * ((L ** dim).sum() / (hbars ** dim).sum()) ** (1.0 / dim)
+    hedges = fh(p[edges].sum(1) / 2)
+    L0 = hedges * L0mult * ((L ** dim).sum() / (hedges ** dim).sum()) ** (1.0 / dim)
     F = L0 - L
     F[F < 0] = 0  # Bar forces (scalars)
     Fvec = (
         F[:, None] / L[:, None].dot(np.ones((1, dim))) * barvec
     )  # Bar forces (x,y components)
-
     Ftot = mutils.dense(
-        bars[:, [0] * dim + [1] * dim],
+        edges[:, [0] * dim + [1] * dim],
         np.repeat([list(range(dim)) * 2], len(F), axis=0),
         np.hstack((Fvec, -Fvec)),
         shape=(N, dim),
@@ -594,8 +601,13 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
         p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
     else:
         # Create initial distribution in bounding box (equilateral triangles)
-        p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(float)
-        p = p.reshape(dim, -1).T
+        if dim == 2:
+            p = mutils.create_staggered_grid_2d(h0, bbox)
+        elif dim == 3:
+            p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(
+                float
+            )
+            p = p.reshape(dim, -1).T
 
     # Remove points outside the region, apply the rejection method
     p = p[fd(p) < geps]  # Keep only d<0 points
@@ -604,6 +616,7 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
     # Make sure decimation occurs uniformly accross ranks
     if comm.size > 1:
         r0m = comm.allreduce(r0m, op=MPI.MIN)
+    np.random.seed(opts["seed"])
     p = np.vstack(
         (
             pfix,
