@@ -4,7 +4,6 @@ Here we compare `SeismicMesh` against well-established existing mesh generation 
 
     * a comparison in mesh creation speed in terms of wall-clock time and throughput.
     * a comparison in cell quality.
-    * (for 3D) a comparison of minimum dihedral angle.
 
 where cell quality is defined as d * circumcircle_radius / incircle_radius (where d is 2 for triangles and 3 for tetrahedra). The value is between 0 and 1, where 1 is a perfectly symmetrical simplex.
 
@@ -69,3 +68,4 @@ Details on experiments
 * Mesh generation with `gmsh` is accomplished via [pygmsh](https://github.com/nschloe/pygmsh) with all default options and, similar to `cgal`, an approximately equivalent cell-size function is passed.
 * For `SeismicMesh`, we perform all examples with 25 meshing iterations with a psuedo-timestep of 0.30 and then run the sliver removal implemention to bound the diheral angle to 10 degrees in 3D and, in 2D, we delete any lower quality elements on the boundary (with a cell quality less than 10 percent).
 * All programs are executed in a seqeuntial mode. It's important to note however that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`. Threading based parallelism can be used with `gmsh` and `cgal` but these benchmarks have not been explored.
+* The scripts with the prefix `run` iterate over a range of relevant problem sizes to produce the timining and quality scales at different scales.

@@ -24,11 +24,8 @@ from helpers import print_stats_3d
 # Bounding box describing domain extents (corner coordinates)
 bbox = (-4200, 0, 0, 13520, 0, 13520)
 
-# Desired minimum mesh size in domain.
-HMIN = 150.0
 
-
-def _build_sizing():
+def _build_sizing(HMIN=150.0, FREQ=2):
 
     # This file is in a big Endian binary format, so we must tell the program the shape of the velocity model.
     path = "Salt_Model_3D/3-D_Salt_Model/VEL_GRIDS/"
@@ -48,7 +45,7 @@ def _build_sizing():
         bbox,
         hmin=HMIN,
         dt=0.001,
-        freq=2,
+        freq=FREQ,
         wl=5,
         grade=0.15,
         hmax=5e3,
@@ -86,7 +83,7 @@ def test_cgal(benchmark):
     assert numpy.amin(angles / numpy.pi * 180) > 10.0
 
 
-def run_cgal(ef):
+def run_cgal(ef, HMIN=75.0):
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
             h = ef.eval(x)
@@ -115,7 +112,7 @@ def run_cgal(ef):
     return angles, quality, elapsed, num_vertices, num_cells
 
 
-def run_gmsh(ef):
+def run_gmsh(ef, HMIN=75.0):
     with pygmsh.geo.Geometry() as geom:
 
         geom.add_box(-4200.0, 0.0, 0.0, 13520.0, 0.0, 13520.0, HMIN)
@@ -145,7 +142,7 @@ def run_gmsh(ef):
         return angles, quality, elapsed, num_vertices, num_cells
 
 
-def run_SeismicMesh(ef):
+def run_SeismicMesh(ef, HMIN=75.0):
 
     cube = Cube(bbox)
 
