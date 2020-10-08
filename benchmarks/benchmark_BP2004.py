@@ -19,10 +19,8 @@ from SeismicMesh import (
 
 from helpers import print_stats_2d
 
-HMIN = 75.0
 
-
-def _build_sizing():
+def _build_sizing(FREQ=2.0, HMIN=75.0):
 
     # Name of SEG-Y file containg velocity model.
     fname = "vel_z6.25m_x12.5m_exact.segy"
@@ -36,7 +34,7 @@ def _build_sizing():
         bbox,
         hmin=HMIN,
         wl=10,
-        freq=2,
+        freq=FREQ,
         dt=0.001,
         grade=0.15,
     )
@@ -61,7 +59,7 @@ def test_gmsh(benchmark):
     assert numpy.amin(quality) > 0.10
 
 
-def run_gmsh(ef):
+def run_gmsh(ef, HMIN=75.0):
     with pygmsh.geo.Geometry() as geom:
 
         geom.add_polygon(
@@ -94,7 +92,7 @@ def run_gmsh(ef):
         return quality, elapsed, num_vertices, num_cells
 
 
-def run_SeismicMesh(ef):
+def run_SeismicMesh(ef, HMIN=75.0):
 
     bbox = (-12000, 0.0, 0.0, 67000.0)
 

@@ -260,16 +260,18 @@ if comm.rank == 0:
     )
 ```
 
-How does it compare to `gmsh` and `cgal`?
-===========================================
+How does it compare to `gmsh` and `cgal` mesh generators?
+=========================================================
 
-* Fastest mesh generation in 2D and 3D for analytical sizing functions is accomplished via `gmsh` while similar performance in `cgal` and `SeismicMesh` was observed.
-* `SeismicMesh` tends to produce consistently higher mean cell qualities than either `gmsh` or `cgal`.
-* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling robust numerical simulation.
-* Gridded innterpolant based mesh sizing functions slow down `gmsh` and `cgal` dramatically compared to `SeismicMesh`. In these types of meshing problems, `SeismicMesh` and `gmsh` perform similarly and both dramatically outperform `cgal`.
+* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In this case, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
+* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal`.
+* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of performance](https://user-images.githubusercontent.com/18619644/95204275-40f45d00-07ba-11eb-8dc4-f0b4f2ba2c78.jpg)
+![Summary of the benchmarks.](https://user-images.githubusercontent.com/18619644/95405635-beb98500-08ee-11eb-97a4-5bb7e3c20305.png)
+
+* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
 
 
 

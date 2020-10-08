@@ -14,9 +14,6 @@ import SeismicMesh
 from helpers import print_stats_3d
 
 
-HMIN = 0.025
-
-
 def test_seismic_mesh(benchmark):
     angles, quality, elapsed, num_vertices, num_cells = benchmark.pedantic(
         run_SeismicMesh, iterations=1, rounds=5, warmup_rounds=0
@@ -38,7 +35,7 @@ def test_cgal(benchmark):
     assert numpy.amin(angles / numpy.pi * 180) > 10.0
 
 
-def run_gmsh():
+def run_gmsh(HMIN=0.025):
     with pygmsh.occ.Geometry() as geom:
         geom.add_ball([0.0, 0.0, 0.0], 1.0)
 
@@ -66,7 +63,7 @@ def run_gmsh():
     return angles, quality, elapsed, num_vertices, num_cells
 
 
-def run_cgal():
+def run_cgal(HMIN=0.025):
     class Field(pygalmesh.SizingFieldBase):
         def eval(self, x):
             h = abs(numpy.sqrt(numpy.dot(x, x)) - 0.5) / 5 + HMIN
@@ -94,7 +91,7 @@ def run_cgal():
     return angles, quality, elapsed, num_vertices, num_cells
 
 
-def run_SeismicMesh():
+def run_SeismicMesh(HMIN=0.025):
 
     bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 

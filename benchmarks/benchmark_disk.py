@@ -3,16 +3,14 @@ import argparse
 import numpy
 
 import meshplex
-import meshio
+
+# import meshio
 
 import pygalmesh
 import pygmsh
 import SeismicMesh
 
 from helpers import print_stats_2d
-
-
-HMIN = 0.01
 
 
 def test_seismic_mesh(benchmark):
@@ -36,7 +34,7 @@ def test_cgal(benchmark):
     assert numpy.amin(quality) > 0.10
 
 
-def run_gmsh():
+def run_gmsh(HMIN=0.01):
 
     with pygmsh.geo.Geometry() as geom:
         geom.add_circle([0.0, 0.0], 1.0, mesh_size=HMIN)
@@ -46,7 +44,7 @@ def run_gmsh():
         mesh = geom.generate_mesh()
         elapsed = time.time() - t1
 
-    mesh.write("gmsh_circle.vtk")
+    # mesh.write("gmsh_circle.vtk")
 
     points = mesh.points
     cells = mesh.cells[1].data
@@ -60,7 +58,7 @@ def run_gmsh():
     return quality, elapsed, num_vertices, num_cells
 
 
-def run_cgal():
+def run_cgal(HMIN=0.01):
 
     n = 50
     points = numpy.array(
@@ -75,7 +73,7 @@ def run_cgal():
     mesh = pygalmesh.generate_2d(points, constraints, cell_size=HMIN)
     elapsed = time.time() - t1
 
-    mesh.write("cgal_circle.vtk")
+    # mesh.write("cgal_circle.vtk")
 
     points = mesh.points
     cells = mesh.cells[0].data
@@ -89,7 +87,7 @@ def run_cgal():
     return quality, elapsed, num_vertices, num_cells
 
 
-def run_SeismicMesh():
+def run_SeismicMesh(HMIN=0.01):
 
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
@@ -110,11 +108,11 @@ def run_SeismicMesh():
     )
     elapsed = time.time() - t1
 
-    meshio.write_points_cells(
-        "SeismicMesh_circle.vtk",
-        points,
-        [("triangle", cells)],
-    )
+    # meshio.write_points_cells(
+    #    "SeismicMesh_circle.vtk",
+    #    points,
+    #    [("triangle", cells)],
+    # )
 
     plex = meshplex.MeshTri(points, cells)
     quality = numpy.abs(plex.cell_quality)
