@@ -264,12 +264,14 @@ How does it compare to `gmsh` and `cgal` mesh generators?
 =========================================================
 
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
-* However, gridded innterpolant based mesh sizing functions significantly slow down `gmsh` and `cgal` and in these types of meshing problems, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In this case, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
 * `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal`.
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
 ![Summary of the benchmarks.](https://user-images.githubusercontent.com/18619644/95405635-beb98500-08ee-11eb-97a4-5bb7e3c20305.png)
+
+* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
 
 
 
