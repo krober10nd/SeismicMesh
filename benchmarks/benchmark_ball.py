@@ -114,7 +114,6 @@ def run_SeismicMesh(HMIN=0.025):
         h0=HMIN,
         domain=sphere,
         cell_size=fh,
-        nscreen=10,
         max_iter=25,
         delta_t=0.3,
     )
@@ -126,7 +125,6 @@ def run_SeismicMesh(HMIN=0.025):
         cell_size=fh,
         min_dh_angle_bound=10,
         max_iter=50,
-        nscreen=10,
     )
     elapsed = time.time() - t1
 
