@@ -1,7 +1,7 @@
 import numpy as np
 
 
-class Circle:
+class Disk:
     def __init__(self, xc, yc, r):
         self.xc = xc
         self.yc = yc
@@ -12,7 +12,7 @@ class Circle:
         self.y2 = yc + r
 
     def eval(self, x):
-        return _dcircle(x, self.xc, self.yc, self.r)
+        return _ddisk(x, self.xc, self.yc, self.r)
 
 
 class Rectangle:
@@ -39,8 +39,8 @@ class Cube:
         return dblock(x, self.x1, self.x2, self.y1, self.y2, self.z1, self.z2)
 
 
-def _dcircle(p, xc, yc, r):
-    """Signed distance to circle centered at xc, yc with radius r."""
+def _ddisk(p, xc, yc, r):
+    """Signed distance to disk centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
 
 

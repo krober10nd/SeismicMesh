@@ -1,4 +1,4 @@
-from numpy import allclose, sum, sqrt, array
+from numpy import allclose, sum
 import pytest
 
 from SeismicMesh import generate_mesh, geometry
@@ -6,27 +6,25 @@ from SeismicMesh import generate_mesh, geometry
 
 @pytest.mark.serial
 def test_2dmesher_SDF():
-    """Unit circle"""
+    """Unit disk"""
     hmin = 0.2
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
-    def circle(p):
-        """Signed distance to circle centered at xc, yc with radius r."""
-        return sqrt(((p - array([0, 0])) ** 2).sum(-1)) - 1
+    disk = geometry.Disk(0, 0, 1)
 
     def EF(p):
-        d = circle(p)
+        d = disk.eval(p)
         return hmin - d * 0.15
 
     points, cells = generate_mesh(
         bbox=bbox,
-        domain=circle,
+        domain=disk,
         h0=hmin,
         cell_size=EF,
         max_iter=100,
     )
 
-    print(len(points), len(cells))
+    # print(len(points), len(cells))
     assert allclose([len(points), len(cells)], [63, 93], atol=10)
     assert allclose(sum(geometry.simp_vol(points, cells)), 3.14, atol=hmin)
 
