@@ -292,14 +292,15 @@ meshio.write_points_cells(
 )
 ```
 
-![cube](https://user-images.githubusercontent.com/18619644/95607827-a94d7380-0a32-11eb-9601-7677edd2febb.png)
+![cube](https://user-images.githubusercontent.com/18619644/95621214-b3c63800-0a47-11eb-9600-a80ef2410334.png)
+
 
 ```python
 import SeismicMesh
 import meshio
 
 cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.1)
+points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.05)
 meshio.write_points_cells(
     "cube.vtk",
     points,
