@@ -16,9 +16,9 @@ from SeismicMesh import (
 @pytest.mark.parametrize(
     "style_answer",
     (
-        ("linear_ramp", [10789, 21219]),
-        ("edge", [11106, 21814]),
-        ("constant", [10789, 21219]),
+        ("linear_ramp", [9428, 18525]),
+        ("edge", [9724, 19078]),
+        ("constant", [9428, 18525]),
     ),
 )
 def test_2dmesher_domain_extension(style_answer):
