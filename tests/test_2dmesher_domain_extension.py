@@ -50,7 +50,7 @@ def test_2dmesher_domain_extension(style_answer):
     points, cells = generate_mesh(
         rectangle,
         ef,
-        hmin,
+        h0=hmin,
         perform_checks=True,
     )
     # import meshio
