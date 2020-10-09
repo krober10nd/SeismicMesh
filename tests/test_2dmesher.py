@@ -40,7 +40,7 @@ def test_2dmesher():
     points, cells = generate_mesh(
         rectangle,
         ef,
-        hmin,
+        h0=hmin,
         perform_checks=True,
     )
     # should have: 7690 vertices and 15045 cells

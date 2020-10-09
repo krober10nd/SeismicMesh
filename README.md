@@ -49,8 +49,8 @@ For more detailed information about installation and requirements see:
 [Install](https://seismicmesh.readthedocs.io/en/par3d/install.html) -
 How to install SeismicMesh.
 
-Example
-=======
+Examples
+========
 
 The user can quickly build quality 2D/3D meshes from seismic velocity
 models in serial/parallel.
@@ -117,7 +117,7 @@ if comm.rank == 0:
 seismic velocity model from (WARNING: File is \~500 MB)**
 [here](https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz)
 
-**WARNING: Computationaly demanding! Running this example takes around 5 minutes in serial and requires
+**WARNING: Computationaly demanding! Running this example takes around 3 minutes in serial and requires
 around 2 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
@@ -175,7 +175,7 @@ ef = get_sizing_function_from_segy(
     nz=nz,
     nx=nx,
     ny=ny,
-    byte_order="big"
+    byte_order="big",
 )
 
 points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef, max_iter=75)
@@ -197,11 +197,12 @@ if comm.rank == 0:
     )
 ```
 
-**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the code below!**
+**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the codes below!**
 
 ![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
 
 ```python
+# Mesh a unit cylinder
 from mpi4py import MPI
 from numpy import array, maximum, sqrt, zeros_like
 import meshio
@@ -210,7 +211,6 @@ from SeismicMesh import generate_mesh, sliver_removal
 
 comm = MPI.COMM_WORLD
 
-"""Mesh a unit cylinder"""
 
 hmin = 0.10
 bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
@@ -260,16 +260,67 @@ if comm.rank == 0:
     )
 ```
 
-How does it compare to `gmsh` and `cgal` mesh generators?
-=========================================================
+![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
+
+```python
+import SeismicMesh
+import meshio
+
+disk = SeismicMesh.Disk(0.0, 0.0, 1.0)
+points, cells = SeismicMesh.generate_mesh(domain=disk, cell_size=0.1)
+meshio.write_points_cells(
+    "disk.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+
+```python
+import SeismicMesh
+import meshio
+
+rect = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+points, cells = SeismicMesh.generate_mesh(domain=rect, cell_size=0.1)
+meshio.write_points_cells(
+    "rectangle.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![cube](https://user-images.githubusercontent.com/18619644/95621214-b3c63800-0a47-11eb-9600-a80ef2410334.png)
+
+
+```python
+import SeismicMesh
+import meshio
+
+cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.05)
+meshio.write_points_cells(
+    "cube.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
+How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
+===================================================================================
 
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
-* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In this case, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
-* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal`.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
+* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
 ![Summary of the benchmarks.](https://user-images.githubusercontent.com/18619644/95405635-beb98500-08ee-11eb-97a4-5bb7e3c20305.png)
+
+* **In the figure above, solid lines indicate mean cell qualities while dashed line indicate minimum cell qualities in the mesh**
 
 * Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
 

@@ -35,7 +35,7 @@ def test_3dmesher_par_adapt():
     points, cells = generate_mesh(
         cube,
         ef,
-        hmin,
+        h0=hmin,
         max_iter=10,
         perform_checks=False,
     )
