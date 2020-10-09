@@ -49,8 +49,8 @@ For more detailed information about installation and requirements see:
 [Install](https://seismicmesh.readthedocs.io/en/par3d/install.html) -
 How to install SeismicMesh.
 
-Example
-=======
+Examples
+========
 
 The user can quickly build quality 2D/3D meshes from seismic velocity
 models in serial/parallel.
@@ -175,7 +175,7 @@ ef = get_sizing_function_from_segy(
     nz=nz,
     nx=nx,
     ny=ny,
-    byte_order="big"
+    byte_order="big",
 )
 
 points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef, max_iter=75)
@@ -197,11 +197,12 @@ if comm.rank == 0:
     )
 ```
 
-**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the code below!**
+**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the codes below!**
 
 ![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
 
 ```python
+# Mesh a unit cylinder
 from mpi4py import MPI
 from numpy import array, maximum, sqrt, zeros_like
 import meshio
@@ -210,7 +211,6 @@ from SeismicMesh import generate_mesh, sliver_removal
 
 comm = MPI.COMM_WORLD
 
-"""Mesh a unit cylinder"""
 
 hmin = 0.10
 bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
@@ -260,18 +260,15 @@ if comm.rank == 0:
     )
 ```
 
-**A disk, a cube and a rectangle geometries can be quickly meshed too.**
-
 ![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
 
 ```python
 import SeismicMesh
 import meshio
 
-disk = SeismicMesh.disk(0.0, 0.0, 1.0)
+disk = SeismicMesh.Disk(0.0, 0.0, 1.0)
 points, cells = SeismicMesh.generate_mesh(domain=disk, cell_size=0.1)
-meshio.write_p
-oints_cells(
+meshio.write_points_cells(
     "disk.vtk",
     points,
     [("triangle", cells)],
@@ -279,8 +276,8 @@ oints_cells(
 )
 ```
 
-
 ![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+
 ```python
 import SeismicMesh
 import meshio
@@ -296,19 +293,20 @@ meshio.write_points_cells(
 ```
 
 ![cube](https://user-images.githubusercontent.com/18619644/95607827-a94d7380-0a32-11eb-9601-7677edd2febb.png)
-```python
- import SeismicMesh
- import meshio
 
- cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
- points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.1)
- meshio.write_points_cells(
-     "cube.vtk",
-     points,
-     [("tetra", cells)],
-     file_format="vtk",
- )
- ```
+```python
+import SeismicMesh
+import meshio
+
+cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.1)
+meshio.write_points_cells(
+    "cube.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
 
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
