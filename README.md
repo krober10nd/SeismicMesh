@@ -260,8 +260,58 @@ if comm.rank == 0:
     )
 ```
 
-How does it compare to `gmsh` and `cgal` mesh generators?
-=========================================================
+** A disk, a cube and a rectangle geometries can be quickly meshed.
+
+![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
+
+```python
+import SeismicMesh
+import meshio
+
+disk = SeismicMesh.disk(0.0, 0.0, 1.0)
+points, cells = SeismicMesh.generate_mesh(domain=disk, cell_size=0.1)
+meshio.write_p
+oints_cells(
+    "disk.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+
+![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+```python
+import SeismicMesh
+import meshio
+
+rect = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+points, cells = SeismicMesh.generate_mesh(domain=rect, cell_size=0.1)
+meshio.write_points_cells(
+    "rectangle.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![cube](https://user-images.githubusercontent.com/18619644/95607827-a94d7380-0a32-11eb-9601-7677edd2febb.png)
+```python
+ import SeismicMesh
+ import meshio
+
+ cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+ points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.1)
+ meshio.write_points_cells(
+     "cube.vtk",
+     points,
+     [("tetra", cells)],
+     file_format="vtk",
+ )
+ ```
+
+How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
+===================================================================================
 
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
 * However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In this case, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
