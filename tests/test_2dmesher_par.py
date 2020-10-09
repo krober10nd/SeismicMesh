@@ -32,7 +32,7 @@ def test_2dmesher_par():
     points, cells = generate_mesh(
         rectangle,
         ef,
-        hmin,
+        h0=hmin,
         max_iter=100,
         perform_checks=False,
     )
