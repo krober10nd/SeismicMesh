@@ -260,7 +260,7 @@ if comm.rank == 0:
     )
 ```
 
-** A disk, a cube and a rectangle geometries can be quickly meshed.
+**A disk, a cube and a rectangle geometries can be quickly meshed too.**
 
 ![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
 
