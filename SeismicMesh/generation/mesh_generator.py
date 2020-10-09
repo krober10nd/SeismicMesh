@@ -437,7 +437,11 @@ def _unpack_sizing(cell_size):
     elif np.isscalar(cell_size):
 
         def func(x):
-            return np.array([cell_size] * len(x))
+            if type(x) == tuple:
+                h = np.zeros_like(x[0]) + cell_size
+            else:
+                h = np.array([cell_size] * len(x))
+            return h
 
         fh = func
         hmin = cell_size
@@ -630,13 +634,6 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
     else:
         # Create initial distribution in bounding box (equilateral triangles)
         p = mutils.create_staggered_grid(h0, dim, bbox)
-        # if dim == 2:
-        #    p = mutils.create_staggered_grid(h0, dim, bbox)
-        # elif dim == 3:
-        #    p = np.mgrid[tuple(slice(min, max + h0, h0) for min, max in bbox)].astype(
-        #        float
-        #    )
-        #    p = p.reshape(dim, -1).T
 
     # Remove points outside the region, apply the rejection method
     p = p[fd(p) < geps]  # Keep only d<0 points
