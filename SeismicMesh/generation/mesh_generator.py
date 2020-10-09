@@ -384,7 +384,7 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         # Show the user some progress so they know something is happening
         if verbose and comm.rank == 0:
             maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
-            _display_progress(p, t, count, verbose, maxdp, comm)
+            _display_progress(p, t, count, maxdp, comm)
 
         count += 1
 
@@ -464,7 +464,7 @@ def _parse_kwargs(kwargs):
             )
 
 
-def _display_progress(p, t, count, verbose, maxdp, comm):
+def _display_progress(p, t, count, maxdp, comm):
     """print progress"""
     print(
         "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
