@@ -162,7 +162,6 @@ def run_SeismicMesh(ef, HMIN=75.0):
         cell_size=ef,
         min_dh_angle_bound=10,
         max_iter=50,
-        nscreen=10,
     )
     elapsed = time.time() - t1
 

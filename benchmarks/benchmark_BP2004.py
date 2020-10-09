@@ -105,7 +105,6 @@ def run_SeismicMesh(ef, HMIN=75.0):
         h0=HMIN,
         max_iter=25,
         delta_t=0.3,
-        nscreen=10,
     )
     points, cells = geometry.delete_boundary_entities(
         points, cells, dim=2, min_qual=0.10

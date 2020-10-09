@@ -102,7 +102,6 @@ def run_SeismicMesh(HMIN=0.01):
         h0=HMIN,
         domain=circle,
         cell_size=fh,
-        nscreen=10,
         max_iter=25,
         delta_t=0.3,
     )
