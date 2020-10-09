@@ -29,7 +29,7 @@ from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 __all__ = ["sliver_removal", "generate_mesh"]
 
 opts = {
-    "nscreen": 1,
+    "verbose": False,
     "max_iter": 50,
     "seed": 0,
     "perform_checks": False,
@@ -66,8 +66,8 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *nscreen* (``float``) --
-            Output to the screen `nscreen` timestep. (default==1)
+        * *verbose* (``logical``) --
+            Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *perform_checks* (`boolean`) --
@@ -147,7 +147,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
     count = 0
     pold = None
-    nscreen = opts["nscreen"]
+    verbose = opts["verbose"]
 
     while True:
 
@@ -180,7 +180,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
             ele_nums = np.floor(out_of_bounds / 6).astype("int")
             ele_nums, ix = np.unique(ele_nums, return_index=True)
 
-            if count % nscreen == 0:
+            if verbose:
                 print(
                     "On rank: "
                     + str(comm.rank)
@@ -231,7 +231,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
         count += 1
 
         end = time.time()
-        if comm.rank == 0 and count % nscreen == 0:
+        if comm.rank == 0 and verbose:
             print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
 
     return p, t
@@ -260,8 +260,8 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     :Keyword Arguments:
         * *bbox* (``tuple``) --
             Bounding box containing domain extents. REQUIRED IF NOT USING :class:`cell_size`
-        * *nscreen* (``float``) --
-            Output to the screen `nscreen` timestep. (default==1)
+        * *verbose* (``logical``) --
+            Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *seed* (``float`` or ``int``) --
@@ -342,7 +342,7 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         flush=True,
     )
 
-    nscreen = opts["nscreen"]
+    verbose = opts["verbose"]
     while True:
 
         start = time.time()
@@ -382,14 +382,14 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
             p = np.delete(p, inv[-recv_ix::], axis=0)
 
         # Show the user some progress so they know something is happening
-        if count % nscreen == 0 and comm.rank == 0:
+        if verbose and comm.rank == 0:
             maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
-            _display_progress(p, t, count, nscreen, maxdp, comm)
+            _display_progress(p, t, count, verbose, maxdp, comm)
 
         count += 1
 
         end = time.time()
-        if comm.rank == 0 and count % nscreen == 0:
+        if comm.rank == 0 and verbose:
             print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
 
     return p, t
@@ -443,7 +443,7 @@ def _unpack_domain(domain):
 def _parse_kwargs(kwargs):
     for key in kwargs:
         if key in {
-            "nscreen",
+            "verbose",
             "max_iter",
             "seed",
             "perform_checks",
@@ -464,7 +464,7 @@ def _parse_kwargs(kwargs):
             )
 
 
-def _display_progress(p, t, count, nscreen, maxdp, comm):
+def _display_progress(p, t, count, verbose, maxdp, comm):
     """print progress"""
     print(
         "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
