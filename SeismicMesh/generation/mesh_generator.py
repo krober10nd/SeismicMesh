@@ -106,7 +106,7 @@ def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
         bbox = _minmax(bbox0, bbox1)
 
     # rebuild the Rectangle or Cube if domain padding
-    if bbox0 != bbox1:
+    if bbox0 != bbox1 and bbox1 is not None:
         fd = geometry.Cube(bbox).eval
 
     if not isinstance(bbox, tuple):
@@ -316,7 +316,7 @@ def generate_mesh(domain, cell_size, comm=None, **kwargs):
     dim = int(len(bbox) / 2)
 
     # rebuild the Rectangle or Cube if domain padding
-    if bbox0 != bbox1:
+    if bbox0 != bbox1 and bbox1 is not None:
         if dim == 2:
             tmp = geometry.Rectangle(bbox)
         elif dim == 3:
