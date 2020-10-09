@@ -51,7 +51,7 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     :type points: `np.ndarray`
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
-    :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
+    :type domain: A :class:`geometry.Rectangle/Cube/Disk` object or a function object.
     :param cell_size:
         A function that can evalulate a point and return a mesh size.
     :type cell_size: A :class:`SizeFunction` object or a function object.
@@ -243,7 +243,7 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
 
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω.
-    :type domain: A :class:`geometry.Rectangle/Cube/Circle` object or a function object.
+    :type domain: A :class:`geometry.Rectangle/Cube/Disk` object or a function object.
     :param cell_size:
         Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
     :type cell_size: A :class:`cell_size` object or a function object.
@@ -428,7 +428,7 @@ def _unpack_domain(domain):
     elif isinstance(domain, geometry.Cube):
         bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
         fd = domain.eval
-    elif isinstance(domain, geometry.Circle):
+    elif isinstance(domain, geometry.Disk):
         bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
         fd = domain.eval
     elif callable(domain):
