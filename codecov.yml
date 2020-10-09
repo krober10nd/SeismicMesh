@@ -1,6 +1,6 @@
 comment: no
 codecov:
-  disable_default_path_fixes: False
+  disable_default_path_fixes: True
 fixes:
   - ".*/dist-packages/::"
   - ".*/site-packages/::"
