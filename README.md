@@ -320,6 +320,8 @@ How does performance and cell quality compare to `gmsh` and `cgal` mesh generato
 
 ![Summary of the benchmarks.](https://user-images.githubusercontent.com/18619644/95405635-beb98500-08ee-11eb-97a4-5bb7e3c20305.png)
 
+* **In the figure above, solid lines indicate mean cell qualities while dashed line indicate minimum cell qualities in the mesh**
+
 * Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
 
 
