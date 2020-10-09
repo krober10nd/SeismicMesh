@@ -42,7 +42,7 @@ opts = {
 }
 
 
-def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
+def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
     r"""Improve an existing 3D mesh by removing degenerate elements
     commonly referred to as `slivers`.
 
@@ -55,9 +55,6 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
     :param cell_size:
         A function that can evalulate a point and return a mesh size.
     :type cell_size: A :class:`SizeFunction` object or a function object.
-    :param h0:
-        The minimum element size in the domain
-    :type h0: `float`
     :param comm:
         MPI4py communicator
     :type comm: MPI4py communicator object, optional
@@ -66,6 +63,8 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
+        * *h0* (``float) --
+            The minimum cell size in the domain. REQUIRED IF USING A VARIABLE RESOLUTION CELL-SIZE
         * *verbose* (``logical``) --
             Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
@@ -96,24 +95,37 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
         if comm.rank == 0:
             raise Exception("Mesh improvement currently on works in 3D")
 
-    # unpack domain
     fd, bbox0 = _unpack_domain(domain)
 
-    fh, bbox1 = _unpack_sizing(cell_size)
+    fh, bbox1, hmin = _unpack_sizing(cell_size)
 
-    # take maxmin of boxes
-    bbox = _minmax(bbox0, bbox1)
+    # take minmax of boxes for the case of domain padding
+    if bbox1 is None:
+        bbox = bbox0
+    else:
+        bbox = _minmax(bbox0, bbox1)
 
-    # rebuild the Rectangle or cube if domain padding
+    # rebuild the Rectangle or Cube if domain padding
     if bbox0 != bbox1:
         fd = geometry.Cube(bbox).eval
 
     if not isinstance(bbox, tuple):
         raise ValueError("`bbox` must be a tuple")
 
+    # in case of scalar sizing function
+    if hmin is not None:
+        h0 = hmin
+    else:
+        h0 = opts["h0"]
+
+    # check h0
+    if h0 < 0:
+        raise ValueError("`h0` must be > 0")
+
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
+
     print(
         "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
     )
@@ -238,18 +250,15 @@ def sliver_removal(points, domain, cell_size, h0, comm=None, **kwargs):
 
 
 # @profile
-def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
-    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function :class:`domain`
+def generate_mesh(domain, cell_size, comm=None, **kwargs):
+    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function `domain`
 
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω.
     :type domain: A :class:`geometry.Rectangle/Cube/Disk` object or a function object.
     :param cell_size:
-        Either a :class:`size_function` object or a function that can evalulate a point and return a mesh size.
-    :type cell_size: A :class:`cell_size` object or a function object.
-    :param h0:
-        The minimum element size in the domain.
-    :type h0: `float`
+        Cell sizes in the domain (e.g., triangular edge lengths).
+    :type cell_size: A :class:`cell_size` object, a function object, or a scalar value.
     :param comm:
         MPI4py communicator
     :type comm: MPI4py communicator object, optional
@@ -258,6 +267,8 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
+        * *h0* (``float) --
+            The minimum cell size in the domain. REQUIRED IF USING A VARIABLE RESOLUTION CELL-SIZE
         * *bbox* (``tuple``) --
             Bounding box containing domain extents. REQUIRED IF NOT USING :class:`cell_size`
         * *verbose* (``logical``) --
@@ -290,10 +301,13 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
 
-    fh, bbox1 = _unpack_sizing(cell_size)
+    fh, bbox1, hmin = _unpack_sizing(cell_size)
 
-    # take maxmin of boxes
-    bbox = _minmax(bbox0, bbox1)
+    # take maxmin of boxes for the case of domain padding
+    if bbox1 is None:
+        bbox = bbox0
+    else:
+        bbox = _minmax(bbox0, bbox1)
 
     if not isinstance(bbox, tuple):
         raise ValueError("`bbox` must be a tuple")
@@ -312,6 +326,11 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
 
     bbox = np.array(bbox).reshape(-1, 2)
 
+    if hmin is not None:
+        h0 = hmin
+    else:
+        h0 = opts["h0"]
+
     # check h0
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
@@ -320,7 +339,7 @@ def generate_mesh(domain, cell_size, h0, comm=None, **kwargs):
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
 
-    """These parameters originate from the original DistMesh"""
+    # these parameters originate from the original DistMesh
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = opts["delta_t"]
     geps = 1e-1 * h0
@@ -408,17 +427,25 @@ def _minmax(bbox0, bbox1):
 
 
 def _unpack_sizing(cell_size):
+    bbox = None
+    hmin = None
     if isinstance(cell_size, sizing.SizeFunction):
         bbox = cell_size.bbox
         fh = cell_size.eval
     elif callable(cell_size):
-        bbox = opts["bbox"]
         fh = cell_size
+    elif np.isscalar(cell_size):
+
+        def func(x):
+            return np.array([cell_size] * len(x))
+
+        fh = func
+        hmin = cell_size
     else:
         raise ValueError(
-            "`cell_size` must either be a function or a `cell_size` object"
+            "`cell_size` must either be a function, a `cell_size` object, or a scalar"
         )
-    return fh, bbox
+    return fh, bbox, hmin
 
 
 def _unpack_domain(domain):
@@ -456,6 +483,7 @@ def _parse_kwargs(kwargs):
             "min_dh_angle_bound",
             "max_dh_angle_bound",
             "delta_t",
+            "h0",
         }:
             pass
         else:
