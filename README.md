@@ -117,7 +117,7 @@ if comm.rank == 0:
 seismic velocity model from (WARNING: File is \~500 MB)**
 [here](https://s3.amazonaws.com/open.source.geoscience/open_data/seg_eage_models_cd/Salt_Model_3D.tar.gz)
 
-**WARNING: Computationaly demanding! Running this example takes around 5 minutes in serial and requires
+**WARNING: Computationaly demanding! Running this example takes around 3 minutes in serial and requires
 around 2 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
@@ -314,8 +314,8 @@ How does performance and cell quality compare to `gmsh` and `cgal` mesh generato
 ===================================================================================
 
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
-* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In this case, `SeismicMesh` and `gmsh` perform similarly and both outperform `cgal`.
-* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal`.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
+* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
