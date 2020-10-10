@@ -63,7 +63,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (`float`) --
+        * *h0* (``float``) --
             The minimum  edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH.
         * *verbose* (``logical``) --
             Output to the screen `verbose`. (default==False)
@@ -267,7 +267,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (`float`) --
+        * *h0* (``float``) --
             The minimum edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH
         * *bbox* (``tuple``) --
             Bounding box containing domain extents. REQUIRED IF NOT USING :class:`edge_length`
