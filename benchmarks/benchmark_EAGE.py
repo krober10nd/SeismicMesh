@@ -59,7 +59,7 @@ def _build_sizing(HMIN=150.0, FREQ=2):
 
 
 # for pytest-benchmark
-ef = _build_sizing()
+# ef = _build_sizing()
 
 
 def test_seismic_mesh(benchmark):
@@ -84,18 +84,14 @@ def test_cgal(benchmark):
 
 
 def run_cgal(ef, HMIN=75.0):
-    class Field(pygalmesh.SizingFieldBase):
-        def eval(self, x):
-            h = ef.eval(x)
-            return h / 1.1
 
     print("generating a mesh with cgal...")
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
         pygalmesh.Cuboid([-4200.0, 0.0, 0.0], [0.0, 13520.0, 13520.0]),
-        cell_size=Field(),
         facet_angle=30,
         cell_radius_edge_ratio=2.0,
+        cell_size=lambda x: ef.eval(x) / 1.1,
         edge_size=HMIN,
     )
     elapsed = time.time() - t1

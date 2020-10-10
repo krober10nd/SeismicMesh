@@ -312,15 +312,20 @@ meshio.write_points_cells(
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
+Here we use SeismicMesh 3.0.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
+
+Some key findings:
+
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
 * However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
 * `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks.](https://user-images.githubusercontent.com/18619644/95405635-beb98500-08ee-11eb-97a4-5bb7e3c20305.png)
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95662699-3ebe3580-0b0f-11eb-9390-0cce6d1d1d02.jpg)
 
-* **In the figure above, solid lines indicate mean cell qualities while dashed line indicate minimum cell qualities in the mesh**
+
+* **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
 
 * Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
 
