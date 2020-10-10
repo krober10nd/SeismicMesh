@@ -318,7 +318,7 @@ Some key findings:
 
 * Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
 * However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
-* `SeismicMesh` produces consistently higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
+* `SeismicMesh` produces often comparable or higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
