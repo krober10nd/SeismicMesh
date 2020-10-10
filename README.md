@@ -99,7 +99,7 @@ ef = get_sizing_function_from_segy(
     pad_style="edge",
 )
 
-points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin)
+points, cells = generate_mesh(domain=rectangle, edge_length=ef, h0=hmin)
 
 if comm.rank == 0:
     # Write the mesh in a vtk format for visualization in ParaView
@@ -178,11 +178,11 @@ ef = get_sizing_function_from_segy(
     byte_order="big",
 )
 
-points, cells = generate_mesh(domain=cube, h0=hmin, cell_size=ef, max_iter=75)
+points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(
-    points=points, bbox=bbox, h0=hmin, domain=cube, cell_size=ef
+    points=points, bbox=bbox, h0=hmin, domain=cube, edge_length=ef
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
@@ -242,12 +242,12 @@ points, cells = generate_mesh(
     bbox=bbox,
     domain=cylinder,
     h0=hmin,
-    cell_size=fh,
+    edge_length=fh,
     max_iter=100,
 )
 
 points, cells = sliver_removal(
-    points=points, domain=cylinder, cell_size=fh, h0=hmin, min_dh_angle_bound=5.0
+    points=points, domain=cylinder, edge_length=fh, h0=hmin, min_dh_angle_bound=5.0
 )
 
 
@@ -267,7 +267,7 @@ import SeismicMesh
 import meshio
 
 disk = SeismicMesh.Disk(0.0, 0.0, 1.0)
-points, cells = SeismicMesh.generate_mesh(domain=disk, cell_size=0.1)
+points, cells = SeismicMesh.generate_mesh(domain=disk, edge_length=0.1)
 meshio.write_points_cells(
     "disk.vtk",
     points,
@@ -283,7 +283,7 @@ import SeismicMesh
 import meshio
 
 rect = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=rect, cell_size=0.1)
+points, cells = SeismicMesh.generate_mesh(domain=rect, edge_length=0.1)
 meshio.write_points_cells(
     "rectangle.vtk",
     points,
@@ -300,7 +300,7 @@ import SeismicMesh
 import meshio
 
 cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=cube, cell_size=0.05)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
     points,

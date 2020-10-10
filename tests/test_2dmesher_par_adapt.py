@@ -34,7 +34,7 @@ def test_2dmesher_par_adapt():
     rectangle = Rectangle(bbox)
 
     points, cells = generate_mesh(
-        cell_size=ef,
+        edge_length=ef,
         domain=rectangle,
         h0=hmin,
         perform_checks=False,
@@ -44,7 +44,7 @@ def test_2dmesher_par_adapt():
     # pass the points and restart with a different axis
     points, cells = generate_mesh(
         points=points,
-        cell_size=ef,
+        edge_length=ef,
         h0=hmin,
         domain=rectangle,
         perform_checks=False,

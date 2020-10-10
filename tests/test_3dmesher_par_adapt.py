@@ -46,7 +46,7 @@ def test_3dmesher_par_adapt():
         points=points,
         domain=cube,
         h0=hmin,
-        cell_size=ef,
+        edge_length=ef,
         axis=1,
         max_iter=10,
         perform_checks=False,
@@ -57,7 +57,7 @@ def test_3dmesher_par_adapt():
     points, cells = generate_mesh(
         points=points,
         h0=hmin,
-        cell_size=ef,
+        edge_length=ef,
         domain=cube,
         axis=2,
         max_iter=10,

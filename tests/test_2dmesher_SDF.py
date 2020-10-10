@@ -20,7 +20,7 @@ def test_2dmesher_SDF():
         bbox=bbox,
         domain=disk,
         h0=hmin,
-        cell_size=EF,
+        edge_length=EF,
         max_iter=100,
     )
 
