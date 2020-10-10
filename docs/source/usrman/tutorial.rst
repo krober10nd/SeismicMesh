@@ -10,7 +10,7 @@ Basics
 *SeismicMesh* supports the generation of both 2D and 3D meshes in
 either serial or parallel from seismic velocity models.
 
-Here I show how to build meshes from sizing functions created with the software and explain what the options mean. The API for serial/parallel and 2D/3D is identical.
+Here I show how to build meshes from sizing functions created with the software and explain what the sizng options mean. The API for serial/parallel and 2D/3D is identical.
 
 Assuming you've coded a short Python script to call *SeismicMesh* (similar to what is shown in the examples), you simply call the script with python for serial execution::
 
@@ -55,7 +55,7 @@ File I/O and visualization of meshes
 Meshes can be written to disk in a variety of formats using the Python package `meshio` (https://pypi.org/project/meshio/).
 
 .. warning::
-    Note that *SeismicMesh* makes the assumption that the first dimension is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into Paraview.
+    Note that *SeismicMesh* sizing function makes the assumption that the first dimension is `z` and the second is `x` while the third is `y`. This is done in this way since 2D seismological simulations take place in the z-x plane and 3D in the z-x-y plane. As a result, the meshes when loaded into visualization software will appear rotated 90 degrees. For visualization, we can output in the vtk format using MeshIO (as shown in the examples) and then load the vtk file into ParaView.
 
 Some things to know
 ---------------------
@@ -109,6 +109,7 @@ The notion of an adequate mesh size is determined by a combination of the physic
 
 
 .. note :: The final mesh size map is taken as the minimum of all supplied sizing functions.
+.. note :: The mesh size map dictates the triangular edge lengths in the final mesh (assuming these triangles will be equilateral).
 
 Wavelength-to-gridscale
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -243,20 +244,20 @@ Mesh generation
 
 After building your signed distance function and sizing function, call the ``generate_mesh`` function to generate the mesh::
 
-    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin)
+    points, cells = generate_mesh(domain=rectangle, edge_length=ef, h0=hmin)
 
 .. note::
     `ef` is a sizing function created using get_sizing_function_from_segy
 
 You can change how many iterations are performed by altering the kwarg `max_iter`::
 
-    points, cells = generate_mesh(domain=rectangle, cell_size=ef, h0=hmin, max_iter=100)
+    points, cells = generate_mesh(domain=rectangle, edge_length=ef, h0=hmin, max_iter=100)
 
 .. note :: Generally setting max_iter to between 50 to 100 iterations produces a high quality triangulation. By default it runs 50 iterations.
 
 When executing in parallel, the user can optionally choose which axis (0, 1, or 2 [if 3D]) to decompose the domain::
 
-    points, cells = generate_mesh(domain=cube, cell_size=ef, h0=hmin, max_iter=100, axis=2)
+    points, cells = generate_mesh(domain=cube, edge_length=ef, h0=hmin, max_iter=100, axis=2)
 
 .. note :: Generally axis=1 works the best in 2D or 3D since typically mesh sizes increase in size from the free surface to the depths of the model. In this situation, the computational load tends to be better balanced.
 
@@ -272,12 +273,12 @@ Mesh improvement (*sliver* removal)
 It is strongly encouraged to run the sliver removal method by passing the point of set of a previously generated mesh::
 
     points, cells = sliver_removal(
-        points=points, domain=cube, h0=minimum_mesh_size, cell_size=ef
+        points=points, domain=cube, h0=minimum_mesh_size, edge_length=ef
     )
 
 .. note:: Please remember to import this method at the top of your script (e.g., `from SeismicMesh import sliver_removal`)
 
-By default, ``min_dh_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
+By default, ``min_dh_angle_bound`` is set to :math:`10`. The sliver removal algorithm will attempt 50 iterations but will terminate earlier if no slivers are detected. Generally, if more than 50 meshing iterations were used to build the mesh, this algorithm will converge in 10-20 iterations.
 
 .. warning:: Do not set the minimum dihedral angle bound greater than 15 unless you've already successfully ran the mesh with a lower threshold. Otherwise, the method will likely not converge.
 
