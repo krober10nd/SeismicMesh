@@ -43,7 +43,7 @@ opts = {
 
 
 def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
-    r"""Improve an existing 3D mesh by removing degenerate elements
+    r"""Improve an existing 3D mesh by removing degenerate cells.
     commonly referred to as `slivers`.
 
     :param points:
@@ -63,8 +63,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (``float) --
-            The minimum cell size in the domain. REQUIRED IF USING A VARIABLE RESOLUTION CELL-SIZE
+        * *h0* (`float`) --
+            The minimum  edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH.
         * *verbose* (``logical``) --
             Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
@@ -267,7 +267,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (``float) --
+        * *h0* (`float`) --
             The minimum edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH
         * *bbox* (``tuple``) --
             Bounding box containing domain extents. REQUIRED IF NOT USING :class:`edge_length`
