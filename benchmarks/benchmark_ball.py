@@ -64,18 +64,13 @@ def run_gmsh(HMIN=0.025):
 
 
 def run_cgal(HMIN=0.025):
-    class Field(pygalmesh.SizingFieldBase):
-        def eval(self, x):
-            h = abs(numpy.sqrt(numpy.dot(x, x)) - 0.5) / 5 + HMIN
-            return h / 1.1
 
     t1 = time.time()
     mesh = pygalmesh.generate_mesh(
         pygalmesh.Ball([0.0, 0.0, 0.0], 1.0),
-        cell_size=Field(),
+        cell_size=lambda x: abs(numpy.sqrt(numpy.dot(x, x)) - 0.5) / 5 + HMIN,
         facet_angle=30,
         cell_radius_edge_ratio=2.0,
-        edge_size=HMIN,
     )
     elapsed = time.time() - t1
 
