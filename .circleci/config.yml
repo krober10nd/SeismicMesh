@@ -10,7 +10,7 @@ jobs:
       - run: black --check .
       - run: flake8 .
   build:
-    working_directory: ~/working
+    #working_directory: ~/working
     docker:
       - image: circleci/python:3.7.4
     steps:
