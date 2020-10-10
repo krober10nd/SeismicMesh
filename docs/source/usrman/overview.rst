@@ -64,10 +64,13 @@ such that:
 
 where :math:`φ : D × R+ → R` is Lipschitz continuous and called the level set function. If we assume :math:`|∇φ(·)| = 0` on the set :math:`{x ∈ D, φ(x) = 0}`, then we have :math:`∂ \Omega = {x ∈ D, φ(x) = 0}` i.e., the boundary :math:`∂ \Omega` is the 0-level set of :math:`φ(·)`. The property that :math:`|∇φ(·)| = 0` is satisfied if :math:`φ(·)` is a signed distance function.
 
+.. note :: 
+    We provide several simple signed distance functions: such as a Rectangle, Cube, and Disk. See the geometry module. 
+
 Mesh sizing function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`. By mesh size, we specifically mean the triangular edge length assuming all triangles will be equilateral in the finished mesh.
+Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`. By mesh size, we specifically mean the triangular edge length nearby `x` assuming the triangles will be close to equilateral in the finished mesh.
 
 The purpose of `get_sizing_function_from_segy` to build this function directly from the seismic velocity model provided.
 
