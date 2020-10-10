@@ -84,15 +84,15 @@ This seismic velocity model is passed to the `get_sizing_function_from_segy` alo
 Geometry
 ---------
 
-*SeismicMesh* can mesh any domain defined by a signed distance function. However, we provide some basic domain shapes: a Rectangle, a Cube, or a Circle.
+*SeismicMesh* can mesh any domain defined by a signed distance function. However, we provide some basic domain shapes: a rectangle, a cube, or a disk.
 
 For example::
 
-    from SeismicMesh import Rectangle, Cube, Circle
+    from SeismicMesh import Rectangle, Cube, Disk
 
     rectangle = Rectangle(bbox)
     cube = Cube(bbox)
-    circle = Circle(xc=0,yc=0,r=1) # center of (0,0) with a radius of 1.0
+    disk = Disk(xc=0,yc=0,r=1) # center of (0,0) with a radius of 1.0
 
 .. note::
     A good reference for various signed distance functions can be found at: https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
