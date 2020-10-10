@@ -44,7 +44,7 @@ def test_3dmesher_par():
 
     points, cells = generate_mesh(
         h0=hmin,
-        cell_size=ef,
+        edge_length=ef,
         domain=cube,
         perform_checks=False,
     )
@@ -52,7 +52,7 @@ def test_3dmesher_par():
     points, cells = sliver_removal(
         points=points,
         domain=cube,
-        cell_size=ef,
+        edge_length=ef,
         h0=hmin,
         perform_checks=False,
     )

@@ -149,7 +149,7 @@ def run_SeismicMesh(ef, HMIN=75.0):
     t1 = time.time()
     points, cells = generate_mesh(
         domain=cube,
-        cell_size=ef,
+        edge_length=ef,
         h0=HMIN,
         max_iter=25,
     )
@@ -159,7 +159,7 @@ def run_SeismicMesh(ef, HMIN=75.0):
         bbox=bbox,
         h0=HMIN,
         domain=cube,
-        cell_size=ef,
+        edge_length=ef,
         min_dh_angle_bound=10,
         max_iter=50,
     )

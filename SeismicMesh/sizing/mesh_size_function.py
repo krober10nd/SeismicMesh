@@ -67,9 +67,9 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
 
     :Keyword Arguments:
         * *hmin* (``float``) --
-            Minimum element size in the domain (default==150 m)
+            Minimum edge length in the domain (default==150 m)
         * *hmax* (``float``) --
-            Maximum element size in the domain (default==10,000 m)
+            Maximum edge length in the domain (default==10,000 m)
         * *wl* (``int``) --
             Number of vertices per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 vertices)
         * *freq* (``float``) --
@@ -160,10 +160,10 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 _gradient_sizing(vp, opts["grad"]),
             )
 
-        print("Enforcing minimum element size of " + str(opts["hmin"]))
+        print("Enforcing minimum edge length of " + str(opts["hmin"]))
         cell_size[cell_size < opts["hmin"]] = opts["hmin"]
 
-        print("Enforcing maximum element size of " + str(opts["hmax"]))
+        print("Enforcing maximum edge length of " + str(opts["hmax"]))
         cell_size[cell_size > opts["hmax"]] = opts["hmax"]
 
         cell_size = _enforce_courant_sizing(

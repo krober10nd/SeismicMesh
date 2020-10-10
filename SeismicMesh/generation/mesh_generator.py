@@ -42,8 +42,8 @@ opts = {
 }
 
 
-def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
-    r"""Improve an existing 3D mesh by removing degenerate elements
+def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
+    r"""Improve an existing 3D mesh by removing degenerate cells.
     commonly referred to as `slivers`.
 
     :param points:
@@ -52,9 +52,9 @@ def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω
     :type domain: A :class:`geometry.Rectangle/Cube/Disk` object or a function object.
-    :param cell_size:
-        A function that can evalulate a point and return a mesh size.
-    :type cell_size: A :class:`SizeFunction` object or a function object.
+    :param edge_length:
+        A function that can evalulate a point and return an edge length (e.g. length of the triangular edge)
+    :type edge_length: A :class:`SizeFunction` object or a function object.
     :param comm:
         MPI4py communicator
     :type comm: MPI4py communicator object, optional
@@ -63,8 +63,8 @@ def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (``float) --
-            The minimum cell size in the domain. REQUIRED IF USING A VARIABLE RESOLUTION CELL-SIZE
+        * *h0* (``float``) --
+            The minimum  edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH.
         * *verbose* (``logical``) --
             Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
@@ -97,7 +97,7 @@ def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
 
     fd, bbox0 = _unpack_domain(domain)
 
-    fh, bbox1, hmin = _unpack_sizing(cell_size)
+    fh, bbox1, hmin = _unpack_sizing(edge_length)
 
     # take minmax of boxes for the case of domain padding
     if bbox1 is None:
@@ -250,15 +250,15 @@ def sliver_removal(points, domain, cell_size, comm=None, **kwargs):
 
 
 # @profile
-def generate_mesh(domain, cell_size, comm=None, **kwargs):
-    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `cell_size` and signed distance function `domain`
+def generate_mesh(domain, edge_length, comm=None, **kwargs):
+    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `edge_length` and signed distance function `domain`
 
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω.
     :type domain: A :class:`geometry.Rectangle/Cube/Disk` object or a function object.
-    :param cell_size:
-        Cell sizes in the domain (e.g., triangular edge lengths).
-    :type cell_size: A :class:`cell_size` object, a function object, or a scalar value.
+    :param edge_length:
+        Edge lengths in the domain (e.g., triangular edge lengths assuming all triangles are equilateral).
+    :type edge_length: A :class:`SizeFunction` object, a function object, or a scalar value.
     :param comm:
         MPI4py communicator
     :type comm: MPI4py communicator object, optional
@@ -267,10 +267,10 @@ def generate_mesh(domain, cell_size, comm=None, **kwargs):
         See below
 
     :Keyword Arguments:
-        * *h0* (``float) --
-            The minimum cell size in the domain. REQUIRED IF USING A VARIABLE RESOLUTION CELL-SIZE
+        * *h0* (``float``) --
+            The minimum edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH
         * *bbox* (``tuple``) --
-            Bounding box containing domain extents. REQUIRED IF NOT USING :class:`cell_size`
+            Bounding box containing domain extents. REQUIRED IF NOT USING :class:`edge_length`
         * *verbose* (``logical``) --
             Output to the screen `verbose`. (default==False)
         * *max_iter* (``float``) --
@@ -301,7 +301,7 @@ def generate_mesh(domain, cell_size, comm=None, **kwargs):
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
 
-    fh, bbox1, hmin = _unpack_sizing(cell_size)
+    fh, bbox1, hmin = _unpack_sizing(edge_length)
 
     # take maxmin of boxes for the case of domain padding
     if bbox1 is None:
@@ -426,28 +426,28 @@ def _minmax(bbox0, bbox1):
     return tuple(d)
 
 
-def _unpack_sizing(cell_size):
+def _unpack_sizing(edge_length):
     bbox = None
     hmin = None
-    if isinstance(cell_size, sizing.SizeFunction):
-        bbox = cell_size.bbox
-        fh = cell_size.eval
-    elif callable(cell_size):
-        fh = cell_size
-    elif np.isscalar(cell_size):
+    if isinstance(edge_length, sizing.SizeFunction):
+        bbox = edge_length.bbox
+        fh = edge_length.eval
+    elif callable(edge_length):
+        fh = edge_length
+    elif np.isscalar(edge_length):
 
         def func(x):
             if type(x) == tuple:
-                h = np.zeros_like(x[0]) + cell_size
+                h = np.zeros_like(x[0]) + edge_length
             else:
-                h = np.array([cell_size] * len(x))
+                h = np.array([edge_length] * len(x))
             return h
 
         fh = func
-        hmin = cell_size
+        hmin = edge_length
     else:
         raise ValueError(
-            "`cell_size` must either be a function, a `cell_size` object, or a scalar"
+            "`edge_length` must either be a function, a `edge_length` object, or a scalar"
         )
     return fh, bbox, hmin
 
@@ -482,7 +482,7 @@ def _parse_kwargs(kwargs):
             "axis",
             "points",
             "domain",
-            "cell_size",
+            "edge_length",
             "bbox",
             "min_dh_angle_bound",
             "max_dh_angle_bound",

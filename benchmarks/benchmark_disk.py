@@ -91,7 +91,7 @@ def run_SeismicMesh(HMIN=0.01):
 
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
-    circle = SeismicMesh.geometry.Circle(0, 0, 1)
+    disk = SeismicMesh.geometry.Disk(0, 0, 1)
 
     def fh(x):
         return numpy.array([HMIN] * len(x))
@@ -100,8 +100,8 @@ def run_SeismicMesh(HMIN=0.01):
     points, cells = SeismicMesh.generate_mesh(
         bbox=bbox,
         h0=HMIN,
-        domain=circle,
-        cell_size=fh,
+        domain=disk,
+        edge_length=fh,
         max_iter=25,
         delta_t=0.3,
     )

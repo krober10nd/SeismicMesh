@@ -44,13 +44,13 @@ def test_3dmesher():
 
     points, cells = generate_mesh(
         domain=cube,
-        cell_size=ef,
+        edge_length=ef,
         h0=hmin,
         max_iter=25,
         perform_checks=False,
     )
 
-    points, cells = sliver_removal(points=points, cell_size=ef, domain=cube, h0=hmin)
+    points, cells = sliver_removal(points=points, edge_length=ef, domain=cube, h0=hmin)
     print(len(points), len(cells))
     allclose([len(points), len(cells)], [16459, 89240], atol=100)
 

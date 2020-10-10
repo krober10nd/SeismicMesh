@@ -113,7 +113,7 @@ def run_SeismicMesh(HMIN=0.025):
         bbox=bbox,
         h0=HMIN,
         domain=sphere,
-        cell_size=fh,
+        edge_length=fh,
         max_iter=25,
         delta_t=0.3,
     )
@@ -122,7 +122,7 @@ def run_SeismicMesh(HMIN=0.025):
         bbox=bbox,
         h0=HMIN,
         domain=sphere,
-        cell_size=fh,
+        edge_length=fh,
         min_dh_angle_bound=10,
         max_iter=50,
     )

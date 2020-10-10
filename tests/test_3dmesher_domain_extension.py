@@ -52,12 +52,12 @@ def test_3dmesher_domain_extension(style_answer):
 
     points, cells = generate_mesh(
         domain=cube,
-        cell_size=ef,
+        edge_length=ef,
         h0=hmin,
         perform_checks=False,
     )
 
-    points, cells = sliver_removal(points=points, domain=cube, cell_size=ef, h0=hmin)
+    points, cells = sliver_removal(points=points, domain=cube, edge_length=ef, h0=hmin)
     print(len(points), len(cells))
     allclose([len(points), len(cells)], answer, atol=100)
 

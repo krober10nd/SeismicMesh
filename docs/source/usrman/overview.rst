@@ -11,31 +11,25 @@ This software aims to create end-to-end workflows (e.g., from seismic velocity m
 Mesh definition
 -------------------------------------------
 .. note ::
-    Triangular and tetrahedral meshes.
+    Triangular and tetrahedral conformal meshes.
 
 The domain :math:`\Omega` is partitioned into a finite set of cells :math:`\mathcal{T}_{h} = {T}` with disjoint interiors
 such that
 
 :math:`\cup_{T \in \mathcal{T}_{h}} T = \Omega`
 
-Together, these cells form a mesh of the domain :math:`\Omega`. In our case, the cells are triangles and thus the mesh is a triangulation composed of :math:`nt` triangles and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These entities :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
+Together, these cells form a mesh of the domain :math:`\Omega`. In our case, the cells are triangles and thus the mesh is a triangulation composed of :math:`nt` triangles and :math:`np` vertices in either two or three dimensional space. Note in 3D, the triangulation is composed of tetrahedral but we still refer to it as a triangulation. In 2D, a triangle has 3 vertices, 3 edges, and 1 face. In 3D, a tetrahedral has 4 vertices, 6 edges, and 4 facets. These cells :math:`t` are obtained by tessellating a set of vertices that lie in two or three dimensional space using the well-known and efficient Delaunay triangulation algorithms.
 
 
 *High quality cells*
 ^^^^^^^^^^^^^^^^^^^^^^^
 .. note ::
-    A high quality cell has an aspect ratio of 1.
+    A high quality cell has a cell quality of 1.
 
 Any set of points can be triangulated, but the resulting triangulation will likely not be useable for numerical simulation. Thus, we strive to produce high-quality geometric meshes.
 
-There are many definitions of mesh quality. Here I use the following formula to quantify how *well-shaped* the entities of the mesh are [Bank1998]_
+There are many definitions of mesh quality. Here I use the following formula to quantify how *well-shaped* the cells where cell quality is defined as d * circumcircle_radius / incircle_radius (where d is 2 for triangles and 3 for tetrahedra). The value is between 0 and 1, where 1 is a perfectly symmetrical simplex.
 
-.. math::
-  q_E = 4\sqrt{3}A_E\left(\sum_{i = 1}^{3}(\lambda_{E}^2)_i\right)^{-1}
-
-where :math:`A_E` is the area/volume of the entity and :math:`(\lambda_{E})_i` is the length/area of the :math:`i^{th}` edge/face of the entity. :math:`q_E = 1` corresponds to an well-shaped entity and :math:`q_E = 0` indicates a completely degenerated entity. A simple interpretation of this formula is the aspect ratio of the entity. Entities with equal aspect ratios are preferred as the Jacobian of the coordinate vectors has a low condition number.
-
-The consideration of what constitutes a *high quality* mesh rests on the statistical distribution of entity quality, :math:`q_E`. Generally a mesh with :math:`q_E > 0.95` and :math:`q_E - 3\sigma_{q_E} > 0.75` (where the over-line and :math:`\sigma` denote the mean and standard deviation respectively) is considered *high quality* and can be simulated without any changes to the mesh topology. Thus, when :math:`\overline{q_E} - 3\sigma_{q_E} > 0.75` is achieved, the mesh generation terminates and this generally occurs between 30-100 iterations in most seismic domains.
 
 Software architecture
 -------------------------------------------
@@ -53,7 +47,7 @@ Seismic velocity model
 
 A seismic velocity model is defined on an axis-aligned regular Cartesian grid in either 2D or 3D containing scalar values (typically the P-wave velocity speed at each grid point).
 
-Currently, *SeismicMesh* can read seismic velocity models from SEG-y files or in binary format.
+Currently, *SeismicMesh* can read seismic velocity models from SEG-y files or in binary format. The latter requires some more information; see the docstring.
 
 Signed distance function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,12 +64,15 @@ such that:
 
 where :math:`φ : D × R+ → R` is Lipschitz continuous and called the level set function. If we assume :math:`|∇φ(·)| = 0` on the set :math:`{x ∈ D, φ(x) = 0}`, then we have :math:`∂ \Omega = {x ∈ D, φ(x) = 0}` i.e., the boundary :math:`∂ \Omega` is the 0-level set of :math:`φ(·)`. The property that :math:`|∇φ(·)| = 0` is satisfied if :math:`φ(·)` is a signed distance function.
 
+.. note :: 
+    We provide several simple signed distance functions: such as a Rectangle, Cube, and Disk. See the geometry module. 
+
 Mesh sizing function
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`.
+Given a point :math:`x`, the sizing function :math:`f(h)` returns the isotropic mesh size defined at :math:`x`. By mesh size, we specifically mean the triangular edge length nearby `x` assuming the triangles will be close to equilateral in the finished mesh.
 
-The purpose of `get_sizing_function_from_segy` to build this function  directly from the seismic velocity model provided.
+The purpose of `get_sizing_function_from_segy` to build this function directly from the seismic velocity model provided.
 
 
 *DistMesh* algorithm
@@ -123,8 +120,6 @@ When possible, *SeismicMesh* uses low-level functionality from the CGAL package 
 
 References
 -------------------------------------------
-
-.. [Bank1998] Randolph E. Bank. PLTMG: A Software Package for Solving Elliptic Partial Diﬀerential Equations.Society for Industrial and Applied Mathematics, 1 1998. ISBN 978-0-89871-409-8. doi: 10.1137/1.9780898719635.
 
 .. [hpc_del] Peterka, Tom, Dmitriy Morozov, and Carolyn Phillips. "High-performance computation of distributed-memory parallel 3D Voronoi and Delaunay tessellation." SC'14: Proceedings of the International Conference for High Performance Computing, Networking, Storage and Analysis. IEEE, 2014.
 
