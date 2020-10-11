@@ -29,7 +29,7 @@ from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 __all__ = ["sliver_removal", "generate_mesh"]
 
 opts = {
-    "verbose": False,
+    "verbose": 1,
     "max_iter": 50,
     "seed": 0,
     "perform_checks": False,
@@ -42,7 +42,33 @@ opts = {
 }
 
 
-def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
+def silence(func):
+    def wrapper(*args, **kwargs):
+        None
+
+    return wrapper
+
+
+def talk(func):
+    def wrapper(*args, **kwargs):
+        func(*args, **kwargs)
+
+    return wrapper
+
+
+def _select_verbosity(opts):
+    if opts["verbose"] == 0:
+        return silence, silence
+    elif opts["verbose"] == 1:
+        return talk, silence
+    elif opts["verbose"] > 1:
+        return talk, talk
+
+    else:
+        raise ValueError("Unknown verbosity level")
+
+
+def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C901
     r"""Improve an existing 3D mesh by removing degenerate cells.
     commonly referred to as `slivers`.
 
@@ -65,8 +91,9 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
     :Keyword Arguments:
         * *h0* (``float``) --
             The minimum  edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH.
-        * *verbose* (``logical``) --
-            Output to the screen `verbose`. (default==False)
+        * *verbose* (``int``) --
+            Output to the screen `verbose` (default==1). If `verbose`==1 only start and end messages are
+            written, `verbose`==0, no messages are written besides errors, `verbose` > 1 all messages are written.
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *perform_checks* (`boolean`) --
@@ -89,6 +116,16 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
 
     opts.update(kwargs)
     _parse_kwargs(kwargs)
+
+    verbosity1, verbosity2 = _select_verbosity(opts)
+
+    @verbosity1
+    def print_msg1(msg):
+        print(msg)
+
+    @verbosity2
+    def print_msg2(msg):
+        print(msg)
 
     dim = points.shape[1]
     if dim == 2:
@@ -126,7 +163,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
 
-    print(
+    print_msg1(
         "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
     )
 
@@ -135,12 +172,12 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
     min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
 
-    print(
+    print_msg1(
         "Enforcing a min. dihedral bound of: "
         + str(min_dh_bound * 180 / math.pi)
         + " degrees..."
     )
-    print(
+    print_msg1(
         "Enforcing a max. dihedral bound of: "
         + str(max_dh_bound * 180 / math.pi)
         + " degrees..."
@@ -152,14 +189,12 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
 
     N = len(p)
 
-    print(
-        "Commencing sliver removal with %d vertices on rank %d." % (N, comm.rank),
-        flush=True,
+    print_msg1(
+        "Commencing sliver removal with %d vertices on rank %d." % (N, comm.rank)
     )
 
     count = 0
     pold = None
-    verbose = opts["verbose"]
 
     while True:
 
@@ -192,24 +227,21 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
             ele_nums = np.floor(out_of_bounds / 6).astype("int")
             ele_nums, ix = np.unique(ele_nums, return_index=True)
 
-            if verbose:
-                print(
-                    "On rank: "
-                    + str(comm.rank)
-                    + " There are "
-                    + str(len(ele_nums))
-                    + " slivers...",
-                    flush=True,
-                )
+            print_msg1(
+                "On rank: "
+                + str(comm.rank)
+                + " There are "
+                + str(len(ele_nums))
+                + " slivers...",
+            )
 
             move = t[ele_nums, 0]
             num_move = move.size
             if num_move == 0:
-                print(
+                print_msg1(
                     "Termination reached in "
                     + str(count)
                     + " iterations...no slivers detected!",
-                    flush=True,
                 )
                 p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
                 return p, t
@@ -237,21 +269,23 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
+            print_msg1(
+                "Termination reached...maximum number of iterations reached.",
+            )
             p, t = _termination(p, t, opts, comm, sliver=True)
             break
 
         count += 1
 
         end = time.time()
-        if comm.rank == 0 and verbose:
-            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+        if comm.rank == 0:
+            print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
     return p, t
 
 
-# @profile
 def generate_mesh(domain, edge_length, comm=None, **kwargs):
-    r"""Generate a 2D/3D triangulation using callbacks to a sizing function `edge_length` and signed distance function `domain`
+    r"""Generate a 2D/3D mesh using callbacks to a sizing function `edge_length` and signed distance function `domain`
 
     :param domain:
         A function that takes a point and returns the signed nearest distance to the domain boundary Ω.
@@ -271,8 +305,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
             The minimum edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH
         * *bbox* (``tuple``) --
             Bounding box containing domain extents. REQUIRED IF NOT USING :class:`edge_length`
-        * *verbose* (``logical``) --
-            Output to the screen `verbose`. (default==False)
+        * *verbose* (``int``) --
+            Output to the screen `verbose` (default==1). If `verbose`==1 only start and end messages are
+            written, `verbose`==0, no messages are written besides errors, `verbose` > 1 all messages are written.
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *seed* (``float`` or ``int``) --
@@ -297,6 +332,17 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
     # check call was correct
     opts.update(kwargs)
     _parse_kwargs(kwargs)
+
+    # verbosity decorators
+    verbosity1, verbosity2 = _select_verbosity(opts)
+
+    @verbosity1
+    def print_msg1(msg):
+        print(msg)
+
+    @verbosity2
+    def print_msg2(msg):
+        print(msg)
 
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
@@ -356,12 +402,11 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
     assert N > 0, "No vertices to mesh with!"
 
     count = 0
-    print(
+
+    print_msg1(
         "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
-        flush=True,
     )
 
-    verbose = opts["verbose"]
     while True:
 
         start = time.time()
@@ -382,6 +427,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
+            if comm.rank == 0:
+                print_msg1(
+                    "Termination reached...maximum number of iterations reached.",
+                )
             p, t = _termination(p, t, opts, comm)
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
@@ -403,15 +452,18 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
             p = np.delete(p, inv[-recv_ix::], axis=0)
 
         # Show the user some progress so they know something is happening
-        if verbose and comm.rank == 0:
+        if comm.rank == 0:
             maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
-            _display_progress(p, t, count, maxdp, comm)
+            print_msg2(
+                "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
+                % (count + 1, maxdp, len(p), len(t)),
+            )
 
         count += 1
 
         end = time.time()
-        if comm.rank == 0 and verbose:
-            print("     Elapsed wall-clock time %f : " % (end - start), flush=True)
+        if comm.rank == 0:
+            print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
     return p, t
 
@@ -498,20 +550,9 @@ def _parse_kwargs(kwargs):
             )
 
 
-def _display_progress(p, t, count, maxdp, comm):
-    """print progress"""
-    print(
-        "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
-        % (count + 1, maxdp, len(p), len(t)),
-        flush=True,
-    )
-
-
 def _termination(p, t, opts, comm, sliver=False):
     """Shut it down when reacing `max_iter`"""
     dim = p.shape[1]
-    if comm.rank == 0:
-        print("Termination reached...maximum number of iterations reached.", flush=True)
     if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)

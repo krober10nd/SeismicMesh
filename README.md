@@ -266,7 +266,7 @@ if comm.rank == 0:
 import SeismicMesh
 import meshio
 
-disk = SeismicMesh.Disk(0.0, 0.0, 1.0)
+disk = SeismicMesh.Disk([0.0, 0.0], 1.0)
 points, cells = SeismicMesh.generate_mesh(domain=disk, edge_length=0.1)
 meshio.write_points_cells(
     "disk.vtk",
