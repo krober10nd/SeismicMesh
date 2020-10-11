@@ -92,7 +92,7 @@ For example::
 
     rectangle = Rectangle(bbox)
     cube = Cube(bbox)
-    disk = Disk(xc=0,yc=0,r=1) # center of (0,0) with a radius of 1.0
+    disk = Disk(x0=[0,0],r=1) # center of (0,0) with a radius of 1.0
 
 .. note::
     A good reference for various signed distance functions can be found at: https://www.iquilezles.org/www/articles/distfunctions/distfunctions.htm
