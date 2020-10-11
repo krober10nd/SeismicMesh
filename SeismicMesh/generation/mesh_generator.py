@@ -38,7 +38,7 @@ opts = {
     "min_dh_angle_bound": 10.0,
     "max_dh_angle_bound": 170.0,
     "points": None,
-    "delta_t": 0.20,
+    "delta_t": 0.30,
 }
 
 
