@@ -382,6 +382,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
+            p = _improve_level_set(p, t, fd, deps, deps * 1000)
             p, t = _termination(p, t, opts, comm)
             break
 
@@ -581,6 +582,28 @@ def _remove_triangles_outside(p, t, fd, geps):
     dim = p.shape[1]
     pmid = p[t].sum(1) / (dim + 1)  # Compute centroids
     return t[fd(pmid) < -geps]  # Keep interior triangles
+
+
+def _improve_level_set(p, t, fd, deps, tol):
+    """Reduce level set error"""
+    dim = p.shape[1]
+    max, abs = np.amax, np.abs
+    bid = geometry.get_boundary_vertices(t, dim)
+    it = 0
+    d = fd(p[bid])
+    while max(abs(d)) > tol and it < 10:
+
+        def _deps_vec(i):
+            a = [0] * dim
+            a[i] = deps
+            return a
+
+        dgrads = [(fd(p[bid] + _deps_vec(i)) - d) / deps for i in range(dim)]
+        dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+        dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
+        p[bid] -= (d * np.vstack(dgrads) / dgrad2).T  # Project
+        it += 1
+    return p
 
 
 def _project_points_back(p, fd, deps):
