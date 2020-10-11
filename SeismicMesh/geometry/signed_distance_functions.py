@@ -2,14 +2,14 @@ import numpy as np
 
 
 class Disk:
-    def __init__(self, xc, yc, r):
-        self.xc = xc
-        self.yc = yc
+    def __init__(self, x0, r):
+        self.xc = x0[0]
+        self.yc = x0[1]
         self.r = r
-        self.x1 = xc - r
-        self.x2 = xc + r
-        self.y1 = yc - r
-        self.y2 = yc + r
+        self.x1 = x0[0] - r
+        self.x2 = x0[0] + r
+        self.y1 = x0[1] - r
+        self.y2 = x0[1] + r
 
     def eval(self, x):
         return _ddisk(x, self.xc, self.yc, self.r)
