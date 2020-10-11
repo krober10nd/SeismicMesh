@@ -92,8 +92,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         * *h0* (``float``) --
             The minimum  edge length in the domain. REQUIRED IF USING A VARIABLE RESOLUTION EDGE LENGTH.
         * *verbose* (``int``) --
-            Output to the screen `verbose`. (default==1). If `verbose`==1 only start and end messages are
-            written, `verbose`==0, no messages are written. `verbose` > 1 all messages are written.
+            Output to the screen `verbose` (default==1). If `verbose`==1 only start and end messages are
+            written, `verbose`==0, no messages are written besides errors, `verbose` > 1 all messages are written.
         * *max_iter* (``float``) --
             Maximum number of meshing iterations. (default==50)
         * *perform_checks* (`boolean`) --
