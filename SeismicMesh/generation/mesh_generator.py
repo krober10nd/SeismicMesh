@@ -382,8 +382,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
-            p = _improve_level_set(p, t, fd, deps, deps * 1000)
             p, t = _termination(p, t, opts, comm)
+            if comm.rank == 0:
+                p = _improve_level_set(p, t, fd, deps, deps * 1000)
             break
 
         # Compute the forces on the edges
