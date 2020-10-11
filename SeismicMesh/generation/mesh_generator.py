@@ -233,7 +233,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):
             p[move] += 0.10 * h0 * perturb
 
         # Bring outside points back to the boundary
-        p = _project_points_back(p, fd, deps)
+        p = _project_points_back_newton(p, fd, deps)
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
@@ -384,7 +384,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
         if count == (max_iter - 1):
             p, t = _termination(p, t, opts, comm)
             if comm.rank == 0:
-                p = _improve_level_set(p, t, fd, deps, deps * 1000)
+                p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             break
 
         # Compute the forces on the edges
@@ -396,7 +396,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        p = _project_points_back(p, fd, deps)
+        p = _project_points_back_newton(p, fd, deps)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -585,8 +585,8 @@ def _remove_triangles_outside(p, t, fd, geps):
     return t[fd(pmid) < -geps]  # Keep interior triangles
 
 
-def _improve_level_set(p, t, fd, deps, tol):
-    """Reduce level set error"""
+def _improve_level_set_newton(p, t, fd, deps, tol):
+    """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
     max, abs = np.amax, np.abs
     bid = geometry.get_boundary_vertices(t, dim)
@@ -607,8 +607,10 @@ def _improve_level_set(p, t, fd, deps, tol):
     return p
 
 
-def _project_points_back(p, fd, deps):
-    """Project points outsidt the domain back within"""
+def _project_points_back_newton(p, fd, deps):
+    """Project points outside the domain back with one iteration of Newton minimization method
+    finding the root of f(p)
+    """
     dim = p.shape[1]
 
     d = fd(p)
