@@ -322,7 +322,7 @@ Some key findings:
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95662699-3ebe3580-0b0f-11eb-9390-0cce6d1d1d02.jpg)
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95694311-d606b400-0c07-11eb-939e-9746a408908d.jpg)
 
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
