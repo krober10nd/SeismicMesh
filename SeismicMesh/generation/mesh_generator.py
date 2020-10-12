@@ -38,7 +38,7 @@ opts = {
     "min_dh_angle_bound": 10.0,
     "max_dh_angle_bound": 170.0,
     "points": None,
-    "delta_t": 0.20,
+    "delta_t": 0.30,
 }
 
 
@@ -121,11 +121,11 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     @verbosity1
     def print_msg1(msg):
-        print(msg)
+        print(msg, flush=True)
 
     @verbosity2
     def print_msg2(msg):
-        print(msg)
+        print(msg, flush=True)
 
     dim = points.shape[1]
     if dim == 2:
@@ -265,7 +265,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             p[move] += 0.10 * h0 * perturb
 
         # Bring outside points back to the boundary
-        p = _project_points_back(p, fd, deps)
+        p = _project_points_back_newton(p, fd, deps)
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
@@ -284,7 +284,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     return p, t
 
 
-def generate_mesh(domain, edge_length, comm=None, **kwargs):
+def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     r"""Generate a 2D/3D mesh using callbacks to a sizing function `edge_length` and signed distance function `domain`
 
     :param domain:
@@ -338,11 +338,11 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
 
     @verbosity1
     def print_msg1(msg):
-        print(msg)
+        print(msg, flush=True)
 
     @verbosity2
     def print_msg2(msg):
-        print(msg)
+        print(msg, flush=True)
 
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
@@ -432,6 +432,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
                     "Termination reached...maximum number of iterations reached.",
                 )
             p, t = _termination(p, t, opts, comm)
+            if comm.rank == 0:
+                p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             break
 
         # Compute the forces on the edges
@@ -443,7 +445,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        p = _project_points_back(p, fd, deps)
+        p = _project_points_back_newton(p, fd, deps)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -624,8 +626,32 @@ def _remove_triangles_outside(p, t, fd, geps):
     return t[fd(pmid) < -geps]  # Keep interior triangles
 
 
-def _project_points_back(p, fd, deps):
-    """Project points outsidt the domain back within"""
+def _improve_level_set_newton(p, t, fd, deps, tol):
+    """Reduce level set error by using Newton's minimization method"""
+    dim = p.shape[1]
+    max, abs = np.amax, np.abs
+    bid = geometry.get_boundary_vertices(t, dim)
+    it = 0
+    d = fd(p[bid])
+    while max(abs(d)) > tol and it < 10:
+
+        def _deps_vec(i):
+            a = [0] * dim
+            a[i] = deps
+            return a
+
+        dgrads = [(fd(p[bid] + _deps_vec(i)) - d) / deps for i in range(dim)]
+        dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+        dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
+        p[bid] -= (d * np.vstack(dgrads) / dgrad2).T  # Project
+        it += 1
+    return p
+
+
+def _project_points_back_newton(p, fd, deps):
+    """Project points outside the domain back with one iteration of Newton minimization method
+    finding the root of f(p)
+    """
     dim = p.shape[1]
 
     d = fd(p)

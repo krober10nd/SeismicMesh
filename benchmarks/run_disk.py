@@ -4,6 +4,9 @@ import numpy
 from benchmark_disk import run_gmsh, run_SeismicMesh, run_cgal
 
 
+plt.rcParams.update({"font.size": 18})
+
+
 colors1 = ["ko-", "ro-", "bo-"]
 colors2 = ["ko--", "ro--", "bo--"]
 labels = ["gmsh", "SeismicMesh", "cgal"]
