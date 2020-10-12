@@ -121,11 +121,11 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     @verbosity1
     def print_msg1(msg):
-        print(msg)
+        print(msg, flush=True)
 
     @verbosity2
     def print_msg2(msg):
-        print(msg)
+        print(msg, flush=True)
 
     dim = points.shape[1]
     if dim == 2:
@@ -338,11 +338,11 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     @verbosity1
     def print_msg1(msg):
-        print(msg)
+        print(msg, flush=True)
 
     @verbosity2
     def print_msg2(msg):
-        print(msg)
+        print(msg, flush=True)
 
     # unpack domain
     fd, bbox0 = _unpack_domain(domain)
