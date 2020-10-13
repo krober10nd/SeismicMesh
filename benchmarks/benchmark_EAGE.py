@@ -37,9 +37,6 @@ def _build_sizing(HMIN=150.0, FREQ=2):
     # Dimensions of model (number of grid points in z, x, and y)
     nx, ny, nz = 676, 676, 210
 
-    # A graded sizing function is created from the velocity model along with a signed distance function by passing
-    # the velocity grid that we created above.
-    # More details can be found here: https://seismicmesh.readthedocs.io/en/par3d/api.html
     ef = get_sizing_function_from_segy(
         fname,
         bbox,

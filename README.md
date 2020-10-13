@@ -4,12 +4,12 @@
 </p>
 
 
-[![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/par3d.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/par3d)
-[![CodeCov](https://codecov.io/gh/krober10nd/SeismicMesh/branch/par3d/graph/badge.svg)](https://codecov.io/gh/krober10nd/SeismicMesh)
+[![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/master.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/master)
+[![CodeCov](https://codecov.io/gh/krober10nd/SeismicMesh/branch/master/graph/badge.svg)](https://codecov.io/gh/krober10nd/SeismicMesh)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square)](https://pypi.org/pypi/SeismicMesh/)
 [![PyPi downloads](https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square)](https://pypistats.org/packages/seismicmesh)
-[![ReadTheDocs](https://readthedocs.org/projects/seismicmesh/badge/?version=par3d)](https://seismicmesh.readthedocs.io/en/par3d/?badge=par3d)
+[![ReadTheDocs](https://readthedocs.org/projects/seismicmesh/badge/?version=master)](https://seismicmesh.readthedocs.io/en/master/?badge=master)
 [![Zenodo](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
 [![PyPi]( https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
@@ -23,13 +23,13 @@ with the finite element method. With short scripts, variable resolution meshes a
 
 Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength.
 
-Thus in this work we provide an approach to build large scale 2D/3D mesh sizing functions with the [mesh sizing function module](https://seismicmesh.readthedocs.io/en/par3d/api.html#seimsicmesh-meshsizefunction). This tool maps variations in seismic velocities from a seismic velocity model to triangular mesh sizes. Importantly, the sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and an estimate of the [Courant number](https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition) can be bounded above by a constant--amongst other capabilities--which are important considerations for accurate and successful simulations with finite elements. Our sizing functions are defined on the same regular Cartesian grids as the original seismic velocity model bypassing the need for the user to create their own sizing function on a triangular mesh. Their structured nature also enables efficient performance.
+Thus in this work we provide an approach to build large scale 2D/3D mesh sizing functions with the [mesh sizing function module](https://seismicmesh.readthedocs.io/en/master/api.html#seimsicmesh-meshsizefunction). This tool maps variations in seismic velocities from a seismic velocity model to triangular mesh sizes. Importantly, the sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and an estimate of the [Courant number](https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition) can be bounded above by a constant--amongst other capabilities--which are important considerations for accurate and successful simulations with finite elements. Our sizing functions are defined on the same regular Cartesian grids as the original seismic velocity model bypassing the need for the user to create their own sizing function on a triangular mesh. Their structured nature also enables efficient performance.
 
 *SeismicMesh* supports both 2D and 3D triangular meshing in either serial or using distributed memory parallelism relying on the [Message Passing Interface](https://computing.llnl.gov/tutorials/mpi/). In 3D mesh generation, a mesh improvement method ([sliver removal](https://hal.inria.fr/inria-00430202/document)) is used to ensure a minimum quality bound (e.g. [minimum dihedral angle](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge)) can be enforced and will lead to numerically stable simulations.
 
 Our mesh generation approach provided in this package can be operated standalone (e.g., without the sizing function module). It is based off modifications to the [DistMesh](http://persson.berkeley.edu/distmesh/) algorithm. Thus in its most basic operation, *SeismicMesh* can mesh *any* domain that can be defined by a [signed distance function](https://en.wikipedia.org/wiki/Signed_distance_function#:~:text=In%20mathematics%20and%20its%20applications,whether%20x%20is%20in%20%CE%A9.) with mesh sizes that follow variations described by a user-defined [mesh sizing function](http://persson.berkeley.edu/pub/persson05qualmesh.pdf)
 
-*SeismicMesh* is distributed under the GPL3 license and more details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/par3d/paper/paper.md).
+*SeismicMesh* is distributed under the GPL3 license and more details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/master/paper/paper.md).
 
 Installation
 ============
@@ -46,7 +46,7 @@ After that, SeismicMesh can be installed from the Python Package Index
 
 For more detailed information about installation and requirements see:
 
-[Install](https://seismicmesh.readthedocs.io/en/par3d/install.html) -
+[Install](https://seismicmesh.readthedocs.io/en/master/install.html) -
 How to install SeismicMesh.
 
 Examples
@@ -159,7 +159,7 @@ cube = Cube(bbox)
 
 # A graded sizing function is created from the velocity model along with a signed distance function by passing
 # the velocity grid that we created above.
-# More details can be found here: https://seismicmesh.readthedocs.io/en/par3d/api.html
+# More details can be found here: https://seismicmesh.readthedocs.io/en/master/api.html
 
 ef = get_sizing_function_from_segy(
     fname,
@@ -327,7 +327,7 @@ Some key findings:
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
 
-* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics) provided in `SeismicMesh`.
+* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in `SeismicMesh`.
 
 
 
@@ -338,8 +338,8 @@ All other information is available at:
 <https://seismicmesh.readthedocs.io>
 
 [Getting
-started](https://seismicmesh.readthedocs.io/en/par3d/overview.html) -
+started](https://seismicmesh.readthedocs.io/en/master/overview.html) -
 Learn the basics about the program and the application domain.
 
-[Tutorials](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html) -
+[Tutorials](https://seismicmesh.readthedocs.io/en/master/tutorial.html) -
 Tutorials that will guide you through the main features.

@@ -5,12 +5,12 @@ default:
 
 tag:
 
-	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "par3d" ]; then exit 1; fi
+	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "master" ]; then exit 1; fi
 	curl -H "Authorization: token `cat $(HOME)/.github-access-token`" -d '{"tag_name": "v$(VERSION)"}' https://api.github.com/repos/krober10nd/SeismicMesh/releases
 
 upload:
-	# Make sure we're on the par3d branch
-	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "par3d" ]; then exit 1; fi
+	# Make sure we're on the master branch
+	@if [ "$(shell git rev-parse --abbrev-ref HEAD)" != "master" ]; then exit 1; fi
 
 	rm -rf dist/*
 	python3 setup.py sdist bdist_wheel
@@ -34,6 +34,6 @@ black:
 	black .
 
 lint:
-	isort --check . SeismicMesh/ setup.py examples/*.py tests/*.py
-	black --check SeismicMesh/ setup.py examples/*.py tests/*.py
-	flake8 setup.py SeismicMesh/ examples/*.py tests/*.py
+	isort --check . SeismicMesh/ setup.py benchmarks/*.py tests/*.py
+	black --check SeismicMesh/ setup.py benchmarks/*.py tests/*.py
+	flake8 setup.py SeismicMesh/ benchmarks/*.py tests/*.py
