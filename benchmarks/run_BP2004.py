@@ -8,6 +8,8 @@ colors1 = ["ko-", "ro-"]
 colors2 = ["ko--", "ro--"]
 labels = ["gmsh", "SeismicMesh"]
 
+plt.rcParams.update({"font.size": 18})
+
 entries = []
 # minimize mesh size
 rg = numpy.linspace(75.0, 25.0, 5)
