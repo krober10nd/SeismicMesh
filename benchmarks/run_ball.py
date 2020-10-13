@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy
 from benchmark_ball import run_gmsh, run_SeismicMesh, run_cgal
 
+plt.rcParams.update({"font.size": 18})
 
 colors1 = ["ko-", "ro-", "bo-"]
 colors2 = ["ko--", "ro--", "bo--"]
