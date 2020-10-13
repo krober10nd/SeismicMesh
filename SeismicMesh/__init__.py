@@ -6,20 +6,28 @@
 #  have received a copy of the license along with this program. If not,
 #  see <http://www.gnu.org/licenses/>.
 
-from .mesh_size_function import MeshSizeFunction
-from .mesh_generator import MeshGenerator
-from .mesh_utils import (
-    get_boundary_edges_of_mesh2,
-    get_edges_of_mesh2,
-    get_winded_boundary_edges_of_mesh2,
+from . import decomp, geometry, migration
+from .geometry import Disk, Cube, Rectangle
+from .generation import generate_mesh, sliver_removal
+from .sizing import (
+    get_sizing_function_from_segy,
+    write_velocity_model,
+    plot_sizing_function,
 )
-from .FastHJ import limgrad
+from .__about__ import __version__
+
 
 __all__ = [
-    "get_edges_of_mesh2",
-    "get_boundary_edges_of_mesh2",
-    "get_winded_boundary_edges_of_mesh2",
-    "limgrad",
-    "MeshSizeFunction",
-    "MeshGenerator",
+    "__version__",
+    "geometry",
+    "Rectangle",
+    "Cube",
+    "Disk",
+    "get_sizing_function_from_segy",
+    "write_velocity_model",
+    "plot_sizing_function",
+    "generate_mesh",
+    "sliver_removal",
+    "decomp",
+    "migration",
 ]

@@ -1,0 +1,10 @@
+include SeismicMesh/generation/cpp/*.cpp
+include SeismicMesh/geometry/cpp/*.cpp
+include SeismicMesh/migration/cpp/*.cpp
+include SeismicMesh/sizing/cpp/*.cpp
+include tests/*
+include benchmarks/*
+
+include README.md LICENSE.txt 
+global-include CMakeLists.txt 
+

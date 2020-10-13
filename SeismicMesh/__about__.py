@@ -1,6 +1,10 @@
-__version__ = "0.0.1"
-__author__ = "Keith Roberts"
-__author_email__ = "keithrbt0@gmail.com"
-__website__ = "https://github.com/krober10nd/SeismicMesh"
-__status__ = "Development Status :: 4 - Beta"
-__license__ = "License :: GNU GPL 3.0"
+try:
+    # Python 3.8
+    from importlib import metadata
+except ImportError:
+    import importlib_metadata as metadata
+
+try:
+    __version__ = metadata.version("SeismicMesh")
+except Exception:
+    __version__ = "unknown"

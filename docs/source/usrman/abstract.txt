@@ -1,0 +1,12 @@
+.. topic:: Abstract
+
+   This document describes the *SeismicMesh* package. This work aims to
+   create end-to-end workflows to build quality models suitable
+   for Finite Element numerical wave propagators.
+
+   The package uses Python to wrap computationally intensive operations in C++ and has
+   support for distributed memory parallelism.
+
+.. Local Variables:
+.. mode: rst
+.. End:
