@@ -341,6 +341,10 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 Unreleased 
 ==========
 
+### Fixed
+- Units in km-s detection warning bug. 
+- Docstring fixes to `generate_mesh`
+
 ### Added
 - More support for reading binary files packed in a binary format. 
 
