@@ -22,7 +22,7 @@ from SeismicMesh import (
 from helpers import print_stats_3d
 
 # Bounding box describing domain extents (corner coordinates)
-bbox = (-4200, 0, 0, 13520, 0, 13520)
+bbox = (-4200.0, 0.0, 0.0, 13520.0, 0.0, 13520.0)
 
 
 def _build_sizing(HMIN=150.0, FREQ=2):

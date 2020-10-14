@@ -26,7 +26,7 @@ def _build_sizing(FREQ=2.0, HMIN=75.0):
     fname = "vel_z6.25m_x12.5m_exact.segy"
 
     # Bounding box describing domain extents (corner coordinates)
-    bbox = (-12000, 0.0, 0.0, 67000.0)
+    bbox = (-12000.0, 0.0, 0.0, 67000.0)
 
     # Construct mesh sizing object from velocity model
     ef = get_sizing_function_from_segy(
