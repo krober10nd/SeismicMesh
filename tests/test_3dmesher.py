@@ -21,7 +21,7 @@ def test_3dmesher():
     freq = 2
     hmin = 50
     grade = 0.005
-    bbox = (-2e3, 0.0, 0.0, 1e3, 0, 1e3)
+    bbox = (-2e3, 0.0, 0.0, 1e3, 0.0, 1e3)
     cube = Cube(bbox)
     ef = get_sizing_function_from_segy(
         fname,

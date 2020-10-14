@@ -481,9 +481,10 @@ def _minmax(bbox0, bbox1):
 
 
 def _check_bbox(bbox):
-    for b in bbox:
-        if isinstance(b, int):
-            raise ValueError("bbox must contain all floats")
+    if bbox is not None:
+        for b in bbox:
+            if isinstance(b, int):
+                raise ValueError("bbox must contain all floats")
 
 
 def _unpack_sizing(edge_length):

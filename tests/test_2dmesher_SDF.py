@@ -10,7 +10,7 @@ def test_2dmesher_SDF():
     hmin = 0.2
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
-    disk = geometry.Disk([0, 0], 1)
+    disk = geometry.Disk([0.0, 0.0], 1)
 
     def EF(p):
         d = disk.eval(p)

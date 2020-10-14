@@ -16,7 +16,7 @@ from SeismicMesh import (
 def test_2dmesher():
 
     fname = os.path.join(os.path.dirname(__file__), "testing.segy")
-    bbox = (-10e3, 0.0, 0.0, 10e3)
+    bbox = (-10000.0, 0.0, 0.0, 10000.0)
     wl = 5
     freq = 5.0
     hmin = 100
