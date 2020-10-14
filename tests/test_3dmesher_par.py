@@ -40,6 +40,7 @@ def test_3dmesher_par():
         nx=nx,
         ny=ny,
         byte_order="little",
+        axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
     )
 
     points, cells = generate_mesh(

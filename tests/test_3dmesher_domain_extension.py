@@ -44,6 +44,7 @@ def test_3dmesher_domain_extension(style_answer):
         byte_order="little",
         domain_pad=200,
         pad_style=style,
+        axes_order=(2, 0, 1),
     )
 
     write_velocity_model(

@@ -36,6 +36,7 @@ def test_3dmesher():
         ny=10,
         byte_order="little",
         domain_pad=0.0,
+        axes_order=(2, 0, 1),
     )
 
     write_velocity_model(

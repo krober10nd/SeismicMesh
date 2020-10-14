@@ -176,6 +176,8 @@ ef = get_sizing_function_from_segy(
     nx=nx,
     ny=ny,
     byte_order="big",
+    axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
+    axes_order_sort="F", # binary is packed in a FORTRAN-style
 )
 
 points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
