@@ -317,9 +317,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         * *pfix* (`array-like`) --
             An array of points to constrain in the mesh. (default==None)
         * *axis* (`int`) --
-            The axis to decompose the mesh (1,2, or 3). (default==1)
+            The axis to decompose the mesh (0,1, or 2). (default==1)
         * *delta_t* (`float`) --
-            Psuedo-timestep to control movement of points (default=0.10)
+            Psuedo-timestep to control movement of points (default=0.30)
 
     :return: points: vertex coordinates of mesh
     :rtype: points: (numpy.ndarray[`float` x dim])

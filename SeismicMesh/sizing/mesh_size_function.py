@@ -549,7 +549,7 @@ def _read_segy(filename):
         for index, trace in enumerate(f.trace):
             vp[:, index] = trace
         if np.amin(vp) < 1000.0:
-            raise Warning(
+            warnings.warn(
                 "Velocity appear to be in km/s. Maybe pass `units` km-s key pair?"
             )
         return np.flipud(vp), nz, nx, 0
