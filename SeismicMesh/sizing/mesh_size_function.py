@@ -227,7 +227,10 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
              Width of the domain pad in meters.
         * *pad_style* (``string``) --
              Type of padding.
-
+        * *axes_order* (``tuple``) --
+             The order of the axes (assumes z,x,y is (0,1,2))
+        * *axes_order_sort* (``string``) --
+             The sort style of the data (either "F" for FORTRAN-style or "C" for C-style)
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -244,6 +247,8 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             nx=opts["nx"],
             ny=opts["ny"],
             byte_order=opts["byte_order"],
+            axes_order=opts["axes_order"],
+            axes_order_sort=opts["axes_order_sort"],
         )
 
         if opts["domain_pad"] > 0.0:
