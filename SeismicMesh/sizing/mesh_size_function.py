@@ -50,7 +50,7 @@ opts = {
     "nx": None,
     "ny": None,
     "byte_order": "byte_order",
-    "axes_order": [0, 1, 2],
+    "axes_order": (0, 1, 2),
     "axes_order_sort": "F",
 }
 
@@ -100,8 +100,8 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
              REQUIRED FOR BINARY VELOCITY MODEL. The number of grid points in the x-direction in the velocity model.
         * *byte_order* (``string``) --
              REQUIRED FOR BINARY VELOCITY MODEL. The order of bytes in a 3D sesimic velocity model (`little` or `big`).
-        * *axes_order* (``list``) --
-             The order of the axes (assumes z,x,y [0,1,2])
+        * *axes_order* (``tuple``) --
+             The order of the axes (assumes z,x,y is (0,1,2))
         * *axes_order_sort* (``string``) --
              The sort style of the data (either "F" for FORTRAN-style or "C" for C-style)
 
@@ -156,6 +156,8 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "nx",
                 "ny",
                 "byte_order",
+                "axes_order",
+                "axes_order_sort",
             }:
                 pass
             else:
@@ -514,16 +516,14 @@ def _read_velocity_model(
         return _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort)
 
 
-def _read_bin(
-    filename, nz, nx, ny, byte_order, axes_order=[0, 1, 2], axes_order_sort="F"
-):
+def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort):
     """Read a velocity model from a binary"""
     if (nz is None) or (nx is None) or (ny is None):
         raise ValueError(
             "Please specify the number of grid points in each dimension (e.g., `nz`, `nx`, `ny`)..."
         )
     axes = [nz, nx, ny]
-    axes = axes[axes_order]
+    axes = [axes[o] for o in axes_order]
     with open(filename, "r") as file:
         print("Reading binary file: " + filename)
         if byte_order == "big":
@@ -532,7 +532,7 @@ def _read_bin(
             vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder("<"))
         else:
             raise ValueError("Please specify byte_order as either: little or big.")
-        vp = vp.reshape(*axes_order, order=axes_order_sort)
+        vp = vp.reshape(*axes, order=axes_order_sort)
         return np.flipud(vp.transpose((*axes_order))), nz, nx, ny  # z, x and then y
 
 
