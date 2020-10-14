@@ -332,6 +332,22 @@ Some key findings:
 * Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in `SeismicMesh`.
 
 
+Changelog
+=========
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Unreleased 
+==========
+
+### Added
+- More support for reading binary files packed in a binary format. 
+
+### [3.0.4] - 2020-10-12
+
+- Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations. 
+
 
 More information
 ================
