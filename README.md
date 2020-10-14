@@ -79,7 +79,7 @@ Takes roughly 1 minute with 2 processors and less than 1 GB of RAM.
 fname = "vel_z6.25m_x12.5m_exact.segy"
 
 # Bounding box describing domain extents (corner coordinates)
-bbox = (-12000, 0.0, 0.0, 67000.0)
+bbox = (-12000.0, 0.0, 0.0, 67000.0)
 
 # Desired minimum mesh size in domain
 hmin = 75.0
@@ -139,7 +139,7 @@ from SeismicMesh import (
 comm = MPI.COMM_WORLD
 
 # Bounding box describing domain extents (corner coordinates)
-bbox = (-4200, 0, 0, 13520, 0, 13520)
+bbox = (-4200.0, 0.0, 0.0, 13520.0, 0.0, 13520.0)
 
 # Desired minimum mesh size in domain.
 hmin = 150.0
@@ -338,19 +338,20 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Unreleased 
+Unreleased
 ==========
 
 ### Fixed
-- Units in km-s detection warning bug. 
+- Units in km-s detection warning bug.
 - Docstring fixes to `generate_mesh`
 
 ### Added
-- More support for reading binary files packed in a binary format. 
+- More support for reading binary files packed in a binary format.
+- Check to make sure bbox is composed of all floats.
 
 ### [3.0.4] - 2020-10-12
 
-- Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations. 
+- Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 
 
 More information

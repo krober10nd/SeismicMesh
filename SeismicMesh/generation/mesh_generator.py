@@ -480,6 +480,12 @@ def _minmax(bbox0, bbox1):
     return tuple(d)
 
 
+def _check_bbox(bbox):
+    for b in bbox:
+        if isinstance(b, int):
+            raise ValueError("bbox must contain all floats")
+
+
 def _unpack_sizing(edge_length):
     bbox = None
     hmin = None
@@ -503,6 +509,7 @@ def _unpack_sizing(edge_length):
         raise ValueError(
             "`edge_length` must either be a function, a `edge_length` object, or a scalar"
         )
+    _check_bbox(bbox)
     return fh, bbox, hmin
 
 
@@ -522,6 +529,7 @@ def _unpack_domain(domain):
         fd = domain
     else:
         raise ValueError("`domain` must be a function or a :class:`geometry` object")
+    _check_bbox(bbox)
     return fd, bbox
 
 
