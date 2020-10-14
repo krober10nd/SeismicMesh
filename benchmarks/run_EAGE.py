@@ -1,7 +1,8 @@
 # run EAGE benchmark and plot a figure
 import matplotlib.pyplot as plt
 import numpy
-from benchmark_EAGE import run_gmsh, run_SeismicMesh, run_cgal, _build_sizing
+from benchmark_EAGE import run_gmsh, run_cgal, _build_sizing
+from benchmark_EAGE_optmi
 
 
 colors1 = ["ko-", "ro-", "bo-"]

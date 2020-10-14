@@ -40,6 +40,7 @@ def test_3dmesher_par():
         nx=nx,
         ny=ny,
         byte_order="little",
+        axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
     )
 
     points, cells = generate_mesh(
@@ -69,8 +70,8 @@ def test_3dmesher_par():
         vol = geometry.simp_vol(points / 1000, cells)
         assert np.abs(2 - np.sum(vol)) < 0.10  # km2
         print(len(points), len(cells))
-        assert np.abs(9220 - len(points)) < 10000
-        assert np.abs(49156 - len(cells)) < 10000
+        assert np.abs(9220 - len(points)) < 5000
+        assert np.abs(49156 - len(cells)) < 5000
 
 
 if __name__ == "__main__":
