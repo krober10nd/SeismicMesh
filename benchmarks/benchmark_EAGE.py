@@ -50,6 +50,8 @@ def _build_sizing(HMIN=150.0, FREQ=2):
         nx=nx,
         ny=ny,
         byte_order="big",
+        axes_order=[2, 0, 1],  # default order z, x, y -> order for EAGE x, y, z
+        axes_order_sort="F",  # binary is packed in a FORTRAN-style
     )
 
     return ef
