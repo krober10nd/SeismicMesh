@@ -331,9 +331,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     opts.update(kwargs)
     _parse_kwargs(kwargs)
 
-    min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
-    max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
-
     # verbosity decorators
     verbosity1, verbosity2 = _select_verbosity(opts)
 
