@@ -2,6 +2,7 @@ import numpy as np
 import SeismicMesh
 
 
+@pytest.mark.serial
 def test_pfix():
     hmin = 0.05
     bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
