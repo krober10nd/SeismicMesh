@@ -419,8 +419,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         p, t = _get_topology(dt)
 
         # Find where pfix went
+        ifix = []
         if nfix > 0:
-            ifix = []
             for fix in pfix:
                 ifix.append(_closest_node(fix, p))
 
