@@ -1,3 +1,4 @@
+import itertools
 import numpy as np
 import scipy.sparse as spsparse
 
@@ -7,6 +8,13 @@ from .cpp import fast_geometry as gutils
 
 # cpp implementation of 4x4 determinant calc
 dete = gutils.calc_4x4determinant
+
+
+def corners(bbox):
+    """Get the corners of a box in N-dim"""
+    mins = bbox[::2]
+    maxs = bbox[1::2]
+    return list(itertools.product(*zip(mins, maxs)))
 
 
 def calc_re_ratios(vertices, entities, dim=2):
