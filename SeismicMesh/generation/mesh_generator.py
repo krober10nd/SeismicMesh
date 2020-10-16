@@ -159,6 +159,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
+
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
@@ -168,7 +170,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     )
 
     geps = 1e-1 * h0
-    deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -218,21 +219,15 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
+        ele_nums, ix = _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound)
+
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             print_msg1(
-                "Termination reached...maximum number of iterations reached.",
+                "FAILURE: Termination...maximum number of iterations reached.",
             )
             p, t = _termination(p, t, opts, comm, sliver=True)
             break
-
-        # calculate the minimum dihedral angle in mesh
-        dh_angles = geometry.calc_dihedral_angles(p, t)
-        out_of_bounds = np.argwhere(
-            (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
-        )
-        ele_nums = np.floor(out_of_bounds / 6).astype("int")
-        ele_nums, ix = np.unique(ele_nums, return_index=True)
 
         print_msg1(
             "On rank: "
@@ -271,7 +266,9 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         perturb /= perturb_norm[:, None]
 
         # perturb push % of minimum mesh size
+        # bid = geometry.get_boundary_vertices(t, 3)
         p[move] += push * h0 * perturb
+        # p[bid] = pold[bid]
 
         # bring outside points back to the boundary
         p = _project_points_back_newton(p, fd, deps)
@@ -333,6 +330,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # check call was correct
     opts.update(kwargs)
     _parse_kwargs(kwargs)
+
+    min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
+    max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
 
     # verbosity decorators
     verbosity1, verbosity2 = _select_verbosity(opts)
@@ -473,6 +473,17 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
     return p, t
+
+
+def _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound):
+    """calculate the minimum dihedral angle in mesh"""
+    dh_angles = geometry.calc_dihedral_angles(p, t)
+    out_of_bounds = np.argwhere(
+        (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
+    )
+    ele_nums = np.floor(out_of_bounds / 6).astype("int")
+    ele_nums, ix = np.unique(ele_nums, return_index=True)
+    return ele_nums, ix
 
 
 def _minmax(bbox0, bbox1):
