@@ -342,10 +342,13 @@ Unreleased
 ==========
 
 ### Fixed
+- Preserving fixed points in serial.
 - Units in km-s detection warning bug.
 - Docstring fixes to `generate_mesh`
 
 ### Added
+- More accurate 3d cube signed distance function
+- Automatic corner point extraction for cubes and rectangles.
 - More support for reading binary files packed in a binary format.
 - Check to make sure bbox is composed of all floats.
 

@@ -195,7 +195,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     count = 0
     pold = None
-
+    push = 0.10
     while True:
 
         start = time.time()
@@ -262,7 +262,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             perturb /= perturb_norm[:, None]
 
             # perturb % of local mesh size
-            p[move] += 0.10 * h0 * perturb
+            p[move] += push * h0 * perturb
 
         # Bring outside points back to the boundary
         p = _project_points_back_newton(p, fd, deps)
@@ -418,6 +418,12 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         # Get the current topology of the triangulation
         p, t = _get_topology(dt)
 
+        # Find where pfix went
+        ifix = []
+        if nfix > 0:
+            for fix in pfix:
+                ifix.append(_closest_node(fix, p))
+
         # Add ghost points to perform Delaunay in parallel.
         if comm.size > 1:
             p, t, inv, recv_ix = _add_ghost_vertices(p, t, dt, extents, comm)
@@ -439,7 +445,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         # Compute the forces on the edges
         Ftot = _compute_forces(p, t, fh, h0, L0mult)
 
-        Ftot[:nfix] = 0  # Force = 0 at fixed points
+        Ftot[ifix] = 0  # Force = 0 at fixed points
 
         # Update positions
         p += delta_t * Ftot
@@ -792,3 +798,10 @@ def _get_topology(dt):
     p = dt.get_finite_vertices()
     t = dt.get_finite_cells()
     return p, t
+
+
+def _closest_node(node, nodes):
+    nodes = np.asarray(nodes)
+    deltas = nodes - node
+    dist_2 = np.einsum("ij,ij->i", deltas, deltas)
+    return np.argmin(dist_2)

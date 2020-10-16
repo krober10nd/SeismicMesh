@@ -54,6 +54,40 @@ def drectangle(p, x1, x2, y1, y2):
 
 
 def dblock(p, x1, x2, y1, y2, z1, z2):
+    # adapted from:
+    # https://github.com/nschloe/dmsh/blob/3305c417d373d509c78491b24e77409411aa18c2/dmsh/geometry/rectangle.py#L31
+    # outside dist
+    # https://gamedev.stackexchange.com/a/44496
+    w = x2 - x1
+    h = y2 - y1
+    d = z2 - z1
+    cx = (x1 + x2) / 2
+    cy = (y1 + y2) / 2
+    cz = (z1 + z2) / 2
+    dx = np.abs(p[:, 0] - cx) - w / 2
+    dy = np.abs(p[:, 1] - cy) - h / 2
+    dz = np.abs(p[:, 2] - cz) - d / 2
+    is_inside = (dx <= 0) & (dy <= 0) & (dz <= 0)
+    dx[dx < 0.0] = 0.0
+    dy[dy < 0.0] = 0.0
+    dz[dz < 0.0] = 0.0
+    dist = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
+    # inside dist
+    a = np.array(
+        [
+            p[is_inside, 0] - x1,
+            x2 - p[is_inside, 0],
+            p[is_inside, 1] - y1,
+            y2 - p[is_inside, 1],
+            p[is_inside, 2] - z1,
+            z2 - p[is_inside, 2],
+        ]
+    )
+    dist[is_inside] = -np.min(a, axis=0)
+    return dist
+
+
+def dblock0(p, x1, x2, y1, y2, z1, z2):
     min = np.minimum
     return -min(
         min(
