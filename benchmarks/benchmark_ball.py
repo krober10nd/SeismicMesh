@@ -98,7 +98,7 @@ def run_SeismicMesh(HMIN=0.025):
         )
 
     def sphere(x):
-        return dsphere(x, 0, 0, 0, 1)
+        return dsphere(x, 0.0, 0.0, 0.0, 1)
 
     def fh(x):
         return numpy.abs(numpy.sqrt(numpy.einsum("ij, ij->i", x, x)) - 0.5) / 5 + HMIN
