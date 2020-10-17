@@ -36,9 +36,10 @@ opts = {
     "pfix": None,
     "axis": 1,
     "min_dh_angle_bound": 10.0,
-    "max_dh_angle_bound": 170.0,
+    "max_dh_angle_bound": 180.0,
     "points": None,
     "delta_t": 0.30,
+    "geps_mult": 0.1,
 }
 
 
@@ -106,6 +107,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             The minimum allowable dihedral angle bound. (default==10 degrees)
         * *max_dh_angle_bound* (`float`) --
             The maximum allowable dihedral angle bound. (default==170 degrees)
+        * *geps_mult* (`float`) --
+            The tolerance used to determine if a vertex is "in" the domain. (default==0.1)
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -169,7 +172,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
     )
 
-    geps = 1e-1 * h0
+    geps = opts["geps_mult"] * h0
     min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -266,9 +269,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         perturb /= perturb_norm[:, None]
 
         # perturb push % of minimum mesh size
-        # bid = geometry.get_boundary_vertices(t, 3)
         p[move] += push * h0 * perturb
-        # p[bid] = pold[bid]
 
         # bring outside points back to the boundary
         p = _project_points_back_newton(p, fd, deps)
@@ -318,6 +319,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             The axis to decompose the mesh (0,1, or 2). (default==1)
         * *delta_t* (`float`) --
             Psuedo-timestep to control movement of points (default=0.30)
+        * *geps_mult* (`float`) --
+            The tolerance used to determine if a vertex is "in" the domain. (default==0.1*h0)
+
 
     :return: points: vertex coordinates of mesh
     :rtype: points: (numpy.ndarray[`float` x dim])
@@ -386,7 +390,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # these parameters originate from the original DistMesh
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = opts["delta_t"]
-    geps = 1e-1 * h0
+    geps = opts["geps_mult"] * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
 
     DT = _select_cgal_dim(dim)
@@ -566,6 +570,7 @@ def _parse_kwargs(kwargs):
             "max_dh_angle_bound",
             "delta_t",
             "h0",
+            "geps_mult",
         }:
             pass
         else:
