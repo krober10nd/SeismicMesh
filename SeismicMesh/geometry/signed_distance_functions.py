@@ -53,7 +53,7 @@ def drectangle(p, x1, x2, y1, y2):
     return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
 
 
-def dblock(p, x1, x2, y1, y2, z1, z2):
+def dblock0(p, x1, x2, y1, y2, z1, z2):
     # adapted from:
     # https://github.com/nschloe/dmsh/blob/3305c417d373d509c78491b24e77409411aa18c2/dmsh/geometry/rectangle.py#L31
     # outside dist
@@ -87,7 +87,7 @@ def dblock(p, x1, x2, y1, y2, z1, z2):
     return dist
 
 
-def dblock0(p, x1, x2, y1, y2, z1, z2):
+def dblock(p, x1, x2, y1, y2, z1, z2):
     min = np.minimum
     return -min(
         min(
