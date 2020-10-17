@@ -3,7 +3,7 @@ Modules
 
 Here we document the public API
 
-*SeimsicMesh.geometry*
+*SeismsicMesh.geometry*
 -------------------------------
 
 Routines to perform geometrical/topological operations and calculate things on meshes.
@@ -11,7 +11,7 @@ Routines to perform geometrical/topological operations and calculate things on m
 .. automodule:: SeismicMesh.geometry
     :members:
 
-*SeimsicMesh.sizing*
+*SeismsicMesh.sizing*
 ---------------------------------------------
 
 Function to build a :math:`f(h)` mesh sizing function from a seismic velocity model.
@@ -20,7 +20,7 @@ Assumes the domain can be represented by a rectangle (2D) or cube (3D) and thus 
 .. automodule:: SeismicMesh.sizing
     :members:
 
-*SeimsicMesh.generation*
+*SeismsicMesh.generation*
 -------------------------------
 
 Functions to build and improve a simplical mesh that conforms to the signed distance function :math:`f(d)`
