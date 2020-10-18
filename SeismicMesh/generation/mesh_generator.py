@@ -208,7 +208,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         start = time.time()
 
         num_move = 0
-
         # Using CGAL's incremental Delaunay triangulation capabilities.
         if count > 0:
             to_move = np.where(_dist(p, pold) > 0)[0]
@@ -308,7 +307,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             Output to the screen `verbose` (default==1). If `verbose`==1 only start and end messages are
             written, `verbose`==0, no messages are written besides errors, `verbose` > 1 all messages are written.
         * *max_iter* (``float``) --
-            Maximum number of meshing iterations. (default==50)
+           Maximum number of meshing iterations. (default==50)
         * *seed* (``float`` or ``int``) --
             Psuedo-random seed to initialize meshing points. (default==0)
         * *perform_checks* (`boolean`) --
@@ -768,8 +767,8 @@ def _form_extents(p, h0, comm):
     if comm.size > 1:
         # min x min y min z max x max y max z
         extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-        extent[_axis] -= h0
-        extent[_axis + dim] += h0
+        extent[_axis] -= 5 * h0
+        extent[_axis + dim] += 5 * h0
         return [comm.bcast(extent, r) for r in range(comm.size)]
     else:
         return []
