@@ -36,9 +36,10 @@ opts = {
     "pfix": None,
     "axis": 1,
     "min_dh_angle_bound": 10.0,
-    "max_dh_angle_bound": 170.0,
+    "max_dh_angle_bound": 180.0,
     "points": None,
     "delta_t": 0.30,
+    "geps_mult": 0.1,
 }
 
 
@@ -106,6 +107,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             The minimum allowable dihedral angle bound. (default==10 degrees)
         * *max_dh_angle_bound* (`float`) --
             The maximum allowable dihedral angle bound. (default==170 degrees)
+        * *geps_mult* (`float`) --
+            The tolerance used to determine if a vertex is "in" the domain. (default==0.1)
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -159,6 +162,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
+
     if opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = opts["max_iter"]
@@ -167,8 +172,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
     )
 
-    geps = 1e-1 * h0
-    deps = np.sqrt(np.finfo(np.double).eps) * h0
+    geps = opts["geps_mult"] * h0
     min_dh_bound = opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -196,15 +200,16 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     count = 0
     pold = None
     push = 0.10
+
+    dt = DT()
+    dt.insert(p.flatten().tolist())
     while True:
 
         start = time.time()
 
+        num_move = 0
         # Using CGAL's incremental Delaunay triangulation capabilities.
-        if count == 0:
-            dt = DT()
-            dt.insert(p.flatten().tolist())
-        else:
+        if count > 0:
             to_move = np.where(_dist(p, pold) > 0)[0]
             dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
 
@@ -216,64 +221,57 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
-        # Sliver removal
-        if count != (max_iter - 1):
-            num_move = 0
-            # calculate dihedral angles in mesh
-            dh_angles = geometry.calc_dihedral_angles(p, t)
-            out_of_bounds = np.argwhere(
-                (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
-            )
-            ele_nums = np.floor(out_of_bounds / 6).astype("int")
-            ele_nums, ix = np.unique(ele_nums, return_index=True)
-
-            print_msg1(
-                "On rank: "
-                + str(comm.rank)
-                + " There are "
-                + str(len(ele_nums))
-                + " slivers...",
-            )
-
-            move = t[ele_nums, 0]
-            num_move = move.size
-            if num_move == 0:
-                print_msg1(
-                    "Termination reached in "
-                    + str(count)
-                    + " iterations...no slivers detected!",
-                )
-                p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
-                return p, t
-
-            p0, p1, p2, p3 = (
-                p[t[ele_nums, 0], :],
-                p[t[ele_nums, 1], :],
-                p[t[ele_nums, 2], :],
-                p[t[ele_nums, 3], :],
-            )
-
-            # perturb vector is based on INCREASING circumsphere's radius
-            perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
-            perturb[np.isinf(perturb)] = 1.0
-
-            # normalize perturbation vector
-            perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
-            perturb /= perturb_norm[:, None]
-
-            # perturb % of local mesh size
-            p[move] += push * h0 * perturb
-
-        # Bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
+        ele_nums, ix = _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound)
 
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             print_msg1(
-                "Termination reached...maximum number of iterations reached.",
+                "FAILURE: Termination...maximum number of iterations reached.",
             )
             p, t = _termination(p, t, opts, comm, sliver=True)
             break
+
+        print_msg1(
+            "On rank: "
+            + str(comm.rank)
+            + " There are "
+            + str(len(ele_nums))
+            + " slivers...",
+        )
+
+        move = t[ele_nums, 0]
+
+        num_move = move.size
+
+        if num_move == 0:
+            print_msg1(
+                "Termination reached in "
+                + str(count)
+                + " iterations...no slivers detected!",
+            )
+            p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+            return p, t
+
+        p0, p1, p2, p3 = (
+            p[t[ele_nums, 0], :],
+            p[t[ele_nums, 1], :],
+            p[t[ele_nums, 2], :],
+            p[t[ele_nums, 3], :],
+        )
+
+        # perturb vector is based on INCREASING the sliver's circumsphere radius
+        perturb = geometry.calc_circumsphere_grad(p0, p1, p2, p3)
+        perturb[np.isinf(perturb)] = 1.0
+
+        # normalize the perturbation vector
+        perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
+        perturb /= perturb_norm[:, None]
+
+        # perturb push % of minimum mesh size
+        p[move] += push * h0 * perturb
+
+        # bring outside points back to the boundary
+        p = _project_points_back_newton(p, fd, deps)
 
         count += 1
 
@@ -309,7 +307,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             Output to the screen `verbose` (default==1). If `verbose`==1 only start and end messages are
             written, `verbose`==0, no messages are written besides errors, `verbose` > 1 all messages are written.
         * *max_iter* (``float``) --
-            Maximum number of meshing iterations. (default==50)
+           Maximum number of meshing iterations. (default==50)
         * *seed* (``float`` or ``int``) --
             Psuedo-random seed to initialize meshing points. (default==0)
         * *perform_checks* (`boolean`) --
@@ -320,6 +318,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             The axis to decompose the mesh (0,1, or 2). (default==1)
         * *delta_t* (`float`) --
             Psuedo-timestep to control movement of points (default=0.30)
+        * *geps_mult* (`float`) --
+            The tolerance used to determine if a vertex is "in" the domain. (default==0.1*h0)
+
 
     :return: points: vertex coordinates of mesh
     :rtype: points: (numpy.ndarray[`float` x dim])
@@ -388,7 +389,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # these parameters originate from the original DistMesh
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = opts["delta_t"]
-    geps = 1e-1 * h0
+    geps = opts["geps_mult"] * h0
     deps = np.sqrt(np.finfo(np.double).eps) * h0
 
     DT = _select_cgal_dim(dim)
@@ -474,6 +475,17 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     return p, t
 
 
+def _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound):
+    """calculate the minimum dihedral angle in mesh"""
+    dh_angles = geometry.calc_dihedral_angles(p, t)
+    out_of_bounds = np.argwhere(
+        (dh_angles[:, 0] < min_dh_bound) | (dh_angles[:, 0] > max_dh_bound)
+    )
+    ele_nums = np.floor(out_of_bounds / 6).astype("int")
+    ele_nums, ix = np.unique(ele_nums, return_index=True)
+    return ele_nums, ix
+
+
 def _minmax(bbox0, bbox1):
     d = []
     for i, (a, b) in enumerate(zip(bbox0, bbox1)):
@@ -557,6 +569,7 @@ def _parse_kwargs(kwargs):
             "max_dh_angle_bound",
             "delta_t",
             "h0",
+            "geps_mult",
         }:
             pass
         else:
@@ -754,8 +767,8 @@ def _form_extents(p, h0, comm):
     if comm.size > 1:
         # min x min y min z max x max y max z
         extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
-        extent[_axis] -= h0
-        extent[_axis + dim] += h0
+        extent[_axis] -= 5 * h0
+        extent[_axis + dim] += 5 * h0
         return [comm.bcast(extent, r) for r in range(comm.size)]
     else:
         return []

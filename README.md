@@ -301,8 +301,10 @@ meshio.write_points_cells(
 import SeismicMesh
 import meshio
 
-cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
+bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+cube = SeismicMesh.Cube(bbox)
+corners = SeismicMesh.geometry.corners(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
 meshio.write_points_cells(
     "cube.vtk",
     points,
@@ -341,19 +343,23 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 Unreleased
 ==========
 
+
+### [3.0.5] - 2020-10-18
+
 ### Fixed
 - Preserving fixed points in serial.
 - Units in km-s detection warning bug.
 - Docstring fixes to `generate_mesh`
+- Improved mesh quality in 3D
 
 ### Added
-- More accurate 3d cube signed distance function
 - Automatic corner point extraction for cubes and rectangles.
 - More support for reading binary files packed in a binary format.
 - Check to make sure bbox is composed of all floats.
 
 ### [3.0.4] - 2020-10-12
 
+### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 
 

@@ -91,7 +91,7 @@ def run_SeismicMesh(HMIN=0.01):
 
     bbox = (-1.0, 1.0, -1.0, 1.0)
 
-    disk = SeismicMesh.geometry.Disk([0, 0], 1)
+    disk = SeismicMesh.geometry.Disk([0.0, 0.0], 1.0)
 
     def fh(x):
         return numpy.array([HMIN] * len(x))

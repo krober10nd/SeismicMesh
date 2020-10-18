@@ -94,7 +94,7 @@ def run_gmsh(ef, HMIN=75.0):
 
 def run_SeismicMesh(ef, HMIN=75.0):
 
-    bbox = (-12000, 0.0, 0.0, 67000.0)
+    bbox = (-12000.0, 0.0, 0.0, 67000.0)
 
     rectangle = Rectangle(bbox)
 
