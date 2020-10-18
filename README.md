@@ -343,10 +343,14 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 Unreleased
 ==========
 
+
+### [3.0.5] - 2020-10-18
+
 ### Fixed
 - Preserving fixed points in serial.
 - Units in km-s detection warning bug.
 - Docstring fixes to `generate_mesh`
+- Improved mesh quality in 3D
 
 ### Added
 - Automatic corner point extraction for cubes and rectangles.
@@ -355,6 +359,7 @@ Unreleased
 
 ### [3.0.4] - 2020-10-12
 
+### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 
 
