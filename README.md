@@ -301,8 +301,10 @@ meshio.write_points_cells(
 import SeismicMesh
 import meshio
 
-cube = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
+bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+cube = SeismicMesh.Cube(bbox)
+corners = SeismicMesh.geometry.corners(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
 meshio.write_points_cells(
     "cube.vtk",
     points,
@@ -347,7 +349,6 @@ Unreleased
 - Docstring fixes to `generate_mesh`
 
 ### Added
-- More accurate 3d cube signed distance function
 - Automatic corner point extraction for cubes and rectangles.
 - More support for reading binary files packed in a binary format.
 - Check to make sure bbox is composed of all floats.
