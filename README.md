@@ -350,6 +350,52 @@ meshio.write_points_cells(
 )
 ```
 
+![prism](https://user-images.githubusercontent.com/18619644/96511116-f69cc280-1234-11eb-984e-b0001b15c7b5.png)
+
+
+```python
+# mesh a prism
+import numpy as np
+import meshio
+
+import SeismicMesh
+
+
+bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
+
+hmin = 0.05
+
+
+def length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+
+def sdTriPrism(p, h=[0.5, 0.5]):
+    q = np.abs(p)
+    return np.maximum(
+        q[:, 2] - h[1],
+        np.maximum(q[:, 0] * 0.866025 + p[:, 1] * 0.5, -p[:, 1]) - h[0] * 0.5,
+    )
+
+
+points, cells = SeismicMesh.generate_mesh(
+    bbox=bbox,
+    domain=sdTriPrism,
+    edge_length=hmin,
+    verbose=2,
+    max_iter=100,
+)
+points, cells = SeismicMesh.sliver_removal(
+    bbox=bbox, points=points, domain=sdTriPrism, edge_length=hmin
+)
+meshio.write_points_cells(
+    "prism.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
@@ -377,9 +423,8 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Unreleased
-==========
-
+### Unreleased
+- Added more examples on README
 
 ### [3.0.5] - 2020-10-18
 
