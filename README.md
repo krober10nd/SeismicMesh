@@ -313,6 +313,40 @@ meshio.write_points_cells(
 )
 ```
 
+![torus](https://user-images.githubusercontent.com/18619644/96498978-25aa3880-1223-11eb-9738-8a4e86c44dbc.png)
+
+
+```python
+# mesh a torus
+import numpy as np
+import meshio
+import SeismicMesh
+
+
+bbox = (-1.0, 1.0, -1.0, 1.0, -10.0, 1.0)
+hmin = 0.05
+
+def length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+def Torus(p, t=(0.5, 0.2)):
+    xz = np.column_stack((p[:, 0], p[:, 2]))
+    q = np.column_stack((length(xz) - t[0], p[:, 1]))
+    return length(q) - t[1]
+
+points, cells = SeismicMesh.generate_mesh(
+    domain=Torus, edge_length=hmin, bbox=bbox, verbose=2, max_iter=100
+)
+points, cells = SeismicMesh.sliver_removal(
+    points=points, domain=Torus, edge_length=hmin, bbox=bbox, verbose=2
+)
+meshio.write_points_cells(
+    "torus.vtk",
+    points,
+    [("tetra", cells)],
+)
+```
+
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
