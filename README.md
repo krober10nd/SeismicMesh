@@ -265,8 +265,8 @@ if comm.rank == 0:
 ![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
 disk = SeismicMesh.Disk([0.0, 0.0], 1.0)
 points, cells = SeismicMesh.generate_mesh(domain=disk, edge_length=0.1)
@@ -281,15 +281,18 @@ meshio.write_points_cells(
 ![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
-rect = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=rect, edge_length=0.1)
+bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+cube = SeismicMesh.Cube(bbox)
+corners = SeismicMesh.geometry.corners(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
 meshio.write_points_cells(
-    "rectangle.vtk",
+    "cube.vtk",
     points,
-    [("triangle", cells)],
+    [("tetra", cells)],
     file_format="vtk",
 )
 ```
@@ -298,8 +301,8 @@ meshio.write_points_cells(
 
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
