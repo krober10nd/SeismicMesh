@@ -265,8 +265,8 @@ if comm.rank == 0:
 ![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
 disk = SeismicMesh.Disk([0.0, 0.0], 1.0)
 points, cells = SeismicMesh.generate_mesh(domain=disk, edge_length=0.1)
@@ -281,15 +281,18 @@ meshio.write_points_cells(
 ![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
-rect = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
-points, cells = SeismicMesh.generate_mesh(domain=rect, edge_length=0.1)
+bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+cube = SeismicMesh.Cube(bbox)
+corners = SeismicMesh.geometry.corners(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
 meshio.write_points_cells(
-    "rectangle.vtk",
+    "cube.vtk",
     points,
-    [("triangle", cells)],
+    [("tetra", cells)],
     file_format="vtk",
 )
 ```
@@ -298,8 +301,8 @@ meshio.write_points_cells(
 
 
 ```python
-import SeismicMesh
 import meshio
+import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
@@ -307,6 +310,86 @@ corners = SeismicMesh.geometry.corners(bbox)
 points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
 meshio.write_points_cells(
     "cube.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
+![torus](https://user-images.githubusercontent.com/18619644/96498978-25aa3880-1223-11eb-9738-8a4e86c44dbc.png)
+
+
+```python
+# mesh a torus
+import numpy as np
+import meshio
+import SeismicMesh
+
+
+bbox = (-1.0, 1.0, -1.0, 1.0, -10.0, 1.0)
+hmin = 0.05
+
+def length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+def Torus(p, t=(0.5, 0.2)):
+    xz = np.column_stack((p[:, 0], p[:, 2]))
+    q = np.column_stack((length(xz) - t[0], p[:, 1]))
+    return length(q) - t[1]
+
+points, cells = SeismicMesh.generate_mesh(
+    domain=Torus, edge_length=hmin, bbox=bbox, verbose=2, max_iter=100
+)
+points, cells = SeismicMesh.sliver_removal(
+    points=points, domain=Torus, edge_length=hmin, bbox=bbox, verbose=2
+)
+meshio.write_points_cells(
+    "torus.vtk",
+    points,
+    [("tetra", cells)],
+)
+```
+
+![prism](https://user-images.githubusercontent.com/18619644/96511116-f69cc280-1234-11eb-984e-b0001b15c7b5.png)
+
+
+```python
+# mesh a prism
+import numpy as np
+import meshio
+
+import SeismicMesh
+
+
+bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
+
+hmin = 0.05
+
+
+def length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+
+def sdTriPrism(p, h=[0.5, 0.5]):
+    q = np.abs(p)
+    return np.maximum(
+        q[:, 2] - h[1],
+        np.maximum(q[:, 0] * 0.866025 + p[:, 1] * 0.5, -p[:, 1]) - h[0] * 0.5,
+    )
+
+
+points, cells = SeismicMesh.generate_mesh(
+    bbox=bbox,
+    domain=sdTriPrism,
+    edge_length=hmin,
+    verbose=2,
+    max_iter=100,
+)
+points, cells = SeismicMesh.sliver_removal(
+    bbox=bbox, points=points, domain=sdTriPrism, edge_length=hmin
+)
+meshio.write_points_cells(
+    "prism.vtk",
     points,
     [("tetra", cells)],
     file_format="vtk",
@@ -340,9 +423,8 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Unreleased
-==========
-
+### Unreleased
+- Added more examples on README
 
 ### [3.0.5] - 2020-10-18
 
