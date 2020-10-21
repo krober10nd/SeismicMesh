@@ -9,6 +9,14 @@ def corners(bbox):
     return list(itertools.product(*zip(mins, maxs)))
 
 
+def _gather_corners(domains):
+    corners = [d.corners for d in domains if d.corners is not None]
+    corners = np.concatenate(corners)
+    if len(corners) == 0:
+        corners = None
+    return corners
+
+
 class Union:
     def __init__(self, domains):
         geom_dim = [d.dim for d in domains]
@@ -27,10 +35,10 @@ class Union:
                 max(d.bbox[1] for d in domains),
                 min(d.bbox[2] for d in domains),
                 max(d.bbox[3] for d in domains),
-                max(d.bbox[4] for d in domains),
+                min(d.bbox[4] for d in domains),
                 max(d.bbox[5] for d in domains),
             )
-        self.corners = corners(self.bbox)
+        self.corners = _gather_corners(domains)
         self.domains = domains
 
     def eval(self, x):
@@ -55,10 +63,10 @@ class Intersection:
                 max(d.bbox[1] for d in domains),
                 min(d.bbox[2] for d in domains),
                 max(d.bbox[3] for d in domains),
-                max(d.bbox[4] for d in domains),
+                min(d.bbox[4] for d in domains),
                 max(d.bbox[5] for d in domains),
             )
-        self.corners = corners(self.bbox)
+        self.corners = _gather_corners(domains)
         self.domains = domains
 
     def eval(self, x):
@@ -83,10 +91,10 @@ class Difference:
                 max(d.bbox[1] for d in domains),
                 min(d.bbox[2] for d in domains),
                 max(d.bbox[3] for d in domains),
-                max(d.bbox[4] for d in domains),
+                min(d.bbox[4] for d in domains),
                 max(d.bbox[5] for d in domains),
             )
-        self.corners = corners(self.bbox)
+        self.corners = _gather_corners(domains)
         self.domains = domains
 
     def eval(self, x):
@@ -106,6 +114,20 @@ class Disk:
 
     def eval(self, x):
         return _ddisk(x, self.xc, self.yc, self.r)
+
+
+class Ball:
+    def __init__(self, x0, r):
+        self.dim = 3
+        self.corners = None
+        self.xc = x0[0]
+        self.yc = x0[1]
+        self.zc = x0[2]
+        self.r = r
+        self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r, x0[2] - r, x0[2] + r)
+
+    def eval(self, x):
+        return dball(x, self.xc, self.yc, self.zc, self.r)
 
 
 class Rectangle:
@@ -131,6 +153,11 @@ class Cube:
 def _ddisk(p, xc, yc, r):
     """Signed distance to disk centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
+
+
+def dball(p, xc, yc, zc, r):
+    """Signed distance function for a ball centered at xc,yc,zc with radius  r."""
+    return np.sqrt((p[:, 0] - xc) ** 2 + (p[:, 1] - yc) ** 2 + (p[:, 2] - zc) ** 2) - r
 
 
 def drectangle(p, x1, x2, y1, y2):

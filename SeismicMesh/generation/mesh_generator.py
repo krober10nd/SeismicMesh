@@ -550,6 +550,7 @@ def _unpack_sizing(edge_length):
 def _unpack_domain(domain, opts):
     corners = None
     domains = [
+        geometry.Ball,
         geometry.Rectangle,
         geometry.Disk,
         geometry.Cube,

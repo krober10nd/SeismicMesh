@@ -462,6 +462,31 @@ meshio.write_points_cells(
 )
 ```
 
+![Cube_wHoles](https://user-images.githubusercontent.com/18619644/96785337-0a772e80-13c5-11eb-88fb-311b5bfdfed4.png)
+
+```python
+import meshio
+import SeismicMesh
+
+h = 0.10
+cube0 = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+ball1 = SeismicMesh.Ball([0.5, 0.0, 0.5], 0.30)
+ball2 = SeismicMesh.Ball([0.5, 0.5, 0.0], 0.30)
+ball3 = SeismicMesh.Ball([0.0, 0.5, 0.5], 0.30)
+ball4 = SeismicMesh.Ball([0.5, 0.5, 0.5], 0.45)
+difference = SeismicMesh.Difference([cube0, ball1, ball2, ball3, ball4])
+points, cells = SeismicMesh.generate_mesh(domain=difference, edge_length=h, verbose=1)
+points, cells = SeismicMesh.sliver_removal(
+    points=points, domain=difference, edge_length=h, verbose=1
+)
+meshio.write_points_cells(
+    "Ball_wHoles.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
