@@ -425,6 +425,8 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 
 ### Unreleased
 - Added more examples on README
+### Fixed 
+- Silence messages about pfix when verbose=0
 
 ### [3.0.5] - 2020-10-18
 
