@@ -787,7 +787,7 @@ def _dist(p1, p2):
 
 def _unpack_pfix(dim, opts, comm):
     """Unpack fixed points"""
-    if opts["pfix"] is not None or comm.size == 1:
+    if opts["pfix"] is not None and comm.size == 1:
         pfix = np.array(opts["pfix"], dtype="d")
         nfix = len(pfix)
     else:
