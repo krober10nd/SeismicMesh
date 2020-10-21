@@ -291,8 +291,7 @@ import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
-corners = SeismicMesh.geometry.corners(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
 points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
@@ -311,8 +310,7 @@ import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
-corners = SeismicMesh.geometry.corners(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
     points,
@@ -401,6 +399,25 @@ meshio.write_points_cells(
 )
 ```
 
+```python
+# Compute the union of several SDFs to create more complex geometries
+import meshio
+import SeismicMesh
+
+h = 0.10
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 0.5))
+rect1 = SeismicMesh.Rectangle((0.0, 0.5, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.5, 0.5], 0.5)
+union = SeismicMesh.Union([rect0, rect1, disk0])
+points, cells = SeismicMesh.generate_mesh(domain=union, edge_length=h)
+meshio.write_points_cells(
+    "Lshape_wDisk.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
@@ -428,12 +445,16 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Unreleased
-- Added more examples on README
+## Unreleased
+
 ### Fixed
 - Silence messages about pfix when verbose=0
+### Added
+- Added more examples on README
+- New unions/intersections with different SDF primivitives
+- Automatic corner constraints in serial
 
-### [3.0.5] - 2020-10-18
+## [3.0.5] - 2020-10-18
 
 ### Fixed
 - Preserving fixed points in serial.
@@ -446,7 +467,7 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - More support for reading binary files packed in a binary format.
 - Check to make sure bbox is composed of all floats.
 
-### [3.0.4] - 2020-10-12
+## [3.0.4] - 2020-10-12
 
 ### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.

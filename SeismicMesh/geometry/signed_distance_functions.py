@@ -1,15 +1,50 @@
 import numpy as np
+import itertools
+
+
+def corners(bbox):
+    """Get the corners of a box in N-dim"""
+    mins = bbox[::2]
+    maxs = bbox[1::2]
+    return list(itertools.product(*zip(mins, maxs)))
+
+
+class Union:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                max(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = corners(self.bbox)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.minimum.reduce([d.eval(x) for d in self.domains])
 
 
 class Disk:
     def __init__(self, x0, r):
+        self.dim = 2
+        self.corners = None
         self.xc = x0[0]
         self.yc = x0[1]
         self.r = r
-        self.x1 = x0[0] - r
-        self.x2 = x0[0] + r
-        self.y1 = x0[1] - r
-        self.y2 = x0[1] + r
+        self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
 
     def eval(self, x):
         return _ddisk(x, self.xc, self.yc, self.r)
@@ -17,26 +52,22 @@ class Disk:
 
 class Rectangle:
     def __init__(self, bbox):
-        self.x1 = bbox[0]
-        self.x2 = bbox[1]
-        self.y1 = bbox[2]
-        self.y2 = bbox[3]
+        self.dim = 2
+        self.corners = corners(bbox)
+        self.bbox = bbox
 
     def eval(self, x):
-        return drectangle(x, self.x1, self.x2, self.y1, self.y2)
+        return drectangle(x, *self.bbox)
 
 
 class Cube:
     def __init__(self, bbox):
-        self.x1 = bbox[0]
-        self.x2 = bbox[1]
-        self.y1 = bbox[2]
-        self.y2 = bbox[3]
-        self.z1 = bbox[4]
-        self.z2 = bbox[5]
+        self.dim = 3
+        self.corners = corners(bbox)
+        self.bbox = bbox
 
     def eval(self, x):
-        return dblock(x, self.x1, self.x2, self.y1, self.y2, self.z1, self.z2)
+        return dblock(x, *self.bbox)
 
 
 def _ddisk(p, xc, yc, r):

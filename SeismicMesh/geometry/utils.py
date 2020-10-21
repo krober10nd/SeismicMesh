@@ -10,12 +10,6 @@ from .cpp import fast_geometry as gutils
 dete = gutils.calc_4x4determinant
 
 
-def corners(bbox):
-    """Get the corners of a box in N-dim"""
-    mins = bbox[::2]
-    maxs = bbox[1::2]
-    return list(itertools.product(*zip(mins, maxs)))
-
 
 def calc_re_ratios(vertices, entities, dim=2):
     """Calculate radius edge ratios--mesh quality metric

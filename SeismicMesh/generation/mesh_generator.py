@@ -354,7 +354,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         print(msg, flush=True)
 
     # unpack domain
-    fd, bbox0 = _unpack_domain(domain, gen_opts)
+    fd, bbox0, gen_opts["pfix"] = _unpack_domain(domain, gen_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
@@ -545,15 +545,11 @@ def _unpack_sizing(edge_length):
 
 
 def _unpack_domain(domain, opts):
-    if isinstance(domain, geometry.Rectangle):
-        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
+    domains = [geometry.Rectangle, geometry.Cube, geometry.Cube, geometry.Union]
+    if np.any([isinstance(domain, d) for d in domains]):
+        bbox = domain.bbox
         fd = domain.eval
-    elif isinstance(domain, geometry.Cube):
-        bbox = (domain.x1, domain.x2, domain.y1, domain.y2, domain.z1, domain.z2)
-        fd = domain.eval
-    elif isinstance(domain, geometry.Disk):
-        bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
-        fd = domain.eval
+        corners = domain.corners
     elif callable(domain):
         # get the bbox from the name value pairs or quit
         bbox = opts["bbox"]
@@ -561,7 +557,7 @@ def _unpack_domain(domain, opts):
     else:
         raise ValueError("`domain` must be a function or a :class:`geometry` object")
     _check_bbox(bbox)
-    return fd, bbox
+    return fd, bbox, corners
 
 
 def _parse_kwargs(kwargs):
@@ -615,7 +611,6 @@ def _get_edges(t):
     return geometry.unique_edges(edges)
 
 
-# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
@@ -792,12 +787,9 @@ def _dist(p1, p2):
 
 def _unpack_pfix(dim, opts, comm):
     """Unpack fixed points"""
-    if opts["pfix"] is not None:
-        if comm.size > 1:
-            raise Exception("Fixed points are not yet supported in parallel.")
-        else:
-            pfix = np.array(opts["pfix"], dtype="d")
-            nfix = len(pfix)
+    if opts["pfix"] is not None or comm.size == 1:
+        pfix = np.array(opts["pfix"], dtype="d")
+        nfix = len(pfix)
     else:
         pfix = np.empty((0, dim))
         nfix = 0
