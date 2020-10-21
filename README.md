@@ -441,7 +441,7 @@ meshio.write_points_cells(
 )
 ```
 
-![Hole](https://user-images.githubusercontent.com/18619644/96757315-a5630f00-13ab-11eb-9e37-0cfcdc0d2809.png)
+![Hole](https://user-images.githubusercontent.com/18619644/96766828-0ab9fe80-13b2-11eb-8bca-6306934008d4.png)
 
 ```python
 # Compute the difference of two SDFs to create more complex geometries.
@@ -451,7 +451,8 @@ import SeismicMesh
 h = 0.05
 rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
 disk0 = SeismicMesh.Disk([0.5, 0.5], 0.1)
-difference = SeismicMesh.Difference([rect0, disk0])
+disk1 = SeismicMesh.Disk([0.75, 0.75], 0.20)
+difference = SeismicMesh.Difference([rect0, disk0, disk1])
 points, cells = SeismicMesh.generate_mesh(domain=difference, edge_length=h)
 meshio.write_points_cells(
     "Hole.vtk",
