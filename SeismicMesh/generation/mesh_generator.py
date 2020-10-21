@@ -395,6 +395,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     DT = _select_cgal_dim(dim)
 
     pfix, nfix = _unpack_pfix(dim, opts, comm)
+    if comm.rank == 0:
+        print_msg1("Constraining " + str(nfix) + " fixed points..")
 
     fh, p, extents = _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm)
 
@@ -787,11 +789,6 @@ def _unpack_pfix(dim, opts, comm):
         else:
             pfix = np.array(opts["pfix"], dtype="d")
             nfix = len(pfix)
-        if comm.rank == 0:
-            print(
-                "Constraining " + str(nfix) + " fixed points..",
-                flush=True,
-            )
     else:
         pfix = np.empty((0, dim))
         nfix = 0
