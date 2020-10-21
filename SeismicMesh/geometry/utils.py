@@ -10,7 +10,6 @@ from .cpp import fast_geometry as gutils
 dete = gutils.calc_4x4determinant
 
 
-
 def calc_re_ratios(vertices, entities, dim=2):
     """Calculate radius edge ratios--mesh quality metric
 
