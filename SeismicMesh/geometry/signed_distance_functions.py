@@ -137,7 +137,7 @@ class Rectangle:
         self.bbox = bbox
 
     def eval(self, x):
-        return drectangle(x, *self.bbox)
+        return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
 
 
 class Cube:
@@ -147,7 +147,15 @@ class Cube:
         self.bbox = bbox
 
     def eval(self, x):
-        return dblock(x, *self.bbox)
+        return dblock(
+            x,
+            self.bbox[0],
+            self.bbox[1],
+            self.bbox[2],
+            self.bbox[3],
+            self.bbox[4],
+            self.bbox[5],
+        )
 
 
 def _ddisk(p, xc, yc, r):
