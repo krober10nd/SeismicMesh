@@ -403,7 +403,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     DT = _select_cgal_dim(dim)
 
     pfix, nfix = _unpack_pfix(dim, gen_opts, comm)
-    if corners is not None:
+    if corners is not None and comm.size == 1:
         pfix = np.append(pfix, corners, axis=0)
         nfix = len(pfix)
     if comm.rank == 0:
