@@ -545,7 +545,13 @@ def _unpack_sizing(edge_length):
 
 
 def _unpack_domain(domain, opts):
-    domains = [geometry.Rectangle, geometry.Cube, geometry.Cube, geometry.Union]
+    domains = [
+        geometry.Rectangle,
+        geometry.Cube,
+        geometry.Cube,
+        geometry.Union,
+        geometry.Intersection,
+    ]
     if np.any([isinstance(domain, d) for d in domains]):
         bbox = domain.bbox
         fd = domain.eval

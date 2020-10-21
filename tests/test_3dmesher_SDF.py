@@ -1,7 +1,7 @@
-from numpy import allclose, sum, array, maximum, sqrt
 import pytest
+from numpy import allclose, array, maximum, sqrt, sum
 
-from SeismicMesh import generate_mesh, sliver_removal, geometry
+from SeismicMesh import generate_mesh, geometry, sliver_removal
 
 
 @pytest.mark.serial

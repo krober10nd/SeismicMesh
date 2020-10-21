@@ -399,6 +399,9 @@ meshio.write_points_cells(
 )
 ```
 
+![Union](https://user-images.githubusercontent.com/18619644/96755280-e3aaff00-13a8-11eb-9f88-95a6684e928b.png)
+
+
 ```python
 # Compute the union of several SDFs to create more complex geometries
 import meshio
@@ -416,6 +419,26 @@ meshio.write_points_cells(
     [("triangle", cells)],
     file_format="vtk",
 )
+```
+![Leaf](https://user-images.githubusercontent.com/18619644/96755336-f6bdcf00-13a8-11eb-99ec-bd7e7d9cad1d.png)
+
+```python
+# Compute the intersection of several SDFs to create more complex geometries
+ import meshio
+ import SeismicMesh
+
+ h = 0.05
+ rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+ disk0 = SeismicMesh.Disk([0.25, 0.25], 0.5)
+ disk1 = SeismicMesh.Disk([0.75, 0.75], 0.5)
+ intersection = SeismicMesh.Intersection([rect0, disk0, disk1])
+ points, cells = SeismicMesh.generate_mesh(domain=intersection, edge_length=h)
+ meshio.write_points_cells(
+     "Leaf.vtk",
+     points,
+     [("triangle", cells)],
+     file_format="vtk",
+ )
 ```
 
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?

@@ -4,13 +4,8 @@ import numpy as np
 import pytest
 from mpi4py import MPI
 
-from SeismicMesh import (
-    get_sizing_function_from_segy,
-    generate_mesh,
-    sliver_removal,
-    geometry,
-    Cube,
-)
+from SeismicMesh import (Cube, generate_mesh, geometry,
+                         get_sizing_function_from_segy, sliver_removal)
 
 comm = MPI.COMM_WORLD
 

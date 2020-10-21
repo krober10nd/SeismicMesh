@@ -37,6 +37,34 @@ class Union:
         return np.minimum.reduce([d.eval(x) for d in self.domains])
 
 
+class Intersection:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                max(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = corners(self.bbox)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.maximum.reduce([d.eval(x) for d in self.domains])
+
+
 class Disk:
     def __init__(self, x0, r):
         self.dim = 2
@@ -127,21 +155,3 @@ def dblock(p, x1, x2, y1, y2, z1, z2):
         ),
         x2 - p[:, 0],
     )
-
-
-def dintersect(d1, d2):
-    """Signed distance to set intersection of two regions described by signed
-    distance functions d1 and d2.
-    Not exact the true signed distance function for the difference,
-    for example around corners.
-    """
-    return np.maximum(d1, d2)
-
-
-def ddiff(d1, d2):
-    """Signed distance to set difference between two regions described by
-    signed distance functions d1 and d2.
-    Not exact the true signed distance function for the difference,
-    for example around corners.
-    """
-    return np.maximum(d1, -d2)

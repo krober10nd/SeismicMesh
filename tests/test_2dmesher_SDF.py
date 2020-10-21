@@ -1,5 +1,5 @@
-from numpy import allclose, sum
 import pytest
+from numpy import allclose, sum
 
 from SeismicMesh import generate_mesh, geometry
 

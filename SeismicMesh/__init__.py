@@ -7,7 +7,7 @@
 #  see <http://www.gnu.org/licenses/>.
 
 from . import decomp, geometry, migration
-from .geometry import Disk, Cube, Rectangle, Union
+from .geometry import Disk, Cube, Rectangle, Union, Intersection
 from .generation import generate_mesh, sliver_removal
 from .sizing import (
     get_sizing_function_from_segy,
@@ -24,6 +24,7 @@ __all__ = [
     "Cube",
     "Disk",
     "Union",
+    "Intersection",
     "get_sizing_function_from_segy",
     "write_velocity_model",
     "plot_sizing_function",

@@ -14,6 +14,7 @@ from .signed_distance_functions import (
     dblock,
     corners,
     Union,
+    Intersection,
 )
 from .utils import (
     calc_re_ratios,
@@ -72,4 +73,5 @@ __all__ = [
     "vertex_in_entity3",
     "unique_edges",
     "Union",
+    "Intersection",
 ]
