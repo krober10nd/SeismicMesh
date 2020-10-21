@@ -14,7 +14,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import math
-import gc
 import time
 import warnings
 
@@ -28,30 +27,6 @@ from .cpp.delaunay_class import DelaunayTriangulation as DT2
 from .cpp.delaunay_class3 import DelaunayTriangulation3 as DT3
 
 __all__ = ["sliver_removal", "generate_mesh"]
-
-gen_opts = {
-    "verbose": 1,
-    "max_iter": 50,
-    "seed": 0,
-    "perform_checks": False,
-    "pfix": None,
-    "axis": 1,
-    "points": None,
-    "delta_t": 0.30,
-    "geps_mult": 0.1,
-}
-
-sliver_opts = {
-    "verbose": 1,
-    "max_iter": 50,
-    "perform_checks": False,
-    "axis": 1,
-    "min_dh_angle_bound": 10.0,
-    "max_dh_angle_bound": 180.0,
-    "points": None,
-    "delta_t": 0.30,
-    "geps_mult": 0.1,
-}
 
 
 def silence(func):
@@ -128,6 +103,18 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             warnings.warn("Sliver removal only works in serial for now")
         return True, True
 
+    sliver_opts = {
+        "verbose": 1,
+        "max_iter": 50,
+        "perform_checks": False,
+        "axis": 1,
+        "min_dh_angle_bound": 10.0,
+        "max_dh_angle_bound": 180.0,
+        "points": None,
+        "delta_t": 0.30,
+        "geps_mult": 0.1,
+    }
+
     sliver_opts.update(kwargs)
     _parse_kwargs(kwargs)
 
@@ -146,7 +133,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         if comm.rank == 0:
             raise Exception("Mesh improvement currently on works in 3D")
 
-    fd, bbox0 = _unpack_domain(domain)
+    fd, bbox0 = _unpack_domain(domain, sliver_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
@@ -290,7 +277,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         if comm.rank == 0:
             print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
-    gc.collect()
     return p, t
 
 
@@ -341,7 +327,17 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     """
     comm = comm or MPI.COMM_WORLD
-
+    gen_opts = {
+        "verbose": 1,
+        "max_iter": 50,
+        "seed": 0,
+        "perform_checks": False,
+        "pfix": None,
+        "axis": 1,
+        "points": None,
+        "delta_t": 0.30,
+        "geps_mult": 0.1,
+    }
     # check call was correct
     gen_opts.update(kwargs)
     _parse_kwargs(kwargs)
@@ -358,7 +354,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         print(msg, flush=True)
 
     # unpack domain
-    fd, bbox0 = _unpack_domain(domain)
+    fd, bbox0 = _unpack_domain(domain, gen_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
@@ -453,7 +449,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                     "Termination reached...maximum number of iterations reached.",
                 )
             p, t = _termination(p, t, gen_opts, comm)
-            _flush_dictionary(gen_opts)
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             break
@@ -487,12 +482,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         if comm.rank == 0:
             print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
-    gc.collect()
     return p, t
-
-
-def _flush_dictionary(opts):
-    opts.clear()
 
 
 def _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound):
@@ -552,7 +542,7 @@ def _unpack_sizing(edge_length):
     return fh, bbox, hmin
 
 
-def _unpack_domain(domain):
+def _unpack_domain(domain, opts):
     if isinstance(domain, geometry.Rectangle):
         bbox = (domain.x1, domain.x2, domain.y1, domain.y2)
         fd = domain.eval
@@ -564,7 +554,7 @@ def _unpack_domain(domain):
         fd = domain.eval
     elif callable(domain):
         # get the bbox from the name value pairs or quit
-        bbox = gen_opts["bbox"]
+        bbox = opts["bbox"]
         fd = domain
     else:
         raise ValueError("`domain` must be a function or a :class:`geometry` object")
@@ -764,7 +754,7 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
             p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
         )
     )
-    extents = _form_extents(p, h0, comm)
+    extents = _form_extents(p, h0, comm, opts)
     return fh, p, extents
 
 
@@ -772,7 +762,6 @@ def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
     """Form initial point set to mesh with"""
     points = opts["points"]
     if points is None:
-        # def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
         fh, p, extents = _generate_initial_points(
             h0, geps, dim, bbox, fh, fd, pfix, comm, opts
         )
@@ -781,9 +770,9 @@ def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
     return fh, p, extents
 
 
-def _form_extents(p, h0, comm):
+def _form_extents(p, h0, comm, opts):
     dim = p.shape[1]
-    _axis = gen_opts["axis"]
+    _axis = opts["axis"]
     if comm.size > 1:
         # min x min y min z max x max y max z
         extent = [*np.amin(p, axis=0), *np.amax(p, axis=0)]
