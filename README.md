@@ -249,7 +249,12 @@ points, cells = generate_mesh(
 )
 
 points, cells = sliver_removal(
-    points=points, domain=cylinder, edge_length=fh, h0=hmin, min_dh_angle_bound=5.0
+    points=points,
+    domain=cylinder,
+    edge_length=fh,
+    h0=hmin,
+    min_dh_angle_bound=5.0,
+    bbox=bbox,
 )
 
 
@@ -425,7 +430,7 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 
 ### Unreleased
 - Added more examples on README
-### Fixed 
+### Fixed
 - Silence messages about pfix when verbose=0
 
 ### [3.0.5] - 2020-10-18
