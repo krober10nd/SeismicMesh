@@ -1,47 +1,171 @@
 import numpy as np
+import itertools
+
+
+def corners(bbox):
+    """Get the corners of a box in N-dim"""
+    mins = bbox[::2]
+    maxs = bbox[1::2]
+    return list(itertools.product(*zip(mins, maxs)))
+
+
+def _gather_corners(domains):
+    corners = [d.corners for d in domains if d.corners is not None]
+    corners = np.concatenate(corners)
+    if len(corners) == 0:
+        corners = None
+    return corners
+
+
+class Union:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                min(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = _gather_corners(domains)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.minimum.reduce([d.eval(x) for d in self.domains])
+
+
+class Intersection:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                min(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = _gather_corners(domains)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.maximum.reduce([d.eval(x) for d in self.domains])
+
+
+class Difference:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                min(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = _gather_corners(domains)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.maximum.reduce(
+            [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
+        )
 
 
 class Disk:
     def __init__(self, x0, r):
+        self.dim = 2
+        self.corners = None
         self.xc = x0[0]
         self.yc = x0[1]
         self.r = r
-        self.x1 = x0[0] - r
-        self.x2 = x0[0] + r
-        self.y1 = x0[1] - r
-        self.y2 = x0[1] + r
+        self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
 
     def eval(self, x):
         return _ddisk(x, self.xc, self.yc, self.r)
 
 
-class Rectangle:
-    def __init__(self, bbox):
-        self.x1 = bbox[0]
-        self.x2 = bbox[1]
-        self.y1 = bbox[2]
-        self.y2 = bbox[3]
+class Ball:
+    def __init__(self, x0, r):
+        self.dim = 3
+        self.corners = None
+        self.xc = x0[0]
+        self.yc = x0[1]
+        self.zc = x0[2]
+        self.r = r
+        self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r, x0[2] - r, x0[2] + r)
 
     def eval(self, x):
-        return drectangle(x, self.x1, self.x2, self.y1, self.y2)
+        return dball(x, self.xc, self.yc, self.zc, self.r)
+
+
+class Rectangle:
+    def __init__(self, bbox):
+        self.dim = 2
+        self.corners = corners(bbox)
+        self.bbox = bbox
+
+    def eval(self, x):
+        return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
 
 
 class Cube:
     def __init__(self, bbox):
-        self.x1 = bbox[0]
-        self.x2 = bbox[1]
-        self.y1 = bbox[2]
-        self.y2 = bbox[3]
-        self.z1 = bbox[4]
-        self.z2 = bbox[5]
+        self.dim = 3
+        self.corners = corners(bbox)
+        self.bbox = bbox
 
     def eval(self, x):
-        return dblock(x, self.x1, self.x2, self.y1, self.y2, self.z1, self.z2)
+        return dblock(
+            x,
+            self.bbox[0],
+            self.bbox[1],
+            self.bbox[2],
+            self.bbox[3],
+            self.bbox[4],
+            self.bbox[5],
+        )
 
 
 def _ddisk(p, xc, yc, r):
     """Signed distance to disk centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
+
+
+def dball(p, xc, yc, zc, r):
+    """Signed distance function for a ball centered at xc,yc,zc with radius  r."""
+    return np.sqrt((p[:, 0] - xc) ** 2 + (p[:, 1] - yc) ** 2 + (p[:, 2] - zc) ** 2) - r
 
 
 def drectangle(p, x1, x2, y1, y2):
@@ -96,21 +220,3 @@ def dblock(p, x1, x2, y1, y2, z1, z2):
         ),
         x2 - p[:, 0],
     )
-
-
-def dintersect(d1, d2):
-    """Signed distance to set intersection of two regions described by signed
-    distance functions d1 and d2.
-    Not exact the true signed distance function for the difference,
-    for example around corners.
-    """
-    return np.maximum(d1, d2)
-
-
-def ddiff(d1, d2):
-    """Signed distance to set difference between two regions described by
-    signed distance functions d1 and d2.
-    Not exact the true signed distance function for the difference,
-    for example around corners.
-    """
-    return np.maximum(d1, -d2)

@@ -1,11 +1,11 @@
 import os
 
-from numpy import allclose
 import pytest
+from numpy import allclose
 
 from SeismicMesh import (
-    generate_mesh,
     Rectangle,
+    generate_mesh,
     get_sizing_function_from_segy,
     plot_sizing_function,
     write_velocity_model,

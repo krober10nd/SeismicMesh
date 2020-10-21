@@ -5,10 +5,10 @@ import pytest
 from mpi4py import MPI
 
 from SeismicMesh import (
-    get_sizing_function_from_segy,
+    Rectangle,
     generate_mesh,
     geometry,
-    Rectangle,
+    get_sizing_function_from_segy,
 )
 
 comm = MPI.COMM_WORLD

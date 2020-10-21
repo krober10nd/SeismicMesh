@@ -291,8 +291,7 @@ import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
-corners = SeismicMesh.geometry.corners(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
 points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
@@ -311,8 +310,7 @@ import SeismicMesh
 
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
-corners = SeismicMesh.geometry.corners(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05, pfix=corners)
+points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
     points,
@@ -401,6 +399,94 @@ meshio.write_points_cells(
 )
 ```
 
+![Union](https://user-images.githubusercontent.com/18619644/96755280-e3aaff00-13a8-11eb-9f88-95a6684e928b.png)
+
+
+```python
+# Compute the union of several SDFs to create more complex geometries
+import meshio
+import SeismicMesh
+
+h = 0.10
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 0.5))
+rect1 = SeismicMesh.Rectangle((0.0, 0.5, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.5, 0.5], 0.5)
+union = SeismicMesh.Union([rect0, rect1, disk0])
+points, cells = SeismicMesh.generate_mesh(domain=union, edge_length=h)
+meshio.write_points_cells(
+    "Lshape_wDisk.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+![Leaf](https://user-images.githubusercontent.com/18619644/96755336-f6bdcf00-13a8-11eb-99ec-bd7e7d9cad1d.png)
+
+```python
+# Compute the intersection of several SDFs to create more complex geometries
+import meshio
+import SeismicMesh
+
+h = 0.05
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.25, 0.25], 0.5)
+disk1 = SeismicMesh.Disk([0.75, 0.75], 0.5)
+intersection = SeismicMesh.Intersection([rect0, disk0, disk1])
+points, cells = SeismicMesh.generate_mesh(domain=intersection, edge_length=h)
+meshio.write_points_cells(
+    "Leaf.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![Hole](https://user-images.githubusercontent.com/18619644/96766828-0ab9fe80-13b2-11eb-8bca-6306934008d4.png)
+
+```python
+# Compute the difference of two SDFs to create more complex geometries.
+import meshio
+import SeismicMesh
+
+h = 0.05
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.5, 0.5], 0.1)
+disk1 = SeismicMesh.Disk([0.75, 0.75], 0.20)
+difference = SeismicMesh.Difference([rect0, disk0, disk1])
+points, cells = SeismicMesh.generate_mesh(domain=difference, edge_length=h)
+meshio.write_points_cells(
+    "Hole.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![Cube_wHoles](https://user-images.githubusercontent.com/18619644/96785337-0a772e80-13c5-11eb-88fb-311b5bfdfed4.png)
+
+```python
+import meshio
+import SeismicMesh
+
+h = 0.10
+cube0 = SeismicMesh.Cube((0.0, 1.0, 0.0, 1.0, 0.0, 1.0))
+ball1 = SeismicMesh.Ball([0.5, 0.0, 0.5], 0.30)
+ball2 = SeismicMesh.Ball([0.5, 0.5, 0.0], 0.30)
+ball3 = SeismicMesh.Ball([0.0, 0.5, 0.5], 0.30)
+ball4 = SeismicMesh.Ball([0.5, 0.5, 0.5], 0.45)
+difference = SeismicMesh.Difference([cube0, ball1, ball2, ball3, ball4])
+points, cells = SeismicMesh.generate_mesh(domain=difference, edge_length=h, verbose=1)
+points, cells = SeismicMesh.sliver_removal(
+    points=points, domain=difference, edge_length=h, verbose=1
+)
+meshio.write_points_cells(
+    "Ball_wHoles.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
 ===================================================================================
 
@@ -428,12 +514,16 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-### Unreleased
-- Added more examples on README
+## Unreleased
+
 ### Fixed
 - Silence messages about pfix when verbose=0
+### Added
+- Added more examples on README
+- New unions/intersections/differences with several SDF primivitives
+- Automatic corner constraints in serial
 
-### [3.0.5] - 2020-10-18
+## [3.0.5] - 2020-10-18
 
 ### Fixed
 - Preserving fixed points in serial.
@@ -446,7 +536,7 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - More support for reading binary files packed in a binary format.
 - Check to make sure bbox is composed of all floats.
 
-### [3.0.4] - 2020-10-12
+## [3.0.4] - 2020-10-12
 
 ### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.

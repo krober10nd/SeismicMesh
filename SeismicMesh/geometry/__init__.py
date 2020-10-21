@@ -6,7 +6,18 @@ from .cpp.fast_geometry import (
     calc_volume_grad,
     unique_edges,
 )
-from .signed_distance_functions import Rectangle, Cube, Disk, drectangle, dblock
+from .signed_distance_functions import (
+    Rectangle,
+    Cube,
+    Disk,
+    Ball,
+    drectangle,
+    dblock,
+    corners,
+    Union,
+    Intersection,
+    Difference,
+)
 from .utils import (
     calc_re_ratios,
     delete_boundary_entities,
@@ -28,7 +39,6 @@ from .utils import (
     unique_rows,
     vertex_to_entities,
     vertex_in_entity3,
-    corners,
 )
 
 __all__ = [
@@ -39,6 +49,7 @@ __all__ = [
     "calc_4x4determinant",
     "corners",
     "Rectangle",
+    "Ball",
     "Cube",
     "Disk",
     "drectangle",
@@ -64,4 +75,7 @@ __all__ = [
     "get_winded_boundary_edges",
     "vertex_in_entity3",
     "unique_edges",
+    "Union",
+    "Intersection",
+    "Difference",
 ]
