@@ -133,7 +133,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         if comm.rank == 0:
             raise Exception("Mesh improvement currently on works in 3D")
 
-    fd, bbox0 = _unpack_domain(domain, sliver_opts)
+    fd, bbox0, _ = _unpack_domain(domain, sliver_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
