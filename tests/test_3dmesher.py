@@ -3,8 +3,13 @@ import os
 import pytest
 from numpy import allclose
 
-from SeismicMesh import (Cube, generate_mesh, get_sizing_function_from_segy,
-                         sliver_removal, write_velocity_model)
+from SeismicMesh import (
+    Cube,
+    generate_mesh,
+    get_sizing_function_from_segy,
+    sliver_removal,
+    write_velocity_model,
+)
 
 
 @pytest.mark.serial

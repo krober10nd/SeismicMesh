@@ -354,7 +354,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         print(msg, flush=True)
 
     # unpack domain
-    fd, bbox0, gen_opts["pfix"] = _unpack_domain(domain, gen_opts)
+    fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
@@ -403,6 +403,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     DT = _select_cgal_dim(dim)
 
     pfix, nfix = _unpack_pfix(dim, gen_opts, comm)
+    if corners is not None:
+        pfix = np.append(pfix, corners, axis=0)
+        nfix = len(pfix)
     if comm.rank == 0:
         print_msg1("Constraining " + str(nfix) + " fixed points..")
 
@@ -545,12 +548,15 @@ def _unpack_sizing(edge_length):
 
 
 def _unpack_domain(domain, opts):
+    corners = None
     domains = [
         geometry.Rectangle,
+        geometry.Disk,
         geometry.Cube,
         geometry.Cube,
         geometry.Union,
         geometry.Intersection,
+        geometry.Difference,
     ]
     if np.any([isinstance(domain, d) for d in domains]):
         bbox = domain.bbox

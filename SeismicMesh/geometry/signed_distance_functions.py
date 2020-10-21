@@ -65,6 +65,36 @@ class Intersection:
         return np.maximum.reduce([d.eval(x) for d in self.domains])
 
 
+class Difference:
+    def __init__(self, domains):
+        geom_dim = [d.dim for d in domains]
+        assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
+        self.dim = geom_dim[0]
+        if self.dim == 2:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+            )
+        elif self.dim == 3:
+            self.bbox = (
+                min(d.bbox[0] for d in domains),
+                max(d.bbox[1] for d in domains),
+                min(d.bbox[2] for d in domains),
+                max(d.bbox[3] for d in domains),
+                max(d.bbox[4] for d in domains),
+                max(d.bbox[5] for d in domains),
+            )
+        self.corners = corners(self.bbox)
+        self.domains = domains
+
+    def eval(self, x):
+        return np.maximum.reduce(
+            [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
+        )
+
+
 class Disk:
     def __init__(self, x0, r):
         self.dim = 2

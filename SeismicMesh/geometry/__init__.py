@@ -15,6 +15,7 @@ from .signed_distance_functions import (
     corners,
     Union,
     Intersection,
+    Difference,
 )
 from .utils import (
     calc_re_ratios,
@@ -74,4 +75,5 @@ __all__ = [
     "unique_edges",
     "Union",
     "Intersection",
+    "Difference",
 ]

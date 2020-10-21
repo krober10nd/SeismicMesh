@@ -3,9 +3,13 @@ import os
 import pytest
 from numpy import allclose
 
-from SeismicMesh import (Rectangle, generate_mesh,
-                         get_sizing_function_from_segy, plot_sizing_function,
-                         write_velocity_model)
+from SeismicMesh import (
+    Rectangle,
+    generate_mesh,
+    get_sizing_function_from_segy,
+    plot_sizing_function,
+    write_velocity_model,
+)
 
 
 @pytest.mark.serial

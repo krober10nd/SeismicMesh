@@ -424,21 +424,41 @@ meshio.write_points_cells(
 
 ```python
 # Compute the intersection of several SDFs to create more complex geometries
- import meshio
- import SeismicMesh
+import meshio
+import SeismicMesh
 
- h = 0.05
- rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
- disk0 = SeismicMesh.Disk([0.25, 0.25], 0.5)
- disk1 = SeismicMesh.Disk([0.75, 0.75], 0.5)
- intersection = SeismicMesh.Intersection([rect0, disk0, disk1])
- points, cells = SeismicMesh.generate_mesh(domain=intersection, edge_length=h)
- meshio.write_points_cells(
-     "Leaf.vtk",
-     points,
-     [("triangle", cells)],
-     file_format="vtk",
- )
+h = 0.05
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.25, 0.25], 0.5)
+disk1 = SeismicMesh.Disk([0.75, 0.75], 0.5)
+intersection = SeismicMesh.Intersection([rect0, disk0, disk1])
+points, cells = SeismicMesh.generate_mesh(domain=intersection, edge_length=h)
+meshio.write_points_cells(
+    "Leaf.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![Hole](https://user-images.githubusercontent.com/18619644/96757315-a5630f00-13ab-11eb-9e37-0cfcdc0d2809.png)
+
+```python
+# Compute the difference of two SDFs to create more complex geometries.
+import meshio
+import SeismicMesh
+
+h = 0.05
+rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
+disk0 = SeismicMesh.Disk([0.5, 0.5], 0.1)
+difference = SeismicMesh.Difference([rect0, disk0])
+points, cells = SeismicMesh.generate_mesh(domain=difference, edge_length=h)
+meshio.write_points_cells(
+    "Hole.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
 ```
 
 How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
@@ -474,7 +494,7 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Silence messages about pfix when verbose=0
 ### Added
 - Added more examples on README
-- New unions/intersections with different SDF primivitives
+- New unions/intersections/differences with several SDF primivitives
 - Automatic corner constraints in serial
 
 ## [3.0.5] - 2020-10-18
