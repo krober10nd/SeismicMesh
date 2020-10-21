@@ -402,8 +402,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     DT = _select_cgal_dim(dim)
 
-
-    pfix, nfix = _unpack_pfix(dim, opts, comm)
+    pfix, nfix = _unpack_pfix(dim, gen_opts, comm)
     if comm.rank == 0:
         print_msg1("Constraining " + str(nfix) + " fixed points..")
 
