@@ -53,9 +53,9 @@ How to install SeismicMesh.
 Contributing
 ============
 
-If you have something to contribute, please feel free to contribute. 
+All contributions are welcome!
 
-Clone and fork the repository:
+Fork and then clone the repository:
 
     git clone https://github.com/krober10nd/SeismicMesh
 
@@ -63,7 +63,7 @@ Make sure the tests pass:
 
     tox
 
-Make your changes on a branch and please add tests that capture your changes! Make sure tests pass:
+Make your changes on a branch and add tests that capture your changes! Make sure tests pass again:
 
     tox
 
@@ -71,8 +71,7 @@ Push to fork then [submit a pull request][pr].
 
 [pr]: https://github.com/krober10nd/SeismicMesh/pulls
 
-From there we may suggest
-some changes or improvements or alternatives.
+From there we may suggest some changes or improvements or alternatives.
 
 Some things that will increase the chance that your pull request is accepted:
 
