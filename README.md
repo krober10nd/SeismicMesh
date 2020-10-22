@@ -49,6 +49,40 @@ For more detailed information about installation and requirements see:
 [Install](https://seismicmesh.readthedocs.io/en/master/install.html) -
 How to install SeismicMesh.
 
+
+Contributing
+============
+
+If you have something to contribute, please feel free to contribute. 
+
+Clone and fork the repository:
+
+    git clone https://github.com/krober10nd/SeismicMesh
+
+Make sure the tests pass:
+
+    tox
+
+Make your changes on a branch and please add tests that capture your changes! Make sure tests pass:
+
+    tox
+
+Push to fork then [submit a pull request][pr].
+
+[pr]: https://github.com/krober10nd/SeismicMesh/pulls
+
+From there we may suggest
+some changes or improvements or alternatives.
+
+Some things that will increase the chance that your pull request is accepted:
+
+* Write tests.
+* Add Python docstrings that follow the [Sphinx][style].
+* Write good commit and pull request messages.
+
+[style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+
 Examples
 ========
 
