@@ -264,7 +264,7 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             f.attrs["units"] = "m/s"
 
 
-def plot_sizing_function(cell_size, stride=1, comm=None):
+def plot_sizing_function(cell_size, stride=1, comm=None, filename=None):
     """Plot the mesh size function in 2D
 
     :param cell_size: a callable function that takes a point and gives a size
@@ -273,6 +273,8 @@ def plot_sizing_function(cell_size, stride=1, comm=None):
     :type stride: `int`, optional
     :param comm: MPI communicator
     :type comm: MPI4py communicator, optional
+    :param filename: a name for the saved image
+    :type filename: str
 
     """
     comm = comm or MPI.COMM_WORLD
@@ -303,7 +305,10 @@ def plot_sizing_function(cell_size, stride=1, comm=None):
         plt.xlabel("x-direction (m)")
         plt.ylabel("z-direction (m)")
         ax.axis("equal")
-        plt.show()
+        if filename is None:
+            plt.show()
+        else:
+            plt.savefig(filename)
     return ax
 
 
