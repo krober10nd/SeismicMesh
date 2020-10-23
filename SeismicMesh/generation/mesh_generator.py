@@ -558,6 +558,7 @@ def _unpack_domain(domain, opts):
         geometry.Union,
         geometry.Intersection,
         geometry.Difference,
+        geometry.Repeat,
     ]
     if np.any([isinstance(domain, d) for d in domains]):
         bbox = domain.bbox
