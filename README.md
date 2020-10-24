@@ -331,9 +331,9 @@ meshio.write_points_cells(
 import meshio
 import SeismicMesh
 
-hmin = 0.05
+hmin = 0.10
 
-torus = SeismicMesh.Torus(r1=0.5, r2=2.0)
+torus = SeismicMesh.Torus(r1=1.0, r2=0.5)
 points, cells = SeismicMesh.generate_mesh(
     domain=torus, edge_length=hmin,
 )
