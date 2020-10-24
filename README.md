@@ -316,18 +316,17 @@ meshio.write_points_cells(
 )
 ```
 
-![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+![Square](https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png)
 
 ```python
 import meshio
 import SeismicMesh
 
-bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-cube = SeismicMesh.Cube(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
-points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
+bbox = (0.0, 1.0, 0.0, 1.0)
+square = SeismicMesh.Rectangle(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=square, edge_length=0.05)
 meshio.write_points_cells(
-    "cube.vtk",
+    "square.vtk",
     points,
     [("tetra", cells)],
     file_format="vtk",
