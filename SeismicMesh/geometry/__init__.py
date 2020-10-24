@@ -9,6 +9,7 @@ from .cpp.fast_geometry import (
 from .signed_distance_functions import (
     Rectangle,
     Cube,
+    Cylinder,
     Disk,
     Ball,
     Torus,
@@ -53,6 +54,7 @@ __all__ = [
     "Rectangle",
     "Ball",
     "Cube",
+    "Cylinder",
     "Torus",
     "Prism",
     "Disk",

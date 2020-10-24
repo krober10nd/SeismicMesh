@@ -554,6 +554,7 @@ def _unpack_domain(domain, opts):
         geometry.Rectangle,
         geometry.Disk,
         geometry.Cube,
+        geometry.Cylinder,
         geometry.Cube,
         geometry.Torus,
         geometry.Prism,

@@ -234,62 +234,31 @@ if comm.rank == 0:
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
-![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
+![Cylinder](https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png)
 
 ```python
-# Mesh a unit cylinder
+# Mesh a cylinder
 from mpi4py import MPI
-from numpy import array, maximum, sqrt, zeros_like
 import meshio
 
-from SeismicMesh import generate_mesh, sliver_removal
+import SeismicMesh
 
 comm = MPI.COMM_WORLD
 
-
 hmin = 0.10
-bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 
+cylinder = SeismicMesh.Cylinder(h=1.0, r=0.5)
 
-def cylinder(p):
-    r, z = sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
-    d1, d2, d3 = r - 1.0, z - 1.0, -z - 1.0
-    d4, d5 = sqrt(d1 ** 2 + d2 ** 2), sqrt(d1 ** 2 + d3 ** 2)
-    d = maximum.reduce([d1, d2, d3])
-    ix = (d1 > 0) * (d2 > 0)
-    d[ix] = d4[ix]
-    ix = (d1 > 0) * (d3 > 0)
-    d[ix] = d5[ix]
-    return d
-
-
-def fh(p):
-    # Note: for parallel execution this logic is required
-    # since the decomposition of the sizing function passes a tuple to fh
-    if type(p) == tuple:
-        h = zeros_like(p[0]) + hmin
-    else:
-        h = array([hmin] * len(p))
-    return h
-
-
-points, cells = generate_mesh(
-    bbox=bbox,
+points, cells = SeismicMesh.generate_mesh(
     domain=cylinder,
-    h0=hmin,
-    edge_length=fh,
-    max_iter=100,
+    edge_length=hmin,
 )
 
-points, cells = sliver_removal(
+points, cells = SeismicMesh.sliver_removal(
     points=points,
     domain=cylinder,
-    edge_length=fh,
-    h0=hmin,
-    min_dh_angle_bound=5.0,
-    bbox=bbox,
+    edge_length=hmin,
 )
-
 
 if comm.rank == 0:
     meshio.write_points_cells(

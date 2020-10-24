@@ -191,6 +191,22 @@ class Prism:
         )
 
 
+class Cylinder:
+    def __init__(self, h=1.0, r=0.5):
+        assert h > 0.0 or r > 0.0
+        self.bbox = (-2 * r, 2 * r, -2 * r, 2 * r, -2 * h, 2 * h)
+        self.h = (h, r)
+        self.corners = None
+
+    def eval(self, x):
+        xz = np.column_stack((x[:, 0], x[:, 2]))
+        lxz = np.column_stack((_length(xz), x[:, 1]))
+        d = np.abs(lxz) - self.h
+        return np.minimum(np.maximum(d[:, 0], d[:, 1]), 0.0) + _length(
+            np.maximum(d, 0.0)
+        )
+
+
 def _ddisk(p, xc, yc, r):
     """Signed distance to disk centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r
