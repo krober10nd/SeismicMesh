@@ -177,6 +177,20 @@ class Torus:
         return _length(q) - self.t[1]
 
 
+class Prism:
+    def __init__(self, b, h):
+        self.bbox = (-b, +b, -b, +b, -h, +h)
+        self.h = (b, h)
+        self.corners = None
+
+    def eval(self, x):
+        q = np.abs(x)
+        return np.maximum(
+            q[:, 2] - self.h[1],
+            np.maximum(q[:, 0] * 0.866025 + x[:, 1] * 0.5, -x[:, 1]) - self.h[0] * 0.5,
+        )
+
+
 def _ddisk(p, xc, yc, r):
     """Signed distance to disk centered at xc, yc with radius r."""
     return np.sqrt(((p - np.array([xc, yc])) ** 2).sum(-1)) - r

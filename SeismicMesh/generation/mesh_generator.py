@@ -556,6 +556,7 @@ def _unpack_domain(domain, opts):
         geometry.Cube,
         geometry.Cube,
         geometry.Torus,
+        geometry.Prism,
         geometry.Union,
         geometry.Intersection,
         geometry.Difference,

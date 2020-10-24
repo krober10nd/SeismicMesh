@@ -16,6 +16,7 @@ from .geometry import (
     Intersection,
     Difference,
     Torus,
+    Prism,
 )
 from .generation import generate_mesh, sliver_removal
 from .sizing import (
@@ -34,6 +35,7 @@ __all__ = [
     "Disk",
     "Union",
     "Torus",
+    "Prism",
     "Ball",
     "Intersection",
     "Difference",
