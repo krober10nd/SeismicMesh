@@ -334,8 +334,7 @@ meshio.write_points_cells(
 )
 ```
 
-![cube](https://user-images.githubusercontent.com/18619644/95621214-b3c63800-0a47-11eb-9600-a80ef2410334.png)
-
+![cube](https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png)
 
 ```python
 import meshio
@@ -344,6 +343,7 @@ import SeismicMesh
 bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 cube = SeismicMesh.Cube(bbox)
 points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
+points, cells = SeismicMesh.sliver_removal(points=points, domain=cube, edge_length=0.05)
 meshio.write_points_cells(
     "cube.vtk",
     points,
