@@ -300,7 +300,8 @@ if comm.rank == 0:
     )
 ```
 
-![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
+![Disk](https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png)
+
 
 ```python
 import meshio
@@ -538,6 +539,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- New geometric primitives--torus, wedge, and cylinder.
+- Updated images on README.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed
@@ -548,7 +552,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Automatic corner constraints in serial
 
 ## [3.0.5] - 2020-10-18
-
 ### Fixed
 - Preserving fixed points in serial.
 - Units in km-s detection warning bug.
@@ -561,7 +564,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Check to make sure bbox is composed of all floats.
 
 ## [3.0.4] - 2020-10-12
-
 ### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 
