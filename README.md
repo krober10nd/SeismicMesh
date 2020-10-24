@@ -366,10 +366,10 @@ hmin = 0.05
 
 torus = SeismicMesh.Torus(r1=0.5, r2=2.0)
 points, cells = SeismicMesh.generate_mesh(
-    domain=Torus, edge_length=hmin,
+    domain=torus, edge_length=hmin,
 )
 points, cells = SeismicMesh.sliver_removal(
-    points=points, domain=Torus, edge_length=hmin
+    points=points, domain=torus, edge_length=hmin
 )
 meshio.write_points_cells(
     "torus.vtk",
@@ -379,7 +379,6 @@ meshio.write_points_cells(
 ```
 
 ![prism](https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png)
-
 
 ```python
 # mesh a prism
