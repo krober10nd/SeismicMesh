@@ -2,6 +2,10 @@ import numpy as np
 import itertools
 
 
+def _length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+
 def corners(bbox):
     """Get the corners of a box in N-dim"""
     mins = bbox[::2]
@@ -156,6 +160,21 @@ class Cube:
             self.bbox[4],
             self.bbox[5],
         )
+
+
+class Torus:
+    def __init__(self, r1, r2):
+        """A torus with outer radius `r1` and inner radius of `r2`"""
+        assert r1 > 0.0 or r2 > 0.0
+        z = 2 * max(r1, r2)
+        self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
+        self.t = (r1, r2)
+        self.corners = None
+
+    def eval(self, x):
+        xz = np.column_stack((x[:, 0], x[:, 2]))
+        q = np.column_stack((_length(xz) - self.t[0], x[:, 1]))
+        return _length(q) - self.t[1]
 
 
 def _ddisk(p, xc, yc, r):

@@ -352,12 +352,10 @@ meshio.write_points_cells(
 )
 ```
 
-![torus](https://user-images.githubusercontent.com/18619644/96498978-25aa3880-1223-11eb-9738-8a4e86c44dbc.png)
-
+![torus](https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png)
 
 ```python
 # mesh a torus
-import numpy as np
 import meshio
 import SeismicMesh
 
@@ -365,19 +363,12 @@ import SeismicMesh
 bbox = (-1.0, 1.0, -1.0, 1.0, -10.0, 1.0)
 hmin = 0.05
 
-def length(x):
-    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
-
-def Torus(p, t=(0.5, 0.2)):
-    xz = np.column_stack((p[:, 0], p[:, 2]))
-    q = np.column_stack((length(xz) - t[0], p[:, 1]))
-    return length(q) - t[1]
-
+torus = SeismicMesh.Torus(0.5, 2.0)
 points, cells = SeismicMesh.generate_mesh(
-    domain=Torus, edge_length=hmin, bbox=bbox, verbose=2, max_iter=100
+    domain=Torus, edge_length=hmin,
 )
 points, cells = SeismicMesh.sliver_removal(
-    points=points, domain=Torus, edge_length=hmin, bbox=bbox, verbose=2
+    points=points, domain=Torus, edge_length=hmin
 )
 meshio.write_points_cells(
     "torus.vtk",
