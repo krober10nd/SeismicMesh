@@ -13,14 +13,13 @@ def corners(bbox):
     return list(itertools.product(*zip(mins, maxs)))
 
 
-def _gather_corners(domains):
-    corners = [d.corners for d in domains if d.corners is not None]
-    corners = np.concatenate(corners)
-    if len(corners) == 0:
-        corners = None
-    return corners
-
-
+ def _gather_corners(domains):
+     corners = [d.corners for d in domains if d.corners is not None]
+     if len(corners) == 0:
+         return None
+     else:
+         return np.concatenate(corners)
+ 
 class Union:
     def __init__(self, domains):
         geom_dim = [d.dim for d in domains]
