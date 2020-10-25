@@ -67,7 +67,7 @@ Make your changes on a branch and add tests that capture your changes! Make sure
 
     tox
 
-Push to fork then [submit a pull request][pr].
+Push to the fork then [submit a pull request][pr].
 
 [pr]: https://github.com/krober10nd/SeismicMesh/pulls
 
@@ -210,7 +210,7 @@ ef = get_sizing_function_from_segy(
     ny=ny,
     byte_order="big",
     axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
-    axes_order_sort="F", # binary is packed in a FORTRAN-style
+    axes_order_sort="F",  # binary is packed in a FORTRAN-style
 )
 
 points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
@@ -232,64 +232,33 @@ if comm.rank == 0:
     )
 ```
 
-**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the codes below!**
+**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
-![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
+![Cylinder](https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png)
 
 ```python
-# Mesh a unit cylinder
+# Mesh a cylinder
 from mpi4py import MPI
-from numpy import array, maximum, sqrt, zeros_like
 import meshio
 
-from SeismicMesh import generate_mesh, sliver_removal
+import SeismicMesh
 
 comm = MPI.COMM_WORLD
 
-
 hmin = 0.10
-bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 
+cylinder = SeismicMesh.Cylinder(h=1.0, r=0.5)
 
-def cylinder(p):
-    r, z = sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
-    d1, d2, d3 = r - 1.0, z - 1.0, -z - 1.0
-    d4, d5 = sqrt(d1 ** 2 + d2 ** 2), sqrt(d1 ** 2 + d3 ** 2)
-    d = maximum.reduce([d1, d2, d3])
-    ix = (d1 > 0) * (d2 > 0)
-    d[ix] = d4[ix]
-    ix = (d1 > 0) * (d3 > 0)
-    d[ix] = d5[ix]
-    return d
-
-
-def fh(p):
-    # Note: for parallel execution this logic is required
-    # since the decomposition of the sizing function passes a tuple to fh
-    if type(p) == tuple:
-        h = zeros_like(p[0]) + hmin
-    else:
-        h = array([hmin] * len(p))
-    return h
-
-
-points, cells = generate_mesh(
-    bbox=bbox,
+points, cells = SeismicMesh.generate_mesh(
     domain=cylinder,
-    h0=hmin,
-    edge_length=fh,
-    max_iter=100,
+    edge_length=hmin,
 )
 
-points, cells = sliver_removal(
+points, cells = SeismicMesh.sliver_removal(
     points=points,
     domain=cylinder,
-    edge_length=fh,
-    h0=hmin,
-    min_dh_angle_bound=5.0,
-    bbox=bbox,
+    edge_length=hmin,
 )
-
 
 if comm.rank == 0:
     meshio.write_points_cells(
@@ -300,9 +269,11 @@ if comm.rank == 0:
     )
 ```
 
-![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
+![Disk](https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png)
+
 
 ```python
+# mesh a disk
 import meshio
 import SeismicMesh
 
@@ -316,9 +287,28 @@ meshio.write_points_cells(
 )
 ```
 
-![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+![Square](https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png)
 
 ```python
+# mesh a square/rectangle
+import meshio
+import SeismicMesh
+
+bbox = (0.0, 1.0, 0.0, 1.0)
+square = SeismicMesh.Rectangle(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=square, edge_length=0.05)
+meshio.write_points_cells(
+    "square.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+![cube](https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png)
+
+```python
+# mesh a cuboid/cube
 import meshio
 import SeismicMesh
 
@@ -334,50 +324,22 @@ meshio.write_points_cells(
 )
 ```
 
-![cube](https://user-images.githubusercontent.com/18619644/95621214-b3c63800-0a47-11eb-9600-a80ef2410334.png)
-
-
-```python
-import meshio
-import SeismicMesh
-
-bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-cube = SeismicMesh.Cube(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
-meshio.write_points_cells(
-    "cube.vtk",
-    points,
-    [("tetra", cells)],
-    file_format="vtk",
-)
-```
-
-![torus](https://user-images.githubusercontent.com/18619644/96498978-25aa3880-1223-11eb-9738-8a4e86c44dbc.png)
-
+![torus](https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png)
 
 ```python
 # mesh a torus
-import numpy as np
 import meshio
 import SeismicMesh
 
+hmin = 0.10
 
-bbox = (-1.0, 1.0, -1.0, 1.0, -10.0, 1.0)
-hmin = 0.05
-
-def length(x):
-    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
-
-def Torus(p, t=(0.5, 0.2)):
-    xz = np.column_stack((p[:, 0], p[:, 2]))
-    q = np.column_stack((length(xz) - t[0], p[:, 1]))
-    return length(q) - t[1]
-
+torus = SeismicMesh.Torus(r1=1.0, r2=0.5)
 points, cells = SeismicMesh.generate_mesh(
-    domain=Torus, edge_length=hmin, bbox=bbox, verbose=2, max_iter=100
+    domain=torus,
+    edge_length=hmin,
 )
 points, cells = SeismicMesh.sliver_removal(
-    points=points, domain=Torus, edge_length=hmin, bbox=bbox, verbose=2
+    points=points, domain=torus, edge_length=hmin
 )
 meshio.write_points_cells(
     "torus.vtk",
@@ -386,43 +348,23 @@ meshio.write_points_cells(
 )
 ```
 
-![prism](https://user-images.githubusercontent.com/18619644/96511116-f69cc280-1234-11eb-984e-b0001b15c7b5.png)
-
+![prism](https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png)
 
 ```python
 # mesh a prism
-import numpy as np
 import meshio
 
 import SeismicMesh
 
-
-bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
-
 hmin = 0.05
-
-
-def length(x):
-    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
-
-
-def sdTriPrism(p, h=[0.5, 0.5]):
-    q = np.abs(p)
-    return np.maximum(
-        q[:, 2] - h[1],
-        np.maximum(q[:, 0] * 0.866025 + p[:, 1] * 0.5, -p[:, 1]) - h[0] * 0.5,
-    )
-
+prism = SeismicMesh.Prism(b=0.5, h=0.5)
 
 points, cells = SeismicMesh.generate_mesh(
-    bbox=bbox,
-    domain=sdTriPrism,
+    domain=prism,
     edge_length=hmin,
-    verbose=2,
-    max_iter=100,
 )
 points, cells = SeismicMesh.sliver_removal(
-    bbox=bbox, points=points, domain=sdTriPrism, edge_length=hmin
+    points=points, domain=prism, edge_length=hmin
 )
 meshio.write_points_cells(
     "prism.vtk",
@@ -432,8 +374,7 @@ meshio.write_points_cells(
 )
 ```
 
-![Union](https://user-images.githubusercontent.com/18619644/96755280-e3aaff00-13a8-11eb-9f88-95a6684e928b.png)
-
+![Union](https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png)
 
 ```python
 # Compute the union of several SDFs to create more complex geometries
@@ -453,7 +394,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-![Leaf](https://user-images.githubusercontent.com/18619644/96755336-f6bdcf00-13a8-11eb-99ec-bd7e7d9cad1d.png)
+![Leaf](https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png)
 
 ```python
 # Compute the intersection of several SDFs to create more complex geometries
@@ -474,7 +415,7 @@ meshio.write_points_cells(
 )
 ```
 
-![Hole](https://user-images.githubusercontent.com/18619644/96766828-0ab9fe80-13b2-11eb-8bca-6306934008d4.png)
+![Hole](https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png)
 
 ```python
 # Compute the difference of two SDFs to create more complex geometries.
@@ -495,9 +436,11 @@ meshio.write_points_cells(
 )
 ```
 
-![Cube_wHoles](https://user-images.githubusercontent.com/18619644/96785337-0a772e80-13c5-11eb-88fb-311b5bfdfed4.png)
+![Cube_wHoles](https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png)
+
 
 ```python
+# Compute the difference of several SDFs in 3D
 import meshio
 import SeismicMesh
 
@@ -513,7 +456,7 @@ points, cells = SeismicMesh.sliver_removal(
     points=points, domain=difference, edge_length=h, verbose=1
 )
 meshio.write_points_cells(
-    "Ball_wHoles.vtk",
+    "Cube_wHoles.vtk",
     points,
     [("tetra", cells)],
     file_format="vtk",
@@ -548,6 +491,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Added
+- New geometric primitives--torus, wedge/prism, and cylinder.
+- Updated images on README.
+### Fixed
+- Only constrain corners near 0-level set.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed
@@ -558,7 +506,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Automatic corner constraints in serial
 
 ## [3.0.5] - 2020-10-18
-
 ### Fixed
 - Preserving fixed points in serial.
 - Units in km-s detection warning bug.
@@ -571,7 +518,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Check to make sure bbox is composed of all floats.
 
 ## [3.0.4] - 2020-10-12
-
 ### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 
