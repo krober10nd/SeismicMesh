@@ -308,7 +308,7 @@ meshio.write_points_cells(
 ![cube](https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png)
 
 ```python
-# mesh a cube/rectangle
+# mesh a cuboid/cube
 import meshio
 import SeismicMesh
 
