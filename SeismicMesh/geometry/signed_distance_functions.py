@@ -19,7 +19,8 @@ def _gather_corners(domains):
         return None
     else:
         return np.concatenate(corners)
- 
+
+
 class Union:
     def __init__(self, domains):
         geom_dim = [d.dim for d in domains]

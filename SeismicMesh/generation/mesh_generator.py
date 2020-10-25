@@ -404,6 +404,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     pfix, nfix = _unpack_pfix(dim, gen_opts, comm)
     if corners is not None and comm.size == 1:
+        # keep corners only near level set
+        corners = corners[fd(corners) > -1000 * deps]
         pfix = np.append(pfix, corners, axis=0)
         nfix = len(pfix)
     if comm.rank == 0:
