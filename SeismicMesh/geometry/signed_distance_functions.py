@@ -10,7 +10,7 @@ def corners(bbox):
     """Get the corners of a box in N-dim"""
     mins = bbox[::2]
     maxs = bbox[1::2]
-    return list(itertools.product(*zip(mins, maxs)))
+    return np.array(list(itertools.product(*zip(mins, maxs))))
 
 
 def _gather_corners(domains):

@@ -210,7 +210,7 @@ ef = get_sizing_function_from_segy(
     ny=ny,
     byte_order="big",
     axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
-    axes_order_sort="F", # binary is packed in a FORTRAN-style
+    axes_order_sort="F",  # binary is packed in a FORTRAN-style
 )
 
 points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
@@ -335,7 +335,8 @@ hmin = 0.10
 
 torus = SeismicMesh.Torus(r1=1.0, r2=0.5)
 points, cells = SeismicMesh.generate_mesh(
-    domain=torus, edge_length=hmin,
+    domain=torus,
+    edge_length=hmin,
 )
 points, cells = SeismicMesh.sliver_removal(
     points=points, domain=torus, edge_length=hmin
@@ -493,6 +494,8 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - New geometric primitives--torus, wedge/prism, and cylinder.
 - Updated images on README.
+### Fixed
+- Only constrain corners near 0-level set.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed
