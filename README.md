@@ -234,7 +234,7 @@ if comm.rank == 0:
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
-![Cylinder](https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png)
+<img alt="Cylinder" src="https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png" width="30%">
 
 ```python
 # Mesh a cylinder
@@ -269,7 +269,7 @@ if comm.rank == 0:
     )
 ```
 
-![Disk](https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png)
+<img alt="Disk" src="https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png" width="30%">
 
 
 ```python
@@ -287,7 +287,7 @@ meshio.write_points_cells(
 )
 ```
 
-![Square](https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png)
+<img alt="Square" src="https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png" width="30%">
 
 ```python
 # mesh a square/rectangle
@@ -304,8 +304,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![cube](https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png)
+<img alt="Cube" src="https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png" width="30%">
 
 ```python
 # mesh a cuboid/cube
@@ -323,8 +322,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png" width="30%">
 
-![torus](https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png)
 
 ```python
 # mesh a torus
@@ -348,7 +347,7 @@ meshio.write_points_cells(
 )
 ```
 
-![prism](https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png)
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png" width="30%">
 
 ```python
 # mesh a prism
@@ -373,8 +372,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Union](https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png)
+<img alt="Union" src="https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png" width="30%">
 
 ```python
 # Compute the union of several SDFs to create more complex geometries
@@ -394,7 +392,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-![Leaf](https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png)
+<img alt="Leaf" src="https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png" width="30%">
 
 ```python
 # Compute the intersection of several SDFs to create more complex geometries
@@ -414,8 +412,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Hole](https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png)
+<img alt="Hole" src="https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png" width="30%">
 
 ```python
 # Compute the difference of two SDFs to create more complex geometries.
@@ -435,9 +432,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Cube_wHoles](https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png)
-
+<img alt="Cube wHoles" src="https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png" width="30%">
 
 ```python
 # Compute the difference of several SDFs in 3D
