@@ -269,7 +269,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         p[move] += push * h0 * perturb
 
         # bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
+        p = _project_points_back_newton(p, fd, deps, 0.0)
 
         count += 1
 
@@ -337,6 +337,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomain": None,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -425,6 +426,12 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
     )
 
+    levels = [fd]
+    if gen_opts["subdomain"] is not None:
+        for subdomain in gen_opts["subdomain"]:
+            fd_subdomain, _, _ = _unpack_domain(subdomain, gen_opts)
+            levels.append(fd_subdomain)
+
     while True:
 
         start = time.time()
@@ -469,7 +476,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
+        for level in levels:
+            p = _project_points_back_newton(p, level, deps, h0)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -596,6 +604,7 @@ def _parse_kwargs(kwargs):
             "delta_t",
             "h0",
             "geps_mult",
+            "subdomain",
         }:
             pass
         else:
@@ -701,14 +710,14 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     return p
 
 
-def _project_points_back_newton(p, fd, deps):
+def _project_points_back_newton(p, fd, deps, hmin):
     """Project points outside the domain back with one iteration of Newton minimization method
     finding the root of f(p)
     """
     dim = p.shape[1]
 
     d = fd(p)
-    ix = d > 0  # Find points outside (d>0)
+    ix = np.logical_and(d > 0.0, d < hmin)
     if ix.any():
 
         def _deps_vec(i):
