@@ -269,7 +269,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         p[move] += push * h0 * perturb
 
         # bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps, 0.0)
+        p = _project_points_back_newton(p, fd, deps, 0.0, 0)
 
         count += 1
 
@@ -476,8 +476,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        for level in levels:
-            p = _project_points_back_newton(p, level, deps, h0)
+        for idx, level in enumerate(levels):
+            p = _project_points_back_newton(p, level, deps, h0, idx)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -710,14 +710,17 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     return p
 
 
-def _project_points_back_newton(p, fd, deps, hmin):
+def _project_points_back_newton(p, fd, deps, hmin, idx):
     """Project points outside the domain back with one iteration of Newton minimization method
     finding the root of f(p)
     """
     dim = p.shape[1]
 
     d = fd(p)
-    ix = np.logical_and(d > 0.0, d < hmin)
+    if idx == 0:
+        ix = d > 0.0
+    else:
+        ix = np.logical_and(d > 0.0, d < hmin / 1.5)
     if ix.any():
 
         def _deps_vec(i):
