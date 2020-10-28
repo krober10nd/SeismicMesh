@@ -181,7 +181,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         )
 
         cell_size = _enforce_gradation_sizing(
-            cell_size, opts["grade"], (bbox[3] - bbox[2]) / nx
+            cell_size, opts["grade"], (bbox[1] - bbox[0]) / nz
         )
 
         cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, opts)
@@ -533,7 +533,8 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort):
             "Please specify the number of grid points in each dimension (e.g., `nz`, `nx`, `ny`)..."
         )
     axes = [nz, nx, ny]
-    axes = [axes[o] for o in axes_order]
+    ix = np.argsort(axes_order)
+    axes = [axes[o] for o in ix]
     with open(filename, "r") as file:
         print("Reading binary file: " + filename)
         if byte_order == "big":
