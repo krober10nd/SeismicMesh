@@ -486,11 +486,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+- None
+## [3.1.0] - 2020-10-28
 ### Added
 - New geometric primitives--torus, wedge/prism, and cylinder.
 - Updated images on README.
 ### Fixed
 - Only constrain corners near 0-level set.
+- Bug fix to 3D binary velocity reading. 
 
 ## [3.0.6] - 2020-10-21
 ### Fixed
