@@ -74,6 +74,8 @@ A simplified version of the parallel Delaunay algorithm proposed by [ @peterka20
  * The usage of SDF to implicitly define the meshing domain presents potential use cases in a topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of a SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce modifications to the 0-level set. In this framework, `SeismicMesh` can be embedded within the inversion algorithm to generate and adapt meshes.
 
  * Much like how the original `DistMesh` program has been used, `SeismicMesh` can be adapted for other domain-specific applications besides seismology (e.g., fluid dynamics, astrophysics, and oceanography). An open source project project is already under way to use the same mesh generation technology for a Python version of `OceanMesh2D` to build industrial-grade meshes of coastal oceans [@roberts2019oceanmesh2d].
+ 
+ We expect future extensions of the program to introduce better domain decomposition algorithms to improve parallel performance, and support for both immersed and periodic mesh generation.
 
 # Acknowledgements
 
