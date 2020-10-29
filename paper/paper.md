@@ -50,18 +50,19 @@ Parallel capabilities can be useful as well as tetrahedral meshes can become com
 
 The mesh's domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary and can be particularly useful in geophysical domains.
 
-# Parallelism
-
-A simplified version of the parallel Delaunay algorithm proposed by [ @peterka2014high] is implemented. \autoref{fig:speedup} shows a peak speed-up of approximately 6.60 times using 11 cores when performing 50 meshing iterations to generate an approximately 4 million cell mesh. The usage of 11 cores reduces the generation time of this example from 20 minutes to approximately 2 wall-clock minutes.  The machine used was 2 Intel Xeon Gold 6148 clocked at 2.4 GHz  (40 cores in total, 27 MB cache, 10.4 GT/s) with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
-
-![Speed-up (left-axis) as compared to the sequential version of the program and wall-clock time in minutes to generate a 3D mesh (approximately 4.6 M cells) for the EAGE Salt seismic velocity model. The panel on the right hand side shows the a slice through the center of the generated mesh. \label{fig:speedup}](Performance.jpg)
-
 
 # Performance Comparison
 
 The 2D/3D serial performance against `gmsh` and `cgal` [@cgal:rty-m3-20b, @cgal:r-ctm2-20b] in terms of cell quality and creation time where cell quality is defined as dimension (2 or 3) multiplied by the circumcircle radius divided by the incircle radius. This cell quality is between 0 and 1, where 1 is a perfectly symmetrical simplex. For the analytical geometries (e.g. disk and ball) `gmsh` is the fastest to generate a mesh and then performance is approximately similar for both `SeismicMesh` and `cgal`. `gmsh` and `cgal` produce higher minimum cell qualities overall than `SeismicMesh` but importantly all generators are capable of producing sliver-free meshes. With that said, `SeismicMesh` produces higher mean cell qualities by about 5\% as compared to `gmsh` and `cgal`. For the two seismic meshes (e.g., BP2004 and EAGE), `SeismicMesh` is faster than `cgal` but slower than `gmsh` and the mesh quality similarly follows the results observed in the analytical cases. Interpolant-based mesh sizing functions significantly slow the mesh generation time of `gmsh` increasing its mesh generation time by a factor of 3x. The `DistMesh` algorithm used in `SeismicMesh` requires far less calls to the sizing function. For example in the EAGE benchmark, `gmsh` calls the sizing function 95,756 times whereas `DistMesh` calls it just 26 times.
 
 ![The mesh creation time and resulting mesh quality for four benchmark problems studied over a range of problem sizes. Two analytical problems (disk and a ball) and two non-analytical problems with sizing functions defined via regular gridded interpolants (BP2004 and EAGE). For the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh. See the `SeismicMesh` github repository for information regarding the benchmarks. \label{fig:benchmark}](Benchmarks.jpg)
+
+
+# Parallelism
+
+A simplified version of the parallel Delaunay algorithm proposed by [ @peterka2014high] is implemented inside the DistMesh algorithm. This algorithm does not consider sophisticated domain decomposition or load balancing. \autoref{fig:speedup} shows a peak speed-up of approximately 4 times using 11 cores when performing 50 meshing iterations to generate both the light and heavy meshes of the EAGE P-wave velocity model. While the parallel performance is not ideal, this capability enables the generation of large meshes with 33 M cells that would otherwise take 92 minutes to generate down to approximately 21.7 minutes. The machine used for this experiment was an Intel Xeon Gold 6148 machine clocked at 2.4 GHz  with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+
+![The speedup (left-panel) as compared to the serial version of SeismicMesh V3.1.0 for a relatively light and heavy meshes adapted to P-wave data from the EAGE Salt seismic velocity model. The total mesh generation wall-clock time is annotated in decimal minutes next to each point. The panel on the right hand side shows the mesh generation rate normalized by the number of total cells in the mesh. \label{fig:speedup}](Performance.png)
 
 
 # Ongoing and future applications
