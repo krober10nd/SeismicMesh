@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import mode
 import scipy.sparse as spsparse
 
 from ..generation.cpp import c_cgal
@@ -291,6 +292,16 @@ def get_edges(entities, dim=2):
     return edges
 
 
+def unique_row_view(data):
+    """https://github.com/numpy/numpy/issues/11136"""
+    b = np.ascontiguousarray(data).view(
+        np.dtype((np.void, data.dtype.itemsize * data.shape[1]))
+    )
+    u, cnts = np.unique(b, return_counts=True)
+    u = u.view(data.dtype).reshape(-1, data.shape[1])
+    return u, cnts
+
+
 def get_boundary_edges(entities, dim=2):
     """Get the boundary edges of the mesh. Boundary edges only appear (dim-1) times
 
@@ -304,7 +315,8 @@ def get_boundary_edges(entities, dim=2):
     """
     edges = get_edges(entities, dim=dim)
     edges = np.sort(edges, axis=1)
-    unq, cnt = np.unique(edges, axis=0, return_counts=True)
+    # unq, cnt = np.unique(edges, axis=0, return_counts=True)
+    unq, cnt = unique_row_view(edges)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == (dim - 1)])
     return boundary_edges
 
@@ -414,7 +426,8 @@ def get_boundary_facets(entities):
         raise ValueError("Only works for triangles")
     facets = get_facets(entities)
     facets = np.sort(facets, axis=1)
-    unq, cnt = np.unique(facets, axis=0, return_counts=True)
+    # unq, cnt = np.unique(facets, axis=0, return_counts=True)
+    unq, cnt = unique_row_view(facets)
     boundary_facets = np.array([e for e, c in zip(unq, cnt) if c == 1])
     return boundary_facets
 
