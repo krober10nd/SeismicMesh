@@ -682,11 +682,9 @@ def _remove_triangles_outside(p, t, fd, geps):
 def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
-    max, abs = np.amax, np.abs
     bid = geometry.get_boundary_vertices(t, dim)
-    it = 0
     d = fd(p[bid])
-    while max(abs(d)) > tol and it < 10:
+    for _ in range(5):
 
         def _deps_vec(i):
             a = [0] * dim
@@ -697,7 +695,6 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
         dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
         p[bid] -= (d * np.vstack(dgrads) / dgrad2).T  # Project
-        it += 1
     return p
 
 
