@@ -399,6 +399,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         corners = corners[fd(corners) > -1000 * deps]
         pfix = np.append(pfix, corners, axis=0)
         nfix = len(pfix)
+
     if comm.rank == 0:
         print_msg1("Constraining " + str(nfix) + " fixed points..")
 
@@ -408,14 +409,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     if gen_opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
+
     max_iter = gen_opts["max_iter"]
-    if max_iter == 50:
-        # automatic max_iter selection based on resolution disparity
-        ms = np.amax(fh(p)) / np.amin(fh(p))
-        msmax = comm.allreduce(ms, op=MPI.MAX)
-        if msmax > 5:
-            max_iter = np.floor(50 * (msmax / 4))
-            print_msg1("Multiscale mesh: increasing max_iter to " + str(max_iter))
 
     N = p.shape[0]
 
