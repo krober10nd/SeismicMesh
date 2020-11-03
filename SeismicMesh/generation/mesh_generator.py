@@ -160,8 +160,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
-    deps = np.sqrt(np.finfo(np.double).eps) * h0
-
     if sliver_opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = sliver_opts["max_iter"]
@@ -267,9 +265,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
         # perturb push % of minimum mesh size
         p[move] += push * h0 * perturb
-
-        # bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
 
         count += 1
 
@@ -390,10 +385,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
-    if gen_opts["max_iter"] < 0:
-        raise ValueError("`max_iter` must be > 0")
-    max_iter = gen_opts["max_iter"]
-
     # these parameters originate from the original DistMesh
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = gen_opts["delta_t"]
@@ -414,6 +405,17 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     fh, p, extents = _initialize_points(
         dim, geps, bbox, fh, fd, h0, gen_opts, pfix, comm
     )
+
+    if gen_opts["max_iter"] < 0:
+        raise ValueError("`max_iter` must be > 0")
+    max_iter = gen_opts["max_iter"]
+    if max_iter == 50:
+        # automatic max_iter selection based on resolution disparity
+        ms = np.amax(fh(p)) / np.amin(fh(p))
+        msmax = comm.allreduce(ms, op=MPI.MAX)
+        if msmax > 5:
+            max_iter = np.floor(50 * (msmax / 4))
+            print_msg1("Multiscale mesh: increasing max_iter to " + str(max_iter))
 
     N = p.shape[0]
 
