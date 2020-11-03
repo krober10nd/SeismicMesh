@@ -9,6 +9,16 @@ from .cpp import fast_geometry as gutils
 dete = gutils.calc_4x4determinant
 
 
+def unique_row_view(data):
+    """https://github.com/numpy/numpy/issues/11136"""
+    b = np.ascontiguousarray(data).view(
+        np.dtype((np.void, data.dtype.itemsize * data.shape[1]))
+    )
+    u, cnts = np.unique(b, return_counts=True)
+    u = u.view(data.dtype).reshape(-1, data.shape[1])
+    return u, cnts
+
+
 def calc_re_ratios(vertices, entities, dim=2):
     """Calculate radius edge ratios--mesh quality metric
 
@@ -89,7 +99,9 @@ def remove_external_entities(vertices, entities, extent, dim=2):
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
     entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new, entities_new, jx = fix_mesh(vertices, entities_new, dim=dim)
+    vertices_new = vertices
+    jx = range(len(vertices_new))
+    # vertices_new, entities_new, jx = fix_mesh(vertices, entities_new, dim=dim)
     return vertices_new, entities_new, jx
 
 
@@ -289,16 +301,6 @@ def get_edges(entities, dim=2):
         edges = entities[:, [[0, 1], [1, 2], [2, 0], [0, 3], [1, 3], [2, 3]]]
         edges = edges.reshape((num_entities * 6, 2))
     return edges
-
-
-def unique_row_view(data):
-    """https://github.com/numpy/numpy/issues/11136"""
-    b = np.ascontiguousarray(data).view(
-        np.dtype((np.void, data.dtype.itemsize * data.shape[1]))
-    )
-    u, cnts = np.unique(b, return_counts=True)
-    u = u.view(data.dtype).reshape(-1, data.shape[1])
-    return u, cnts
 
 
 def get_boundary_edges(entities, dim=2):
