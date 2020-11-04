@@ -191,13 +191,6 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
 
         cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, opts)
 
-        import matplotlib.pyplot as plt
-
-        plt.pcolor(cell_size[:, :, 50])
-        plt.colorbar()
-        plt.show()
-        # quit()
-
         fh = _build_sizing_function(cell_size, vp, bbox)
     else:
 
