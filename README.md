@@ -483,11 +483,17 @@ Changelog
 =========
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+- None
+
+## [3.1.2] - 2020-11-04
 ### Improved
-- Faster calculation of boundary vertices. 
+- Faster calculation of boundary vertices.
+- More robust sliver removal in 3D.
+### Fixed
+- Corners are only constrained for constant resolution meshes
 
 ## [3.1.0] - 2020-10-28
 ### Added
@@ -495,7 +501,7 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Updated images on README.
 ### Fixed
 - Only constrain corners near 0-level set.
-- Bug fix to 3D binary velocity reading. 
+- Bug fix to 3D binary velocity reading.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed

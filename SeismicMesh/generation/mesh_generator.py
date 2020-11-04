@@ -351,6 +351,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # unpack domain
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
+    # discard corners for now
+    if not np.isscalar(edge_length):
+        corners = None
+
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
     # take maxmin of boxes for the case of domain padding
@@ -479,6 +483,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                 % (count + 1, maxdp, len(p), len(t)),
             )
+            assert (
+                maxdp < 50 * h0
+            ), "max movement indicates there's a convergence problem"
 
         count += 1
 
