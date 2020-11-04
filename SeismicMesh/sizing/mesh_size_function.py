@@ -40,6 +40,7 @@ opts = {
     "freq": 2.0,
     "grad": 0.0,
     "grade": 0.0,
+    "stencil_size": 10.0,
     "space_order": 1,
     "dt": 0.0,
     "cr_max": 1.0,
@@ -78,6 +79,9 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
             𝑓𝑚𝑎𝑥 in hertz for which to estimate `wl` (default==2 Hertz)
         * *grad* (``float``) --
             Resolution in meters nearby sharp gradients in velociy (default==0 m)
+        * *stencil_size* (``int`` or ``tuple of ints``) --
+            Size of stencil in grid points to calculate variance of velocity to
+            assign mesh resolution with the *grad* option (default==10 grid points)
         * *grade* (``float``) --
             Maximum allowable variation in mesh size in decimal percent (default==0.0)
         * *space_order* (``int``) --
@@ -149,6 +153,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "space_order",
                 "grad",
                 "grade",
+                "stencil_size",
                 "pad_style",
                 "domain_pad",
                 "units",
@@ -167,7 +172,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         if np.any([opts["wl"] > 0, opts["grad"] > 0]):
             cell_size = np.minimum(
                 _wavelength_sizing(vp, opts["wl"], opts["freq"]),
-                _gradient_sizing(vp, opts["grad"]),
+                _gradient_sizing(vp, opts["grad"], opts["stencil_size"]),
             )
 
         print("Enforcing minimum edge length of " + str(opts["hmin"]))
@@ -353,7 +358,7 @@ def _wavelength_sizing(vp, wl=5, freq=2.0):
     return vp / (freq * wl)
 
 
-def _gradient_sizing(vp, grad):
+def _gradient_sizing(vp, grad, stencil_size):
     """Refine the mesh near sharp gradients in seismic velocity."""
     if grad == 0.0:
         return 99999
@@ -361,10 +366,14 @@ def _gradient_sizing(vp, grad):
     if grad < 0:
         raise ValueError("Parameter grad must be > 0")
 
-    window = [100] * vp.ndim
+    if np.isscalar(stencil_size):
+        window = [stencil_size] * vp.ndim
+    else:
+        window = stencil_size
     win_mean = ndimage.uniform_filter(vp, tuple(window))
     win_sqr_mean = ndimage.uniform_filter(vp ** 2, tuple(window))
     win_var = win_sqr_mean - win_mean ** 2
+
     # normalize variance to [0,1]
     win_var /= np.amax(win_var)
     win_var -= np.amin(win_var)

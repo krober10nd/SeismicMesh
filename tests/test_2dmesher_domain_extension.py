@@ -37,6 +37,7 @@ def test_2dmesher_domain_extension(style_answer):
         bbox=bbox,
         grade=grade,
         grad=grad,
+        stencil_size=100,
         wl=wl,
         freq=freq,
         hmin=hmin,
