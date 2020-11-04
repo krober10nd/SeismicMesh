@@ -484,7 +484,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 % (count + 1, maxdp, len(p), len(t)),
             )
             assert (
-                maxdp < 10 * h0
+                maxdp < 50 * h0
             ), "max movement indicates there's a convergence problem"
 
         count += 1
