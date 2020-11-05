@@ -194,8 +194,9 @@ class Prism:
 class Cylinder:
     def __init__(self, h=1.0, r=0.5):
         assert h > 0.0 or r > 0.0
-        self.bbox = (-2 * r, 2 * r, -2 * r, 2 * r, -2 * h, 2 * h)
-        self.h = (h, r)
+        sz = max(h, r)
+        self.bbox = (-2 * sz, 2 * sz, -2 * sz, 2 * sz, -2 * sz, 2 * sz)
+        self.h = (r, h)
         self.corners = None
 
     def eval(self, x):
