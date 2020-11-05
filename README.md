@@ -15,11 +15,11 @@
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 
-[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
+[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
 ==================================================================================================
 
-*SeismicMesh* is a tool to generate 2D/3D triangular meshes that are used for acoustic and elastic wave propagators discretized
-with the finite element method. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities. Seismic P-wave/S-wave data are typically provided on [regular Cartesian grids for global and regional domains](https://ds.iris.edu/spud/earthmodel).
+*SeismicMesh* is a tool to generate unstructured and high geometric quality 2D/3D triangular meshes that *can be* used for acoustic and elastic wave propagators discretized
+with the finite element method. *SeismicMesh* however can also be used as a general purpose simplicial mesh generation tool in 2D/3D. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities from seismic velocity models. Seismic P-wave/S-wave data are typically provided on regular Cartesian grids for global and regional domains.
 
 Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength.
 
