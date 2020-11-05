@@ -55,31 +55,28 @@ Contributing
 
 All contributions are welcome!
 
-Fork and then clone the repository:
+To contribute to the software:
 
-    git clone https://github.com/krober10nd/SeismicMesh
+1. [Fork](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo) the repository.
+2. Clone the forked repository, add your contributions and push the changes to your fork.
+3. Create a [Pull request](https://github.com/krober10nd/SeismicMesh/pulls)
 
-Make sure the tests pass:
-
-    tox
-
-Make your changes on a branch and add tests that capture your changes! Make sure tests pass again:
-
-    tox
-
-Push to the fork then [submit a pull request][pr].
-
-[pr]: https://github.com/krober10nd/SeismicMesh/pulls
-
-From there we may suggest some changes or improvements or alternatives.
-
+Before creating the pull request, make sure that the tests pass by running
+```
+tox
+```
 Some things that will increase the chance that your pull request is accepted:
+-  Write tests.
+- Add Python docstrings that follow the [Sphinx](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html).
+- Write good commit and pull request messages.
 
-* Write tests.
-* Add Python docstrings that follow the [Sphinx][style].
-* Write good commit and pull request messages.
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+Problems?
+==========
+
+If something isn't working as it should or you'd like to recommend a new addition/feature to the software, please let me know by starting an issue through the [issues](https://github.com/krober10nd/SeismicMesh/issues) tab. I'll try to get to it as soon as possible.
 
 
 Examples
