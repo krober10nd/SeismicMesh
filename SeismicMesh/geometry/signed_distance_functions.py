@@ -182,6 +182,7 @@ class Prism:
     def __init__(self, b, h):
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
+        self.dim = 3
         self.corners = None
 
     def eval(self, x):

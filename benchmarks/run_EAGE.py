@@ -44,6 +44,7 @@ for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
 
 plt.subplot(1, 2, 1)
 plt.title("Number of cells vs. mesh generation time")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.legend()
 plt.xlabel("Number of cells")
 plt.ylabel("Elapsed time (s)")
@@ -51,6 +52,7 @@ plt.grid()
 
 plt.subplot(1, 2, 2)
 plt.title("Number of cells. vs cell quality")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.xlabel("Number of cells")
 plt.ylabel("Cell quality")
 plt.grid()
