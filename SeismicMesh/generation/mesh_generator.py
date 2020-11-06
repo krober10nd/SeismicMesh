@@ -160,8 +160,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
-    deps = np.sqrt(np.finfo(np.double).eps) * h0
-
     if sliver_opts["max_iter"] < 0:
         raise ValueError("`max_iter` must be > 0")
     max_iter = sliver_opts["max_iter"]
@@ -268,9 +266,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # perturb push % of minimum mesh size
         p[move] += push * h0 * perturb
 
-        # bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps, 0.0, 0)
-
         count += 1
 
         end = time.time()
@@ -337,7 +332,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
-        "subdomain": None,
+        "subdomains": None,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -356,6 +351,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     # unpack domain
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
+
+    # discard corners for now
+    if not np.isscalar(edge_length):
+        corners = None
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
@@ -391,10 +390,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     if h0 < 0:
         raise ValueError("`h0` must be > 0")
 
-    if gen_opts["max_iter"] < 0:
-        raise ValueError("`max_iter` must be > 0")
-    max_iter = gen_opts["max_iter"]
-
     # these parameters originate from the original DistMesh
     L0mult = 1 + 0.4 / 2 ** (dim - 1)
     delta_t = gen_opts["delta_t"]
@@ -409,12 +404,18 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         corners = corners[fd(corners) > -1000 * deps]
         pfix = np.append(pfix, corners, axis=0)
         nfix = len(pfix)
+
     if comm.rank == 0:
         print_msg1("Constraining " + str(nfix) + " fixed points..")
 
     fh, p, extents = _initialize_points(
         dim, geps, bbox, fh, fd, h0, gen_opts, pfix, comm
     )
+
+    if gen_opts["max_iter"] < 0:
+        raise ValueError("`max_iter` must be > 0")
+
+    max_iter = gen_opts["max_iter"]
 
     N = p.shape[0]
 
@@ -427,10 +428,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     )
 
     levels = [fd]
-    if gen_opts["subdomain"] is not None:
-        for subdomain in gen_opts["subdomain"]:
-            fd_subdomain, _, _ = _unpack_domain(subdomain, gen_opts)
-            levels.append(fd_subdomain)
+    if gen_opts["subdomains"] is not None:
+        for subdomains in gen_opts["subdomains"]:
+            fd_subdomains, _, _ = _unpack_domain(subdomains, gen_opts)
+            levels.append(fd_subdomains)
 
     while True:
 
@@ -490,6 +491,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                 % (count + 1, maxdp, len(p), len(t)),
             )
+            assert (
+                maxdp < 50 * h0
+            ), "max movement indicates there's a convergence problem"
 
         count += 1
 
@@ -604,7 +608,7 @@ def _parse_kwargs(kwargs):
             "delta_t",
             "h0",
             "geps_mult",
-            "subdomain",
+            "subdomains",
         }:
             pass
         else:
@@ -691,11 +695,9 @@ def _remove_triangles_outside(p, t, fd, geps):
 def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
-    max, abs = np.amax, np.abs
     bid = geometry.get_boundary_vertices(t, dim)
-    it = 0
     d = fd(p[bid])
-    while max(abs(d)) > tol and it < 10:
+    for _ in range(5):
 
         def _deps_vec(i):
             a = [0] * dim
@@ -706,7 +708,6 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
         dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
         p[bid] -= (d * np.vstack(dgrads) / dgrad2).T  # Project
-        it += 1
     return p
 
 

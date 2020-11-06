@@ -15,11 +15,11 @@
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 
-[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
+[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
 ==================================================================================================
 
-*SeismicMesh* is a tool to generate 2D/3D triangular meshes that are used for acoustic and elastic wave propagators discretized
-with the finite element method. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities. Seismic P-wave/S-wave data are typically provided on [regular Cartesian grids for global and regional domains](https://ds.iris.edu/spud/earthmodel).
+*SeismicMesh* is a tool to generate unstructured and high geometric quality 2D/3D triangular meshes that *can be* used for acoustic and elastic wave propagators discretized
+with the finite element method. *SeismicMesh* however can also be used as a general purpose simplicial mesh generation tool in 2D/3D. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities from seismic velocity models. Seismic P-wave/S-wave data are typically provided on regular Cartesian grids for global and regional domains.
 
 Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength.
 
@@ -55,31 +55,28 @@ Contributing
 
 All contributions are welcome!
 
-Fork and then clone the repository:
+To contribute to the software:
 
-    git clone https://github.com/krober10nd/SeismicMesh
+1. [Fork](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo) the repository.
+2. Clone the forked repository, add your contributions and push the changes to your fork.
+3. Create a [Pull request](https://github.com/krober10nd/SeismicMesh/pulls)
 
-Make sure the tests pass:
-
-    tox
-
-Make your changes on a branch and add tests that capture your changes! Make sure tests pass again:
-
-    tox
-
-Push to the fork then [submit a pull request][pr].
-
-[pr]: https://github.com/krober10nd/SeismicMesh/pulls
-
-From there we may suggest some changes or improvements or alternatives.
-
+Before creating the pull request, make sure that the tests pass by running
+```
+tox
+```
 Some things that will increase the chance that your pull request is accepted:
+-  Write tests.
+- Add Python docstrings that follow the [Sphinx](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html).
+- Write good commit and pull request messages.
 
-* Write tests.
-* Add Python docstrings that follow the [Sphinx][style].
-* Write good commit and pull request messages.
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+Problems?
+==========
+
+If something isn't working as it should or you'd like to recommend a new addition/feature to the software, please let me know by starting an issue through the [issues](https://github.com/krober10nd/SeismicMesh/issues) tab. I'll try to get to it as soon as possible.
 
 
 Examples
@@ -234,7 +231,7 @@ if comm.rank == 0:
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
-![Cylinder](https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png)
+<img alt="Cylinder" src="https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png" width="30%">
 
 ```python
 # Mesh a cylinder
@@ -269,7 +266,7 @@ if comm.rank == 0:
     )
 ```
 
-![Disk](https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png)
+<img alt="Disk" src="https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png" width="30%">
 
 
 ```python
@@ -287,7 +284,7 @@ meshio.write_points_cells(
 )
 ```
 
-![Square](https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png)
+<img alt="Square" src="https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png" width="30%">
 
 ```python
 # mesh a square/rectangle
@@ -304,8 +301,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![cube](https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png)
+<img alt="Cube" src="https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png" width="30%">
 
 ```python
 # mesh a cuboid/cube
@@ -323,8 +319,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png" width="30%">
 
-![torus](https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png)
 
 ```python
 # mesh a torus
@@ -348,7 +344,7 @@ meshio.write_points_cells(
 )
 ```
 
-![prism](https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png)
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png" width="30%">
 
 ```python
 # mesh a prism
@@ -373,8 +369,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Union](https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png)
+<img alt="Union" src="https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png" width="30%">
 
 ```python
 # Compute the union of several SDFs to create more complex geometries
@@ -394,7 +389,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-![Leaf](https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png)
+<img alt="Leaf" src="https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png" width="30%">
 
 ```python
 # Compute the intersection of several SDFs to create more complex geometries
@@ -414,8 +409,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Hole](https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png)
+<img alt="Hole" src="https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png" width="30%">
 
 ```python
 # Compute the difference of two SDFs to create more complex geometries.
@@ -435,9 +429,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Cube_wHoles](https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png)
-
+<img alt="Cube wHoles" src="https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png" width="30%">
 
 ```python
 # Compute the difference of several SDFs in 3D
@@ -488,14 +480,33 @@ Changelog
 =========
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased 
+- None
+
+## [3.1.3] - 2020-11-06
+### Fixed
+- Cylinder radius and height are now correct.
+- Torus, Prism, and Cylinder now have `dim` tag.
+
+### Improved
+- More control over the `grad` option in the mesh sizing function.
+
+## [3.1.2] - 2020-11-04
+### Improved
+- Faster calculation of boundary vertices.
+- More robust sliver removal in 3D.
+### Fixed
+- Corners are only constrained for constant resolution meshes
+
+## [3.1.0] - 2020-10-28
 ### Added
 - New geometric primitives--torus, wedge/prism, and cylinder.
 - Updated images on README.
 ### Fixed
 - Only constrain corners near 0-level set.
+- Bug fix to 3D binary velocity reading.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed

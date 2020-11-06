@@ -4,7 +4,7 @@ import numpy
 from benchmark_disk import run_gmsh, run_SeismicMesh, run_cgal
 
 
-plt.rcParams.update({"font.size": 18})
+plt.rcParams.update({"font.size": 19})
 
 
 colors1 = ["ko-", "ro-", "bo-"]
@@ -41,13 +41,16 @@ plt.subplot(1, 2, 1)
 plt.title("Number of cells vs. mesh generation time")
 plt.legend()
 plt.xlabel("Number of cells")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.ylabel("Elapsed time (s)")
 plt.grid()
 
 plt.subplot(1, 2, 2)
 plt.title("Number of cells. vs cell quality")
 plt.xlabel("Number of cells")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.ylabel("Cell quality")
+
 plt.grid()
 
 plt.show()

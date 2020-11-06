@@ -165,8 +165,9 @@ class Cube:
 class Torus:
     def __init__(self, r1, r2):
         """A torus with outer radius `r1` and inner radius of `r2`"""
-        assert r1 > 0.0 or r2 > 0.0
+        assert r1 > 0.0 and r2 > 0.0
         z = 2 * max(r1, r2)
+        self.dim = 3
         self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
         self.t = (r1, r2)
         self.corners = None
@@ -181,6 +182,7 @@ class Prism:
     def __init__(self, b, h):
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
+        self.dim = 3
         self.corners = None
 
     def eval(self, x):
@@ -193,9 +195,12 @@ class Prism:
 
 class Cylinder:
     def __init__(self, h=1.0, r=0.5):
-        assert h > 0.0 or r > 0.0
-        self.bbox = (-2 * r, 2 * r, -2 * r, 2 * r, -2 * h, 2 * h)
-        self.h = (h, r)
+        assert h > 0.0 and r > 0.0
+        h /= 2.0
+        sz = max(h, r)
+        self.dim = 3
+        self.bbox = (-2 * sz, 2 * sz, -2 * sz, 2 * sz, -2 * sz, 2 * sz)
+        self.h = (r, h)
         self.corners = None
 
     def eval(self, x):
