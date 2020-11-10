@@ -1,4 +1,5 @@
 import numpy as np
+import bottleneck
 import scipy.sparse as spsparse
 
 from ..generation.cpp import c_cgal
@@ -89,7 +90,11 @@ def remove_external_entities(vertices, entities, extent, dim=2):
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
     entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new, entities_new, jx = fix_mesh(vertices, entities_new, dim=dim)
+    vertices_new = vertices
+    jx = np.arange(len(vertices_new))
+    # vertices_new, entities_new, jx = fix_mesh(
+    #    vertices, entities_new, dim=dim, fix_orientation=False
+    # )
     return vertices_new, entities_new, jx
 
 
@@ -112,9 +117,11 @@ def vertex_to_entities(vertices, entities, dim=2):
     """
     num_entities = len(entities)
 
-    ext = np.tile(np.arange(0, num_entities), (dim + 1, 1)).reshape(-1, order="F")
-    ve = np.reshape(entities, (-1,))
-    ve = np.vstack((ve, ext)).T
+    ext = np.tile(np.arange(0, num_entities), (dim + 1, 1)).T.reshape(
+        (-1, 1), order="C"
+    )
+    ve = np.reshape(entities, (-1, 1))
+    ve = np.hstack((ve, ext))
     ve = ve[ve[:, 0].argsort(), :]
 
     idx = np.insert(np.diff(ve[:, 0]), 0, 0)
@@ -198,7 +205,7 @@ def simp_vol(p, t):
         raise NotImplementedError
 
 
-def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
+def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False, fix_orientation=True):
     """Remove duplicated/unused vertices and entities and
        ensure orientation of entities is CCW.
 
@@ -236,9 +243,10 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
 
-    # entity orientation is CCW
-    flip = simp_vol(p, t) < 0
-    t[flip, :2] = t[flip, 1::-1]
+    if fix_orientation:
+        # entity orientation is CCW
+        flip = simp_vol(p, t) < 0
+        t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
