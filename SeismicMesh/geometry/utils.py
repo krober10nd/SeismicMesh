@@ -1,5 +1,4 @@
 import numpy as np
-import bottleneck
 import scipy.sparse as spsparse
 
 from ..generation.cpp import c_cgal
