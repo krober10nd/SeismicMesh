@@ -466,6 +466,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             p, t = _termination(p, t, gen_opts, comm)
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
+                t = _remove_triangles_outside(p, t, fd, h0 * 0.001)
             break
 
         # Compute the forces on the edges
@@ -696,8 +697,8 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
     bid = geometry.get_boundary_vertices(t, dim)
-    d = fd(p[bid])
     for _ in range(5):
+        d = fd(p[bid])
 
         def _deps_vec(i):
             a = [0] * dim
