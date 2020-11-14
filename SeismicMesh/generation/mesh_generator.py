@@ -456,7 +456,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 print_msg1(
                     "Termination reached...maximum number of iterations reached.",
                 )
-            p, t = _termination(p, t, gen_opts, comm)
+            p, t = _termination(p, t, gen_opts, comm, verbose=gen_opts["verbose"])
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             break
@@ -608,20 +608,25 @@ def _parse_kwargs(kwargs):
             )
 
 
-def _termination(p, t, opts, comm, sliver=False):
+def _termination(p, t, opts, comm, sliver=False, verbose=1):
     """Shut it down when reacing `max_iter`"""
     dim = p.shape[1]
     if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
-    # perform laplacian smoothing for min. quality improvement
+    # delete and perform laplacian smoothing for big min. quality improvement
     if comm.rank == 0 and dim == 2:
-        p, t = geometry.laplacian2(p, t)
+        p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
     elif comm.rank == 0:
+        if dim == 2:
+            p, t = geometry.delete_boundary_entities(
+                p, t, dim=2, min_qual=0.10, verbose=verbose
+            )
         p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+
     return p, t
 
 

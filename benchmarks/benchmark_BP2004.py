@@ -106,13 +106,12 @@ def run_SeismicMesh(ef, HMIN=75.0):
         max_iter=25,
         delta_t=0.3,
     )
-    points, cells = geometry.delete_boundary_entities(
-        points, cells, dim=2, min_qual=0.10
-    )
     elapsed = time.time() - t1
 
+    # import meshio
+
     # meshio.write_points_cells(
-    #    "BP2004_sm.vtk",
+    #    "BP2004_sm" + str(HMIN) + ".vtk",
     #    points,
     #    [("triangle", cells)],
     #    file_format="vtk",
