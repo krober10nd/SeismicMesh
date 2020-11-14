@@ -13,7 +13,6 @@ from SeismicMesh import (
     get_sizing_function_from_segy,
     Rectangle,
     generate_mesh,
-    geometry,
 )
 
 
