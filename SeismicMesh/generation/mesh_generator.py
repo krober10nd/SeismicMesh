@@ -351,10 +351,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # unpack domain
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
-    # discard corners for now
-    if not np.isscalar(edge_length):
-        corners = None
-
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
     # take maxmin of boxes for the case of domain padding
@@ -368,6 +364,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     # check bbox shape
     dim = int(len(bbox) / 2)
+
+    # discard corners for now in 3d, doesn't work too well
+    if not np.isscalar(edge_length) and dim == 3:
+        corners = None
 
     # rebuild the Rectangle or Cube if domain padding
     if bbox0 != bbox1 and bbox1 is not None:
@@ -616,15 +616,14 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
     # delete and perform laplacian smoothing for big min. quality improvement
     if comm.rank == 0 and dim == 2:
+        p, t = geometry.delete_boundary_entities(
+            p, t, dim=2, min_qual=0.15, verbose=verbose
+        )
         p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
     elif comm.rank == 0:
-        if dim == 2:
-            p, t = geometry.delete_boundary_entities(
-                p, t, dim=2, min_qual=0.10, verbose=verbose
-            )
         p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
 
     return p, t
