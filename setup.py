@@ -17,13 +17,14 @@ if sys.version_info < (3, 0):
     sys.exit(1)
 
 benchmarking = [
-     "meshplex == 0.13.3",
-     "pygalmesh == 0.8.2",
-     "pygmsh == 7.0.0",
-     "termplotlib == 0.3.2",
-     "meshio == 4.2.2",
-     "termplotlib == 0.3.2",
- ]
+    "meshplex == 0.13.3",
+    "pygalmesh == 0.8.2",
+    "pygmsh == 7.0.0",
+    "termplotlib == 0.3.2",
+    "meshio == 4.2.2",
+    "termplotlib == 0.3.2",
+]
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
@@ -97,7 +98,7 @@ setup(
     ],
     cmdclass=dict(build_ext=CMakeBuild),
     extras_require={
-         "benchmarking": benchmarking,
-     },
+        "benchmarking": benchmarking,
+    },
     python_requires=">=3.0",
 )
