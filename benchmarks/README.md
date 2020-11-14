@@ -2,7 +2,7 @@ Packages for benchmarks
 ------------------------
 Some extra packages are required for benchmarking. These can be installed through the following command:
 ```
-pip install SeismicMesh[benchmarks]
+pip install SeismicMesh[benchmarking]
 ```
 
 Performance
