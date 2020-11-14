@@ -484,7 +484,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 % (count + 1, maxdp, len(p), len(t)),
             )
             assert (
-                maxdp < 50 * h0
+                maxdp < 1000 * h0
             ), "max movement indicates there's a convergence problem"
 
         count += 1
@@ -616,6 +616,7 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
     # delete and perform laplacian smoothing for big min. quality improvement
     if comm.rank == 0 and dim == 2:
+        p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
         p, t = geometry.delete_boundary_entities(
             p, t, dim=2, min_qual=0.15, verbose=verbose
         )
