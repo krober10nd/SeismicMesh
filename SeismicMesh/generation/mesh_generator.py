@@ -614,6 +614,9 @@ def _termination(p, t, opts, comm, sliver=False):
     if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
+    # perform laplacian smoothing for min. quality improvement
+    if comm.rank == 0 and dim == 2:
+        p, t = geometry.laplacian2(p, t)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
