@@ -1,3 +1,10 @@
+Packages for benchmarks
+------------------------
+Some extra packages are required for benchmarking. These can be installed through the following command:
+```
+pip install SeismicMesh[benchmarking]
+```
+
 Performance
 ------------
 Here we compare `SeismicMesh` against well-established existing mesh generation tools such as [cgal](https://doc.cgal.org/latest/Mesh_3/) and [gmsh](https://gmsh.info/doc/texinfo/gmsh.html). Specifically:
