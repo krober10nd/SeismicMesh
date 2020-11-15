@@ -463,13 +463,14 @@ Here we use SeismicMesh 3.0.4, [pygalmesh](https://github.com/nschloe/pygalmesh)
 
 Some key findings:
 
-* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
+* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` but a close competition for `cgal` and `SeismicMesh`.
 * However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
 * `SeismicMesh` produces often comparable or higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95696741-b923ae00-0c12-11eb-9d96-e52e5e9de7ae.jpg)
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/99197939-48713380-2774-11eb-8b83-46d18a79915f.png)
+
 
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
