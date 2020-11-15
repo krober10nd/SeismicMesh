@@ -489,7 +489,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [3.1.4] - 2020-11-15
 - Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
 - Made `hmin` a field of the SizeFunction class, which implies the user no longer needs to pass `h0` to
- `generate_mesh`
+ `generate_mesh` or `sliver_removal`.
 
 ## [3.1.3] - 2020-11-06
 ### Fixed
