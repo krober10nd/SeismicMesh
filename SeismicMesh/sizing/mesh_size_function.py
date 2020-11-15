@@ -201,7 +201,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     if comm.size > 1:
         bbox = comm.bcast(bbox, 0)
 
-    return SizeFunction(bbox, fh)
+    return SizeFunction(bbox, fh, opts["hmin"])
 
 
 def write_velocity_model(filename, ofname=None, comm=None, **kwargs):

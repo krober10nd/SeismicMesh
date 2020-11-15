@@ -101,9 +101,7 @@ def run_SeismicMesh(ef, HMIN=75.0):
     points, cells = generate_mesh(
         domain=rectangle,
         edge_length=ef,
-        h0=HMIN,
-        max_iter=25,
-        delta_t=0.3,
+        verbose=0,
     )
     elapsed = time.time() - t1
 

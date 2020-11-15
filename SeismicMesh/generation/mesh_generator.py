@@ -532,6 +532,7 @@ def _unpack_sizing(edge_length):
     if isinstance(edge_length, sizing.SizeFunction):
         bbox = edge_length.bbox
         fh = edge_length.eval
+        hmin = edge_length.hmin
     elif callable(edge_length):
         fh = edge_length
     elif np.isscalar(edge_length):

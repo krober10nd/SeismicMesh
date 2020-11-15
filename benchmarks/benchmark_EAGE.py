@@ -145,18 +145,14 @@ def run_SeismicMesh(ef, HMIN=75.0):
     points, cells = generate_mesh(
         domain=cube,
         edge_length=ef,
-        h0=HMIN,
         max_iter=25,
     )
 
     points, cells = sliver_removal(
         points=points,
         bbox=bbox,
-        h0=HMIN,
         domain=cube,
         edge_length=ef,
-        min_dh_angle_bound=10,
-        max_iter=50,
     )
     elapsed = time.time() - t1
 
@@ -204,9 +200,9 @@ if __name__ == "__main__":
         a1, q1, t1, nv, nc = run_gmsh(ef)
         print_stats_3d(a1, q1, "gmsh", t1, nv, nc)
     else:
-        a1, q1, t1, nv1, nc1 = run_cgal(ef)
+        # a1, q1, t1, nv1, nc1 = run_cgal(ef)
         a2, q2, t2, nv2, nc2 = run_SeismicMesh(ef)
         a3, q3, t3, nv3, nc3 = run_gmsh(ef)
-        print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
+        # print_stats_3d(a1, q1, "CGAL", t1, nv1, nc1)
         print_stats_3d(a2, q2, "SeismicMesh", t2, nv2, nc2)
         print_stats_3d(a3, q3, "gmsh", t3, nv3, nc3)

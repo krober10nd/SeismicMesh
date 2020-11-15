@@ -103,7 +103,6 @@ def run_SeismicMesh(HMIN=0.01):
         domain=disk,
         edge_length=fh,
         max_iter=25,
-        delta_t=0.3,
         verbose=0,
     )
     elapsed = time.time() - t1
