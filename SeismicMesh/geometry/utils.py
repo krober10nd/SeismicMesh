@@ -431,7 +431,7 @@ def get_boundary_facets(entities):
     return boundary_facets
 
 
-def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
+def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10, verbose=1):
     """Delete boundary entities with poor geometric quality (i.e., < min. quality)
 
     :param vertices: vertex coordinates of mesh
@@ -452,10 +452,11 @@ def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
     bele = get_boundary_entities(vertices, entities, dim=dim)
     qualBou = qual[bele]
     delete = qualBou < min_qual
-    print(
-        "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
-        flush=True,
-    )
+    if verbose:
+        print(
+            "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
+            flush=True,
+        )
     delete = np.argwhere(delete == 1)
     entities = np.delete(entities, bele[delete], axis=0)
     vertices, entities, _ = fix_mesh(vertices, entities, delete_unused=True, dim=dim)
@@ -484,7 +485,7 @@ def _sparse(Ix, J, S, shape=None, dtype=None):
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
 
 
-def laplacian2(vertices, entities, max_iter=20, tol=0.01):
+def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     """Move vertices to the average position of their connected neighbors
     with the goal to hopefully improve geometric entity quality.
 
@@ -538,10 +539,13 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
         Lnew[Lnew < eps] = eps
         move = np.amax(np.divide((Lnew - L), Lnew))
         if move < tol:
-            print(
-                "Movement tolerance reached after " + str(it) + " iterations..exiting",
-                flush=True,
-            )
+            if verbose:
+                print(
+                    "Movement tolerance reached after "
+                    + str(it)
+                    + " iterations..exiting",
+                    flush=True,
+                )
             break
         L = Lnew
     vertices = np.array(vertices)
