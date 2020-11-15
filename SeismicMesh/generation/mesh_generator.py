@@ -99,7 +99,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank > 0:
-        if comm.rank == 1:
+        if comm.rank == 0:
             warnings.warn("Sliver removal only works in serial for now")
         return True, True
 
@@ -136,9 +136,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     fd, bbox0, _ = _unpack_domain(domain, sliver_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
-
-    # ensure consensus re hmin
-    hmin = comm.bcast(hmin, 0)
 
     # take minmax of boxes for the case of domain padding
     if bbox1 is None:

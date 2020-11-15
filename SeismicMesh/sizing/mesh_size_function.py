@@ -32,29 +32,6 @@ __all__ = [
     "plot_sizing_function",
 ]
 
-# reasonable sizing function options go here
-opts = {
-    "hmin": 150.0,
-    "hmax": 10000.0,
-    "wl": 0,
-    "freq": 2.0,
-    "grad": 0.0,
-    "grade": 0.0,
-    "stencil_size": 10.0,
-    "space_order": 1,
-    "dt": 0.0,
-    "cr_max": 1.0,
-    "pad_style": "edge",
-    "domain_pad": 0.0,
-    "units": "m-s",
-    "nz": None,
-    "nx": None,
-    "ny": None,
-    "byte_order": "byte_order",
-    "axes_order": (0, 1, 2),
-    "axes_order_sort": "F",
-}
-
 
 def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     r"""Build a mesh size function from a seismic velocity model.
@@ -113,23 +90,45 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     :rtype: a :class:`SizeFunction` object
 
     """
+    # reasonable sizing function options go here
+    sz_opts = {
+        "hmin": 150.0,
+        "hmax": 10000.0,
+        "wl": 0,
+        "freq": 2.0,
+        "grad": 0.0,
+        "grade": 0.0,
+        "stencil_size": 10.0,
+        "space_order": 1,
+        "dt": 0.0,
+        "cr_max": 1.0,
+        "pad_style": "edge",
+        "domain_pad": 0.0,
+        "units": "m-s",
+        "nz": None,
+        "nx": None,
+        "ny": None,
+        "byte_order": "byte_order",
+        "axes_order": (0, 1, 2),
+        "axes_order_sort": "F",
+    }
     comm = comm or MPI.COMM_WORLD
     cell_size = None
 
+    sz_opts.update(kwargs)
     if comm.rank == 0:
-        opts.update(kwargs)
 
         vp, nz, nx, ny = _read_velocity_model(
             filename=filename,
-            nz=opts["nz"],
-            nx=opts["nx"],
-            ny=opts["ny"],
-            byte_order=opts["byte_order"],
-            axes_order=opts["axes_order"],
-            axes_order_sort=opts["axes_order_sort"],
+            nz=sz_opts["nz"],
+            nx=sz_opts["nx"],
+            ny=sz_opts["ny"],
+            byte_order=sz_opts["byte_order"],
+            axes_order=sz_opts["axes_order"],
+            axes_order_sort=sz_opts["axes_order_sort"],
         )
 
-        if opts["units"] == "km-s":
+        if sz_opts["units"] == "km-s":
             vp *= 1000.0
 
         # check the bbox
@@ -140,7 +139,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         else:
             raise ValueError("Dimension not supported")
 
-        cell_size = _initialize_sizing_function(dim, opts["hmin"], nz, nx, ny)
+        cell_size = _initialize_sizing_function(dim, sz_opts["hmin"], nz, nx, ny)
 
         for key in kwargs:
             if key in {
@@ -169,27 +168,27 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 raise ValueError(
                     "Option %s with parameter %s not recognized " % (key, kwargs[key])
                 )
-        if np.any([opts["wl"] > 0, opts["grad"] > 0]):
+        if np.any([sz_opts["wl"] > 0, sz_opts["grad"] > 0]):
             cell_size = np.minimum(
-                _wavelength_sizing(vp, opts["wl"], opts["freq"]),
-                _gradient_sizing(vp, opts["grad"], opts["stencil_size"]),
+                _wavelength_sizing(vp, sz_opts["wl"], sz_opts["freq"]),
+                _gradient_sizing(vp, sz_opts["grad"], sz_opts["stencil_size"]),
             )
 
-        print("Enforcing minimum edge length of " + str(opts["hmin"]))
-        cell_size[cell_size < opts["hmin"]] = opts["hmin"]
+        print("Enforcing minimum edge length of " + str(sz_opts["hmin"]))
+        cell_size[cell_size < sz_opts["hmin"]] = sz_opts["hmin"]
 
-        print("Enforcing maximum edge length of " + str(opts["hmax"]))
-        cell_size[cell_size > opts["hmax"]] = opts["hmax"]
+        print("Enforcing maximum edge length of " + str(sz_opts["hmax"]))
+        cell_size[cell_size > sz_opts["hmax"]] = sz_opts["hmax"]
 
         cell_size = _enforce_courant_sizing(
-            vp, cell_size, opts["cr_max"], opts["dt"], opts["space_order"]
+            vp, cell_size, sz_opts["cr_max"], sz_opts["dt"], sz_opts["space_order"]
         )
 
         cell_size = _enforce_gradation_sizing(
-            cell_size, opts["grade"], (bbox[1] - bbox[0]) / nz
+            cell_size, sz_opts["grade"], (bbox[1] - bbox[0]) / nz
         )
 
-        cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, opts)
+        cell_size, vp, bbox = _build_domain_pad(cell_size, vp, bbox, sz_opts)
 
         fh = _build_sizing_function(cell_size, vp, bbox)
     else:
@@ -201,7 +200,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     if comm.size > 1:
         bbox = comm.bcast(bbox, 0)
 
-    return SizeFunction(bbox, fh, opts["hmin"])
+    return SizeFunction(bbox, fh, sz_opts["hmin"])
 
 
 def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
@@ -238,9 +237,32 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
              The sort style of the data (either "F" for FORTRAN-style or "C" for C-style)
 
     """
+    # reasonable sizing function options go here
+    opts = {
+        "hmin": 150.0,
+        "hmax": 10000.0,
+        "wl": 0,
+        "freq": 2.0,
+        "grad": 0.0,
+        "grade": 0.0,
+        "stencil_size": 10.0,
+        "space_order": 1,
+        "dt": 0.0,
+        "cr_max": 1.0,
+        "pad_style": "edge",
+        "domain_pad": 0.0,
+        "units": "m-s",
+        "nz": None,
+        "nx": None,
+        "ny": None,
+        "byte_order": "byte_order",
+        "axes_order": (0, 1, 2),
+        "axes_order_sort": "F",
+    }
+
     comm = comm or MPI.COMM_WORLD
+    opts.update(kwargs)
     if comm.rank == 0:
-        opts.update(kwargs)
 
         if ofname is None:
             warnings.warn("No output filename specified, name will be `filename`")

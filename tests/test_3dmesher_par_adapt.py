@@ -11,6 +11,7 @@ comm = MPI.COMM_WORLD
 
 @pytest.mark.parallel3
 def test_3dmesher_par_adapt():
+
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     nz, nx, ny = 20, 10, 10
     bbox = (-2000.0, 0.0, 0.0, 1000.0, 0.0, 1000.0)
