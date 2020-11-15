@@ -137,6 +137,9 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
 
+    # ensure consensus re hmin
+    hmin = comm.bcast(hmin, 0)
+
     # take minmax of boxes for the case of domain padding
     if bbox1 is None:
         bbox = bbox0
@@ -352,6 +355,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
     fh, bbox1, hmin = _unpack_sizing(edge_length)
+
+    # ensure consensus re hmin
+    hmin = comm.bcast(hmin, 0)
 
     # take maxmin of boxes for the case of domain padding
     if bbox1 is None:
