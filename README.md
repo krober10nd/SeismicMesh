@@ -13,6 +13,7 @@
 [![Zenodo](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
 [![PyPi]( https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 
 
 [SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
@@ -129,7 +130,7 @@ ef = get_sizing_function_from_segy(
     pad_style="edge",
 )
 
-points, cells = generate_mesh(domain=rectangle, edge_length=ef, h0=hmin)
+points, cells = generate_mesh(domain=rectangle, edge_length=ef)
 
 if comm.rank == 0:
     # Write the mesh in a vtk format for visualization in ParaView
@@ -210,11 +211,11 @@ ef = get_sizing_function_from_segy(
     axes_order_sort="F",  # binary is packed in a FORTRAN-style
 )
 
-points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
+points, cells = generate_mesh(domain=cube, edge_length=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(
-    points=points, bbox=bbox, h0=hmin, domain=cube, edge_length=ef
+    points=points, bbox=bbox, domain=cube, edge_length=ef
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
@@ -462,13 +463,14 @@ Here we use SeismicMesh 3.0.4, [pygalmesh](https://github.com/nschloe/pygalmesh)
 
 Some key findings:
 
-* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
+* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` but a close competition for `cgal` and `SeismicMesh`.
 * However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
 * `SeismicMesh` produces often comparable or higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
 * All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95696741-b923ae00-0c12-11eb-9d96-e52e5e9de7ae.jpg)
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/99197939-48713380-2774-11eb-8b83-46d18a79915f.png)
+
 
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
@@ -482,8 +484,13 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
+## Unreleased
 - None
+
+## [3.1.4] - 2020-11-15
+- Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
+- Made `hmin` a field of the SizeFunction class, which implies the user no longer needs to pass `h0` to
+ `generate_mesh` or `sliver_removal`.
 
 ## [3.1.3] - 2020-11-06
 ### Fixed
