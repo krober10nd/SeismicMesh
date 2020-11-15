@@ -26,6 +26,8 @@ The following set of benchmark problems are available:
 
 Run `python benchmark_sphere.py` to run all benchmarks for a particular domain (e.g., sphere). Run `python benchmark_sphere.py --method METHODNAME` to select either `cgal` using [pygalmesh](https://github.com/nschloe/pygalmesh), `gmsh` using [pygmsh](https://github.com/nschloe/pygmsh) or `sm` to use `SeismicMesh`.
 
+* Note: 3D CGAL results are not shown for the EAGE benchmark because they are several times slower than Gmsh and SeismicMesh. 2D CGAL results are not shown for BP2004 since they do not support user-defined variable mesh density functions.
+
 Results
 ---------------
 

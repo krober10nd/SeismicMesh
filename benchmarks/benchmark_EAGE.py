@@ -150,7 +150,6 @@ def run_SeismicMesh(ef, HMIN=75.0):
 
     points, cells = sliver_removal(
         points=points,
-        bbox=bbox,
         domain=cube,
         edge_length=ef,
     )
