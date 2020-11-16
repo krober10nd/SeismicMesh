@@ -47,10 +47,11 @@ plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.grid()
 
 plt.subplot(1, 2, 2)
-plt.title("Number of cells. vs cell quality")
+plt.title("Number of cells vs. cell quality")
 plt.xlabel("Number of cells")
 plt.ylabel("Cell quality")
 plt.xlabel("Number of cells")
+plt.ylim(ymax=1, ymin=0)
 plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.grid()
 
