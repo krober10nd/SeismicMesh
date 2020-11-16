@@ -456,26 +456,23 @@ meshio.write_points_cells(
 )
 ```
 
-How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
+How does performance and cell quality compare to Gmsh and CGAL mesh generators?
 ===================================================================================
 
 Here we use SeismicMesh 3.1.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
 
 Some key findings:
 
-* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` but a close competition for `cgal` and `SeismicMesh`.
-* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
-* `SeismicMesh` produces often comparable or higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
-* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
+* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using Gmsh but a closer competition for CGAL and SeismicMesh.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both Gmsh and CGAL. In these cases, SeismicMesh and Gmsh perform similarly both outperforming CGAL's 3D mesh generator in terms of mesh generation time.
+* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation (not shown)
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/99197939-48713380-2774-11eb-8b83-46d18a79915f.png)
-
-
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/99252088-38e20100-27ed-11eb-80b3-c10afac7efbf.png)
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
 
-* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in `SeismicMesh`.
+* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in SeismicMesh.
 
 
 Changelog
