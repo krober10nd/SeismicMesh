@@ -11,9 +11,10 @@ comm = MPI.COMM_WORLD
 
 @pytest.mark.parallel3
 def test_3dmesher_par_adapt():
+
     fname = os.path.join(os.path.dirname(__file__), "test3D.bin")
     nz, nx, ny = 20, 10, 10
-    bbox = (-2e3, 0.0, 0.0, 1e3, 0.0, 1e3)
+    bbox = (-2000.0, 0.0, 0.0, 1000.0, 0.0, 1000.0)
     cube = Cube(bbox)
     hmin = 50
     wl = 10
@@ -35,9 +36,7 @@ def test_3dmesher_par_adapt():
     points, cells = generate_mesh(
         cube,
         ef,
-        h0=hmin,
         max_iter=10,
-        perform_checks=False,
     )
 
     points = comm.bcast(points, 0)
@@ -45,23 +44,19 @@ def test_3dmesher_par_adapt():
     points, cells = generate_mesh(
         points=points,
         domain=cube,
-        h0=hmin,
         edge_length=ef,
         axis=1,
         max_iter=10,
-        perform_checks=False,
     )
 
     points = comm.bcast(points, 0)
 
     points, cells = generate_mesh(
         points=points,
-        h0=hmin,
         edge_length=ef,
         domain=cube,
         axis=2,
         max_iter=10,
-        perform_checks=False,
     )
 
     if comm.rank == 0:
