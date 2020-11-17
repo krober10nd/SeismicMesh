@@ -113,6 +113,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomains": [],
     }
 
     sliver_opts.update(kwargs)
@@ -634,7 +635,9 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
         p, t = geometry.delete_boundary_entities(
             p, t, dim=2, min_qual=0.15, verbose=verbose
         )
-        p, t = geometry.laplacian2(p, t, verbose=verbose)
+        # only do Laplacian smoothing if no immersed domains
+        if opts["subdomains"] is None:
+            p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
