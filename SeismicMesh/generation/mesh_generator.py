@@ -113,6 +113,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomains": [],
     }
 
     sliver_opts.update(kwargs)
@@ -332,6 +333,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomains": None,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -429,6 +431,12 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
     )
 
+    levels = [fd]
+    if gen_opts["subdomains"] is not None:
+        for subdomains in gen_opts["subdomains"]:
+            fd_subdomains, _, _ = _unpack_domain(subdomains, gen_opts)
+            levels.append(fd_subdomains)
+
     while True:
 
         start = time.time()
@@ -462,6 +470,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             p, t = _termination(p, t, gen_opts, comm, verbose=gen_opts["verbose"])
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
+                t = _remove_triangles_outside(p, t, fd, h0 * 0.001)
             break
 
         # Compute the forces on the edges
@@ -473,7 +482,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
+        for idx, level in enumerate(levels):
+            p = _project_points_back_newton(p, level, deps, h0, idx)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -604,6 +614,7 @@ def _parse_kwargs(kwargs):
             "delta_t",
             "h0",
             "geps_mult",
+            "subdomains",
         }:
             pass
         else:
@@ -624,7 +635,9 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
         p, t = geometry.delete_boundary_entities(
             p, t, dim=2, min_qual=0.15, verbose=verbose
         )
-        p, t = geometry.laplacian2(p, t, verbose=verbose)
+        # only do Laplacian smoothing if no immersed domains
+        if opts["subdomains"] is None:
+            p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
@@ -699,8 +712,8 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
     bid = geometry.get_boundary_vertices(t, dim)
-    d = fd(p[bid])
     for _ in range(5):
+        d = fd(p[bid])
 
         def _deps_vec(i):
             a = [0] * dim
@@ -714,14 +727,17 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     return p
 
 
-def _project_points_back_newton(p, fd, deps):
+def _project_points_back_newton(p, fd, deps, hmin, idx):
     """Project points outside the domain back with one iteration of Newton minimization method
     finding the root of f(p)
     """
     dim = p.shape[1]
 
     d = fd(p)
-    ix = d > 0  # Find points outside (d>0)
+    if idx == 0:
+        ix = d > 0.0
+    else:
+        ix = np.logical_and(d > 0.0, d < hmin / 1.5)
     if ix.any():
 
         def _deps_vec(i):

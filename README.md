@@ -456,6 +456,40 @@ meshio.write_points_cells(
 )
 ```
 
+<img alt="Immersed disk" src="https://user-images.githubusercontent.com/18619644/99576017-37b0ff80-29b8-11eb-881d-a9b0dd0adc34.png" width="30%">
+
+```python
+# Immerse a subdomain so that it's boundary is conforming in the mesh.
+import numpy as np
+
+import meshio
+
+import SeismicMesh
+
+box0 = SeismicMesh.Rectangle((-1.25, 0.0, -0.250, 1.250))
+disk0 = SeismicMesh.Disk([-0.5, 0.5], 0.25)
+
+hmin = 0.10
+
+
+fh = lambda p: 0.05 * np.abs(disk0.eval(p)) + hmin
+
+points, cells = SeismicMesh.generate_mesh(
+    domain=box0,
+    edge_length=fh,
+    h0=hmin,
+    subdomains=[disk0],
+    max_iter=100,
+)
+meshio.write_points_cells(
+    "Square_wsubdomain.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+
 How does performance and cell quality compare to Gmsh and CGAL mesh generators?
 ===================================================================================
 
@@ -482,8 +516,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
-- None
-
+- Support for constraining/immersing subdomains represented as signed distance functions.
+-
 ## [3.1.4] - 2020-11-15
 - Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
 - Made `hmin` a field of the SizeFunction class, which implies the user no longer needs to pass `h0` to
