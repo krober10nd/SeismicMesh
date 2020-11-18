@@ -24,8 +24,8 @@ bibliography: paper.bib
 ---
 # Summary
 
-SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of DistMesh [@doi:10.1137/S0036144503429121; @peterka2014high], it produces high-geometric quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the Computational Geometry Algorithms Library [@CGAL:hs-chdt3-20a]. SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
-
+SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of DistMesh [@doi:10.1137/S0036144503429121; @peterka2014high], it produces high-geometric quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the Computational Geometry Algorithms Library [@CGAL:hs-chdt3-20b]. SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
+cgal:hs-chdt3-20b
 
 # Background
 
