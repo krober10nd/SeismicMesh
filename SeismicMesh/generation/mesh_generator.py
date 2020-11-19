@@ -99,7 +99,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     """
     comm = comm or MPI.COMM_WORLD
     if comm.rank > 0:
-        if comm.rank == 1:
+        if comm.rank == 0:
             warnings.warn("Sliver removal only works in serial for now")
         return True, True
 
@@ -113,6 +113,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomains": [],
     }
 
     sliver_opts.update(kwargs)
@@ -332,6 +333,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "points": None,
         "delta_t": 0.30,
         "geps_mult": 0.1,
+        "subdomains": None,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -351,11 +353,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # unpack domain
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
-    # discard corners for now
-    if not np.isscalar(edge_length):
-        corners = None
-
     fh, bbox1, hmin = _unpack_sizing(edge_length)
+
+    # ensure consensus re hmin
+    hmin = comm.bcast(hmin, 0)
 
     # take maxmin of boxes for the case of domain padding
     if bbox1 is None:
@@ -368,6 +369,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
     # check bbox shape
     dim = int(len(bbox) / 2)
+
+    # discard corners for now in 3d, doesn't work too well
+    if not np.isscalar(edge_length) and dim == 3:
+        corners = None
 
     # rebuild the Rectangle or Cube if domain padding
     if bbox0 != bbox1 and bbox1 is not None:
@@ -426,6 +431,12 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "Commencing mesh generation with %d vertices on rank %d." % (N, comm.rank),
     )
 
+    levels = [fd]
+    if gen_opts["subdomains"] is not None:
+        for subdomains in gen_opts["subdomains"]:
+            fd_subdomains, _, _ = _unpack_domain(subdomains, gen_opts)
+            levels.append(fd_subdomains)
+
     while True:
 
         start = time.time()
@@ -459,9 +470,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 print_msg1(
                     "Termination reached...maximum number of iterations reached.",
                 )
-            p, t = _termination(p, t, gen_opts, comm)
+            p, t = _termination(p, t, gen_opts, comm, verbose=gen_opts["verbose"])
             if comm.rank == 0:
                 p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
+                t = _remove_triangles_outside(p, t, fd, h0 * 0.001)
             break
 
         # Compute the forces on the edges
@@ -473,7 +485,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         p += delta_t * Ftot
 
         # Bring outside points back to the boundary
-        p = _project_points_back_newton(p, fd, deps)
+        for idx, level in enumerate(levels):
+            p = _project_points_back_newton(p, level, deps, h0, idx)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
@@ -487,7 +500,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 % (count + 1, maxdp, len(p), len(t)),
             )
             assert (
-                maxdp < 50 * h0
+                maxdp < 1000 * h0
             ), "max movement indicates there's a convergence problem"
 
         count += 1
@@ -535,6 +548,7 @@ def _unpack_sizing(edge_length):
     if isinstance(edge_length, sizing.SizeFunction):
         bbox = edge_length.bbox
         fh = edge_length.eval
+        hmin = edge_length.hmin
     elif callable(edge_length):
         fh = edge_length
     elif np.isscalar(edge_length):
@@ -603,6 +617,7 @@ def _parse_kwargs(kwargs):
             "delta_t",
             "h0",
             "geps_mult",
+            "subdomains",
         }:
             pass
         else:
@@ -611,17 +626,27 @@ def _parse_kwargs(kwargs):
             )
 
 
-def _termination(p, t, opts, comm, sliver=False):
+def _termination(p, t, opts, comm, sliver=False, verbose=1):
     """Shut it down when reacing `max_iter`"""
     dim = p.shape[1]
     if comm.size > 1 and sliver is False:
         # gather onto rank 0
         p, t = migration.aggregate(p, t, comm, comm.size, comm.rank, dim=dim)
+    # delete and perform laplacian smoothing for big min. quality improvement
+    if comm.rank == 0 and dim == 2:
+        p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+        p, t = geometry.delete_boundary_entities(
+            p, t, dim=2, min_qual=0.15, verbose=verbose
+        )
+        # only do Laplacian smoothing if no immersed domains
+        if opts["subdomains"] is None:
+            p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
     elif comm.rank == 0:
         p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+
     return p, t
 
 
@@ -690,8 +715,8 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
     bid = geometry.get_boundary_vertices(t, dim)
-    d = fd(p[bid])
     for _ in range(5):
+        d = fd(p[bid])
 
         def _deps_vec(i):
             a = [0] * dim
@@ -705,14 +730,17 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     return p
 
 
-def _project_points_back_newton(p, fd, deps):
+def _project_points_back_newton(p, fd, deps, hmin, idx):
     """Project points outside the domain back with one iteration of Newton minimization method
     finding the root of f(p)
     """
     dim = p.shape[1]
 
     d = fd(p)
-    ix = d > 0  # Find points outside (d>0)
+    if idx == 0:
+        ix = d > 0.0
+    else:
+        ix = np.logical_and(d > 0.0, d < hmin / 1.5)
     if ix.any():
 
         def _deps_vec(i):

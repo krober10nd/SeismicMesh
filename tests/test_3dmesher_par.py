@@ -43,19 +43,12 @@ def test_3dmesher_par():
         axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
     )
 
-    points, cells = generate_mesh(
-        h0=hmin,
-        edge_length=ef,
-        domain=cube,
-        perform_checks=False,
-    )
+    points, cells = generate_mesh(edge_length=ef, domain=cube, verbose=2)
 
     points, cells = sliver_removal(
         points=points,
         domain=cube,
         edge_length=ef,
-        h0=hmin,
-        perform_checks=False,
     )
 
     if comm.rank == 0:

@@ -1,7 +1,7 @@
 # run EAGE benchmark and plot a figure
 import matplotlib.pyplot as plt
 import numpy
-from benchmark_EAGE import run_gmsh, run_SeismicMesh, run_cgal, _build_sizing
+from benchmark_EAGE import run_gmsh, run_SeismicMesh, _build_sizing
 
 
 colors1 = ["ko-", "ro-", "bo-"]
@@ -15,7 +15,8 @@ entries = []
 rg = numpy.linspace(300, 150.0, 5)
 freqs = numpy.linspace(1, 2, 5)
 
-for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
+# for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
+for i, func in enumerate([run_gmsh, run_SeismicMesh]):
     q = []
     mq = []
     nv = []
