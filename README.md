@@ -517,7 +517,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 - Support for constraining/immersing subdomains represented as signed distance functions.
--
+- Faster cell manipulation operations for ~5-10% better speedups in parallel. 
+
 ## [3.1.4] - 2020-11-15
 - Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
 - Made `hmin` a field of the SizeFunction class, which implies the user no longer needs to pass `h0` to
