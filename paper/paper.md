@@ -33,7 +33,7 @@ Generating a high-geometric quality graded mesh for a geophysical domain represe
 
 # Statement of Need
 
-Despite the fact that many mesh generation programs exist such as Gmsh and CGAL, it is rare to find capabilities that incorporate geophysical data directly into the mesh generation process to appropriately size elements. This in part contributes to the reality that automatic mesh generation for geophysical domains largely still remains an unsolved problem.
+Despite the fact that many mesh generation programs exist such as Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b], it is rare to find capabilities that incorporate geophysical data directly into the mesh generation process to appropriately size elements. This in part contributes to the reality that automatic mesh generation for geophysical domains largely still remains an unsolved problem.
 
 However some freely available packages have been created to script mesh generation from geophysical datasets such as in coastal ocean modeling [e.g., @roberts2019oceanmesh2d; GMT and Terreno @gorman2008systematic] and reservoir modeling [e.g., MeshIT @cacace2015meshit]. To ease the burden of mesh development for geophysical problems in seismology, the aim of this package is to provide a simple-to-use Python package to script mesh generation directly from seismic velocity models. This is accomplished first by building a mesh density function directly from seismic velocity models and then supplying these inputs to a mesh generator that can use these inputs while operating at scale.
 
@@ -48,14 +48,14 @@ Our mesh density functions can be used with other mesh generators however the us
 
   3. An implementation of a 3D degenerate (i.e., sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric while preserving the domain structure. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
 
- Similar to other meshing programs such as Gmsh [@doi:10.1002/nme.2579], SeismicMesh [@SeismicMeshDocs] enables both generation of simplex meshes through a Python scripting-based application programming interface.
+ Similar to other meshing programs such as Gmsh, SeismicMesh [@SeismicMeshDocs] enables both generation of simplex meshes through a Python scripting-based application programming interface.
 
 The mesh's domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary and can be particularly useful in geophysical domains.
 
 
 # Performance Comparison
 
-The 2D/3D serial performance against Gmsh and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b] in terms of cell quality and creation time where cell quality is defined as dimension (2 or 3) multiplied by the circumcircle radius divided by the incircle radius. This cell quality is between 0 and 1, where 1 is a perfectly symmetrical simplex. For the analytical geometries (e.g. disk and ball) Gmsh is the fastest to generate a mesh and then performance is approximately similar for both SeismicMesh and CGAL with CGAL outperforming SeismicMesh for the disk and vice versa for the ball. Gmsh and CGAL produce similar minimum cell qualities to SeismicMesh and importantly all generators are capable of producing sliver-free meshes with minimal dihedral angles greater than 10 degrees. However, SeismicMesh in general produces very higher mean cell qualities which are about 5-10\% greater than either Gmsh or CGAL.
+The 2D/3D serial performance against Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b] in terms of cell quality and creation time where cell quality is defined as dimension (2 or 3) multiplied by the circumcircle radius divided by the incircle radius. This cell quality is between 0 and 1, where 1 is a perfectly symmetrical simplex. For the analytical geometries (e.g. disk and ball) Gmsh is the fastest to generate a mesh and then performance is approximately similar for both SeismicMesh and CGAL with CGAL outperforming SeismicMesh for the disk and vice versa for the ball. Gmsh and CGAL produce similar minimum cell qualities to SeismicMesh and importantly all generators are capable of producing sliver-free meshes with minimal dihedral angles greater than 10 degrees. However, SeismicMesh in general produces very higher mean cell qualities which are about 5-10\% greater than either Gmsh or CGAL.
 
 For the two seismic domains (e.g., BP2004 and EAGE), SeismicMesh is faster than Gmsh for the 2D BP2004 benchmark but slightly slower for the 3D EAGE benchmark at scale, while CGAL is not competitive for the 3D benchmark and does not support user-defined mesh sizing functions and therefore is shown. Mesh quality results similarly follows the results observed in the two analytical cases with competitive performance. It's interesting to note that interpolant-based mesh sizing functions significantly slow the mesh generation time of Gmsh increasing its mesh generation time by a factor of around 3x. The DistMesh algorithm used in SeismicMesh requires far less calls to the sizing function. For example in the EAGE benchmark, Gmsh calls the sizing function 95,756 times whereas DistMesh calls it just 26 times.
 
@@ -77,7 +77,7 @@ A simplified version of the parallel Delaunay algorithm proposed by [ @peterka20
 
  * The usage of SDF to implicitly define the meshing domain presents potential use cases in a topology-optimization framework [@laurain2018level] for modeling the sharp interface of salt-bodies in seismological domains. In these applications, the 0-level set of a SDF is used to demarcate the boundary of the feature. Each inversion iteration, updates to an objective functional produce modifications to the 0-level set. In this framework, SeismicMesh can be embedded within the inversion algorithm to generate and adapt meshes.
 
- * Much like how the original DistMesh program has been used, SeismicMesh can be adapted for other domain-specific applications besides seismology (e.g., fluid dynamics, astrophysics, and oceanography). An open source project project is already under way to use the same mesh generation technology for a Python version of `OceanMesh2D` to build industrial-grade meshes of coastal oceans [@roberts2019oceanmesh2d].
+ * Much like how the original DistMesh program has been used, SeismicMesh can be adapted for other domain-specific applications besides seismology (e.g., fluid dynamics, astrophysics, and oceanography). An open source project project is already under way to use the same mesh generation technology for a Python version of OceanMesh2D to build industrial-grade meshes of coastal oceans [@roberts2019oceanmesh2d].
 
  We expect future extensions of the program to introduce better domain decomposition algorithms to improve parallel performance, and support for both immersed and periodic mesh generation.
 
