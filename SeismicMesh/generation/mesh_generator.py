@@ -441,6 +441,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
         start = time.time()
 
+        # Remove non-unique points
+        p = np.array(list(set(tuple(p) for p in p)))
+
         # (Re)-triangulation by the Delaunay algorithm
         dt = DT()
         dt.insert(p.flatten().tolist())
