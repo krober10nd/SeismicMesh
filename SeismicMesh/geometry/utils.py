@@ -218,6 +218,8 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False, fix_orientation=True)
     :type dim: `int`, optional
     :param delete_unused: flag to delete disjoint vertices.
     :type delete_unused: `boolean`, optional
+    :param fix_orientation: flag to make eles ccw
+    :type fix_orientation: `boolean`, optional
 
     :return: p: updated point coordinates of mesh
     :rtype: numpy.ndarray[`float` x dim]
@@ -234,7 +236,7 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False, fix_orientation=True)
 
     # duplicate entities
     t = np.sort(t, axis=1)
-    t = unique_rows(t)
+    t, _ = unique_row_view(t)
 
     # delete disjoint vertices
     if delete_unused:
