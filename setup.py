@@ -18,7 +18,7 @@ if sys.version_info < (3, 0):
 
 if sys.version_info > (3, 8):
     print(
-        "Python 3.9 or higher is not yet supported, please use an Python older version."
+        "Python 3.9 or higher is not yet supported, please use an older Python version."
     )
     sys.exit(1)
 
