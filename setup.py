@@ -20,6 +20,7 @@ if sys.version_info > (3, 8):
     print("Python 3.9 or higher is not yet supported, please use an older version.")
     sys.exit(1)
     
+    
 benchmarking = [
     "meshplex == 0.13.3",
     "pygalmesh == 0.8.2",
