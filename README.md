@@ -35,6 +35,9 @@ Our mesh generation approach provided in this package can be operated standalone
 Installation
 ============
 
+**Nov. 21, 2020 our software is not comptabilite yet with Python 3.9 because of upstream dependencies (`segyio`). Until these are fixed, please use a Python version prior to 3.9.**
+
+
 For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 [pybind11](https://github.com/pybind/pybind11):
 
