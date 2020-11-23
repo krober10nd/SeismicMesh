@@ -487,6 +487,8 @@ meshio.write_points_cells(
 How does performance and cell quality compare to Gmsh and CGAL mesh generators?
 ===================================================================================
 
+* For an additional comparison of *SeismicMesh* against several other popular mesh generators head over to [meshgen-comparison](https://github.com/nschloe/meshgen-comparison).
+
 Here we use SeismicMesh 3.1.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
 
 Some key findings:
