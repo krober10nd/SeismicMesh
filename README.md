@@ -26,7 +26,7 @@ SeismicMesh is a Python package for simplex mesh generation in two or three dime
 Installation
 ============
 
-**Nov. 21, 2020 our software is not comptabilite yet with Python 3.9 because of upstream dependencies (`segyio`). Until these are fixed, please use a Python version prior to 3.9.**
+**Nov. 21, 2020 our software is not yet compatible with Python 3.9 because of the `segyio` package dependency which doesn't build yet with this version of Python. Until this is fixed, please use a Python version prior to 3.9 to run your scripts with this package.**
 
 
 For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
