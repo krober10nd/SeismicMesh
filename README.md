@@ -511,9 +511,13 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased 
+- None
+
+## [3.1.5] - 2020-11-24
 - Support for constraining/immersing subdomains represented as signed distance functions.
 - Faster cell manipulation operations for ~5-10% better speedups in parallel. 
+- Projection of points back onto level set.
 
 ## [3.1.4] - 2020-11-15
 - Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
