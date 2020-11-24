@@ -720,7 +720,6 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     alpha = 1
     for iteration in range(5):
         d = fd(p[bid])
-        print(np.amax(np.abs(d)))
 
         def _deps_vec(i):
             a = [0] * dim
