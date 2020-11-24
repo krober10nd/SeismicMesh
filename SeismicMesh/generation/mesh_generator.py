@@ -170,6 +170,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     )
 
     geps = sliver_opts["geps_mult"] * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = sliver_opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -247,6 +248,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
                 + " iterations...no slivers detected!",
             )
             p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
+            p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             return p, t
 
         p0, p1, p2, p3 = (
@@ -715,7 +717,8 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
     """Reduce level set error by using Newton's minimization method"""
     dim = p.shape[1]
     bid = geometry.get_boundary_vertices(t, dim)
-    for _ in range(5):
+    alpha = 1
+    for iteration in range(5):
         d = fd(p[bid])
 
         def _deps_vec(i):
@@ -726,7 +729,8 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
         dgrads = [(fd(p[bid] + _deps_vec(i)) - d) / deps for i in range(dim)]
         dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
-        p[bid] -= (d * np.vstack(dgrads) / dgrad2).T  # Project
+        p[bid] -= alpha * (d * np.vstack(dgrads) / dgrad2).T  # Project
+        alpha /= iteration + 1
     return p
 
 
