@@ -249,7 +249,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             )
             p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
             p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
-            ele_nums, ix = _calc_dihedral_angles(p, t, min_dh_bound, max_dh_bound)
             return p, t
 
         p0, p1, p2, p3 = (
