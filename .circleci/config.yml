@@ -9,7 +9,7 @@ jobs:
       - run: pip install -U black flake8 --user
       - run: black --check .
       - run: flake8 .
-   lint_3.8.1:
+  lint_3.8.1:
     docker:
       - image: circleci/python:3.8.1
     steps:
