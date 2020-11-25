@@ -34,7 +34,7 @@ jobs:
       - run: pip install -U virtualenv
       - run: pip install . --user
       - run:
-             pip install tox --user && tox
+             pip install tox --user && tox -e py38-local
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.7.4:
     docker:
@@ -52,7 +52,7 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
       - run:
-             pip install tox --user && tox
+             pip install tox --user && tox -e py37-local
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
