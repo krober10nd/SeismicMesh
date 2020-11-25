@@ -27,7 +27,7 @@ jobs:
       - run:
              pip install tox --user && pip uninstall -y virtualenv && tox -e py38
       - run: bash <(curl -s https://codecov.io/bash)
-  build_3.7.0:
+  build_3.7.4:
     docker:
       - image: circleci/python:3.7.4
     steps:
