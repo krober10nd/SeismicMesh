@@ -25,7 +25,7 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
       - run:
-             pip install tox --user && pip --upgrade --no-deps --force-reinstall virtualenv && tox -e py38
+             pip install tox --user && pip install --upgrade --no-deps --force-reinstall virtualenv && tox -e py38
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.7.4:
     docker:
