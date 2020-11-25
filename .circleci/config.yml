@@ -47,7 +47,7 @@ jobs:
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.6.12:
     docker:
-      - image: circleci/3.6.12-node-browsers-legacy
+      - image: circleci/3.6.12
     steps:
       - checkout
       - run: python --version
