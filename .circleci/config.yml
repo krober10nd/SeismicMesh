@@ -47,7 +47,7 @@ jobs:
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.6.5:
     docker:
-      - image: circleci/3.6.5-stretch
+      - image: circleci/python:3.6.5-stretch
     steps:
       - checkout
       - run: python --version
