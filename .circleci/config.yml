@@ -1,6 +1,10 @@
 version: 2
 
 jobs:
+  dependencies:
+    override:
+      - pip install tox tox-pyenv
+      - pyenv local 3.7.4 3.8.1
   lint_3.7.4:
     docker:
       - image: circleci/python:3.7.4
@@ -31,10 +35,9 @@ jobs:
       - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: sudo apt install -y python-pybind11
-      - run: pip install -U virtualenv
       - run: pip install . --user
       - run:
-             pip install tox --user && tox -e py38-local
+             pip install tox tox-pyenv --user && tox
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.7.4:
     docker:
@@ -52,7 +55,7 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
       - run:
-             pip install tox --user && tox -e py37-local
+             pip install tox tox-pyenv --user && tox
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
