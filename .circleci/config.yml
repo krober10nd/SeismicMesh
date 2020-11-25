@@ -45,14 +45,14 @@ jobs:
       - run:
              pip install tox --user && tox -e py37
       - run: bash <(curl -s https://codecov.io/bash)
-  build_3.6.1:
+  build_3.6.12:
     docker:
-      - image: circleci/python:3.6.1
+      - image: circleci/3.6.12-node-browsers-legacy
     steps:
       - checkout
       - run: python --version
       - run: pip --version
-      - run: sudo apt-get update && sudo apt-cache search openmpi  && sudo apt install -y libopenmpi1.6 libopenmpi-dev openmpi-bin
+      - run: sudo apt-get update && sudo apt-cache search openmpi  && sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
       - run: sudo apt-get update && sudo apt install -y cmake
       - run: sudo apt-get install libboost-all-dev
       - run: sudo apt-get install libmpfr-dev
@@ -69,6 +69,6 @@ workflows:
   lint_and_build:
     jobs:
       - lint
-      - build_3.6.1
+      - build_3.6.12
       - build_3.7.4
       - build_3.8.1
