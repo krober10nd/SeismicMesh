@@ -52,7 +52,7 @@ jobs:
       - checkout
       - run: python --version
       - run: pip --version
-      - run: sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
+      - run: sudo apt-get update && sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
       - run: sudo apt-get update && sudo apt install -y cmake
       - run: sudo apt-get install libboost-all-dev
       - run: sudo apt-get install libmpfr-dev
