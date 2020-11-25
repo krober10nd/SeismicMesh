@@ -58,6 +58,6 @@ workflows:
   lint_and_build:
     jobs:
       - lint_3.7.4
-      - lint_3.8.1
       - build_3.7.4
+      - lint_3.8.1
       - build_3.8.1
