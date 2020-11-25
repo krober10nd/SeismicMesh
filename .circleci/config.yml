@@ -1,7 +1,7 @@
 version: 2
 
 jobs:
-  lint:
+  lint_3.7.4:
     docker:
       - image: circleci/python:3.7.4
     steps:
@@ -9,8 +9,33 @@ jobs:
       - run: pip install -U black flake8 --user
       - run: black --check .
       - run: flake8 .
-  build:
-    #working_directory: ~/working
+   lint_3.8.1:
+    docker:
+      - image: circleci/python:3.8.1
+    steps:
+      - checkout
+      - run: pip install -U black flake8 --user
+      - run: black --check .
+      - run: flake8 .
+  build_3.8.1:
+    docker:
+      - image: circleci/python:3.8.1
+    steps:
+      - checkout
+      - run: python --version
+      - run: pip --version
+      - run: sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
+      - run: sudo apt-get update && sudo apt install -y cmake
+      - run: sudo apt-get install libboost-all-dev
+      - run: sudo apt-get install libmpfr-dev
+      - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
+      - run: sudo apt install -y libhdf5-dev
+      - run: sudo apt install -y python-pybind11
+      - run: pip install . --user
+      - run:
+             pip install tox --user && tox
+      - run: bash <(curl -s https://codecov.io/bash)
+  build_3.7.4:
     docker:
       - image: circleci/python:3.7.4
     steps:
@@ -32,5 +57,7 @@ workflows:
   version: 2
   lint_and_build:
     jobs:
-      - lint
-      - build
+      - lint_3.7.4
+      - lint_3.8.1
+      - build_3.7.4
+      - build_3.8.1
