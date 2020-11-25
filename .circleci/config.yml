@@ -1,15 +1,7 @@
 version: 2
 
 jobs:
-  lint_3.7.4:
-    docker:
-      - image: circleci/python:3.7.4
-    steps:
-      - checkout
-      - run: pip install -U black flake8 --user
-      - run: black --check .
-      - run: flake8 .
-  lint_3.8.1:
+  lint:
     docker:
       - image: circleci/python:3.8.1
     steps:
@@ -33,7 +25,7 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
       - run:
-             pip install tox tox-pyenv --user && tox
+             pip install tox --user && tox
       - run: bash <(curl -s https://codecov.io/bash)
   build_3.7.4:
     docker:
@@ -51,13 +43,12 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install . --user
       - run:
-             pip install tox tox-pyenv --user && tox
+             pip install tox --user && tox
       - run: bash <(curl -s https://codecov.io/bash)
 workflows:
   version: 2
   lint_and_build:
     jobs:
-      - lint_3.7.4
+      - lint
       - build_3.7.4
-      - lint_3.8.1
       - build_3.8.1
