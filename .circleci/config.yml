@@ -45,9 +45,9 @@ jobs:
       - run:
              pip install tox --user && tox -e py37
       - run: bash <(curl -s https://codecov.io/bash)
-  build_3.6.0:
+  build_3.6.1:
     docker:
-      - image: circleci/python:3.6.0
+      - image: circleci/python:3.6.1
     steps:
       - checkout
       - run: python --version
@@ -68,6 +68,6 @@ workflows:
   lint_and_build:
     jobs:
       - lint
-      - build_3.6.0
+      - build_3.6.1
       - build_3.7.0
       - build_3.8.0
