@@ -57,8 +57,8 @@ jobs:
       - run: sudo apt-get install libboost-all-dev
       - run: sudo apt-get install libmpfr-dev
       - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
-      - run: sudo apt-get update && sudo apt install -y libhdf5-dev
-      - run: sudo apt-get update && sudo apt-cache search pybind11 && sudo apt install -y python3-pybind11
+      - run: sudo apt install -y libhdf5-dev
+      - run: pip install pytest --user && git clone https://github.com/pybind/pybind11.git && cd pybind11 && mkdir build && cd build && cmake .. && sudo make install
       - run: pip install . --user
       - run:
              pip install tox --user && /home/circleci/.local/bin/tox -e py36
