@@ -61,7 +61,7 @@ jobs:
       - run: git clone https://github.com/pybind/pybind11.git && cd pybind11 && mkdir build && cd build && cmake .. && sudo make install
       - run: pip install . --user
       - run:
-             pip install tox --user && tox -e py36
+             pip install tox --user && home/circleci/.local/bin/tox -e py36
       - run: bash <(curl -s https://codecov.io/bash)
 
 workflows:
