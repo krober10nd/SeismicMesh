@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/krober10nd/SeismicMesh"><img alt="SeismicMesh" src="https://user-images.githubusercontent.com/18619644/92964244-28f31d00-f44a-11ea-9aa0-3d8ed0a1b60e.jpg" width="40%"></a>
-  <p align="center">Create high-quality 2D/3D meshes from seismic velocity models.</p>
+  <p align="center">Create high-quality, simulation-ready 2D/3D meshes.</p>
 </p>
 
 
@@ -16,12 +16,36 @@
 [![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 
 
-[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
+[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python 
 ==================================================================================================
 
 SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of [DistMesh](http://persson.berkeley.edu/distmesh/), it produces high-geometric quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the [Computational Geometry Algorithms Library](https://doc.cgal.org/latest/Mesh_3/index.html). SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
 
 *SeismicMesh* is distributed under the GPL3 license and more details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/master/paper/paper.md).
+
+Table of contents
+=================
+
+<!--ts-->
+   * [Installation](#installation)
+   * [Getting help](#problems)
+   * [Contributing](#contributing)
+   * [Examples](#examples)
+     * [BP2004](#bp2004)
+     * [EAGE Salt](#eage)
+     * [Cylinder](#cylinder)
+     * [Disk](#disk)
+     * [Square](#square)
+     * [Cube](#cube)
+     * [Torus](#torus)
+     * [Prism](#prism)
+     * [Union](#union)
+     * [Intersection](#intersection)
+     * [Difference](#difference)
+     * [Immersion](#immersion)
+   * [Performance comparison](#performance)
+   * [Changelog](#changelog)
+<!--te-->
 
 Installation
 ============
@@ -80,6 +104,8 @@ Examples
 The user can quickly build quality 2D/3D meshes from seismic velocity
 models in serial/parallel.
 
+BP2004
+-------
 **WARNING: To run the code snippet below you must download the 2D BP2004
 seismic velocity model and then you must uncompress it (e.g., gunzip).
 This file can be downloaded from**
@@ -137,6 +163,10 @@ if comm.rank == 0:
         file_format="vtk",
     )
 ```
+
+
+EAGE
+----------
 
 **WARNING: To run the code snippet below you must download (and uncompress) the 3D EAGE
 seismic velocity model from (WARNING: File is \~500 MB)**
@@ -224,7 +254,11 @@ if comm.rank == 0:
     )
 ```
 
+
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
+
+Cylinder 
+--------
 
 <img alt="Cylinder" src="https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png" width="30%">
 
@@ -261,6 +295,8 @@ if comm.rank == 0:
     )
 ```
 
+Disk 
+--------
 <img alt="Disk" src="https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png" width="30%">
 
 
@@ -278,7 +314,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
+Square 
+--------
 <img alt="Square" src="https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png" width="30%">
 
 ```python
@@ -296,6 +333,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Cube 
+--------
 <img alt="Cube" src="https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png" width="30%">
 
 ```python
@@ -314,6 +353,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Torus 
+--------
 <img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png" width="30%">
 
 
@@ -341,6 +382,8 @@ meshio.write_points_cells(
 
 <img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png" width="30%">
 
+Prism 
+--------
 ```python
 # mesh a prism
 import meshio
@@ -364,6 +407,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Union
+-----------------------------------
 <img alt="Union" src="https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png" width="30%">
 
 ```python
@@ -384,6 +429,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Intersection
+-------------------------------------------
 <img alt="Leaf" src="https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png" width="30%">
 
 ```python
@@ -404,6 +451,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Difference
+-------------------------------------------
 <img alt="Hole" src="https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png" width="30%">
 
 ```python
@@ -424,6 +473,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+Difference of Signed Distance Functions in 3-D
+------------------------------------------------
 <img alt="Cube wHoles" src="https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png" width="30%">
 
 ```python
@@ -449,7 +500,8 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
+Immersion
+--------------------
 <img alt="Immersed disk" src="https://user-images.githubusercontent.com/18619644/99576017-37b0ff80-29b8-11eb-881d-a9b0dd0adc34.png" width="30%">
 
 ```python
@@ -483,11 +535,10 @@ meshio.write_points_cells(
 )
 ```
 
+Performance
+------------
 
-How does performance and cell quality compare to Gmsh and CGAL mesh generators?
-===================================================================================
-
-* For an additional comparison of *SeismicMesh* against several other popular mesh generators head over to [meshgen-comparison](https://github.com/nschloe/meshgen-comparison).
+**How does performance and cell quality compare to Gmsh and CGAL mesh generators?
 
 Here we use SeismicMesh 3.1.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
 
@@ -503,6 +554,9 @@ Some key findings:
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
 
 * Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in SeismicMesh.
+
+
+**For an additional comparison of *SeismicMesh* against several other popular mesh generators head over to [meshgen-comparison](https://github.com/nschloe/meshgen-comparison).
 
 
 Changelog
