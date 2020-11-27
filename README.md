@@ -565,8 +565,24 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
-- Unit testing three versions of Python.
+## Unreleased 
+- None
+
+## [3.1.7] - 2020-11-27
+### Improved
+- Table of contents in README 
+
+### Added
+- More testing of sliver removal and 2d mesh generation qualities. 
+
+### Fixed
+- Disabled bug when doing Newton boundary projection at the end of 3d `sliver_removal`.
+
+### [3.1.6] - 2020-11-26 
+### Bug present with sliver removal. Recommend to not use.
+### Added 
+- Unit testing three versions of Python (3.6.1, 3.7.4, 3.8.1)
+
 
 ## [3.1.5] - 2020-11-24
 - Support for constraining/immersing subdomains represented as signed distance functions.
