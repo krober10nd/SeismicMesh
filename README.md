@@ -578,7 +578,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - Disabled bug when doing Newton boundary projection at the end of 3d `sliver_removal`.
 
-### [3.1.6] - 2020-11-26 
+## [3.1.6] - 2020-11-26 
 ### Bug present with sliver removal. Recommend to not use.
 ### Added 
 - Unit testing three versions of Python (3.6.1, 3.7.4, 3.8.1)
