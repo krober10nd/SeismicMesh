@@ -1,6 +1,6 @@
 <p align="center">
   <a href="https://github.com/krober10nd/SeismicMesh"><img alt="SeismicMesh" src="https://user-images.githubusercontent.com/18619644/92964244-28f31d00-f44a-11ea-9aa0-3d8ed0a1b60e.jpg" width="40%"></a>
-  <p align="center">Create high-quality 2D/3D meshes from seismic velocity models.</p>
+  <p align="center">Create high-quality, simulation-ready 2D/3D meshes.</p>
 </p>
 
 
@@ -13,26 +13,45 @@
 [![Zenodo](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
 [![PyPi]( https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 
 
-[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Mesh generation for Seismology in Python
+[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python 
 ==================================================================================================
 
-*SeismicMesh* is a tool to generate 2D/3D triangular meshes that are used for acoustic and elastic wave propagators discretized
-with the finite element method. With short scripts, variable resolution meshes are built that have size transitions which reflect variations in P-wave or S-wave velocities. Seismic P-wave/S-wave data are typically provided on [regular Cartesian grids for global and regional domains](https://ds.iris.edu/spud/earthmodel).
-
-Generating variable resolution unstructured meshes of complex and large-scale 2D/3D geophysical domains with popular mesh generation tools such as [gmsh](https://gmsh.info) or [cgal](https://doc.cgal.org/latest/Mesh_3/index.html) requires deciding how to size elements in the domain, which can become a complex task. Typically users must either create their own mesh sizing function that reflect the geophysical data in the domain or rely on analytical mesh sizing functions. However, for seismological problems with mesh size variations mostly in the interior of the domain, mesh sizing heuristics like [boundary layer/attractor adaptation](https://gmsh.info/doc/texinfo/gmsh.html) or [characteristic size calculations](https://gmsh.info/doc/texinfo/gmsh.html) may not be directly relevant. Instead, in a typical seismologial domain, variations in mesh size generally reflect internal material properties such as P-wave or S-wave velocity, which are used to cost-effectively model waves by ensuring there are sufficient number of grid-points per wavelength.
-
-Thus in this work we provide an approach to build large scale 2D/3D mesh sizing functions with the [mesh sizing function module](https://seismicmesh.readthedocs.io/en/master/api.html#seimsicmesh-meshsizefunction). This tool maps variations in seismic velocities from a seismic velocity model to triangular mesh sizes. Importantly, the sizing module can ensure that mesh size transitions vary smoothly (e.g., are graded) and an estimate of the [Courant number](https://en.wikipedia.org/wiki/Courant%E2%80%93Friedrichs%E2%80%93Lewy_condition) can be bounded above by a constant--amongst other capabilities--which are important considerations for accurate and successful simulations with finite elements. Our sizing functions are defined on the same regular Cartesian grids as the original seismic velocity model bypassing the need for the user to create their own sizing function on a triangular mesh. Their structured nature also enables efficient performance.
-
-*SeismicMesh* supports both 2D and 3D triangular meshing in either serial or using distributed memory parallelism relying on the [Message Passing Interface](https://computing.llnl.gov/tutorials/mpi/). In 3D mesh generation, a mesh improvement method ([sliver removal](https://hal.inria.fr/inria-00430202/document)) is used to ensure a minimum quality bound (e.g. [minimum dihedral angle](https://en.wikipedia.org/wiki/Dihedral_angle#:~:text=A%20dihedral%20angle%20is%20the,line%20as%20a%20common%20edge)) can be enforced and will lead to numerically stable simulations.
-
-Our mesh generation approach provided in this package can be operated standalone (e.g., without the sizing function module). It is based off modifications to the [DistMesh](http://persson.berkeley.edu/distmesh/) algorithm. Thus in its most basic operation, *SeismicMesh* can mesh *any* domain that can be defined by a [signed distance function](https://en.wikipedia.org/wiki/Signed_distance_function#:~:text=In%20mathematics%20and%20its%20applications,whether%20x%20is%20in%20%CE%A9.) with mesh sizes that follow variations described by a user-defined [mesh sizing function](http://persson.berkeley.edu/pub/persson05qualmesh.pdf)
+SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of [DistMesh](http://persson.berkeley.edu/distmesh/), it produces high-geometric quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the [Computational Geometry Algorithms Library](https://doc.cgal.org/latest/Mesh_3/index.html). SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
 
 *SeismicMesh* is distributed under the GPL3 license and more details can be found in our [short paper](https://github.com/krober10nd/SeismicMesh/blob/master/paper/paper.md).
 
+Table of contents
+=================
+
+<!--ts-->
+   * [Installation](#installation)
+   * [Getting help](#problems)
+   * [Contributing](#contributing)
+   * [Examples](#examples)
+     * [BP2004](#bp2004)
+     * [EAGE Salt](#eage)
+     * [Cylinder](#cylinder)
+     * [Disk](#disk)
+     * [Square](#square)
+     * [Cube](#cube)
+     * [Torus](#torus)
+     * [Prism](#prism)
+     * [Union](#union)
+     * [Intersection](#intersection)
+     * [Difference](#difference)
+     * [Immersion](#immersion)
+   * [Performance comparison](#performance)
+   * [Changelog](#changelog)
+<!--te-->
+
 Installation
 ============
+
+**Nov. 21, 2020 our software is not yet compatible with Python 3.9 because of the `segyio` package dependency which doesn't build yet with this version of Python. Until this is fixed, please use a Python version prior to 3.9 to run your scripts with this package.**
+
 
 For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 [pybind11](https://github.com/pybind/pybind11):
@@ -55,31 +74,28 @@ Contributing
 
 All contributions are welcome!
 
-Fork and then clone the repository:
+To contribute to the software:
 
-    git clone https://github.com/krober10nd/SeismicMesh
+1. [Fork](https://docs.github.com/en/free-pro-team@latest/github/getting-started-with-github/fork-a-repo) the repository.
+2. Clone the forked repository, add your contributions and push the changes to your fork.
+3. Create a [Pull request](https://github.com/krober10nd/SeismicMesh/pulls)
 
-Make sure the tests pass:
-
-    tox
-
-Make your changes on a branch and add tests that capture your changes! Make sure tests pass again:
-
-    tox
-
-Push to fork then [submit a pull request][pr].
-
-[pr]: https://github.com/krober10nd/SeismicMesh/pulls
-
-From there we may suggest some changes or improvements or alternatives.
-
+Before creating the pull request, make sure that the tests pass by running
+```
+tox
+```
 Some things that will increase the chance that your pull request is accepted:
+-  Write tests.
+- Add Python docstrings that follow the [Sphinx](https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html).
+- Write good commit and pull request messages.
 
-* Write tests.
-* Add Python docstrings that follow the [Sphinx][style].
-* Write good commit and pull request messages.
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+Problems?
+==========
+
+If something isn't working as it should or you'd like to recommend a new addition/feature to the software, please let me know by starting an issue through the [issues](https://github.com/krober10nd/SeismicMesh/issues) tab. I'll try to get to it as soon as possible.
 
 
 Examples
@@ -88,6 +104,8 @@ Examples
 The user can quickly build quality 2D/3D meshes from seismic velocity
 models in serial/parallel.
 
+BP2004
+-------
 **WARNING: To run the code snippet below you must download the 2D BP2004
 seismic velocity model and then you must uncompress it (e.g., gunzip).
 This file can be downloaded from**
@@ -132,7 +150,7 @@ ef = get_sizing_function_from_segy(
     pad_style="edge",
 )
 
-points, cells = generate_mesh(domain=rectangle, edge_length=ef, h0=hmin)
+points, cells = generate_mesh(domain=rectangle, edge_length=ef)
 
 if comm.rank == 0:
     # Write the mesh in a vtk format for visualization in ParaView
@@ -145,6 +163,10 @@ if comm.rank == 0:
         file_format="vtk",
     )
 ```
+
+
+EAGE
+----------
 
 **WARNING: To run the code snippet below you must download (and uncompress) the 3D EAGE
 seismic velocity model from (WARNING: File is \~500 MB)**
@@ -210,14 +232,14 @@ ef = get_sizing_function_from_segy(
     ny=ny,
     byte_order="big",
     axes_order=(2, 0, 1),  # order for EAGE (x, y, z) to default order (z,x,y)
-    axes_order_sort="F", # binary is packed in a FORTRAN-style
+    axes_order_sort="F",  # binary is packed in a FORTRAN-style
 )
 
-points, cells = generate_mesh(domain=cube, h0=hmin, edge_length=ef, max_iter=75)
+points, cells = generate_mesh(domain=cube, edge_length=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
 points, cells = sliver_removal(
-    points=points, bbox=bbox, h0=hmin, domain=cube, edge_length=ef
+    points=points, bbox=bbox, domain=cube, edge_length=ef
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
@@ -232,64 +254,37 @@ if comm.rank == 0:
     )
 ```
 
-**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm. Try the codes below!**
 
-![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/93465337-05542a80-f8c1-11ea-8774-a059e215088f.png)
+**The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
+
+Cylinder 
+--------
+
+<img alt="Cylinder" src="https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png" width="30%">
 
 ```python
-# Mesh a unit cylinder
+# Mesh a cylinder
 from mpi4py import MPI
-from numpy import array, maximum, sqrt, zeros_like
 import meshio
 
-from SeismicMesh import generate_mesh, sliver_removal
+import SeismicMesh
 
 comm = MPI.COMM_WORLD
 
-
 hmin = 0.10
-bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
 
+cylinder = SeismicMesh.Cylinder(h=1.0, r=0.5)
 
-def cylinder(p):
-    r, z = sqrt(p[:, 0] ** 2 + p[:, 1] ** 2), p[:, 2]
-    d1, d2, d3 = r - 1.0, z - 1.0, -z - 1.0
-    d4, d5 = sqrt(d1 ** 2 + d2 ** 2), sqrt(d1 ** 2 + d3 ** 2)
-    d = maximum.reduce([d1, d2, d3])
-    ix = (d1 > 0) * (d2 > 0)
-    d[ix] = d4[ix]
-    ix = (d1 > 0) * (d3 > 0)
-    d[ix] = d5[ix]
-    return d
-
-
-def fh(p):
-    # Note: for parallel execution this logic is required
-    # since the decomposition of the sizing function passes a tuple to fh
-    if type(p) == tuple:
-        h = zeros_like(p[0]) + hmin
-    else:
-        h = array([hmin] * len(p))
-    return h
-
-
-points, cells = generate_mesh(
-    bbox=bbox,
+points, cells = SeismicMesh.generate_mesh(
     domain=cylinder,
-    h0=hmin,
-    edge_length=fh,
-    max_iter=100,
+    edge_length=hmin,
 )
 
-points, cells = sliver_removal(
+points, cells = SeismicMesh.sliver_removal(
     points=points,
     domain=cylinder,
-    edge_length=fh,
-    h0=hmin,
-    min_dh_angle_bound=5.0,
-    bbox=bbox,
+    edge_length=hmin,
 )
-
 
 if comm.rank == 0:
     meshio.write_points_cells(
@@ -300,9 +295,13 @@ if comm.rank == 0:
     )
 ```
 
-![Disk](https://user-images.githubusercontent.com/18619644/95608173-1f51da80-0a33-11eb-90be-170beda85b5a.png)
+Disk 
+--------
+<img alt="Disk" src="https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png" width="30%">
+
 
 ```python
+# mesh a disk
 import meshio
 import SeismicMesh
 
@@ -315,10 +314,31 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Rect](https://user-images.githubusercontent.com/18619644/95607603-5d023380-0a32-11eb-9c6f-41fac9e00aa7.png)
+Square 
+--------
+<img alt="Square" src="https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png" width="30%">
 
 ```python
+# mesh a square/rectangle
+import meshio
+import SeismicMesh
+
+bbox = (0.0, 1.0, 0.0, 1.0)
+square = SeismicMesh.Rectangle(bbox)
+points, cells = SeismicMesh.generate_mesh(domain=square, edge_length=0.05)
+meshio.write_points_cells(
+    "square.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+Cube 
+--------
+<img alt="Cube" src="https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png" width="30%">
+
+```python
+# mesh a cuboid/cube
 import meshio
 import SeismicMesh
 
@@ -333,51 +353,25 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![cube](https://user-images.githubusercontent.com/18619644/95621214-b3c63800-0a47-11eb-9600-a80ef2410334.png)
-
-
-```python
-import meshio
-import SeismicMesh
-
-bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
-cube = SeismicMesh.Cube(bbox)
-points, cells = SeismicMesh.generate_mesh(domain=cube, edge_length=0.05)
-meshio.write_points_cells(
-    "cube.vtk",
-    points,
-    [("tetra", cells)],
-    file_format="vtk",
-)
-```
-
-![torus](https://user-images.githubusercontent.com/18619644/96498978-25aa3880-1223-11eb-9738-8a4e86c44dbc.png)
+Torus 
+--------
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png" width="30%">
 
 
 ```python
 # mesh a torus
-import numpy as np
 import meshio
 import SeismicMesh
 
+hmin = 0.10
 
-bbox = (-1.0, 1.0, -1.0, 1.0, -10.0, 1.0)
-hmin = 0.05
-
-def length(x):
-    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
-
-def Torus(p, t=(0.5, 0.2)):
-    xz = np.column_stack((p[:, 0], p[:, 2]))
-    q = np.column_stack((length(xz) - t[0], p[:, 1]))
-    return length(q) - t[1]
-
+torus = SeismicMesh.Torus(r1=1.0, r2=0.5)
 points, cells = SeismicMesh.generate_mesh(
-    domain=Torus, edge_length=hmin, bbox=bbox, verbose=2, max_iter=100
+    domain=torus,
+    edge_length=hmin,
 )
 points, cells = SeismicMesh.sliver_removal(
-    points=points, domain=Torus, edge_length=hmin, bbox=bbox, verbose=2
+    points=points, domain=torus, edge_length=hmin
 )
 meshio.write_points_cells(
     "torus.vtk",
@@ -386,43 +380,25 @@ meshio.write_points_cells(
 )
 ```
 
-![prism](https://user-images.githubusercontent.com/18619644/96511116-f69cc280-1234-11eb-984e-b0001b15c7b5.png)
+<img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png" width="30%">
 
-
+Prism 
+--------
 ```python
 # mesh a prism
-import numpy as np
 import meshio
 
 import SeismicMesh
 
-
-bbox = (-1.0, 1.0, -1.0, 1.0, -1.0, 1.0)
-
 hmin = 0.05
-
-
-def length(x):
-    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
-
-
-def sdTriPrism(p, h=[0.5, 0.5]):
-    q = np.abs(p)
-    return np.maximum(
-        q[:, 2] - h[1],
-        np.maximum(q[:, 0] * 0.866025 + p[:, 1] * 0.5, -p[:, 1]) - h[0] * 0.5,
-    )
-
+prism = SeismicMesh.Prism(b=0.5, h=0.5)
 
 points, cells = SeismicMesh.generate_mesh(
-    bbox=bbox,
-    domain=sdTriPrism,
+    domain=prism,
     edge_length=hmin,
-    verbose=2,
-    max_iter=100,
 )
 points, cells = SeismicMesh.sliver_removal(
-    bbox=bbox, points=points, domain=sdTriPrism, edge_length=hmin
+    points=points, domain=prism, edge_length=hmin
 )
 meshio.write_points_cells(
     "prism.vtk",
@@ -431,9 +407,9 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Union](https://user-images.githubusercontent.com/18619644/96755280-e3aaff00-13a8-11eb-9f88-95a6684e928b.png)
-
+Union
+-----------------------------------
+<img alt="Union" src="https://user-images.githubusercontent.com/18619644/97081772-045a9b00-15db-11eb-8356-7863cdf274a3.png" width="30%">
 
 ```python
 # Compute the union of several SDFs to create more complex geometries
@@ -453,7 +429,9 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-![Leaf](https://user-images.githubusercontent.com/18619644/96755336-f6bdcf00-13a8-11eb-99ec-bd7e7d9cad1d.png)
+Intersection
+-------------------------------------------
+<img alt="Leaf" src="https://user-images.githubusercontent.com/18619644/97081808-41bf2880-15db-11eb-9333-2d1230621c01.png" width="30%">
 
 ```python
 # Compute the intersection of several SDFs to create more complex geometries
@@ -473,8 +451,9 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Hole](https://user-images.githubusercontent.com/18619644/96766828-0ab9fe80-13b2-11eb-8bca-6306934008d4.png)
+Difference
+-------------------------------------------
+<img alt="Hole" src="https://user-images.githubusercontent.com/18619644/97081829-69ae8c00-15db-11eb-815d-a8302f822337.png" width="30%">
 
 ```python
 # Compute the difference of two SDFs to create more complex geometries.
@@ -494,10 +473,12 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-
-![Cube_wHoles](https://user-images.githubusercontent.com/18619644/96785337-0a772e80-13c5-11eb-88fb-311b5bfdfed4.png)
+Difference of Signed Distance Functions in 3-D
+------------------------------------------------
+<img alt="Cube wHoles" src="https://user-images.githubusercontent.com/18619644/97081862-ad08fa80-15db-11eb-94b2-801001137f1a.png" width="30%">
 
 ```python
+# Compute the difference of several SDFs in 3D
 import meshio
 import SeismicMesh
 
@@ -513,41 +494,128 @@ points, cells = SeismicMesh.sliver_removal(
     points=points, domain=difference, edge_length=h, verbose=1
 )
 meshio.write_points_cells(
-    "Ball_wHoles.vtk",
+    "Cube_wHoles.vtk",
     points,
     [("tetra", cells)],
     file_format="vtk",
 )
 ```
+Immersion
+--------------------
+<img alt="Immersed disk" src="https://user-images.githubusercontent.com/18619644/99576017-37b0ff80-29b8-11eb-881d-a9b0dd0adc34.png" width="30%">
 
-How does performance and cell quality compare to `gmsh` and `cgal` mesh generators?
-===================================================================================
+```python
+# Immerse a subdomain so that it's boundary is conforming in the mesh.
+import numpy as np
 
-Here we use SeismicMesh 3.0.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
+import meshio
+
+import SeismicMesh
+
+box0 = SeismicMesh.Rectangle((-1.25, 0.0, -0.250, 1.250))
+disk0 = SeismicMesh.Disk([-0.5, 0.5], 0.25)
+
+hmin = 0.10
+
+
+fh = lambda p: 0.05 * np.abs(disk0.eval(p)) + hmin
+
+points, cells = SeismicMesh.generate_mesh(
+    domain=box0,
+    edge_length=fh,
+    h0=hmin,
+    subdomains=[disk0],
+    max_iter=100,
+)
+meshio.write_points_cells(
+    "Square_wsubdomain.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+Performance
+------------
+
+**How does performance and cell quality compare to Gmsh and CGAL mesh generators?
+
+Here we use SeismicMesh 3.1.4, [pygalmesh](https://github.com/nschloe/pygalmesh) 0.8.2, and [pygmsh](https://github.com/nschloe/pygmsh) 7.0.0 (more details in the benchmarks folder).
 
 Some key findings:
 
-* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using `gmsh` followed by `cgal` and then `SeismicMesh`.
-* However, using mesh sizing functions defined on gridded interpolants significantly slow down both `gmsh` and `cgal`. In these cases, `SeismicMesh` and `gmsh` perform similarly both outperforming `cgal`'s 3D mesh generator in terms of mesh generation time.
-* `SeismicMesh` produces often comparable or higher mean cell qualities in 2D/3D than either `gmsh` or `cgal` and this may have implications on mesh improvement strategies as higher minimum quality may be realizable with some common mesh improvement strategies (e.g., NetGen)
-* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation.
+* Mesh generation in 2D and 3D using analytical sizing functions is quickest when using Gmsh but a closer competition for CGAL and SeismicMesh.
+* However, using mesh sizing functions defined on gridded interpolants significantly slow down both Gmsh and CGAL. In these cases, SeismicMesh and Gmsh perform similarly both outperforming CGAL's 3D mesh generator in terms of mesh generation time.
+* All methods produce 3D triangulations that have a minimum dihedral angle > 10 degrees enabling stable numerical simulation (not shown)
 * Head over to the `benchmarks` folder for more detailed information on these experiments.
 
-![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/95696741-b923ae00-0c12-11eb-9d96-e52e5e9de7ae.jpg)
-
+![Summary of the benchmarks](https://user-images.githubusercontent.com/18619644/99252088-38e20100-27ed-11eb-80b3-c10afac7efbf.png)
 
 * **In the figure for the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh.**
 
-* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in `SeismicMesh`.
+* Note: it's important to point out here that a significant speed-up can be achieved for moderate to large problems using the [parallel capabilities](https://seismicmesh.readthedocs.io/en/master/tutorial.html#basics) provided in SeismicMesh.
+
+
+**For an additional comparison of *SeismicMesh* against several other popular mesh generators head over to [meshgen-comparison](https://github.com/nschloe/meshgen-comparison).
 
 
 Changelog
 =========
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
-and this project (tries to) adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased 
+- None
+
+## [3.1.7] - 2020-11-27
+### Improved
+- Table of contents in README 
+
+### Added
+- More testing of sliver removal and 2d mesh generation qualities. 
+
+### Fixed
+- Disabled bug when doing Newton boundary projection at the end of 3d `sliver_removal`.
+
+## [3.1.6] - 2020-11-26 
+### Bug present with sliver removal. Recommend to not use.
+### Added 
+- Unit testing three versions of Python (3.6.1, 3.7.4, 3.8.1)
+
+
+## [3.1.5] - 2020-11-24
+- Support for constraining/immersing subdomains represented as signed distance functions.
+- Faster cell manipulation operations for ~5-10% better speedups in parallel.
+- Projection of points back onto level set.
+
+## [3.1.4] - 2020-11-15
+- Laplacian smoothing at termination for 2D meshing...significantly improves minimum cell quality.
+- Made `hmin` a field of the SizeFunction class, which implies the user no longer needs to pass `h0` to
+ `generate_mesh` or `sliver_removal`.
+
+## [3.1.3] - 2020-11-06
+### Fixed
+- Cylinder radius and height are now correct.
+- Torus, Prism, and Cylinder now have `dim` tag.
+
+### Improved
+- More control over the `grad` option in the mesh sizing function.
+
+## [3.1.2] - 2020-11-04
+### Improved
+- Faster calculation of boundary vertices.
+- More robust sliver removal in 3D.
+### Fixed
+- Corners are only constrained for constant resolution meshes
+
+## [3.1.0] - 2020-10-28
+### Added
+- New geometric primitives--torus, wedge/prism, and cylinder.
+- Updated images on README.
+### Fixed
+- Only constrain corners near 0-level set.
+- Bug fix to 3D binary velocity reading.
 
 ## [3.0.6] - 2020-10-21
 ### Fixed
@@ -558,7 +626,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Automatic corner constraints in serial
 
 ## [3.0.5] - 2020-10-18
-
 ### Fixed
 - Preserving fixed points in serial.
 - Units in km-s detection warning bug.
@@ -571,7 +638,6 @@ and this project (tries to) adhere to [Semantic Versioning](https://semver.org/s
 - Check to make sure bbox is composed of all floats.
 
 ## [3.0.4] - 2020-10-12
-
 ### Added
 - Improve conformity of level-set in final mesh through additional set of Newton boundary projection iterations.
 

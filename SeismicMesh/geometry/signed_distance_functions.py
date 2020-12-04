@@ -2,19 +2,23 @@ import numpy as np
 import itertools
 
 
+def _length(x):
+    return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
+
+
 def corners(bbox):
     """Get the corners of a box in N-dim"""
     mins = bbox[::2]
     maxs = bbox[1::2]
-    return list(itertools.product(*zip(mins, maxs)))
+    return np.array(list(itertools.product(*zip(mins, maxs))))
 
 
 def _gather_corners(domains):
     corners = [d.corners for d in domains if d.corners is not None]
-    corners = np.concatenate(corners)
     if len(corners) == 0:
-        corners = None
-    return corners
+        return None
+    else:
+        return np.concatenate(corners)
 
 
 class Repeat:
@@ -168,6 +172,56 @@ class Cube:
             self.bbox[3],
             self.bbox[4],
             self.bbox[5],
+        )
+
+
+class Torus:
+    def __init__(self, r1, r2):
+        """A torus with outer radius `r1` and inner radius of `r2`"""
+        assert r1 > 0.0 and r2 > 0.0
+        z = 2 * max(r1, r2)
+        self.dim = 3
+        self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
+        self.t = (r1, r2)
+        self.corners = None
+
+    def eval(self, x):
+        xz = np.column_stack((x[:, 0], x[:, 2]))
+        q = np.column_stack((_length(xz) - self.t[0], x[:, 1]))
+        return _length(q) - self.t[1]
+
+
+class Prism:
+    def __init__(self, b, h):
+        self.bbox = (-b, +b, -b, +b, -h, +h)
+        self.h = (b, h)
+        self.dim = 3
+        self.corners = None
+
+    def eval(self, x):
+        q = np.abs(x)
+        return np.maximum(
+            q[:, 2] - self.h[1],
+            np.maximum(q[:, 0] * 0.866025 + x[:, 1] * 0.5, -x[:, 1]) - self.h[0] * 0.5,
+        )
+
+
+class Cylinder:
+    def __init__(self, h=1.0, r=0.5):
+        assert h > 0.0 and r > 0.0
+        h /= 2.0
+        sz = max(h, r)
+        self.dim = 3
+        self.bbox = (-2 * sz, 2 * sz, -2 * sz, 2 * sz, -2 * sz, 2 * sz)
+        self.h = (r, h)
+        self.corners = None
+
+    def eval(self, x):
+        xz = np.column_stack((x[:, 0], x[:, 2]))
+        lxz = np.column_stack((_length(xz), x[:, 1]))
+        d = np.abs(lxz) - self.h
+        return np.minimum(np.maximum(d[:, 0], d[:, 1]), 0.0) + _length(
+            np.maximum(d, 0.0)
         )
 
 

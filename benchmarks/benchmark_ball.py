@@ -110,7 +110,6 @@ def run_SeismicMesh(HMIN=0.025):
         domain=sphere,
         edge_length=fh,
         max_iter=25,
-        delta_t=0.3,
     )
     points, cells = SeismicMesh.sliver_removal(
         points=points,
@@ -118,8 +117,6 @@ def run_SeismicMesh(HMIN=0.025):
         h0=HMIN,
         domain=sphere,
         edge_length=fh,
-        min_dh_angle_bound=10,
-        max_iter=50,
     )
     elapsed = time.time() - t1
 

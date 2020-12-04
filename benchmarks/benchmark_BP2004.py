@@ -13,7 +13,6 @@ from SeismicMesh import (
     get_sizing_function_from_segy,
     Rectangle,
     generate_mesh,
-    geometry,
 )
 
 
@@ -102,17 +101,15 @@ def run_SeismicMesh(ef, HMIN=75.0):
     points, cells = generate_mesh(
         domain=rectangle,
         edge_length=ef,
-        h0=HMIN,
+        verbose=0,
         max_iter=25,
-        delta_t=0.3,
-    )
-    points, cells = geometry.delete_boundary_entities(
-        points, cells, dim=2, min_qual=0.10
     )
     elapsed = time.time() - t1
 
+    # import meshio
+
     # meshio.write_points_cells(
-    #    "BP2004_sm.vtk",
+    #    "BP2004_sm" + str(HMIN) + ".vtk",
     #    points,
     #    [("triangle", cells)],
     #    file_format="vtk",

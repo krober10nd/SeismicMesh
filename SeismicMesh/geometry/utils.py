@@ -89,7 +89,11 @@ def remove_external_entities(vertices, entities, extent, dim=2):
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
     entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new, entities_new, jx = fix_mesh(vertices, entities_new, dim=dim)
+    vertices_new = vertices
+    jx = np.arange(len(vertices_new))
+    # vertices_new, entities_new, jx = fix_mesh(
+    #    vertices, entities_new, dim=dim, fix_orientation=False
+    # )
     return vertices_new, entities_new, jx
 
 
@@ -112,9 +116,11 @@ def vertex_to_entities(vertices, entities, dim=2):
     """
     num_entities = len(entities)
 
-    ext = np.tile(np.arange(0, num_entities), (dim + 1, 1)).reshape(-1, order="F")
-    ve = np.reshape(entities, (-1,))
-    ve = np.vstack((ve, ext)).T
+    ext = np.tile(np.arange(0, num_entities), (dim + 1, 1)).T.reshape(
+        (-1, 1), order="C"
+    )
+    ve = np.reshape(entities, (-1, 1))
+    ve = np.hstack((ve, ext))
     ve = ve[ve[:, 0].argsort(), :]
 
     idx = np.insert(np.diff(ve[:, 0]), 0, 0)
@@ -198,7 +204,7 @@ def simp_vol(p, t):
         raise NotImplementedError
 
 
-def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
+def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False, fix_orientation=True):
     """Remove duplicated/unused vertices and entities and
        ensure orientation of entities is CCW.
 
@@ -212,6 +218,8 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
     :type dim: `int`, optional
     :param delete_unused: flag to delete disjoint vertices.
     :type delete_unused: `boolean`, optional
+    :param fix_orientation: flag to make eles ccw
+    :type fix_orientation: `boolean`, optional
 
     :return: p: updated point coordinates of mesh
     :rtype: numpy.ndarray[`float` x dim]
@@ -228,7 +236,7 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
 
     # duplicate entities
     t = np.sort(t, axis=1)
-    t = unique_rows(t)
+    t, _ = unique_row_view(t)
 
     # delete disjoint vertices
     if delete_unused:
@@ -236,9 +244,10 @@ def fix_mesh(p, t, ptol=2e-13, dim=2, delete_unused=False):
         t = np.reshape(jx, (t.shape))
         p = p[pix, :]
 
-    # entity orientation is CCW
-    flip = simp_vol(p, t) < 0
-    t[flip, :2] = t[flip, 1::-1]
+    if fix_orientation:
+        # entity orientation is CCW
+        flip = simp_vol(p, t) < 0
+        t[flip, :2] = t[flip, 1::-1]
 
     return p, t, jx
 
@@ -291,6 +300,16 @@ def get_edges(entities, dim=2):
     return edges
 
 
+def unique_row_view(data):
+    """https://github.com/numpy/numpy/issues/11136"""
+    b = np.ascontiguousarray(data).view(
+        np.dtype((np.void, data.dtype.itemsize * data.shape[1]))
+    )
+    u, cnts = np.unique(b, return_counts=True)
+    u = u.view(data.dtype).reshape(-1, data.shape[1])
+    return u, cnts
+
+
 def get_boundary_edges(entities, dim=2):
     """Get the boundary edges of the mesh. Boundary edges only appear (dim-1) times
 
@@ -304,7 +323,8 @@ def get_boundary_edges(entities, dim=2):
     """
     edges = get_edges(entities, dim=dim)
     edges = np.sort(edges, axis=1)
-    unq, cnt = np.unique(edges, axis=0, return_counts=True)
+    # unq, cnt = np.unique(edges, axis=0, return_counts=True)
+    unq, cnt = unique_row_view(edges)
     boundary_edges = np.array([e for e, c in zip(unq, cnt) if c == (dim - 1)])
     return boundary_edges
 
@@ -414,12 +434,13 @@ def get_boundary_facets(entities):
         raise ValueError("Only works for triangles")
     facets = get_facets(entities)
     facets = np.sort(facets, axis=1)
-    unq, cnt = np.unique(facets, axis=0, return_counts=True)
+    # unq, cnt = np.unique(facets, axis=0, return_counts=True)
+    unq, cnt = unique_row_view(facets)
     boundary_facets = np.array([e for e, c in zip(unq, cnt) if c == 1])
     return boundary_facets
 
 
-def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
+def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10, verbose=1):
     """Delete boundary entities with poor geometric quality (i.e., < min. quality)
 
     :param vertices: vertex coordinates of mesh
@@ -440,10 +461,11 @@ def delete_boundary_entities(vertices, entities, dim=2, min_qual=0.10):
     bele = get_boundary_entities(vertices, entities, dim=dim)
     qualBou = qual[bele]
     delete = qualBou < min_qual
-    print(
-        "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
-        flush=True,
-    )
+    if verbose:
+        print(
+            "Deleting " + str(np.sum(delete)) + " poor quality boundary entities...",
+            flush=True,
+        )
     delete = np.argwhere(delete == 1)
     entities = np.delete(entities, bele[delete], axis=0)
     vertices, entities, _ = fix_mesh(vertices, entities, delete_unused=True, dim=dim)
@@ -472,7 +494,7 @@ def _sparse(Ix, J, S, shape=None, dtype=None):
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
 
 
-def laplacian2(vertices, entities, max_iter=20, tol=0.01):
+def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     """Move vertices to the average position of their connected neighbors
     with the goal to hopefully improve geometric entity quality.
 
@@ -526,10 +548,13 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01):
         Lnew[Lnew < eps] = eps
         move = np.amax(np.divide((Lnew - L), Lnew))
         if move < tol:
-            print(
-                "Movement tolerance reached after " + str(it) + " iterations..exiting",
-                flush=True,
-            )
+            if verbose:
+                print(
+                    "Movement tolerance reached after "
+                    + str(it)
+                    + " iterations..exiting",
+                    flush=True,
+                )
             break
         L = Lnew
     vertices = np.array(vertices)

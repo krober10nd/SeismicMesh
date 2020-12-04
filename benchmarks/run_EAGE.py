@@ -1,7 +1,7 @@
 # run EAGE benchmark and plot a figure
 import matplotlib.pyplot as plt
 import numpy
-from benchmark_EAGE import run_gmsh, run_SeismicMesh, run_cgal, _build_sizing
+from benchmark_EAGE import run_gmsh, run_SeismicMesh, _build_sizing
 
 
 colors1 = ["ko-", "ro-", "bo-"]
@@ -15,7 +15,8 @@ entries = []
 rg = numpy.linspace(300, 150.0, 5)
 freqs = numpy.linspace(1, 2, 5)
 
-for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
+# for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
+for i, func in enumerate([run_gmsh, run_SeismicMesh]):
     q = []
     mq = []
     nv = []
@@ -44,6 +45,7 @@ for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
 
 plt.subplot(1, 2, 1)
 plt.title("Number of cells vs. mesh generation time")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.legend()
 plt.xlabel("Number of cells")
 plt.ylabel("Elapsed time (s)")
@@ -51,6 +53,7 @@ plt.grid()
 
 plt.subplot(1, 2, 2)
 plt.title("Number of cells. vs cell quality")
+plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
 plt.xlabel("Number of cells")
 plt.ylabel("Cell quality")
 plt.grid()
