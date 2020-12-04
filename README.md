@@ -16,7 +16,7 @@
 [![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 
 
-[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python 
+[SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
 ==================================================================================================
 
 SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of [DistMesh](http://persson.berkeley.edu/distmesh/), it produces high-geometric quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the [Computational Geometry Algorithms Library](https://doc.cgal.org/latest/Mesh_3/index.html). SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
@@ -43,6 +43,7 @@ Table of contents
      * [Intersection](#intersection)
      * [Difference](#difference)
      * [Immersion](#immersion)
+     * [Periodic](#periodic)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
 <!--te-->
@@ -257,7 +258,7 @@ if comm.rank == 0:
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
-Cylinder 
+Cylinder
 --------
 
 <img alt="Cylinder" src="https://user-images.githubusercontent.com/18619644/97082301-0e7e9880-15df-11eb-9055-15394213d755.png" width="30%">
@@ -295,7 +296,7 @@ if comm.rank == 0:
     )
 ```
 
-Disk 
+Disk
 --------
 <img alt="Disk" src="https://user-images.githubusercontent.com/18619644/97063883-b9a83700-1578-11eb-9cd7-3ff0cbac20d9.png" width="30%">
 
@@ -314,7 +315,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-Square 
+Square
 --------
 <img alt="Square" src="https://user-images.githubusercontent.com/18619644/97063852-7b127c80-1578-11eb-97d5-cfe07cc969ec.png" width="30%">
 
@@ -333,7 +334,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-Cube 
+Cube
 --------
 <img alt="Cube" src="https://user-images.githubusercontent.com/18619644/97063751-e1e36600-1577-11eb-9387-613f3ae04bff.png" width="30%">
 
@@ -353,7 +354,7 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
-Torus 
+Torus
 --------
 <img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97063588-eeb38a00-1576-11eb-8cff-8e77ea4d2946.png" width="30%">
 
@@ -382,7 +383,7 @@ meshio.write_points_cells(
 
 <img alt="Torus" src="https://user-images.githubusercontent.com/18619644/97081705-8ac2ad00-15da-11eb-9466-a86216b8908c.png" width="30%">
 
-Prism 
+Prism
 --------
 ```python
 # mesh a prism
@@ -535,6 +536,32 @@ meshio.write_points_cells(
 )
 ```
 
+Periodic
+-------------
+<img alt="Periodic torus" src="https://user-images.githubusercontent.com/18619644/101163708-bfcb1200-3612-11eb-9c6d-4f664a754d01.png" width="30%">
+
+```python
+# Repeat primitives to create more complex domains/shapes.
+import SeismicMesh
+import meshio
+
+hmin = 0.30
+bbox = (0.0, 10.0, 0.0, 10.0, 0.0, 10.0)
+torus = SeismicMesh.Torus(r1=1.0, r2=0.5)
+# the Repeat function takes a list specifying the repetition period in each dim
+periodic_torus = SeismicMesh.Repeat(bbox, torus, [2.0, 2.0, 2.0])
+points, cells = SeismicMesh.generate_mesh(domain=periodic_torus, edge_length=hmin)
+points, cells = SeismicMesh.sliver_removal(
+    points=points, domain=periodic_torus, edge_length=hmin
+)
+meshio.write_points_cells(
+    "periodic_torus.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
 Performance
 ------------
 
@@ -565,22 +592,22 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
-- None
+## Unreleased
+- Adding basic periodic domains with the Repeat SDF.
 
 ## [3.1.7] - 2020-11-27
 ### Improved
-- Table of contents in README 
+- Table of contents in README
 
 ### Added
-- More testing of sliver removal and 2d mesh generation qualities. 
+- More testing of sliver removal and 2d mesh generation qualities.
 
 ### Fixed
 - Disabled bug when doing Newton boundary projection at the end of 3d `sliver_removal`.
 
-## [3.1.6] - 2020-11-26 
+## [3.1.6] - 2020-11-26
 ### Bug present with sliver removal. Recommend to not use.
-### Added 
+### Added
 - Unit testing three versions of Python (3.6.1, 3.7.4, 3.8.1)
 
 

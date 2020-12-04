@@ -21,6 +21,19 @@ def _gather_corners(domains):
         return np.concatenate(corners)
 
 
+class Repeat:
+    def __init__(self, bbox, domain, period):
+        self.bbox = bbox
+        self.domain = domain
+        self.corners = None
+        self.period = np.array(period)
+        self.parent = Cube(bbox)
+
+    def eval(self, x):
+        q = np.mod(x + 0.5 * self.period, self.period) - 0.5 * self.period
+        return np.maximum(self.domain.eval(q), self.parent.eval(x))
+
+
 class Union:
     def __init__(self, domains):
         geom_dim = [d.dim for d in domains]

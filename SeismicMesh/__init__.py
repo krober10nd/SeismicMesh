@@ -16,6 +16,7 @@ from .geometry import (
     Union,
     Intersection,
     Difference,
+    Repeat,
     Torus,
     Prism,
 )
@@ -24,6 +25,7 @@ from .sizing import (
     get_sizing_function_from_segy,
     write_velocity_model,
     plot_sizing_function,
+    SizeFunction,
 )
 from .__about__ import __version__
 
@@ -48,4 +50,6 @@ __all__ = [
     "sliver_removal",
     "decomp",
     "migration",
+    "SizeFunction",
+    "Repeat",
 ]

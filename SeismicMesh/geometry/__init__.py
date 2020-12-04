@@ -20,6 +20,7 @@ from .signed_distance_functions import (
     Union,
     Intersection,
     Difference,
+    Repeat,
 )
 from .utils import (
     calc_re_ratios,
@@ -84,4 +85,5 @@ __all__ = [
     "Union",
     "Intersection",
     "Difference",
+    "Repeat",
 ]
