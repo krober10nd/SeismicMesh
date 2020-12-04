@@ -11,6 +11,7 @@ from .geometry import (
     Ball,
     Disk,
     Cube,
+    Cylinder,
     Rectangle,
     Union,
     Intersection,
