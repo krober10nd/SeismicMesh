@@ -156,7 +156,7 @@ class Rectangle:
     def eval(self, x):
         return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
 
-    def boundary_step(self, x):
+    def boundary_step(self, x, snap=False):
         """Project points outside of a rectangle back in"""
         x0, x1, y0, y1 = self.bbox
 
@@ -172,6 +172,18 @@ class Rectangle:
         X[X > +w / 2] = +w / 2
         Y[Y < -h / 2] = -h / 2
         Y[Y > +h / 2] = +h / 2
+
+        if snap:
+            # snaps interior points to boundary
+            # careful! if the point is too far away from the boundary, this will
+            # ruin the convergence of DistMesh
+            is_interior = (-w / 2 < X) & (X < w / 2) & (-h / 2 < Y) & (Y < h / 2)
+            a = h * X < w * Y
+            b = -h * X < w * Y
+            Y[is_interior & a & b] = h / 2
+            Y[is_interior & ~a & ~b] = -h / 2
+            X[is_interior & ~a & b] = w / 2
+            X[is_interior & a & ~b] = -w / 2
 
         X += cx
         Y += cy
@@ -197,7 +209,7 @@ class Cube:
             self.bbox[5],
         )
 
-    def boundary_step(self, x):
+    def boundary_step(self, x, snap=False):
         """Project points outside of a cuboid back in"""
         x0, x1, y0, y1, z0, z1 = self.bbox
 
@@ -218,6 +230,39 @@ class Cube:
         Y[Y > +h / 2] = +h / 2
         Z[Z < -le / 2] = -le / 2
         Z[Z > +le / 2] = +le / 2
+
+        if snap:
+            # snaps interior points to boundary
+            # careful! if the point is too far away from the boundary, this will
+            # ruin the convergence of DistMesh
+            is_interior = (
+                (-w / 2 < X)
+                & (X < w / 2)
+                & (-h / 2 < Y)
+                & (Y < h / 2)
+                & (-le / 2 < Z)
+                & (Z < le / 2)
+            )
+            # snap interior points to nearest of the 6 sides of a cube
+            sides = []
+            sides.append(X < w / 2)
+            sides.append(X < -w / 2)
+            sides.append(Y < h / 2)
+            sides.append(Y < -h / 2)
+            sides.append(Z < le / 2)
+            sides.append(Z < -le / 2)
+            zcoords = [w, -w, h, -h, le, -le]
+            zcoords = [x / 2 for x in zcoords]
+
+            a = h * X < w * Y
+            b = -h * X < w * Y
+            for zcoord, side in zip(zcoords, sides):
+                Y[is_interior & a & b & side] = h / 2
+                Y[is_interior & ~a & ~b & side] = -h / 2
+                X[is_interior & ~a & b & side] = w / 2
+                X[is_interior & a & ~b & side] = -w / 2
+                Z[is_interior & ~a & b & side] = zcoord
+                Z[is_interior & a & ~b & side] = zcoord
 
         X += cx
         Y += cy
