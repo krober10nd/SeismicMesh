@@ -147,6 +147,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     # rebuild the Rectangle or Cube if domain padding
     if bbox0 != bbox1 and bbox1 is not None:
         fd = geometry.Cube(bbox).eval
+        domain.bbox = bbox
 
     if not isinstance(bbox, tuple):
         raise ValueError("`bbox` must be a tuple")
@@ -393,6 +394,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             tmp = geometry.Cube(bbox)
 
         fd = tmp.eval
+        domain.bbox = bbox
 
     bbox = np.array(bbox).reshape(-1, 2)
 
