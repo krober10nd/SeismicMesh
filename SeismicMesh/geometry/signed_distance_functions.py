@@ -235,6 +235,7 @@ class Cube:
             # snaps interior points to boundary
             # careful! if the point is too far away from the boundary, this will
             # ruin the convergence of DistMesh
+
             is_interior = (
                 (-w / 2 < X)
                 & (X < w / 2)
@@ -243,26 +244,38 @@ class Cube:
                 & (-le / 2 < Z)
                 & (Z < le / 2)
             )
-            # snap interior points to nearest of the 6 sides of a cube
-            sides = []
-            sides.append(X < w / 2)
-            sides.append(X < -w / 2)
-            sides.append(Y < h / 2)
-            sides.append(Y < -h / 2)
-            sides.append(Z < le / 2)
-            sides.append(Z < -le / 2)
-            zcoords = [w, -w, h, -h, le, -le]
-            zcoords = [x / 2 for x in zcoords]
+            if np.any(is_interior):
+                #  evaluate the dot product of "Point - CubeCenter" against the three 'axes' of your cube.
+                # The largest absolute value corresponds to the side that is the closest.
+                # then we need to determine which face its closest to
+                p_in = x[is_interior, :]
+                dist_x = np.dot(p_in, [1, 0, 0])
+                dist_y = np.dot(p_in, [0, 1, 0])
+                dist_z = np.dot(p_in, [0, 0, 1])
+                closest_face = np.argmax(
+                    np.abs(np.column_stack([dist_x, dist_y, dist_z])), axis=1
+                )
+                # could be one of two faces (+/-), determine which one the coordinate is closest
+                axes_up_bound = np.tile([+w / 2, +h / 2, +le / 2], (len(p_in), 1))
+                axes_low_bound = np.tile([-w / 2, -h / 2, -le / 2], (len(p_in), 1))
 
-            a = h * X < w * Y
-            b = -h * X < w * Y
-            for zcoord, side in zip(zcoords, sides):
-                Y[is_interior & a & b & side] = h / 2
-                Y[is_interior & ~a & ~b & side] = -h / 2
-                X[is_interior & ~a & b & side] = w / 2
-                X[is_interior & a & ~b & side] = -w / 2
-                Z[is_interior & ~a & b & side] = zcoord
-                Z[is_interior & a & ~b & side] = zcoord
+                dmy = np.arange(len(closest_face))
+                above = p_in[dmy, closest_face] > 0.0
+                below = p_in[dmy, closest_face] < 0.0
+
+                # snap to faces
+                if np.any(above):
+                    p_in[above == True, closest_face] = axes_up_bound[
+                        above == True, closest_face
+                    ]
+                if np.any(below):
+                    p_in[below == True, closest_face] = axes_low_bound[
+                        below == True, closest_face
+                    ]
+
+                X[is_interior] = p_in[:, 0]
+                Y[is_interior] = p_in[:, 1]
+                Z[is_interior] = p_in[:, 2]
 
         X += cx
         Y += cy

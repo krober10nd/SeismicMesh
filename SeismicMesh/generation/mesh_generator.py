@@ -278,7 +278,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # for some primitives so do it every iteration
         if np.any([isinstance(domain, d) for d in boundary_step_domains]):
             d = fd(p)
-            p[d > geps, :] = domain.boundary_step(p[d > geps, :], snap=True)
+            p[d > -geps, :] = domain.boundary_step(p[d > -geps, :], snap=True)
 
         count += 1
 
@@ -510,8 +510,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             if idx == 0 and np.any(
                 [isinstance(domain, d) for d in boundary_step_domains]
             ):
-                d = fd(p)
-                p[d > geps, :] = domain.boundary_step(p[d > geps, :], snap=True)
+                d = level(p)
+                p[d > 0.0, :] = domain.boundary_step(p[d > 0.0, :], snap=False)
             else:
                 p = _project_points_back_newton(p, level, deps, h0, idx)
 
