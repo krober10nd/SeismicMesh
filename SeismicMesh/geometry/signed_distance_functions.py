@@ -156,6 +156,29 @@ class Rectangle:
     def eval(self, x):
         return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
 
+    def boundary_step(self, x):
+        """Project points outside of a rectangle back in"""
+        x0, x1, y0, y1 = self.bbox
+
+        cx = (x0 + x1) / 2
+        cy = (y0 + y1) / 2
+        w = x1 - x0
+        h = y1 - y0
+
+        X = x[:, 0] - cx
+        Y = x[:, 1] - cy
+
+        X[X < -w / 2] = -w / 2
+        X[X > +w / 2] = +w / 2
+        Y[Y < -h / 2] = -h / 2
+        Y[Y > +h / 2] = +h / 2
+
+        X += cx
+        Y += cy
+
+        out = np.column_stack([X, Y])
+        return out
+
 
 class Cube:
     def __init__(self, bbox):
@@ -173,6 +196,35 @@ class Cube:
             self.bbox[4],
             self.bbox[5],
         )
+
+    def boundary_step(self, x):
+        """Project points outside of a cuboid back in"""
+        x0, x1, y0, y1, z0, z1 = self.bbox
+
+        cx = (x0 + x1) / 2
+        cy = (y0 + y1) / 2
+        cz = (z0 + z1) / 2
+        w = x1 - x0
+        h = y1 - y0
+        le = z1 - z0
+
+        X = x[:, 0] - cx
+        Y = x[:, 1] - cy
+        Z = x[:, 2] - cz
+
+        X[X < -w / 2] = -w / 2
+        X[X > +w / 2] = +w / 2
+        Y[Y < -h / 2] = -h / 2
+        Y[Y > +h / 2] = +h / 2
+        Z[Z < -le / 2] = -le / 2
+        Z[Z > +le / 2] = +le / 2
+
+        X += cx
+        Y += cy
+        Z += cz
+
+        out = np.column_stack([X, Y, Z])
+        return out
 
 
 class Torus:

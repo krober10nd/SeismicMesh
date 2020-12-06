@@ -170,7 +170,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     )
 
     geps = sliver_opts["geps_mult"] * h0
-    # deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = sliver_opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -198,6 +197,12 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     count = 0
     pold = None
     push = 0.10
+
+    # these domains have boundary_step methods
+    boundary_step_domains = [
+        geometry.Rectangle,
+        geometry.Cube,
+    ]
 
     dt = DT()
     dt.insert(p.flatten().tolist())
@@ -248,7 +253,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
                 + " iterations...no slivers detected!",
             )
             p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
-            # p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             return p, t
 
         p0, p1, p2, p3 = (
@@ -268,6 +272,11 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
         # perturb push % of minimum mesh size
         p[move] += push * h0 * perturb
+
+        # if a cube/rectangle, the boundary projection step is quite light
+        # so do it every iteration
+        if np.any([isinstance(domain, d) for d in boundary_step_domains]):
+            p = domain.boundary_step(p)
 
         count += 1
 
@@ -439,6 +448,12 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             fd_subdomains, _, _ = _unpack_domain(subdomains, gen_opts)
             levels.append(fd_subdomains)
 
+    # these domains have boundary_step methods
+    boundary_step_domains = [
+        geometry.Rectangle,
+        geometry.Cube,
+    ]
+
     while True:
 
         start = time.time()
@@ -488,7 +503,13 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
         # Bring outside points back to the boundary
         for idx, level in enumerate(levels):
-            p = _project_points_back_newton(p, level, deps, h0, idx)
+            # use the boundary step method of the domain class when available
+            if idx == 0 and np.any(
+                [isinstance(domain, d) for d in boundary_step_domains]
+            ):
+                p = domain.boundary_step(p)
+            else:
+                p = _project_points_back_newton(p, level, deps, h0, idx)
 
         if comm.size > 1:
             # If continuing on, delete ghost points
