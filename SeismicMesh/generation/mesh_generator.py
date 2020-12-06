@@ -274,10 +274,11 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # perturb push % of minimum mesh size
         p[move] += push * h0 * perturb
 
-        # if a cube/rectangle, the boundary projection step is quite light
-        # so do it every iteration
+        # the boundary projection step is quite light
+        # for some primitives so do it every iteration
         if np.any([isinstance(domain, d) for d in boundary_step_domains]):
-            p = domain.boundary_step(p)
+            d = fd(p)
+            p[d > geps, :] = domain.boundary_step(p[d > geps, :], snap=True)
 
         count += 1
 
@@ -509,7 +510,8 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             if idx == 0 and np.any(
                 [isinstance(domain, d) for d in boundary_step_domains]
             ):
-                p = domain.boundary_step(p)
+                d = fd(p)
+                p[d > geps, :] = domain.boundary_step(p[d > geps, :], snap=True)
             else:
                 p = _project_points_back_newton(p, level, deps, h0, idx)
 
