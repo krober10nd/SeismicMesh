@@ -157,7 +157,9 @@ class Rectangle:
         return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
 
     def boundary_step(self, x, snap=False):
-        """Project points outside of a rectangle back in"""
+        """Project points outside of a rectangle back in
+        inspired by https://github.com/nschloe/dmsh/blob/20adbe5956b0e26ef54c0a4994185fe46a9609f8/dmsh/geometry/rectangle.py#L57
+        """
         x0, x1, y0, y1 = self.bbox
 
         cx = (x0 + x1) / 2
