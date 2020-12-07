@@ -263,15 +263,11 @@ class Cube:
                 above = p_in[dmy, closest_face] > 0.0
                 below = p_in[dmy, closest_face] < 0.0
 
-                # snap to faces
+                # snap to faces (needs more work)
                 if np.any(above):
-                    p_in[above == True, closest_face] = axes_up_bound[
-                        above == True, closest_face
-                    ]
+                    p_in[above, closest_face] = axes_up_bound[above, closest_face]
                 if np.any(below):
-                    p_in[below == True, closest_face] = axes_low_bound[
-                        below == True, closest_face
-                    ]
+                    p_in[below, closest_face] = axes_low_bound[below, closest_face]
 
                 X[is_interior] = p_in[:, 0]
                 Y[is_interior] = p_in[:, 1]
