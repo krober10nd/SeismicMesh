@@ -28,15 +28,15 @@ SeismicMesh is a Python package for simplex mesh generation in two or three dime
 
 # Background
 
-Generating a high quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the Finite Element Method (FEM). In these applications, a domain is discretized typically with triangles/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as Full Waveform Inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and Reverse Time Migration [@10.1093/gji/ggv380].
+Generating a high quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the Finite Element Method (FEM). In these applications, a domain is discretized typically with triangular/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as Full Waveform Inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and reverse time migration [@10.1093/gji/ggv380].
 
 # Statement of Need
 
-Despite the fact that many mesh generation programs exist such as Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b], it is uncommon to find capabilities that incorporate geophysical data into the mesh generation process to appropriately size elements. This in part contributes to the reality that automatic mesh generation for geophysical domains largely still remains an unsolved problem.
+Despite the fact that many mesh generation programs exist such as Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b], it is uncommon to find capabilities that incorporate geophysical data into the mesh generation process to appropriately size elements. This in part contributes to the reality that automatic mesh generation for geophysical domains is not user-friendly.
 
 Some packages have been created to script mesh generation from geophysical datasets such as in coastal ocean modeling [e.g., @roberts2019oceanmesh2d; GMT and Terreno @gorman2008systematic] and reservoir modeling [e.g., MeshIT @cacace2015meshit]. In a similar manner, the aim of this package is to provide a straightforward Python package to script mesh generation directly from seismic velocity models. This is accomplished first by building a mesh density function using seismic velocity data and then supplying these inputs to a mesh generator that can use these inputs and operate at scale.
 
-The mesh density function can be used as input other mesh generators. However, the usage of a particular sizing function can have impact on the mesh generation performance. For example, Gmsh’s advancing front and Delaunay refinement methods construct the mesh incrementally and do not permit vectorization, which leads to reduced performance at scale in 2D/3D. In contrast, the DistMesh algorithm takes advantage of vectorization when querying a complex mesh density function making it efficient and competitive to Gmsh for this kind of meshing problem.
+The mesh density function can be used as input other mesh generators. However, the usage of a sizing function can have impact on the mesh generation performance. For example, Gmsh’s advancing front and Delaunay refinement methods construct the mesh incrementally and do not permit vectorization, which leads to reduced performance at scale in 2D/3D. In contrast, the DistMesh algorithm takes advantage of vectorization when querying a complex mesh density function making it efficient and competitive to Gmsh for this kind of meshing problem.
 
 # Core functionality
 
@@ -46,13 +46,13 @@ The mesh density function can be used as input other mesh generators. However, t
 
   3. An implementation of a 3D degenerate (i.e., sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
 
-Similar to other meshing programs such as Gmsh, SeismicMesh [@SeismicMeshDocs] enables generation of simplex meshes through a Python scripting-based application programming interface.
+Similar to other meshing programs such as Gmsh, SeismicMesh [@SeismicMeshDocs] enables generation of simplex meshes through a Python application programming interface.
 
 The mesh's domain geometry is defined as the 0-level set of a signed distance function (SDF), which avoids the need to have explicit geometry information defining the boundary and can be particularly useful in geophysical domains.
 
 # Performance Comparison
 
-We present a comparison of the 2D/3D serial performance in terms of cell quality and mesh creation time. We compare SeismicMesh with Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b]. The cell quality is defined as the product of the topological dimension of the mesh (2 or 3) and the circumcircle radius divided by the incircle radius. This metric is between 0 and 1, where 1 is a perfectly symmetrical simplex.
+We present a comparison of the 2D/3D serial performance in terms of cell quality and mesh creation time. We compare SeismicMesh with Gmsh [@doi:10.1002/nme.2579] and CGAL [@cgal:rty-m3-20b; @cgal:r-ctm2-20b]. The cell quality is defined as the product of the topological dimension of the mesh (2 or 3) and the incircle radius divided by the circumcircle radius. This metric is between 0 and 1, where 1 is a perfectly symmetrical simplex.
 
 For the analytical geometries (e.g. disk and ball), Gmsh is the fastest to generate a mesh and then performance is approximately similar for both SeismicMesh and CGAL. CGAL outperforms SeismicMesh for the disk and vice versa for the ball. Gmsh and CGAL produce similar minimum cell qualities to SeismicMesh and importantly all generators are capable of producing sliver-free meshes with minimal dihedral angles greater than 10 degrees. However, SeismicMesh in general produces higher mean cell qualities which are about 5-10\% greater than either Gmsh or CGAL.
 
