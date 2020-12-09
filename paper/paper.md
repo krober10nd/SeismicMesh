@@ -24,11 +24,11 @@ bibliography: paper.bib
 ---
 # Summary
 
-SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of DistMesh [@doi:10.1137/S0036144503429121], it produces high quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20b]. SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
+SeismicMesh is a Python package for simplex mesh generation in two or three dimensions. As an implementation of DistMesh [@doi:10.1137/S0036144503429121], it produces high-quality meshes at the expense of speed. For increased efficiency, the core package is written in C++, works in parallel, and uses the Computational Geometry Algorithms Library [@cgal:hs-chdt3-20b]. SeismicMesh can also produce mesh-density functions from seismological data to be used in the mesh generator.
 
 # Background
 
-Generating a high quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the finite element method (FEM). In these applications, a domain is discretized typically with triangular/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as full waveform inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and reverse time migration [@10.1093/gji/ggv380].
+Generating a high-quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the finite element method (FEM). In these applications, a domain is discretized typically with triangular/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as full waveform inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and reverse time migration [@10.1093/gji/ggv380].
 
 # Statement of Need
 
@@ -42,7 +42,7 @@ The mesh density function can be used as input other mesh generators. However, t
 
   1. The creation of 2D/3D graded mesh size functions defined on axis-aligned regular Cartesian grids. These mesh sizing functions encode mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [see @SeismicMeshDocs for further details]. Mesh size function grading is accomplished using [@persson2006mesh].
 
-  2. Distributed memory parallelism. The generation of potentially large (> 10 million cells) high quality triangular or tetrahedral meshes in either using distributed memory parallelism with mesh resolution following sizing functions.
+  2. Distributed memory parallelism. The generation of potentially large (> 10 million cells) high-quality triangular or tetrahedral meshes in either using distributed memory parallelism with mesh resolution following sizing functions.
 
   3. An implementation of a 3D degenerate (i.e., sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
 
