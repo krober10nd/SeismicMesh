@@ -28,7 +28,7 @@ SeismicMesh is a Python package for simplex mesh generation in two or three dime
 
 # Background
 
-Generating a high quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the Finite Element Method (FEM). In these applications, a domain is discretized typically with triangular/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as Full Waveform Inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and reverse time migration [@10.1093/gji/ggv380].
+Generating a high quality graded mesh for a geophysical domain represents a challenge for seismological modeling using the finite element method (FEM). In these applications, a domain is discretized typically with triangular/tetrahedral elements that vary widely in size around features of interest. These meshes are commonly used with the FEM to solve partial differential equations that model acoustic or elastic waves, which are used in seismic velocity model building algorithms such as full waveform inversion (FWI) [@doi:10.1190/1.1441754; @virieux2009overview] and reverse time migration [@10.1093/gji/ggv380].
 
 # Statement of Need
 
