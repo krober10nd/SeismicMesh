@@ -460,7 +460,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 ifix.append(_closest_node(fix, p))
 
         # Add ghost points to perform Delaunay in parallel.
-        if comm.size > 1 and (count < 10 or count > max_iter - 5):
+        if comm.size > 1 and (count < 10 or count > max_iter - 10):
             p, t, inv, recv_ix = _add_ghost_vertices(p, t, dt, extents, comm)
 
         # Remove points outside the domain
@@ -490,7 +490,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         for idx, level in enumerate(levels):
             p = _project_points_back_newton(p, level, deps, h0, idx)
 
-        if comm.size > 1 and (count < 10 or count > max_iter - 5):
+        if comm.size > 1 and (count < 10 or count > max_iter - 10):
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
 
