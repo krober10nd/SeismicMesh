@@ -197,7 +197,9 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     count = 0
     pold = None
-    push = 0.10
+    step = 0.10
+    gamma = 0.8
+    num_old_bad = np.inf
 
     dt = DT()
     dt.insert(p.flatten().tolist())
@@ -266,10 +268,21 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
         perturb /= perturb_norm[:, None]
 
-        # perturb push % of minimum mesh size
-        p[move] += push * h0 * perturb
+        num_bad = len(ele_nums)
+
+        if num_bad < num_old_bad:
+            # increase step
+            step /= gamma
+        elif num_bad > num_old_bad:
+            # decrease step
+            step *= gamma
+
+        # perturb step % of minimum mesh size
+        p[move] += step * h0 * perturb
 
         count += 1
+
+        num_old_bad = len(ele_nums)
 
         end = time.time()
         if comm.rank == 0:
@@ -460,7 +473,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 ifix.append(_closest_node(fix, p))
 
         # Add ghost points to perform Delaunay in parallel.
-        if comm.size > 1 and (count < 10 or count > max_iter - 10):
+        if comm.size > 1:
             p, t, inv, recv_ix = _add_ghost_vertices(p, t, dt, extents, comm)
 
         # Remove points outside the domain
@@ -490,7 +503,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         for idx, level in enumerate(levels):
             p = _project_points_back_newton(p, level, deps, h0, idx)
 
-        if comm.size > 1 and (count < 10 or count > max_iter - 10):
+        if comm.size > 1:
             # If continuing on, delete ghost points
             p = np.delete(p, inv[-recv_ix::], axis=0)
 
