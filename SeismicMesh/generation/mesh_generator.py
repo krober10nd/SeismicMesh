@@ -114,6 +114,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "delta_t": 0.30,
         "geps_mult": 0.1,
         "subdomains": [],
+        "gamma": 1.0,
     }
 
     sliver_opts.update(kwargs)
@@ -170,6 +171,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     )
 
     geps = sliver_opts["geps_mult"] * h0
+
     # deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = sliver_opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
@@ -198,7 +200,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     count = 0
     pold = None
     step = 0.10
-    gamma = 0.8
+    gamma = sliver_opts["gamma"]
     num_old_bad = np.inf
 
     dt = DT()
@@ -634,6 +636,7 @@ def _parse_kwargs(kwargs):
             "h0",
             "geps_mult",
             "subdomains",
+            "gamma",
         }:
             pass
         else:
