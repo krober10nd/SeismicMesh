@@ -14,7 +14,6 @@
 #include <assert.h>
 #include <vector>
 
-#include <map>
 #include <iterator>
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
@@ -28,32 +27,39 @@ typedef K::Iso_cuboid_3 Cuboid;
 namespace py = pybind11;
 
 
-// build the vertex-to-element connectivity here
-// using a std::multimap
-std::multimap<int, int> build_vtoe2(std::vector<int> &t){
-    std::multimap <int, int> vtoe;
-    int sz = t.size()/3;
-    for(std::size_t e = 0; e < sz; ++e){
-        for(std::size_t n = 0; n < 3; n++){
-            vtoe.insert(std::pair <int, int> (t[3*e + n], e));
+// build the vertex-to-element connectivity here for 2d
+std::vector<std::vector<int>> build_vtoe2(std::vector<double> &p, std::vector<int> &t){
+    int sz = p.size()/2;
+    int sz_e = t.size()/3;
+    std::vector<std::vector<int>> vtoe(sz);
+    // assume 3 for a reasonable amount of elemental neighbors
+    for(auto &v : vtoe){
+        v.reserve(10);
+    }
+    for(std::size_t e = 0; e < sz_e; ++e) {
+        for(std::size_t n = 0; n < 3; n++) {
+            vtoe[t[3*e +n]].push_back(e);
         }
     }
+    vtoe.resize(vtoe.capacity());
     return vtoe;
 }
-// build the vertex-to-element connectivity here
-// using a std::multimap
-std::multimap<int, int> build_vtoe3(std::vector<int> &t){
-    std::multimap <int, int> vtoe;
-    int sz = t.size()/4;
-    for(std::size_t e = 0; e < sz; ++e){
-        for(std::size_t n = 0; n < 4; n++){
-            vtoe.insert(std::pair <int, int> (t[4*e + n], e));
+// build the vertex-to-element connectivity here for 3d
+std::vector<std::vector<int>> build_vtoe3(std::vector<double> &p, std::vector<int> &t){
+    int sz = p.size()/3;
+    int sz_e = t.size()/4;
+    std::vector<std::vector<int>> vtoe(sz);
+    for(auto &v : vtoe){
+        v.reserve(10);
+    }
+    for(std::size_t e = 0; e < sz_e; ++e) {
+        for(std::size_t n = 0; n < 4; n++) {
+            vtoe[t[4*e +n]].push_back(e);
         }
     }
+    vtoe.resize(vtoe.capacity());
     return vtoe;
 }
-
-
 
 // fixed size calculation of 4x4 determinant
 double calc_4x4dete(std::vector<double> &m) {
@@ -79,25 +85,21 @@ std::vector<double> c_where_to2(std::vector<double> &points,
   int num_faces = faces.size() / 3;
   int num_points = points.size() / 2;
 
-  typedef std::multimap<int, int>::iterator MMAPIterator;
-
   // Determine which rank to send the vertex (exports)
   // exports[iv] is either 0 or 1 (0 for block owned by rank-1 and 1 for block
   // owned by rank+1)
   std::vector<int> exports;
   exports.resize(num_points, -1);
 
-  // create map
-  auto vtoe_map = build_vtoe2(faces);
+  auto vtoe_map = build_vtoe2(points, faces);
 
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
-    // use the multimap associative container
-   std::pair<MMAPIterator, MMAPIterator> result = vtoe_map.equal_range(iv);
-   for (MMAPIterator it = result.first; it != result.second; it++) {
+    for (std::size_t ie = 0; ie < vtoe_map[iv].size() ;++ie) {
 
-      int nei_ele = it ->second;
+      int nei_ele = vtoe_map[iv][ie];
+
       // Indices of element into points
       int nm1 = faces[nei_ele * 3];
       int nm2 = faces[nei_ele * 3 + 1];
@@ -208,8 +210,6 @@ std::vector<double> c_where_to3(std::vector<double> &points,
                                 std::vector<double> &llc,
                                 std::vector<double> &urc, int rank) {
 
-  typedef std::multimap<int, int>::iterator MMAPIterator;
-
   int num_faces = faces.size() / 4;
   int num_points = points.size() / 3;
 
@@ -219,17 +219,14 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   std::vector<int> exports;
   exports.resize(num_points, -1);
 
-  // create map
-  auto vtoe_map = build_vtoe3(faces);
+  auto vtoe_map = build_vtoe3(points, faces);
 
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
-    // use the multimap associative container
-   std::pair<MMAPIterator, MMAPIterator> result = vtoe_map.equal_range(iv);
-   for (MMAPIterator it = result.first; it != result.second; it++) {
+    for (std::size_t ie = 0; ie < vtoe_map[iv].size() ;++ie) {
 
-      int nei_ele = it ->second;
+      int nei_ele = vtoe_map[iv][ie];
 
       // Indices of element into points
       int nm1 = faces[nei_ele * 4];
