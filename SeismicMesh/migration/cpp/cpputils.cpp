@@ -14,6 +14,9 @@
 #include <assert.h>
 #include <vector>
 
+#include <map>
+#include <iterator>
+
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
 typedef K::Point_2 Point;
 typedef K::Point_3 Point3;
@@ -23,6 +26,34 @@ typedef K::Iso_rectangle_2 Rectangle;
 typedef K::Iso_cuboid_3 Cuboid;
 
 namespace py = pybind11;
+
+
+// build the vertex-to-element connectivity here
+// using a std::multimap
+std::multimap<int, int> build_vtoe2(std::vector<int> &t){
+    std::multimap <int, int> vtoe;
+    int sz = t.size()/3;
+    for(std::size_t e = 0; e < sz; ++e){
+        for(std::size_t n = 0; n < 3; n++){
+            vtoe.insert(std::pair <int, int> (t[3*e + n], e));
+        }
+    }
+    return vtoe;
+}
+// build the vertex-to-element connectivity here
+// using a std::multimap
+std::multimap<int, int> build_vtoe3(std::vector<int> &t){
+    std::multimap <int, int> vtoe;
+    int sz = t.size()/4;
+    for(std::size_t e = 0; e < sz; ++e){
+        for(std::size_t n = 0; n < 4; n++){
+            vtoe.insert(std::pair <int, int> (t[4*e + n], e));
+        }
+    }
+    return vtoe;
+}
+
+
 
 // fixed size calculation of 4x4 determinant
 double calc_4x4dete(std::vector<double> &m) {
@@ -42,23 +73,31 @@ double calc_4x4dete(std::vector<double> &m) {
 
 // determine which rank points need to be exported to in 2D
 std::vector<double> c_where_to2(std::vector<double> &points,
-                                std::vector<int> &faces, std::vector<int> &vtoe,
-                                std::vector<int> &ptr, std::vector<double> &llc,
+                                std::vector<int> &faces,
+                                std::vector<double> &llc,
                                 std::vector<double> &urc, int rank) {
   int num_faces = faces.size() / 3;
   int num_points = points.size() / 2;
+
+  typedef std::multimap<int, int>::iterator MMAPIterator;
 
   // Determine which rank to send the vertex (exports)
   // exports[iv] is either 0 or 1 (0 for block owned by rank-1 and 1 for block
   // owned by rank+1)
   std::vector<int> exports;
   exports.resize(num_points, -1);
+
+  // create map
+  auto vtoe_map = build_vtoe2(faces);
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
-    int nneis = ptr[iv + 1] - ptr[iv];
-    // For all connected elements to point iv
-    for (std::size_t ic = 0; ic < nneis; ++ic) {
-      int nei_ele = vtoe[ptr[iv] + ic];
+
+    // use the multimap associative container
+   std::pair<MMAPIterator, MMAPIterator> result = vtoe_map.equal_range(iv);
+   for (MMAPIterator it = result.first; it != result.second; it++) {
+
+      int nei_ele = it ->second;
       // Indices of element into points
       int nm1 = faces[nei_ele * 3];
       int nm2 = faces[nei_ele * 3 + 1];
@@ -126,8 +165,6 @@ std::vector<double> c_where_to2(std::vector<double> &points,
 py::array
 where_to2(py::array_t<double, py::array::c_style | py::array::forcecast> points,
           py::array_t<int, py::array::c_style | py::array::forcecast> faces,
-          py::array_t<int, py::array::c_style | py::array::forcecast> vtoe,
-          py::array_t<int, py::array::c_style | py::array::forcecast> ptr,
           py::array_t<double, py::array::c_style | py::array::forcecast> llc,
           py::array_t<double, py::array::c_style | py::array::forcecast> urc,
           int rank) {
@@ -137,22 +174,17 @@ where_to2(py::array_t<double, py::array::c_style | py::array::forcecast> points,
   // allocate std::vector (to pass to the C++ function)
   std::vector<double> cpppoints(num_points * 2);
   std::vector<int> cppfaces(num_faces * 3);
-  std::vector<int> cppvtoe(num_faces * 3);
-  std::vector<int> cppptr(num_points + 1);
   std::vector<double> cppllc(4);
   std::vector<double> cppurc(4);
 
   // copy py::array -> std::vector
   std::memcpy(cpppoints.data(), points.data(), num_points * 2 * sizeof(double));
   std::memcpy(cppfaces.data(), faces.data(), num_faces * 3 * sizeof(int));
-  std::memcpy(cppvtoe.data(), vtoe.data(), num_faces * 3 * sizeof(int));
-  std::memcpy(cppptr.data(), ptr.data(), (num_points + 1) * sizeof(int));
   std::memcpy(cppllc.data(), llc.data(), 4 * sizeof(double));
   std::memcpy(cppurc.data(), urc.data(), 4 * sizeof(double));
 
   // call cpp code
-  std::vector<double> pointsToMigrate =
-      c_where_to2(cpppoints, cppfaces, cppvtoe, cppptr, cppllc, cppurc, rank);
+  std::vector<double> pointsToMigrate = c_where_to2(cpppoints, cppfaces, cppllc, cppurc, rank);
 
   ssize_t sodble = sizeof(double);
   ssize_t ndim = 2;
@@ -172,9 +204,12 @@ where_to2(py::array_t<double, py::array::c_style | py::array::forcecast> points,
 
 // determine which rank points need to be exported to in 3D
 std::vector<double> c_where_to3(std::vector<double> &points,
-                                std::vector<int> &faces, std::vector<int> &vtoe,
-                                std::vector<int> &ptr, std::vector<double> &llc,
+                                std::vector<int> &faces,
+                                std::vector<double> &llc,
                                 std::vector<double> &urc, int rank) {
+
+  typedef std::multimap<int, int>::iterator MMAPIterator;
+
   int num_faces = faces.size() / 4;
   int num_points = points.size() / 3;
 
@@ -183,12 +218,19 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   // owned by rank+1)
   std::vector<int> exports;
   exports.resize(num_points, -1);
+
+  // create map
+  auto vtoe_map = build_vtoe3(faces);
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
-    int nneis = ptr[iv + 1] - ptr[iv];
-    // For all connected elements to point iv
-    for (std::size_t ic = 0; ic < nneis; ++ic) {
-      int nei_ele = vtoe[ptr[iv] + ic];
+
+    // use the multimap associative container
+   std::pair<MMAPIterator, MMAPIterator> result = vtoe_map.equal_range(iv);
+   for (MMAPIterator it = result.first; it != result.second; it++) {
+
+      int nei_ele = it ->second;
+
       // Indices of element into points
       int nm1 = faces[nei_ele * 4];
       int nm2 = faces[nei_ele * 4 + 1];
@@ -273,8 +315,6 @@ std::vector<double> c_where_to3(std::vector<double> &points,
 py::array
 where_to3(py::array_t<double, py::array::c_style | py::array::forcecast> points,
           py::array_t<int, py::array::c_style | py::array::forcecast> faces,
-          py::array_t<int, py::array::c_style | py::array::forcecast> vtoe,
-          py::array_t<int, py::array::c_style | py::array::forcecast> ptr,
           py::array_t<double, py::array::c_style | py::array::forcecast> llc,
           py::array_t<double, py::array::c_style | py::array::forcecast> urc,
           int rank) {
@@ -284,22 +324,17 @@ where_to3(py::array_t<double, py::array::c_style | py::array::forcecast> points,
   // allocate std::vector (to pass to the C++ function)
   std::vector<double> cpppoints(num_points * 3);
   std::vector<int> cppfaces(num_faces * 4);
-  std::vector<int> cppvtoe(num_faces * 4);
-  std::vector<int> cppptr(num_points + 1);
   std::vector<double> cppllc(6);
   std::vector<double> cppurc(6);
 
   // copy py::array -> std::vector
   std::memcpy(cpppoints.data(), points.data(), num_points * 3 * sizeof(double));
   std::memcpy(cppfaces.data(), faces.data(), num_faces * 4 * sizeof(int));
-  std::memcpy(cppvtoe.data(), vtoe.data(), num_faces * 4 * sizeof(int));
-  std::memcpy(cppptr.data(), ptr.data(), (num_points + 1) * sizeof(int));
   std::memcpy(cppllc.data(), llc.data(), 6 * sizeof(double));
   std::memcpy(cppurc.data(), urc.data(), 6 * sizeof(double));
 
   // call cpp code
-  std::vector<double> pointsToMigrate =
-      c_where_to3(cpppoints, cppfaces, cppvtoe, cppptr, cppllc, cppurc, rank);
+  std::vector<double> pointsToMigrate = c_where_to3(cpppoints, cppfaces, cppllc, cppurc, rank);
 
   ssize_t sodble = sizeof(double);
   ssize_t ndim = 2;

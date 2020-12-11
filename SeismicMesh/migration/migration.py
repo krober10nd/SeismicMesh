@@ -135,12 +135,10 @@ def enqueue(extents, points, faces, rank, size, dim=2):
         le = np.insert(le, 0, [-999999999] * dim)
         re = np.insert(re, 0, [-999999998] * dim)
 
-    vtoe, ptr = geometry.vertex_to_entities(points, faces, dim=dim)
-
     if dim == 2:
-        exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
+        exports = cpputils.where_to2(points, faces, le, re, rank)
     elif dim == 3:
-        exports = cpputils.where_to3(points, faces, vtoe, ptr, le, re, rank)
+        exports = cpputils.where_to3(points, faces, le, re, rank)
 
     return exports
 
