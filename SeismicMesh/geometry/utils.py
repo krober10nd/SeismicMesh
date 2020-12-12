@@ -2,7 +2,8 @@ import numpy as np
 import scipy.sparse as spsparse
 
 from ..generation.cpp import c_cgal
-from . import signed_distance_functions as sdf
+
+# from . import signed_distance_functions as sdf
 from .cpp import fast_geometry as gutils
 
 # cpp implementation of 4x4 determinant calc

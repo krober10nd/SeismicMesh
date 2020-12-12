@@ -26,39 +26,40 @@ typedef K::Iso_cuboid_3 Cuboid;
 
 namespace py = pybind11;
 
-
 // build the vertex-to-element connectivity here for 2d
-std::vector<std::vector<int>> build_vtoe2(std::vector<double> &p, std::vector<int> &t){
-    int sz = p.size()/2;
-    int sz_e = t.size()/3;
-    std::vector<std::vector<int>> vtoe(sz);
-    // assume 3 for a reasonable amount of elemental neighbors
-    for(auto &v : vtoe){
-        v.reserve(10);
+std::vector<std::vector<int>> build_vtoe2(std::vector<double> &p,
+                                          std::vector<int> &t) {
+  int sz = p.size() / 2;
+  int sz_e = t.size() / 3;
+  std::vector<std::vector<int>> vtoe(sz);
+  // assume 3 for a reasonable amount of elemental neighbors
+  for (auto &v : vtoe) {
+    v.reserve(10);
+  }
+  for (std::size_t e = 0; e < sz_e; ++e) {
+    for (std::size_t n = 0; n < 3; n++) {
+      vtoe[t[3 * e + n]].push_back(e);
     }
-    for(std::size_t e = 0; e < sz_e; ++e) {
-        for(std::size_t n = 0; n < 3; n++) {
-            vtoe[t[3*e +n]].push_back(e);
-        }
-    }
-    vtoe.resize(vtoe.capacity());
-    return vtoe;
+  }
+  vtoe.resize(vtoe.capacity());
+  return vtoe;
 }
 // build the vertex-to-element connectivity here for 3d
-std::vector<std::vector<int>> build_vtoe3(std::vector<double> &p, std::vector<int> &t){
-    int sz = p.size()/3;
-    int sz_e = t.size()/4;
-    std::vector<std::vector<int>> vtoe(sz);
-    for(auto &v : vtoe){
-        v.reserve(10);
+std::vector<std::vector<int>> build_vtoe3(std::vector<double> &p,
+                                          std::vector<int> &t) {
+  int sz = p.size() / 3;
+  int sz_e = t.size() / 4;
+  std::vector<std::vector<int>> vtoe(sz);
+  for (auto &v : vtoe) {
+    v.reserve(10);
+  }
+  for (std::size_t e = 0; e < sz_e; ++e) {
+    for (std::size_t n = 0; n < 4; n++) {
+      vtoe[t[4 * e + n]].push_back(e);
     }
-    for(std::size_t e = 0; e < sz_e; ++e) {
-        for(std::size_t n = 0; n < 4; n++) {
-            vtoe[t[4*e +n]].push_back(e);
-        }
-    }
-    vtoe.resize(vtoe.capacity());
-    return vtoe;
+  }
+  vtoe.resize(vtoe.capacity());
+  return vtoe;
 }
 
 // fixed size calculation of 4x4 determinant
@@ -96,7 +97,7 @@ std::vector<double> c_where_to2(std::vector<double> &points,
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
-    for (std::size_t ie = 0; ie < vtoe_map[iv].size() ;++ie) {
+    for (std::size_t ie = 0; ie < vtoe_map[iv].size(); ++ie) {
 
       int nei_ele = vtoe_map[iv][ie];
 
@@ -186,7 +187,8 @@ where_to2(py::array_t<double, py::array::c_style | py::array::forcecast> points,
   std::memcpy(cppurc.data(), urc.data(), 4 * sizeof(double));
 
   // call cpp code
-  std::vector<double> pointsToMigrate = c_where_to2(cpppoints, cppfaces, cppllc, cppurc, rank);
+  std::vector<double> pointsToMigrate =
+      c_where_to2(cpppoints, cppfaces, cppllc, cppurc, rank);
 
   ssize_t sodble = sizeof(double);
   ssize_t ndim = 2;
@@ -224,7 +226,7 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
-    for (std::size_t ie = 0; ie < vtoe_map[iv].size() ;++ie) {
+    for (std::size_t ie = 0; ie < vtoe_map[iv].size(); ++ie) {
 
       int nei_ele = vtoe_map[iv][ie];
 
@@ -332,7 +334,8 @@ where_to3(py::array_t<double, py::array::c_style | py::array::forcecast> points,
   std::memcpy(cppurc.data(), urc.data(), 6 * sizeof(double));
 
   // call cpp code
-  std::vector<double> pointsToMigrate = c_where_to3(cpppoints, cppfaces, cppllc, cppurc, rank);
+  std::vector<double> pointsToMigrate =
+      c_where_to3(cpppoints, cppfaces, cppllc, cppurc, rank);
 
   ssize_t sodble = sizeof(double);
   ssize_t ndim = 2;
