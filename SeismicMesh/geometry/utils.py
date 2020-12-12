@@ -25,7 +25,7 @@ def calc_re_ratios(vertices, entities, dim=2):
         bars = np.concatenate(
             [entities[:, [0, 1]], entities[:, [1, 2]], entities[:, [2, 0]]]
         )
-        cc = c_cgal.circumballs2(vertices[entities.flatten()])
+        cc = c_cgal.circumballs2(vertices[entities.ravel()])
     elif dim == 3:
         bars = np.concatenate(
             [
@@ -71,7 +71,7 @@ def remove_external_entities(vertices, entities, extent, dim=2):
 
     if dim == 2:
         signed_distance = sdf.drectangle(
-            vertices[entities.flatten(), :],
+            vertices[entities.ravel(), :],
             x1=extent[0],
             x2=extent[2],
             y1=extent[1],
@@ -79,7 +79,7 @@ def remove_external_entities(vertices, entities, extent, dim=2):
         )
     elif dim == 3:
         signed_distance = sdf.dblock(
-            vertices[entities.flatten(), :],
+            vertices[entities.ravel(), :],
             x1=extent[0],
             x2=extent[3],
             y1=extent[1],
@@ -88,13 +88,9 @@ def remove_external_entities(vertices, entities, extent, dim=2):
             z2=extent[5],
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
-    entities_new = entities[(np.sum(isOut, axis=1) != (dim + 1))]
-    vertices_new = vertices
-    jx = np.arange(len(vertices_new))
-    # vertices_new, entities_new, jx = fix_mesh(
-    #    vertices, entities_new, dim=dim, fix_orientation=False
-    # )
-    return vertices_new, entities_new, jx
+    entities = entities[(np.sum(isOut, axis=1) != (dim + 1))]
+    jx = np.arange(len(vertices))
+    return vertices, entities, jx
 
 
 def vertex_to_entities(vertices, entities, dim=2):

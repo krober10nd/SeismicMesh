@@ -315,6 +315,7 @@ where_to3(py::array_t<double, py::array::c_style | py::array::forcecast> points,
           py::array_t<double, py::array::c_style | py::array::forcecast> llc,
           py::array_t<double, py::array::c_style | py::array::forcecast> urc,
           int rank) {
+
   int num_faces = faces.size() / 4;
   int num_points = points.size() / 3;
 

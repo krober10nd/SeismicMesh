@@ -204,7 +204,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     num_old_bad = np.inf
 
     dt = DT()
-    dt.insert(p.flatten().tolist())
+    dt.insert(p.ravel().tolist())
     while True:
 
         start = time.time()
@@ -213,7 +213,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Using CGAL's incremental Delaunay triangulation capabilities.
         if count > 0:
             to_move = np.where(_dist(p, pold) > 0)[0]
-            dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
+            dt.move(to_move.ravel().tolist(), p[to_move].ravel().tolist())
 
         # Get the current topology of the triangulation
         p, t = _get_topology(dt)
@@ -463,7 +463,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
         # (Re)-triangulation by the Delaunay algorithm
         dt = DT()
-        dt.insert(p.flatten().tolist())
+        dt.insert(p.ravel().tolist())
 
         # Get the current topology of the triangulation
         p, t = _get_topology(dt)
@@ -712,7 +712,7 @@ def _add_ghost_vertices(p, t, dt, extents, comm):
     exports = migration.enqueue(extents, p, t, comm.rank, comm.size, dim=dim)
     recv = migration.exchange(comm, comm.rank, comm.size, exports, dim=dim)
     recv_ix = len(recv)
-    dt.insert(recv.flatten().tolist())
+    dt.insert(recv.ravel().tolist())
     p, t = _get_topology(dt)
     p, t, inv = geometry.remove_external_entities(
         p,
