@@ -74,6 +74,9 @@ def aggregate(points, faces, comm, size, rank, dim=2):
     """
     # geometry.dump_mesh(points, faces, rank)
 
+    # do this in serial first then reduce later
+    points, faces, ix = geometry.fix_mesh(points, faces, delete_unused=True, dim=dim)
+
     soff_p = np.zeros((size), dtype=int)
     soff_t = np.zeros((size), dtype=int)
 
@@ -103,15 +106,11 @@ def aggregate(points, faces, comm, size, rank, dim=2):
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces, ix = geometry.fix_mesh(
-            gpoints, gfaces, delete_unused=True, dim=dim
-        )
-        return upoints, ufaces
+        return gpoints, gfaces
     else:
         return True, True
 
 
-# @profile
 def enqueue(extents, points, faces, rank, size, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent
@@ -144,7 +143,6 @@ def enqueue(extents, points, faces, rank, size, dim=2):
     return exports
 
 
-# @profile
 def exchange(comm, rank, size, exports, dim=2):
     """
     Exchange data via MPI using P2P comm

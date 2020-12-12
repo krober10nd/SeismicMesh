@@ -50,7 +50,6 @@ def calc_re_ratios(vertices, entities, dim=2):
     return np.sqrt(r) / minL
 
 
-# @profile
 def remove_external_entities(vertices, entities, extent, dim=2):
     """Remove entities with all dim+1 vertices outside block.
 

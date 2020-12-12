@@ -228,7 +228,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             print_msg1(
-                "FAILURE: Termination...maximum number of iterations reached.",
+                "FAILURE: Termination...maximum number of iterations reached. Try increasing max_iter when generating the mesh",
             )
             p, t = _termination(p, t, sliver_opts, comm, sliver=True)
             break
@@ -278,8 +278,8 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         elif num_bad > num_old_bad:
             # decrease step
             step *= gamma
-        elif num_bad == 1 and num_old_bad == 1:
-            # algorithm appears stuck on last sliver
+        elif num_bad == num_old_bad:
+            # algorithm appears stuck
             # increase step
             step /= 0.8
 
@@ -297,7 +297,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     return p, t
 
 
-# @profile
 def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     r"""Generate a 2D/3D mesh using callbacks to a sizing function `edge_length` and signed distance function `domain`
 
@@ -685,7 +684,6 @@ def _get_edges(t):
     return geometry.unique_edges(edges)
 
 
-# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
@@ -710,7 +708,6 @@ def _compute_forces(p, t, fh, h0, L0mult):
     return Ftot
 
 
-# @profile
 def _add_ghost_vertices(p, t, dt, extents, comm):
     """Parallel Delauany triangulation requires ghost vertices
     to be added each meshing iteration to maintain Delaunay-hood
