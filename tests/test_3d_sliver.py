@@ -84,7 +84,7 @@ def test_3d_sliver_box3d():
 
 @pytest.mark.serial
 def test_3d_sliver_box3d_refined():
-    hmins = np.logspace(-1.0, -1.5, num=5)
+    hmins = np.logspace(-1.0, -1.3, num=5)
     for h in hmins:
         points, cells = box_with_refinement(h)
         ele_nums = calc_dh_angles(points, cells)
