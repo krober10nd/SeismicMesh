@@ -111,6 +111,7 @@ def aggregate(points, faces, comm, size, rank, dim=2):
         return True, True
 
 
+# @profile
 def enqueue(extents, points, faces, rank, size, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent
@@ -143,6 +144,7 @@ def enqueue(extents, points, faces, rank, size, dim=2):
     return exports
 
 
+# @profile
 def exchange(comm, rank, size, exports, dim=2):
     """
     Exchange data via MPI using P2P comm
@@ -155,9 +157,11 @@ def exchange(comm, rank, size, exports, dim=2):
     if NSB != 0 and (rank != 0):  # rank 0 can't send below
         comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
-    # recv  points from above
+    # receive points from above
     if rank != size - 1:
-        tmp = np.append(tmp, comm.recv(source=rank + 1, tag=11))
+        dat_recv = comm.recv(source=rank + 1, tag=11)
+        for p in dat_recv:
+            tmp.append(p)
 
     # send points above
     if NSA != 0 and rank != (size - 1):  # topmost rank can't send to above
@@ -167,8 +171,10 @@ def exchange(comm, rank, size, exports, dim=2):
     # receive points from below
     if rank != 0:
         # all but the bottommost rank receive from below
-        tmp = np.append(tmp, comm.recv(source=rank - 1, tag=11))
+        dat_recv = comm.recv(source=rank - 1, tag=11)
+        for p in dat_recv:
+            tmp.append(p)
 
-    new_points = np.reshape(tmp, (int(len(tmp) / dim), dim))
+    new_points = np.array(tmp)
 
     return new_points

@@ -705,6 +705,7 @@ def _compute_forces(p, t, fh, h0, L0mult):
     return Ftot
 
 
+# @profile
 def _add_ghost_vertices(p, t, dt, extents, comm):
     """Parallel Delauany triangulation requires ghost vertices
     to be added each meshing iteration to maintain Delaunay-hood
