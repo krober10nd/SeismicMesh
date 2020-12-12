@@ -293,6 +293,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     return p, t
 
 
+#@profile
 def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     r"""Generate a 2D/3D mesh using callbacks to a sizing function `edge_length` and signed distance function `domain`
 
@@ -459,7 +460,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         start = time.time()
 
         # Remove non-unique points
-        p = np.array(list(set(tuple(p) for p in p)))
+        # p = np.array(list(set(tuple(p) for p in p)))
 
         # (Re)-triangulation by the Delaunay algorithm
         dt = DT()

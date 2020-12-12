@@ -5,6 +5,8 @@ from .cpp.fast_geometry import (
     calc_dihedral_angles,
     calc_volume_grad,
     unique_edges,
+    drectangle_fast,
+    dblock_fast,
 )
 from .signed_distance_functions import (
     Rectangle,
@@ -56,6 +58,8 @@ __all__ = [
     "Ball",
     "Cube",
     "Cylinder",
+    "drectangle_fast",
+    "dblock_fast",
     "Torus",
     "Prism",
     "Disk",

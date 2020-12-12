@@ -70,22 +70,22 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     """
 
     if dim == 2:
-        signed_distance = sdf.drectangle(
+        signed_distance = gutils.drectangle_fast(
             vertices[entities.ravel(), :],
-            x1=extent[0],
-            x2=extent[2],
-            y1=extent[1],
-            y2=extent[3],
+            extent[0],
+            extent[2],
+            extent[1],
+            extent[3],
         )
     elif dim == 3:
-        signed_distance = sdf.dblock(
+        signed_distance = gutils.dblock_fast(
             vertices[entities.ravel(), :],
-            x1=extent[0],
-            x2=extent[3],
-            y1=extent[1],
-            y2=extent[4],
-            z1=extent[2],
-            z2=extent[5],
+            extent[0],
+            extent[3],
+            extent[1],
+            extent[4],
+            extent[2],
+            extent[5],
         )
     isOut = np.reshape(signed_distance > 0.0, (-1, (dim + 1)))
     entities = entities[(np.sum(isOut, axis=1) != (dim + 1))]

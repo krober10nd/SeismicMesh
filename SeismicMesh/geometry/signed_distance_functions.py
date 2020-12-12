@@ -1,6 +1,8 @@
 import numpy as np
 import itertools
 
+from .cpp.fast_geometry import drectangle_fast, dblock_fast
+
 
 def _length(x):
     return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
@@ -154,7 +156,9 @@ class Rectangle:
         self.bbox = bbox
 
     def eval(self, x):
-        return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
+        return drectangle_fast(
+            x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3]
+        )
 
 
 class Cube:
@@ -164,7 +168,7 @@ class Cube:
         self.bbox = bbox
 
     def eval(self, x):
-        return dblock(
+        return dblock_fast(
             x,
             self.bbox[0],
             self.bbox[1],
