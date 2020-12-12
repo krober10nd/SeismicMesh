@@ -278,6 +278,10 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         elif num_bad > num_old_bad:
             # decrease step
             step *= gamma
+        elif num_bad == 1 and num_old_bad == 1:
+            # algorithm appears stuck on last sliver
+            # increase step
+            step /= 0.8
 
         # perturb step % of minimum mesh size
         p[move] += step * h0 * perturb
@@ -681,6 +685,7 @@ def _get_edges(t):
     return geometry.unique_edges(edges)
 
 
+# @profile
 def _compute_forces(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
