@@ -94,6 +94,9 @@ std::vector<double> c_where_to2(std::vector<double> &points,
 
   auto vtoe_map = build_vtoe2(points, faces);
 
+  double kount_below = 0.0;
+  double kount_above = 0.0;
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -120,13 +123,25 @@ std::vector<double> c_where_to2(std::vector<double> &points,
       double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3);
       Circle circ = Circle(cc, sqr_radius, CGAL::CLOCKWISE);
       // Does this circumball intersect with box above or box below?
+      bool intersects;
       for (std::size_t bx = 0; bx < 2; ++bx) {
         Rectangle rect = Rectangle(Point(llc[bx * 2], llc[bx * 2 + 1]),
                                    Point(urc[bx * 2], urc[bx * 2 + 1]));
-        bool intersects = CGAL::do_intersect(circ, rect);
+        intersects = CGAL::do_intersect(circ, rect);
         if (intersects) {
           exports[iv] = bx;
+          if(bx == 0){
+            kount_below += 1.0;
+          }
+          else if(bx == 1){
+            kount_above += 1.0;
+          }
+          break;
         }
+      }
+       // no need to inspect the rest, we already know this vertex needs to be migrated
+      if (intersects) {
+          break;
       }
     }
   }
@@ -134,27 +149,26 @@ std::vector<double> c_where_to2(std::vector<double> &points,
   std::vector<double> pointsToMigrate;
   pointsToMigrate.resize(1 + num_points * 3, -1);
 
-  double kount_below = 0.0;
+  double below_count = 0.0;
+  double above_count = 0.0;
+
   for (std::size_t iv = 0; iv < num_points; ++iv) {
     if (exports[iv] == 0) {
-      pointsToMigrate[kount_below * 3 + 0 + 3] = points[iv * 2];
-      pointsToMigrate[kount_below * 3 + 1 + 3] = points[iv * 2 + 1];
-      pointsToMigrate[kount_below * 3 + 2 + 3] = (double)iv;
-      kount_below += 1.0;
+      pointsToMigrate[below_count * 3 + 0 + 3] = points[iv * 2];
+      pointsToMigrate[below_count * 3 + 1 + 3] = points[iv * 2 + 1];
+      pointsToMigrate[below_count * 3 + 2 + 3] = (double)iv;
+      below_count += 1.0;
+    }
+    else if (exports[iv] ==1){
+      pointsToMigrate[kount_below * 3 + above_count * 3 + 0 + 3] =
+          points[iv * 2];
+      pointsToMigrate[kount_below * 3 + above_count * 3 + 1 + 3] =
+          points[iv * 2 + 1];
+      pointsToMigrate[kount_below * 3 + above_count * 3 + 2 + 3] = (double)iv;
+      above_count += 1.0;
     }
   }
 
-  double kount_above = 0.0;
-  for (std::size_t iv = 0; iv < num_points; ++iv) {
-    if (exports[iv] == 1) {
-      pointsToMigrate[kount_below * 3 + kount_above * 3 + 0 + 3] =
-          points[iv * 2];
-      pointsToMigrate[kount_below * 3 + kount_above * 3 + 1 + 3] =
-          points[iv * 2 + 1];
-      pointsToMigrate[kount_below * 3 + kount_above * 3 + 2 + 3] = (double)iv;
-      kount_above += 1.0;
-    }
-  }
   pointsToMigrate[0] = kount_below;
   pointsToMigrate[1] = kount_above;
   pointsToMigrate[2] = 0.0;
@@ -223,6 +237,9 @@ std::vector<double> c_where_to3(std::vector<double> &points,
 
   auto vtoe_map = build_vtoe3(points, faces);
 
+  double kount_below = 0.0;
+  double kount_above = 0.0;
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -251,24 +268,36 @@ std::vector<double> c_where_to3(std::vector<double> &points,
       }
 
       bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
-
       if (isCoplanar) {
         // std::cout<<"alert"<<std::endl;
         continue;
       }
-      //// Calculate circumball of element
+
+      // Calculate circumball of element
       Point3 cc = CGAL::circumcenter(pnm1, pnm2, pnm3, pnm4);
       double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3, pnm4);
       Sphere sphere = Sphere(cc, sqr_radius, CGAL::CLOCKWISE);
       // Does this circumball intersect with box above or box below?
+      bool intersects;
       for (std::size_t bx = 0; bx < 2; ++bx) {
         Cuboid cube =
             Cuboid(Point3(llc[bx * 3], llc[bx * 3 + 1], llc[bx * 3 + 2]),
                    Point3(urc[bx * 3], urc[bx * 3 + 1], urc[bx * 3 + 2]));
-        bool intersects = CGAL::do_intersect(sphere, cube);
+        intersects = CGAL::do_intersect(sphere, cube);
         if (intersects) {
           exports[iv] = bx;
+          if(bx == 0){
+            kount_below += 1.0;
+          }
+          else if(bx == 1){
+            kount_above += 1.0;
+          }
+          break;
         }
+      }
+      // no need to inspect the rest, we already know this vertex needs to be migrated
+      if (intersects){
+          break;
       }
     }
   }
@@ -276,30 +305,29 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   std::vector<double> pointsToMigrate;
   pointsToMigrate.resize(1 + num_points * 4, -1);
 
-  double kount_below = 0.0;
+  double below_count = 0.0;
+  double above_count = 0.0;
+
   for (std::size_t iv = 0; iv < num_points; ++iv) {
     if (exports[iv] == 0) {
-      pointsToMigrate[kount_below * 4 + 0 + 4] = points[iv * 3];
-      pointsToMigrate[kount_below * 4 + 1 + 4] = points[iv * 3 + 1];
-      pointsToMigrate[kount_below * 4 + 2 + 4] = points[iv * 3 + 2];
-      pointsToMigrate[kount_below * 4 + 3 + 4] = (double)iv;
-      kount_below += 1.0;
+      pointsToMigrate[below_count * 4 + 0 + 4] = points[iv * 3];
+      pointsToMigrate[below_count * 4 + 1 + 4] = points[iv * 3 + 1];
+      pointsToMigrate[below_count * 4 + 2 + 4] = points[iv * 3 + 2];
+      pointsToMigrate[below_count * 4 + 3 + 4] = (double)iv;
+      below_count += 1.0;
     }
-  }
-
-  double kount_above = 0.0;
-  for (std::size_t iv = 0; iv < num_points; ++iv) {
-    if (exports[iv] == 1) {
-      pointsToMigrate[kount_below * 4 + kount_above * 4 + 0 + 4] =
+    else if (exports[iv] == 1) {
+      pointsToMigrate[kount_below * 4 + above_count * 4 + 0 + 4] =
           points[iv * 3];
-      pointsToMigrate[kount_below * 4 + kount_above * 4 + 1 + 4] =
+      pointsToMigrate[kount_below * 4 + above_count * 4 + 1 + 4] =
           points[iv * 3 + 1];
-      pointsToMigrate[kount_below * 4 + kount_above * 4 + 2 + 4] =
+      pointsToMigrate[kount_below * 4 + above_count * 4 + 2 + 4] =
           points[iv * 3 + 2];
-      pointsToMigrate[kount_below * 4 + kount_above * 4 + 3 + 4] = (double)iv;
-      kount_above += 1.0;
+      pointsToMigrate[kount_below * 4 + above_count * 4 + 3 + 4] = (double)iv;
+      above_count += 1.0;
+      }
     }
-  }
+
   pointsToMigrate[0] = kount_below;
   pointsToMigrate[1] = kount_above;
   pointsToMigrate[2] = 0.0;
