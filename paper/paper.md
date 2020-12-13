@@ -62,7 +62,7 @@ For the two seismic domains (e.g., BP2004 and EAGE), SeismicMesh is faster than 
 
 # Parallelism
 
-A simplified version of the parallel Delaunay algorithm proposed by [ @peterka2014high] is implemented inside the DistMesh algorithm, which does not consider sophisticated domain decomposition or load balancing yet. \autoref{fig:speedup} shows a peak speed-up of approximately 4 times using 11 cores when performing 50 meshing iterations to generate both the light and heavy meshes of the EAGE P-wave velocity model. While the parallel performance is not perfect at this stage of development, the capability reduces the generation time of this relatively large example (e.g., 33 M cells) from 92.0 minutes to approximately 21.7 minutes. Results indicate that Python array manipulations dominate parallel execution time and inhibit scalability. The machine used for this experiment was an Intel Xeon Gold 6148 machine clocked at 2.4 GHz  with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+A simplified version of the parallel Delaunay algorithm proposed by [ @peterka2014high] is implemented inside the DistMesh algorithm, which does not consider sophisticated domain decomposition or load balancing yet. \autoref{fig:speedup} shows a peak speed-up of approximately 6 times using 11 cores when performing 50 meshing iterations to generate the 33M cell mesh of the EAGE P-wave velocity model. While the parallel performance is not perfect at this stage of development, the capability reduces the generation time of this relatively large example (e.g., 33 M cells) from 90.0 minutes to approximately 15.6 minutes. Results indicate that the simple domain decomposition approach inhibit perfect scalability. The machine used for this experiment was an Intel Xeon Gold 6148 machine clocked at 2.4 GHz  with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
 
 ![The speedup (left-panel) as compared to the serial version of SeismicMesh V3.1.0 for a relatively light and heavy mesh each adapted to P-wave data from the EAGE Salt seismic velocity model. The total mesh generation wall-clock time is annotated in decimal minutes next to each point. The panel on the right hand side shows the mesh generation rate normalized by the number of total number of cells in the mesh. \label{fig:speedup}](Performance.png)
 
@@ -76,7 +76,7 @@ A simplified version of the parallel Delaunay algorithm proposed by [ @peterka20
 
  * Much like how the original DistMesh program has been used, SeismicMesh can be adapted for other domain-specific applications besides seismology (e.g., fluid dynamics, astrophysics, and oceanography). An open source project project is already under way to use the same mesh generation technology for a Python version of OceanMesh2D to build industrial-grade meshes of coastal oceans [@roberts2019oceanmesh2d].
 
- We expect future extensions of the program to introduce better domain decomposition algorithms to improve parallel performance, and support for periodic mesh generation.
+We expect future extensions of the program to introduce better domain decomposition algorithms to improve parallel performance.
 
 # Acknowledgements
 
