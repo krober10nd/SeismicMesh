@@ -97,6 +97,9 @@ std::vector<double> c_where_to2(std::vector<double> &points,
   double kount_below = 0.0;
   double kount_above = 0.0;
 
+ Rectangle rect1 = Rectangle(Point(llc[0 * 2], llc[0 * 2 + 1]),Point(urc[0 * 2], urc[0 * 2 + 1]));
+ Rectangle rect2 = Rectangle(Point(llc[1 * 2], llc[1 * 2 + 1]),Point(urc[1 * 2], urc[1 * 2 + 1]));
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -124,23 +127,16 @@ std::vector<double> c_where_to2(std::vector<double> &points,
       Circle circ = Circle(cc, sqr_radius, CGAL::CLOCKWISE);
       // Does this circumball intersect with box above or box below?
       bool intersects;
-      for (std::size_t bx = 0; bx < 2; ++bx) {
-        Rectangle rect = Rectangle(Point(llc[bx * 2], llc[bx * 2 + 1]),
-                                   Point(urc[bx * 2], urc[bx * 2 + 1]));
-        intersects = CGAL::do_intersect(circ, rect);
-        if (intersects) {
-          exports[iv] = bx;
-          if(bx == 0){
-            kount_below += 1.0;
-          }
-          else if(bx == 1){
-            kount_above += 1.0;
-          }
+      intersects = CGAL::do_intersect(circ, rect1);
+      if (intersects){
+          exports[iv] = 0;
+          kount_below += 1.0;
           break;
-        }
       }
-       // no need to inspect the rest, we already know this vertex needs to be migrated
-      if (intersects) {
+      intersects = CGAL::do_intersect(circ, rect2);
+      if (intersects){
+          exports[iv] = 1;
+          kount_above += 1.0;
           break;
       }
     }
@@ -153,6 +149,9 @@ std::vector<double> c_where_to2(std::vector<double> &points,
   double above_count = 0.0;
 
   for (std::size_t iv = 0; iv < num_points; ++iv) {
+    if (exports[iv] == -1){
+        continue;
+    }
     if (exports[iv] == 0) {
       pointsToMigrate[below_count * 3 + 0 + 3] = points[iv * 2];
       pointsToMigrate[below_count * 3 + 1 + 3] = points[iv * 2 + 1];
@@ -240,6 +239,11 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   double kount_below = 0.0;
   double kount_above = 0.0;
 
+  Cuboid cube1 = Cuboid(Point3(llc[0 * 3], llc[0 * 3 + 1], llc[0 * 3 + 2]),
+                Point3(urc[0 * 3], urc[0 * 3 + 1], urc[0 * 3 + 2]));
+  Cuboid cube2 = Cuboid(Point3(llc[1 * 3], llc[1 * 3 + 1], llc[1 * 3 + 2]),
+                Point3(urc[1 * 3], urc[1 * 3 + 1], urc[1 * 3 + 2]));
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -279,26 +283,19 @@ std::vector<double> c_where_to3(std::vector<double> &points,
       Sphere sphere = Sphere(cc, sqr_radius, CGAL::CLOCKWISE);
       // Does this circumball intersect with box above or box below?
       bool intersects;
-      for (std::size_t bx = 0; bx < 2; ++bx) {
-        Cuboid cube =
-            Cuboid(Point3(llc[bx * 3], llc[bx * 3 + 1], llc[bx * 3 + 2]),
-                   Point3(urc[bx * 3], urc[bx * 3 + 1], urc[bx * 3 + 2]));
-        intersects = CGAL::do_intersect(sphere, cube);
-        if (intersects) {
-          exports[iv] = bx;
-          if(bx == 0){
-            kount_below += 1.0;
-          }
-          else if(bx == 1){
-            kount_above += 1.0;
-          }
-          break;
-        }
-      }
-      // no need to inspect the rest, we already know this vertex needs to be migrated
+      intersects = CGAL::do_intersect(sphere, cube1);
       if (intersects){
+          exports[iv] = 0;
+          kount_below += 1.0;
           break;
       }
+     intersects = CGAL::do_intersect(sphere, cube2);
+     if (intersects){
+          exports[iv] = 1;
+          kount_above += 1.0;
+          break;
+      }
+
     }
   }
 
@@ -309,6 +306,9 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   double above_count = 0.0;
 
   for (std::size_t iv = 0; iv < num_points; ++iv) {
+      if (exports[iv] == -1){
+          continue;
+      }
     if (exports[iv] == 0) {
       pointsToMigrate[below_count * 4 + 0 + 4] = points[iv * 3];
       pointsToMigrate[below_count * 4 + 1 + 4] = points[iv * 3 + 1];
