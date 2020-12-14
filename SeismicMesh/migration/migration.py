@@ -111,6 +111,7 @@ def aggregate(points, faces, comm, size, rank, dim=2):
         return True, True
 
 
+# @profile
 def enqueue(extents, points, faces, rank, size, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent
@@ -149,6 +150,9 @@ def exchange(comm, rank, size, exports, dim=2):
     """
     NSB = int(exports[0, 0])
     NSA = int(exports[0, 1])
+
+    if NSB == 0 and NSA == 0:
+        return np.array([[]])
 
     tmp = []
     # send points below
