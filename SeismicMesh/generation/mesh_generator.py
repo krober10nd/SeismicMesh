@@ -114,6 +114,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "delta_t": 0.30,
         "geps_mult": 0.1,
         "subdomains": [],
+        "gamma": 1.0,
     }
 
     sliver_opts.update(kwargs)
@@ -170,6 +171,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     )
 
     geps = sliver_opts["geps_mult"] * h0
+
     # deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = sliver_opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
@@ -197,10 +199,12 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     count = 0
     pold = None
-    push = 0.10
+    step = 0.10
+    gamma = sliver_opts["gamma"]
+    num_old_bad = np.inf
 
     dt = DT()
-    dt.insert(p.flatten().tolist())
+    dt.insert(p.ravel().tolist())
     while True:
 
         start = time.time()
@@ -209,7 +213,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Using CGAL's incremental Delaunay triangulation capabilities.
         if count > 0:
             to_move = np.where(_dist(p, pold) > 0)[0]
-            dt.move(to_move.flatten().tolist(), p[to_move].flatten().tolist())
+            dt.move(to_move.ravel().tolist(), p[to_move].ravel().tolist())
 
         # Get the current topology of the triangulation
         p, t = _get_topology(dt)
@@ -224,7 +228,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             print_msg1(
-                "FAILURE: Termination...maximum number of iterations reached.",
+                "FAILURE: Termination...maximum number of iterations reached. Try increasing max_iter when generating the mesh",
             )
             p, t = _termination(p, t, sliver_opts, comm, sliver=True)
             break
@@ -266,10 +270,25 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         perturb_norm = np.sum(np.abs(perturb) ** 2, axis=-1) ** (1.0 / 2)
         perturb /= perturb_norm[:, None]
 
-        # perturb push % of minimum mesh size
-        p[move] += push * h0 * perturb
+        num_bad = len(ele_nums)
+
+        if num_bad < num_old_bad:
+            # increase step
+            step /= gamma
+        elif num_bad > num_old_bad:
+            # decrease step
+            step *= gamma
+        elif num_bad == num_old_bad:
+            # algorithm appears stuck
+            # increase step
+            step /= 0.8
+
+        # perturb step % of minimum mesh size
+        p[move] += step * h0 * perturb
 
         count += 1
+
+        num_old_bad = len(ele_nums)
 
         end = time.time()
         if comm.rank == 0:
@@ -444,11 +463,11 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         start = time.time()
 
         # Remove non-unique points
-        p = np.array(list(set(tuple(p) for p in p)))
+        # p = np.array(list(set(tuple(p) for p in p)))
 
         # (Re)-triangulation by the Delaunay algorithm
         dt = DT()
-        dt.insert(p.flatten().tolist())
+        dt.insert(p.ravel().tolist())
 
         # Get the current topology of the triangulation
         p, t = _get_topology(dt)
@@ -621,6 +640,7 @@ def _parse_kwargs(kwargs):
             "h0",
             "geps_mult",
             "subdomains",
+            "gamma",
         }:
             pass
         else:
@@ -696,7 +716,7 @@ def _add_ghost_vertices(p, t, dt, extents, comm):
     exports = migration.enqueue(extents, p, t, comm.rank, comm.size, dim=dim)
     recv = migration.exchange(comm, comm.rank, comm.size, exports, dim=dim)
     recv_ix = len(recv)
-    dt.insert(recv.flatten().tolist())
+    dt.insert(recv.ravel().tolist())
     p, t = _get_topology(dt)
     p, t, inv = geometry.remove_external_entities(
         p,

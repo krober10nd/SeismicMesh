@@ -101,6 +101,118 @@ double dot_product(const std::array<double, 3> &vect_A,
   return product;
 }
 
+std::vector<double> c_dblock(std::vector<double> &points, double x1, double x2,
+                             double y1, double y2, double z1, double z2) {
+  // Signed distance function for block with corners (x1,y1,z1), (x2,y2,z2)
+  int sz = points.size() / 3;
+  std::vector<double> dist;
+  dist.resize(sz);
+  // return -min(
+  //    min(
+  //        min(min(min(-z1 + p[:, 2], z2 - p[:, 2]), -y1 + p[:, 1]), y2 - p[:,
+  //        1]), -x1 + p[:, 0],
+  //    ),
+  //    x2 - p[:, 0],
+  //)
+  for (std::size_t iv = 0; iv < sz; ++iv) {
+
+    double sum1 = -z1 + points[3 * iv + 2];
+    double sum2 = z2 - points[3 * iv + 2];
+    double sum3 = -y1 + points[3 * iv + 1];
+    double sum4 = y2 - points[3 * iv + 1];
+    double sum5 = -x1 + points[3 * iv];
+    double sum6 = x2 - points[3 * iv];
+
+    double tmp1 = std::min(sum1, sum2);
+    double tmp2 = std::min(tmp1, sum3);
+    double tmp3 = std::min(tmp2, sum4);
+    double tmp4 = std::min(tmp3, sum5);
+
+    dist[iv] = -std::min(tmp4, sum6);
+  }
+  return dist;
+}
+
+py::array dblock_fast(
+    py::array_t<double, py::array::c_style | py::array::forcecast> points,
+    double x1, double x2, double y1, double y2, double z1, double z2) {
+
+  // check input dimensions
+  int num_points = points.size() / 3;
+  // allocate std::vector (to pass to the C++ function)
+  std::vector<double> cppPts(num_points * 3);
+
+  // copy py::array -> std::vector
+  std::memcpy(cppPts.data(), points.data(), 3 * num_points * sizeof(double));
+
+  std::vector<double> dist = c_dblock(cppPts, x1, x2, y1, y2, z1, z2);
+
+  ssize_t sodble = sizeof(double);
+  std::vector<ssize_t> shape = {num_points};
+  std::vector<ssize_t> strides = {sodble};
+
+  // return 1-D NumPy array
+  return py::array(
+      py::buffer_info(dist.data(),    /* data as contiguous array  */
+                      sizeof(double), /* size of one scalar        */
+                      py::format_descriptor<double>::format(), /* data type */
+                      1,      /* number of dimensions      */
+                      shape,  /* shape of the matrix       */
+                      strides /* strides for each axis     */
+                      ));
+}
+
+std::vector<double> c_drectangle(std::vector<double> &points, double x1,
+                                 double x2, double y1, double y2) {
+  // Signed distance function for rectangle with corners (x1,y1), (x2,y1)
+  int sz = points.size() / 2;
+  std::vector<double> dist;
+  dist.resize(sz);
+  // return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:,
+  // 0])
+  for (std::size_t iv = 0; iv < sz; ++iv) {
+
+    double sum1 = -y1 + points[2 * iv + 1];
+    double sum2 = y2 - points[2 * iv + 1];
+    double sum3 = -x1 + points[2 * iv];
+    double sum4 = x2 - points[2 * iv];
+
+    double tmp1 = std::min(sum1, sum2);
+    double tmp2 = std::min(tmp1, sum3);
+    dist[iv] = -std::min(tmp2, sum4);
+  }
+  return dist;
+}
+
+py::array drectangle_fast(
+    py::array_t<double, py::array::c_style | py::array::forcecast> points,
+    double x1, double x2, double y1, double y2) {
+
+  // check input dimensions
+  int num_points = points.size() / 2;
+  // allocate std::vector (to pass to the C++ function)
+  std::vector<double> cppPts(num_points * 2);
+
+  // copy py::array -> std::vector
+  std::memcpy(cppPts.data(), points.data(), 2 * num_points * sizeof(double));
+
+  std::vector<double> dist = c_drectangle(cppPts, x1, x2, y1, y2);
+
+  ssize_t sodble = sizeof(double);
+  std::vector<ssize_t> shape = {num_points};
+  std::vector<ssize_t> strides = {sodble};
+
+  // return 1-D NumPy array
+  return py::array(
+      py::buffer_info(dist.data(),    /* data as contiguous array  */
+                      sizeof(double), /* size of one scalar        */
+                      py::format_descriptor<double>::format(), /* data type */
+                      1,      /* number of dimensions      */
+                      shape,  /* shape of the matrix       */
+                      strides /* strides for each axis     */
+                      ));
+}
+
 std::vector<double> c_calc_dihedral_angles(std::vector<double> &points,
                                            std::vector<int> &cells) {
   // compute the 6 dihedral angles of all tetrahedrons in the mesh
@@ -456,6 +568,8 @@ py::array calc_circumsphere_grad(
 }
 
 PYBIND11_MODULE(fast_geometry, m) {
+  m.def("drectangle_fast", &drectangle_fast);
+  m.def("dblock_fast", &dblock_fast);
   m.def("unique_edges", &unique_edges);
   m.def("calc_volume_grad", &calc_volume_grad);
   m.def("calc_circumsphere_grad", &calc_circumsphere_grad);

@@ -1,6 +1,8 @@
 import numpy as np
 import itertools
 
+from .cpp.fast_geometry import drectangle_fast, dblock_fast
+
 
 def _length(x):
     return np.sum(np.abs(x) ** 2, axis=-1) ** (1.0 / 2)
@@ -154,7 +156,9 @@ class Rectangle:
         self.bbox = bbox
 
     def eval(self, x):
-        return drectangle(x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3])
+        return drectangle_fast(
+            x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3]
+        )
 
 
 class Cube:
@@ -164,7 +168,7 @@ class Cube:
         self.bbox = bbox
 
     def eval(self, x):
-        return dblock(
+        return dblock_fast(
             x,
             self.bbox[0],
             self.bbox[1],
@@ -242,40 +246,6 @@ def drectangle(p, x1, x2, y1, y2):
     This has an incorrect distance to the four corners but that isn't a big deal
     """
     return -min(min(min(-y1 + p[:, 1], y2 - p[:, 1]), -x1 + p[:, 0]), x2 - p[:, 0])
-
-
-def dblock0(p, x1, x2, y1, y2, z1, z2):
-    # adapted from:
-    # https://github.com/nschloe/dmsh/blob/3305c417d373d509c78491b24e77409411aa18c2/dmsh/geometry/rectangle.py#L31
-    # outside dist
-    # https://gamedev.stackexchange.com/a/44496
-    w = x2 - x1
-    h = y2 - y1
-    d = z2 - z1
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    cz = (z1 + z2) / 2
-    dx = np.abs(p[:, 0] - cx) - w / 2
-    dy = np.abs(p[:, 1] - cy) - h / 2
-    dz = np.abs(p[:, 2] - cz) - d / 2
-    is_inside = (dx <= 0) & (dy <= 0) & (dz <= 0)
-    dx[dx < 0.0] = 0.0
-    dy[dy < 0.0] = 0.0
-    dz[dz < 0.0] = 0.0
-    dist = np.sqrt(dx ** 2 + dy ** 2 + dz ** 2)
-    # inside dist
-    a = np.array(
-        [
-            p[is_inside, 0] - x1,
-            x2 - p[is_inside, 0],
-            p[is_inside, 1] - y1,
-            y2 - p[is_inside, 1],
-            p[is_inside, 2] - z1,
-            z2 - p[is_inside, 2],
-        ]
-    )
-    dist[is_inside] = -np.min(a, axis=0)
-    return dist
 
 
 def dblock(p, x1, x2, y1, y2, z1, z2):

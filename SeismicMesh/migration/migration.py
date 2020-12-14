@@ -74,6 +74,9 @@ def aggregate(points, faces, comm, size, rank, dim=2):
     """
     # geometry.dump_mesh(points, faces, rank)
 
+    # do this in serial first then reduce later
+    points, faces, ix = geometry.fix_mesh(points, faces, delete_unused=True, dim=dim)
+
     soff_p = np.zeros((size), dtype=int)
     soff_t = np.zeros((size), dtype=int)
 
@@ -103,10 +106,7 @@ def aggregate(points, faces, comm, size, rank, dim=2):
             gpoints = np.append(gpoints, tmp, axis=0)
             gfaces = np.append(gfaces, tmp2, axis=0)
     if rank == 0:
-        upoints, ufaces, ix = geometry.fix_mesh(
-            gpoints, gfaces, delete_unused=True, dim=dim
-        )
-        return upoints, ufaces
+        return gpoints, gfaces
     else:
         return True, True
 
@@ -135,12 +135,10 @@ def enqueue(extents, points, faces, rank, size, dim=2):
         le = np.insert(le, 0, [-999999999] * dim)
         re = np.insert(re, 0, [-999999998] * dim)
 
-    vtoe, ptr = geometry.vertex_to_entities(points, faces, dim=dim)
-
     if dim == 2:
-        exports = cpputils.where_to2(points, faces, vtoe, ptr, le, re, rank)
+        exports = cpputils.where_to2(points, faces, le, re, rank)
     elif dim == 3:
-        exports = cpputils.where_to3(points, faces, vtoe, ptr, le, re, rank)
+        exports = cpputils.where_to3(points, faces, le, re, rank)
 
     return exports
 
@@ -157,9 +155,11 @@ def exchange(comm, rank, size, exports, dim=2):
     if NSB != 0 and (rank != 0):  # rank 0 can't send below
         comm.send(exports[1 : NSB + 1, 0:dim], dest=rank - 1, tag=11)
 
-    # recv  points from above
+    # receive points from above
     if rank != size - 1:
-        tmp = np.append(tmp, comm.recv(source=rank + 1, tag=11))
+        dat_recv = comm.recv(source=rank + 1, tag=11)
+        for p in dat_recv:
+            tmp.append(p)
 
     # send points above
     if NSA != 0 and rank != (size - 1):  # topmost rank can't send to above
@@ -169,8 +169,10 @@ def exchange(comm, rank, size, exports, dim=2):
     # receive points from below
     if rank != 0:
         # all but the bottommost rank receive from below
-        tmp = np.append(tmp, comm.recv(source=rank - 1, tag=11))
+        dat_recv = comm.recv(source=rank - 1, tag=11)
+        for p in dat_recv:
+            tmp.append(p)
 
-    new_points = np.reshape(tmp, (int(len(tmp) / dim), dim))
+    new_points = np.array(tmp)
 
     return new_points
