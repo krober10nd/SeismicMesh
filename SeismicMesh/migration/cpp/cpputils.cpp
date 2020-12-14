@@ -268,6 +268,10 @@ std::vector<double> c_where_to3(std::vector<double> &points,
   Cuboid cube2 = Cuboid(Point3(llc[1 * 3], llc[1 * 3 + 1], llc[1 * 3 + 2]),
                 Point3(urc[1 * 3], urc[1 * 3 + 1], urc[1 * 3 + 2]));
 
+  // create bbox of cuboids to filter tests
+  CGAL::Bbox_3 cuboid1_bbox = CGAL::Bbox_3(llc[0], llc[1], llc[2] ,urc[0], urc[1], urc[2]);
+  CGAL::Bbox_3 cuboid2_bbox = CGAL::Bbox_3(llc[3], llc[4], llc[5], urc[3], urc[4], urc[5]);
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -281,46 +285,64 @@ std::vector<double> c_where_to3(std::vector<double> &points,
       int nm3 = faces[nei_ele * 4 + 2];
       int nm4 = faces[nei_ele * 4 + 3];
 
-      // Coordinates of each vertex of element
-      Point3 pnm1 =
-          Point3(points[nm1 * 3], points[nm1 * 3 + 1], points[nm1 * 3 + 2]);
-      Point3 pnm2 =
-          Point3(points[nm2 * 3], points[nm2 * 3 + 1], points[nm2 * 3 + 2]);
-      Point3 pnm3 =
-          Point3(points[nm3 * 3], points[nm3 * 3 + 1], points[nm3 * 3 + 2]);
-      Point3 pnm4 =
-          Point3(points[nm4 * 3], points[nm4 * 3 + 1], points[nm4 * 3 + 2]);
+      // Test if this element has a bounding box that intersects with one of the rectangles
+      // otherwise go no further
+      std::array<double, 4> ele_x = {points[nm1*3], points[nm2*3], points[nm3*3], points[nm4*3]};
+      std::array<double, 4> ele_y = {points[nm1*3+1], points[nm2*3+1], points[nm3*3+1], points[nm4*3+1]};
+      std::array<double, 4> ele_z = {points[nm1*3+2], points[nm2*3+2], points[nm3*3+2], points[nm4*3+2]};
 
-      if (volume(pnm1, pnm2, pnm3, pnm4) == 0) {
-        continue;
-      }
+      auto min_x = std::min_element(std::begin(ele_x), std::end(ele_x));
+      auto min_y = std::min_element(std::begin(ele_y), std::end(ele_y));
+      auto min_z = std::min_element(std::begin(ele_z), std::end(ele_z));
 
-      bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
-      if (isCoplanar) {
-        // std::cout<<"alert"<<std::endl;
-        continue;
-      }
+      auto max_x = std::max_element(std::begin(ele_x), std::end(ele_x));
+      auto max_y = std::max_element(std::begin(ele_y), std::end(ele_y));
+      auto max_z = std::max_element(std::begin(ele_z), std::end(ele_z));
 
-      // Calculate circumball of element
-      Point3 cc = CGAL::circumcenter(pnm1, pnm2, pnm3, pnm4);
-      double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3, pnm4);
-      Sphere sphere = Sphere(cc, sqr_radius, CGAL::CLOCKWISE);
-      // Does this circumball intersect with box above or box below?
-      bool intersects;
-      intersects = CGAL::do_intersect(sphere, cube1);
-      if (intersects){
-          exports[iv] = 0;
-          kount_below += 1.0;
-          break;
-      }
-     intersects = CGAL::do_intersect(sphere, cube2);
-     if (intersects){
-          exports[iv] = 1;
-          kount_above += 1.0;
-          break;
-      }
+      CGAL::Bbox_3 sphere_bbox = CGAL::Bbox_3(*min_x, *min_y, *min_z, *max_x, *max_y, *max_z);
 
-    }
+      if(CGAL::do_overlap(sphere_bbox, cuboid1_bbox) or CGAL::do_overlap(sphere_bbox, cuboid2_bbox)){
+
+         // Coordinates of each vertex of element
+         Point3 pnm1 =
+             Point3(points[nm1 * 3], points[nm1 * 3 + 1], points[nm1 * 3 + 2]);
+         Point3 pnm2 =
+             Point3(points[nm2 * 3], points[nm2 * 3 + 1], points[nm2 * 3 + 2]);
+         Point3 pnm3 =
+             Point3(points[nm3 * 3], points[nm3 * 3 + 1], points[nm3 * 3 + 2]);
+         Point3 pnm4 =
+             Point3(points[nm4 * 3], points[nm4 * 3 + 1], points[nm4 * 3 + 2]);
+
+         if (volume(pnm1, pnm2, pnm3, pnm4) == 0) {
+           continue;
+         }
+
+         bool isCoplanar = CGAL::coplanar(pnm1, pnm2, pnm3, pnm4);
+         if (isCoplanar) {
+           // std::cout<<"alert"<<std::endl;
+           continue;
+         }
+
+         // Calculate circumball of element
+         Point3 cc = CGAL::circumcenter(pnm1, pnm2, pnm3, pnm4);
+         double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3, pnm4);
+         Sphere sphere = Sphere(cc, sqr_radius, CGAL::CLOCKWISE);
+         // Does this circumball intersect with box above or box below?
+         bool intersects;
+         intersects = CGAL::do_intersect(sphere, cube1);
+         if (intersects){
+             exports[iv] = 0;
+             kount_below += 1.0;
+             break;
+         }
+         intersects = CGAL::do_intersect(sphere, cube2);
+         if (intersects){
+              exports[iv] = 1;
+              kount_above += 1.0;
+              break;
+          }
+        }
+     }
   }
 
   std::vector<double> pointsToMigrate;
