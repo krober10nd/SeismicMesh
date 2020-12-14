@@ -11,6 +11,9 @@
 #include <CGAL/Sphere_3.h>
 #include <CGAL/intersections.h>
 
+#include <CGAL/Bbox_2.h>
+#include <CGAL/Bbox_3.h>
+
 #include <assert.h>
 #include <vector>
 
@@ -100,6 +103,10 @@ std::vector<double> c_where_to2(std::vector<double> &points,
  Rectangle rect1 = Rectangle(Point(llc[0 * 2], llc[0 * 2 + 1]),Point(urc[0 * 2], urc[0 * 2 + 1]));
  Rectangle rect2 = Rectangle(Point(llc[1 * 2], llc[1 * 2 + 1]),Point(urc[1 * 2], urc[1 * 2 + 1]));
 
+ // create bbox of rectangles to filter tests
+ CGAL::Bbox_2 rect1_bbox = CGAL::Bbox_2(llc[0], llc[1], urc[0], urc[1]);
+ CGAL::Bbox_2 rect2_bbox = CGAL::Bbox_2(llc[2], llc[3], urc[2], urc[3]);
+
   // For each point in points
   for (std::size_t iv = 0; iv < num_points; ++iv) {
 
@@ -111,33 +118,50 @@ std::vector<double> c_where_to2(std::vector<double> &points,
       int nm1 = faces[nei_ele * 3];
       int nm2 = faces[nei_ele * 3 + 1];
       int nm3 = faces[nei_ele * 3 + 2];
-      // Coordinates of each vertex of element
-      Point pnm1 = Point(points[nm1 * 2], points[nm1 * 2 + 1]);
-      Point pnm2 = Point(points[nm2 * 2], points[nm2 * 2 + 1]);
-      Point pnm3 = Point(points[nm3 * 2], points[nm3 * 2 + 1]);
-      bool isCollinear = CGAL::collinear(pnm1, pnm2, pnm3);
-      // if this happens we cannot test accurately
-      if (isCollinear) {
-        // std::cout<<"point is collinear" << std::endl;
-        continue;
-      }
-      // Calculate circumball of element
-      Point cc = CGAL::circumcenter(pnm1, pnm2, pnm3);
-      double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3);
-      Circle circ = Circle(cc, sqr_radius, CGAL::CLOCKWISE);
-      // Does this circumball intersect with box above or box below?
-      bool intersects;
-      intersects = CGAL::do_intersect(circ, rect1);
-      if (intersects){
-          exports[iv] = 0;
-          kount_below += 1.0;
-          break;
-      }
-      intersects = CGAL::do_intersect(circ, rect2);
-      if (intersects){
-          exports[iv] = 1;
-          kount_above += 1.0;
-          break;
+
+      // Test if this element has a bounding box that intersects with one of the rectangles
+      // otherwise go no further
+      std::array<double, 3> ele_x = {points[nm1*2], points[nm2*2], points[nm3*2]};
+      std::array<double, 3> ele_y = {points[nm1*2+1], points[nm2*2+1], points[nm3*2+1]};
+
+      auto min_x = std::min_element(std::begin(ele_x), std::end(ele_x));
+      auto min_y = std::min_element(std::begin(ele_y), std::end(ele_y));
+
+      auto max_x = std::max_element(std::begin(ele_x), std::end(ele_x));
+      auto max_y = std::max_element(std::begin(ele_y), std::end(ele_y));
+
+      CGAL::Bbox_2 ball_bbox = CGAL::Bbox_2(*min_x, *min_y, *max_x, *max_y);
+
+      if(CGAL::do_overlap(ball_bbox, rect1_bbox) or CGAL::do_overlap(ball_bbox, rect2_bbox)){
+
+        // Coordinates of each vertex of element
+        Point pnm1 = Point(points[nm1 * 2], points[nm1 * 2 + 1]);
+        Point pnm2 = Point(points[nm2 * 2], points[nm2 * 2 + 1]);
+        Point pnm3 = Point(points[nm3 * 2], points[nm3 * 2 + 1]);
+        bool isCollinear = CGAL::collinear(pnm1, pnm2, pnm3);
+        // if this happens we cannot test accurately
+        if (isCollinear) {
+          // std::cout<<"point is collinear" << std::endl;
+          continue;
+        }
+        // Calculate circumball of element
+        Point cc = CGAL::circumcenter(pnm1, pnm2, pnm3);
+        double sqr_radius = CGAL::squared_radius(pnm1, pnm2, pnm3);
+        Circle circ = Circle(cc, sqr_radius, CGAL::CLOCKWISE);
+        // Does this circumball intersect with box above or box below?
+        bool intersects;
+        intersects = CGAL::do_intersect(circ, rect1);
+        if (intersects){
+            exports[iv] = 0;
+            kount_below += 1.0;
+            break;
+        }
+        intersects = CGAL::do_intersect(circ, rect2);
+        if (intersects){
+            exports[iv] = 1;
+            kount_above += 1.0;
+            break;
+        }
       }
     }
   }
