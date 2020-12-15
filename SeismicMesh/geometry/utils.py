@@ -69,18 +69,19 @@ def remove_external_entities(vertices, entities, extent, dim=2):
     :return: jx: mapping from old point indexing to new point indexing
     :rtype: numpy.ndarray[`int` x 1]
     """
-
     if dim == 2:
+        queries = np.take(vertices, entities.ravel(), axis=0)
         signed_distance = gutils.drectangle_fast(
-            vertices[entities.ravel(), :],
+            queries,
             extent[0],
             extent[2],
             extent[1],
             extent[3],
         )
     elif dim == 3:
-        signed_distance = gutils.dblock_fast(
-            vertices[entities.ravel(), :],
+        signed_distance = gutils.remove_external_entities3(
+            vertices,
+            entities,
             extent[0],
             extent[3],
             extent[1],

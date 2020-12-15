@@ -111,7 +111,6 @@ def aggregate(points, faces, comm, size, rank, dim=2):
         return True, True
 
 
-# @profile
 def enqueue(extents, points, faces, rank, size, dim=2):
     """
     Return ranks that cell sites (vertices of triangulation) need to be sent

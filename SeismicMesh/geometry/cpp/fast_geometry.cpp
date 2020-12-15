@@ -213,6 +213,77 @@ py::array drectangle_fast(
                       ));
 }
 
+
+std::vector<double> c_remove_external_entities3(std::vector<double> &points, std::vector<int> &cells, double x1, double x2, double y1, double y2, double z1, double z2){
+
+    int num_points = points.size()/3;
+    int num_cells = cells.size()/4;
+    std::vector<double> tmp;
+    tmp.resize(num_cells*4*3);
+
+    int kount = 0;
+    for(std::size_t ie = 0; ie < num_cells; ++ie){
+        int nm1 = cells[ie*4 + 0];
+        int nm2 = cells[ie*4 + 1];
+        int nm3 = cells[ie*4 + 2];
+        int nm4 = cells[ie*4 + 3];
+
+        for(std::size_t j = 0; j < 3; ++j){
+            tmp[kount] = points[3*nm1+j];
+            kount += 1;
+        }
+        for(std::size_t j = 0; j < 3; ++j){
+            tmp[kount] = points[3*nm2+j];
+            kount += 1;
+        }
+        for(std::size_t j = 0; j < 3; ++j){
+            tmp[kount] = points[3*nm3+j];
+            kount += 1;
+        }
+        for(std::size_t j = 0; j < 3; ++j){
+            tmp[kount] = points[3*nm4+j];
+            kount += 1;
+        }
+    }
+    std::vector<double> dist = c_dblock(tmp, x1, x2, y1, y2, z1, z2);
+    return dist;
+}
+
+py::array remove_external_entities3(
+    py::array_t<double, py::array::c_style | py::array::forcecast> points,
+    py::array_t<int, py::array::c_style | py::array::forcecast> cells,
+    double x1, double x2, double y1, double y2, double z1, double z2) {
+
+  // check input dimensions
+  int num_points = points.size() / 3;
+  int num_cells  = cells.size() / 4;
+
+  // allocate std::vector (to pass to the C++ function)
+  std::vector<double> cppPts(num_points * 3);
+  std::vector<int> cppCells(num_cells * 4);
+
+  // copy py::array -> std::vector
+  std::memcpy(cppPts.data(), points.data(), 3 * num_points * sizeof(double));
+  std::memcpy(cppCells.data(), cells.data(), 4 * num_cells * sizeof(int));
+
+  std::vector<double> dist = c_remove_external_entities3(cppPts, cppCells, x1, x2, y1, y2, z1, z2);
+
+  ssize_t sodble = sizeof(double);
+  std::vector<ssize_t> shape = {num_cells*4};
+  std::vector<ssize_t> strides = {sodble};
+
+  // return 1-D NumPy array
+  return py::array(
+      py::buffer_info(dist.data(),    /* data as contiguous array  */
+                      sizeof(double), /* size of one scalar        */
+                      py::format_descriptor<double>::format(), /* data type */
+                      1,      /* number of dimensions      */
+                      shape,  /* shape of the matrix       */
+                      strides /* strides for each axis     */
+                      ));
+}
+
+
 std::vector<double> c_calc_dihedral_angles(std::vector<double> &points,
                                            std::vector<int> &cells) {
   // compute the 6 dihedral angles of all tetrahedrons in the mesh
@@ -568,6 +639,7 @@ py::array calc_circumsphere_grad(
 }
 
 PYBIND11_MODULE(fast_geometry, m) {
+  m.def("remove_external_entities3", &remove_external_entities3);
   m.def("drectangle_fast", &drectangle_fast);
   m.def("dblock_fast", &dblock_fast);
   m.def("unique_edges", &unique_edges);
