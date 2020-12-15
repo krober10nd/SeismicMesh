@@ -92,4 +92,5 @@ __all__ = [
     "Difference",
     "Repeat",
     "remove_external_entities3",
+    "remove_external_entities2",
 ]
