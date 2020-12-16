@@ -7,6 +7,8 @@ from .cpp.fast_geometry import (
     unique_edges,
     drectangle_fast,
     dblock_fast,
+    remove_external_entities2,
+    remove_external_entities3,
 )
 from .signed_distance_functions import (
     Rectangle,
@@ -90,4 +92,6 @@ __all__ = [
     "Intersection",
     "Difference",
     "Repeat",
+    "remove_external_entities3",
+    "remove_external_entities2",
 ]

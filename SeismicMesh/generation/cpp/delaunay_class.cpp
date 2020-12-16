@@ -137,6 +137,39 @@ PYBIND11_MODULE(delaunay_class, m) {
              return dt;
            })
 
+      // get all the finite edges of the triangulation
+      .def("get_edges",
+              [](DT &dt){
+                std::vector<int> edges;
+
+                for(DT::Edge_iterator ei=dt.finite_edges_begin();ei!=dt.finite_edges_end(); ei++){
+                  // Get a vertex from the edge
+                  DT::Face& f = *(ei->first);
+                  int i = ei->second;
+                  Vertex_handle vs = f.vertex(f.cw(i));
+                  Vertex_handle vt = f.vertex(f.ccw(i));
+
+                  edges.push_back(vs->info());
+                  edges.push_back(vt->info());
+                  //std::cout << vs->info() << vt->info() << std::endl;
+                }
+             ssize_t soint = sizeof(int);
+             ssize_t num_edges = edges.size() / 2;
+             ssize_t ndim = 2;
+             std::vector<ssize_t> shape = {num_edges, 2};
+             std::vector<ssize_t> strides = {soint * 2, soint};
+
+             // return 2-D NumPy array
+             return py::array(py::buffer_info(
+                 edges.data(), /* data as contiguous array  */
+                 sizeof(int),  /* size of one scalar        */
+                 py::format_descriptor<int>::format(), /* data type */
+                 2,      /* number of dimensions      */
+                 shape,  /* shape of the matrix       */
+                 strides /* strides for each axis     */
+                 ));
+              })
+
       .def("number_of_vertices", &DT::number_of_vertices)
 
       .def("number_of_faces",
