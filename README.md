@@ -593,12 +593,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
+### Improved
+- Marginally parallell speedup at scale in 2d/3d 
 
 ## [3.2.0] -2020-12-14
+### Added
 - Adding basic periodic domains with the `Repeat` SDF.
-- Reworking CPP code and bottlenecks...20-30% faster `generate_mesh` in parallel for 2D/3D from previous versions.
 - `sliver_removal` has optional variable step size when perturbing vertices. Helps to remove the "last sliver".
+### Improved
 - Faster rectangle and cube primitives. 
+- Reworking CPP code and bottlenecks...20-30% faster `generate_mesh` in parallel for 2D/3D from previous versions.
 
 ## [3.1.7] - 2020-11-27
 ### Improved
