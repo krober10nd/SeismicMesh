@@ -1,15 +1,18 @@
 # run disk benchmark and plot a figure
+import matplotlib
 import matplotlib.pyplot as plt
+
 import numpy
 from benchmark_disk import run_gmsh, run_SeismicMesh, run_cgal
 
+matplotlib.use("TkAgg")
 
-plt.rcParams.update({"font.size": 19})
+# plt.rcParams.update({"font.size": 14})
 
 
-colors1 = ["ko-", "ro-", "bo-"]
-colors2 = ["ko--", "ro--", "bo--"]
-labels = ["gmsh", "SeismicMesh", "cgal"]
+colors1 = ["C7o-", "C3o-", "C0o-"]
+colors2 = ["C7o--", "C3o--", "C0o--"]
+labels = ["Gmsh", "SeismicMesh", "CGAL"]
 
 entries = []
 # minimize mesh size
@@ -38,20 +41,23 @@ for i, func in enumerate([run_gmsh, run_SeismicMesh, run_cgal]):
     entries.append(h)
 
 plt.subplot(1, 2, 1)
-plt.title("Number of cells vs. mesh generation time")
+plt.title("# of cells vs. mesh generation time [s]")
 plt.legend()
-plt.xlabel("Number of cells")
+plt.xlabel("# of cells")
 plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-plt.ylabel("Elapsed time (s)")
-plt.grid()
+axes = plt.gca()
+axes.yaxis.grid()
+axes.set_frame_on(False)
 
 plt.subplot(1, 2, 2)
-plt.title("Number of cells. vs cell quality")
-plt.xlabel("Number of cells")
+plt.title("# of cells. vs cell quality")
+plt.xlabel("# of cells")
 plt.ticklabel_format(style="sci", axis="x", scilimits=(0, 0))
-plt.ylim(ymax=1, ymin=0)
-plt.ylabel("Cell quality")
+plt.ylim(ymax=1.1, ymin=0)
+axes = plt.gca()
+axes.yaxis.grid()
+axes.set_frame_on(False)
 
-plt.grid()
 
-plt.show()
+plt.tight_layout(pad=3.0)
+plt.savefig("out.svg", transparent=True, bbox_inches="tight", pad_inches=0)
