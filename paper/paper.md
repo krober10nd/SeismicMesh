@@ -56,7 +56,7 @@ We compare the 2D/3D serial performance in terms of cell quality and mesh creati
 
 For the two seismic domains (e.g., BP2004 and EAGE), SeismicMesh is faster than Gmsh for the 2D BP2004 benchmark but slightly slower for the 3D EAGE benchmark at scale. CGAL is not competitive for the 3D benchmark and is therefore not shown. Interpolant-based mesh sizing functions significantly slow the mesh generation time of Gmsh by a factor of $\sim 3$ as Gmsh calls the sizing function for each point individually (e.g., 95,756 times) whereas SeismicMesh does it for all points at once each meshing iteration (e.g., 26 times). 
 
-![The mesh creation time (left columns) and resulting cell quality (right columns) for the four benchmarks studied over a range of problem sizes. Two analytical problems (disk and a ball) and two non-analytical problems with sizing functions defined via regular gridded interpolants (BP2004 and EAGE). For the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh. See the SeismicMesh github repository for information regarding the benchmarks and version of programs used. \label{fig:benchmark}](Performance.pdf)
+![Using SeismicMesh V3.2.0, the mesh creation time (left columns) and resulting cell quality (right columns) for the four benchmarks studied over a range of problem sizes. For the panels that show cell quality, solid lines indicate the mean and dashed lines indicate the minimum cell quality in the mesh. \label{fig:benchmark}](Performance.pdf)
 
 # Parallelism
 
