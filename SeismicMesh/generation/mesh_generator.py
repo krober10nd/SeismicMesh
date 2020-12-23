@@ -115,6 +115,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         "geps_mult": 0.1,
         "subdomains": [],
         "gamma": 1.0,
+        "preserve": False,
     }
 
     sliver_opts.update(kwargs)
@@ -172,7 +173,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     geps = sliver_opts["geps_mult"] * h0
 
-    # deps = np.sqrt(np.finfo(np.double).eps) * h0
+    deps = np.sqrt(np.finfo(np.double).eps) * h0
     min_dh_bound = sliver_opts["min_dh_angle_bound"] * math.pi / 180
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
 
@@ -252,7 +253,6 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
                 + " iterations...no slivers detected!",
             )
             p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
-            # p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
             return p, t
 
         p0, p1, p2, p3 = (
@@ -285,6 +285,10 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
         # perturb step % of minimum mesh size
         p[move] += step * h0 * perturb
+
+        # reproject boundary points
+        if sliver_opts["preserve"]:
+            p = _improve_level_set_newton(p, t, fd, deps, deps * 1000)
 
         count += 1
 
@@ -641,6 +645,7 @@ def _parse_kwargs(kwargs):
             "geps_mult",
             "subdomains",
             "gamma",
+            "preserve",
         }:
             pass
         else:
