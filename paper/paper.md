@@ -78,6 +78,6 @@ We expect future extensions of the program to introduce better domain decomposit
 
 # Acknowledgements
 
-This research was carried out in association with the ongoing R&D project registered as ANP 20714-2, "Software technologies for modelling and inversion, with applications in seismic imaging" (University of São Paulo / Shell Brasil / ANP). We would like to thank the two reviewers who helped improved the presentation and quality of this manuscript and package greatly.
+This research was carried out in association with the ongoing R&D project registered as ANP 20714-2, "Software technologies for modelling and inversion, with applications in seismic imaging" (University of São Paulo / Shell Brasil / ANP). We would like to thank the two reviewers who helped improve the presentation and quality of this manuscript and package greatly.
 
 # References
