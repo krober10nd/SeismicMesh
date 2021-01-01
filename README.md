@@ -177,7 +177,7 @@ seismic velocity model from (WARNING: File is \~500 MB)**
 around 2 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
-![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/91606008-c5e09100-e947-11ea-97e2-58e4b2f23d2b.jpg)
+![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/103445790-52cd8b00-4c57-11eb-8bd4-4af8f24d4c88.jpg)
 
 <!--exdown-skip-->
 ```python
@@ -239,8 +239,9 @@ ef = get_sizing_function_from_segy(
 points, cells = generate_mesh(domain=cube, edge_length=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
+# We use the preserve kwarg to ensure the level-set is very accurately preserved.
 points, cells = sliver_removal(
-    points=points, bbox=bbox, domain=cube, edge_length=ef
+    points=points, bbox=bbox, domain=cube, edge_length=ef, preserve=True
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
@@ -596,14 +597,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Ability to improve accuracy of level-set when performing 3d sliver removal.
 ### Improved
-- Marginally faster parallel speedup at scale in 2d/3d 
+- Marginally faster parallel speedup at scale in 2d/3d
 
 ## [3.2.0] -2020-12-14
 ### Added
 - Adding basic periodic domains with the `Repeat` SDF.
 - `sliver_removal` has optional variable step size when perturbing vertices. Helps to remove the "last sliver".
 ### Improved
-- Faster rectangle and cube primitives. 
+- Faster rectangle and cube primitives.
 - Reworking CPP code and bottlenecks...20-30% faster `generate_mesh` in parallel for 2D/3D from previous versions.
 
 ## [3.1.7] - 2020-11-27
