@@ -178,7 +178,7 @@ seismic velocity model from (WARNING: File is \~500 MB)**
 around 2 GB of RAM due to the 3D nature of the problem and the domain
 size.**
 
-![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/91606008-c5e09100-e947-11ea-97e2-58e4b2f23d2b.jpg)
+![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/103445790-52cd8b00-4c57-11eb-8bd4-4af8f24d4c88.jpg)
 
 <!--exdown-skip-->
 ```python
@@ -240,8 +240,9 @@ ef = get_sizing_function_from_segy(
 points, cells = generate_mesh(domain=cube, edge_length=ef, max_iter=75)
 
 # For 3D mesh generation, we provide an implementation to bound the minimum dihedral angle::
+# We use the preserve kwarg to ensure the level-set is very accurately preserved.
 points, cells = sliver_removal(
-    points=points, bbox=bbox, domain=cube, edge_length=ef
+    points=points, bbox=bbox, domain=cube, edge_length=ef, preserve=True
 )
 
 # Meshes can be written quickly to disk using meshio and visualized with ParaView::
