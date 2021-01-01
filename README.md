@@ -44,6 +44,7 @@ Table of contents
      * [Difference](#difference)
      * [Immersion](#immersion)
      * [Periodic](#periodic)
+   * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
 <!--te-->
@@ -562,6 +563,16 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+
+
+Parallelism
+-----------
+
+A simplified version of the parallel Delaunay algorithm proposed by [Peterka et. al 2014](https://dl.acm.org/doi/10.1109/SC.2014.86) is implemented inside the DistMesh algorithm, which does not consider sophisticated domain decomposition or load balancing yet. A peak speed-up of approximately 6 times using 11 cores when performing 50 meshing iterations is observed to generate the 33M cell mesh of the EAGE P-wave velocity model. Parallel performance in 2D is better with peak speedups around 8 times using 11 cores. While the parallel performance is not perfect at this stage of development, the capability reduces the generation time of this relatively large example (e.g., 33 M cells) from 91.0 minutes to approximately 15.6 minutes. Results indicate that the simple domain decomposition approach inhibit perfect scalability. The machine used for this experiment was an Intel Xeon Gold 6148 machine clocked at 2.4 GHz with 192 GB of RAM connected together with a 100 Gb/s InfiniBand network.
+
+To use parallelism see the [docs](https://seismicmesh.readthedocs.io/en/par3d/tutorial.html#basics)
+
+**See the paper/paper.md and associated figures for more details.**
 
 Performance
 ------------
