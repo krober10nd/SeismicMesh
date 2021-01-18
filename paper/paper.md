@@ -42,7 +42,7 @@ The mesh density function can be used as input other mesh generators. However, t
 
   1. The creation of 2D/3D graded mesh size functions defined on axis-aligned regular Cartesian grids. These mesh sizing functions encode mesh resolution distributions that conform to the variations from inputted seismic velocity model data and are distributed according to several heuristics [see @SeismicMeshDocs for further details]. Mesh size function grading is accomplished using [@persson2006mesh].
 
-  2. Distributed memory parallelism. The generation of potentially large (> 10 million cells) high-quality triangular or tetrahedral meshes in either using distributed memory parallelism with mesh resolution following sizing functions.
+  2. Distributed memory parallelism. The generation of potentially large (> 10 million cells) high-quality triangular or tetrahedral meshes using distributed memory parallelism with mesh resolution following sizing functions.
 
   3. An implementation of a 3D degenerate (i.e., sliver) tetrahedral element removal technique [@tournois2009perturbing] to bound a mesh quality metric. Note that 2D mesh generation does not suffer from the formation of degenerate elements.
 
