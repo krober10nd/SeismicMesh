@@ -26,8 +26,9 @@ Table of contents
 
 <!--ts-->
    * [Installation](#installation)
-   * [Getting help](#problems)
    * [Contributing](#contributing)
+   * [Citing](#citing)
+   * [Getting help](#problems)
    * [Examples](#examples)
      * [BP2004](#bp2004)
      * [EAGE Salt](#eage)
@@ -91,6 +92,25 @@ Some things that will increase the chance that your pull request is accepted:
 
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+Citing
+=======
+
+You may use the following BibTeX entry:
+```
+@article{Roberts2021,
+  doi = {10.21105/joss.02687},
+  url = {https://doi.org/10.21105/joss.02687},
+  year = {2021},
+  publisher = {The Open Journal},
+  volume = {6},
+  number = {57},
+  pages = {2687},
+  author = {Keith J. Roberts and Rafael dos Santos Gioria and William J. Pringle},
+  title = {SeismicMesh: Triangular meshing for seismology},
+  journal = {Journal of Open Source Software}
+}
+```
 
 Problems?
 ==========
