@@ -3,17 +3,15 @@
   <p align="center">Create high-quality, simulation-ready 2D/3D meshes.</p>
 </p>
 
-
+[![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 [![CircleCI](https://img.shields.io/circleci/project/github/krober10nd/SeismicMesh/master.svg?style=flat-square)](https://circleci.com/gh/krober10nd/SeismicMesh/tree/master)
 [![CodeCov](https://codecov.io/gh/krober10nd/SeismicMesh/branch/master/graph/badge.svg)](https://codecov.io/gh/krober10nd/SeismicMesh)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg?style=flat-square)](https://github.com/psf/black)
 [![PyPI pyversions](https://img.shields.io/pypi/pyversions/SeismicMesh.svg?style=flat-square)](https://pypi.org/pypi/SeismicMesh/)
 [![PyPi downloads](https://img.shields.io/pypi/dm/SeismicMesh.svg?style=flat-square)](https://pypistats.org/packages/seismicmesh)
 [![ReadTheDocs](https://readthedocs.org/projects/seismicmesh/badge/?version=master)](https://seismicmesh.readthedocs.io/en/master/?badge=master)
-[![Zenodo](https://zenodo.org/badge/216707188.svg)](https://zenodo.org/badge/latestdoi/216707188)
 [![PyPi]( https://img.shields.io/pypi/v/SeismicMesh.svg?style=flat-square)](https://pypi.org/project/SeismicMesh)
 [![GPL](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
-[![status](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd/status.svg)](https://joss.theoj.org/papers/ba94127ebbd0ca13c841f047fb5077bd)
 
 
 [SeismicMesh](https://github.com/krober10nd/SeismicMesh): Triangular Mesh generation in Python
@@ -28,8 +26,9 @@ Table of contents
 
 <!--ts-->
    * [Installation](#installation)
-   * [Getting help](#problems)
    * [Contributing](#contributing)
+   * [Citing](#citing)
+   * [Getting help](#problems)
    * [Examples](#examples)
      * [BP2004](#bp2004)
      * [EAGE Salt](#eage)
@@ -93,6 +92,25 @@ Some things that will increase the chance that your pull request is accepted:
 
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
+
+Citing
+=======
+
+You may use the following BibTeX entry:
+```
+@article{Roberts2021,
+  doi = {10.21105/joss.02687},
+  url = {https://doi.org/10.21105/joss.02687},
+  year = {2021},
+  publisher = {The Open Journal},
+  volume = {6},
+  number = {57},
+  pages = {2687},
+  author = {Keith J. Roberts and Rafael dos Santos Gioria and William J. Pringle},
+  title = {SeismicMesh: Triangular meshing for seismology},
+  journal = {Journal of Open Source Software}
+}
+```
 
 Problems?
 ==========
