@@ -138,7 +138,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
     fd, bbox0, _ = _unpack_domain(domain, sliver_opts)
 
-    fh, bbox1, hmin = _unpack_sizing(edge_length)
+    fh, bbox1, hmin, _ = _unpack_sizing(edge_length)
 
     # take minmax of boxes for the case of domain padding
     if bbox1 is None:
@@ -378,7 +378,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     # unpack domain
     fd, bbox0, corners = _unpack_domain(domain, gen_opts)
 
-    fh, bbox1, hmin = _unpack_sizing(edge_length)
+    fh, bbox1, hmin, lsf = _unpack_sizing(edge_length)
 
     # ensure consensus re hmin
     hmin = comm.bcast(hmin, 0)
@@ -438,7 +438,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         print_msg1("Constraining " + str(nfix) + " fixed points..")
 
     fh, p, extents = _initialize_points(
-        dim, geps, bbox, fh, fd, h0, gen_opts, pfix, comm
+        dim, geps, bbox, fh, fd, h0, gen_opts, pfix, comm, lsf
     )
 
     if gen_opts["max_iter"] < 0:
@@ -570,12 +570,15 @@ def _check_bbox(bbox):
 def _unpack_sizing(edge_length):
     bbox = None
     hmin = None
+    localize_sizing_function = False
     if isinstance(edge_length, sizing.SizeFunction):
         bbox = edge_length.bbox
         fh = edge_length.eval
         hmin = edge_length.hmin
+        localize_sizing_function = True
     elif callable(edge_length):
         fh = edge_length
+        localize_sizing_function = False
     elif np.isscalar(edge_length):
 
         def func(x):
@@ -587,12 +590,13 @@ def _unpack_sizing(edge_length):
 
         fh = func
         hmin = edge_length
+        localize_sizing_function = True
     else:
         raise ValueError(
             "`edge_length` must either be a function, a `edge_length` object, or a scalar"
         )
     _check_bbox(bbox)
-    return fh, bbox, hmin
+    return fh, bbox, hmin, localize_sizing_function
 
 
 def _unpack_domain(domain, opts):
@@ -806,11 +810,14 @@ def _user_defined_points(dim, fh, h0, bbox, points, comm, opts):
     return fh, p, extents
 
 
-def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
+def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts, lsf):
     """User did not specify initial points"""
-    if comm.size > 1:
+    if comm.size > 1 and lsf:
         # Localize mesh size function grid.
         fh = migration.localize_sizing_function(fh, h0, bbox, dim, opts["axis"], comm)
+        # Create initial points in parallel in local box owned by rank
+        p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
+    elif not lsf:
         # Create initial points in parallel in local box owned by rank
         p = mutils.make_init_points(bbox, comm.rank, comm.size, opts["axis"], h0, dim)
     else:
@@ -835,12 +842,12 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts):
     return fh, p, extents
 
 
-def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm):
+def _initialize_points(dim, geps, bbox, fh, fd, h0, opts, pfix, comm, lsf):
     """Form initial point set to mesh with"""
     points = opts["points"]
     if points is None:
         fh, p, extents = _generate_initial_points(
-            h0, geps, dim, bbox, fh, fd, pfix, comm, opts
+            h0, geps, dim, bbox, fh, fd, pfix, comm, opts, lsf
         )
     else:
         fh, p, extents = _user_defined_points(dim, fh, h0, bbox, points, comm, opts)
