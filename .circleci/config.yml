@@ -56,7 +56,7 @@ jobs:
       - run: sudo apt-get update && sudo apt install -y cmake
       - run: sudo apt-get install libboost-all-dev
       - run: sudo apt-get install libmpfr-dev
-      - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
+      - run: git clone https://github.com/CGAL/cgal.git && cd cgal/ && git checkout 6f8f790 && mkdir build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && sudo make install
       - run: sudo apt install -y libhdf5-dev
       - run: pip install pytest --user && git clone https://github.com/pybind/pybind11.git && cd pybind11 && mkdir build && cd build && cmake .. && sudo make install
       - run: pip install . --user
