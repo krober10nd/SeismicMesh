@@ -508,16 +508,21 @@ def laplacian2_fixed_point(vertices, entities):
 
     n = len(vertices)
 
-    matrix = _sparse(
-        entities[:, [0, 0, 1, 1, 2, 2]],
-        entities[:, [1, 2, 0, 2, 0, 1]],
-        1,
-        shape=(n, n),
-    )
+    nds = entities.T
+    local_idx = np.array([[1, 2], [2, 0], [0, 1]]).T
+    idx = nds[local_idx]
+    row_idx = np.array([idx[0], idx[1], idx[0], idx[1]]).flat
+    col_idx = np.array([idx[0], idx[1], idx[1], idx[0]]).flat
+
+    a = np.ones(idx.shape[1:], dtype=int)
+    val = np.array([+a, +a, -a, -a]).flat
+
+    # Create CSR matrix for efficiency
+    matrix = spsparse.coo_matrix((val, (row_idx, col_idx)), shape=(n, n))
+    matrix = matrix.tocsr()
 
     bnd = get_boundary_vertices(entities)
 
-    matrix = matrix.tocsr()
     # Apply Dirichlet conditions.
     # Set all Dirichlet rows to 0.
     for b in bnd:
