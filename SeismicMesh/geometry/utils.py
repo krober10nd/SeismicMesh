@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.sparse as spsparse
+from scipy.sparse.linalg import spsolve
 
 from ..generation.cpp import c_cgal
 
@@ -485,6 +486,53 @@ def _sparse(Ix, J, S, shape=None, dtype=None):
     II = Ix.flat
     J = J.flat
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
+
+
+def laplacian2_fixed_point(vertices, entities):
+    """Solve the laplacian smoothing problem as a fixed point problem
+    solve this once, i.e., (I - A) x = rhs vs.
+    repeating this x_{n+1} = A x_n
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[`float` x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[`int` x (dim+1)]
+
+    :return vertices: updated vertices of mesh
+    :rtype: numpy.ndarray[`float` x dim]
+    :return: entities: updated mesh connectivity
+    :rtype: numpy.ndarray[`int` x (dim+1)]
+    """
+    if vertices.ndim != 2:
+        raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
+
+    n = len(vertices)
+
+    matrix = _sparse(
+        entities[:, [0, 0, 1, 1, 2, 2]],
+        entities[:, [1, 2, 0, 2, 0, 1]],
+        1,
+        shape=(n, n),
+    )
+
+    bnd = get_boundary_vertices(entities)
+
+    matrix = matrix.tocsr()
+    # Apply Dirichlet conditions.
+    # Set all Dirichlet rows to 0.
+    for b in bnd:
+        matrix.data[matrix.indptr[b] : matrix.indptr[b + 1]] = 0.0
+    # Set the diagonal and RHS.
+    d = matrix.diagonal()
+    d[bnd] = 1.0
+    matrix.setdiag(d)
+
+    rhs = np.zeros((n, 2))
+    rhs[bnd] = vertices[bnd]
+
+    vertices_new = spsolve(matrix, rhs)
+
+    return vertices_new, entities
 
 
 def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
