@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as spsparse
-from scipy.sparse.linalg import spsolve
+
+# from scipy.sparse.linalg import spsolve
 import pyamg
 
 from ..generation.cpp import c_cgal
