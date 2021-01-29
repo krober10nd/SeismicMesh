@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.sparse as spsparse
 from scipy.sparse.linalg import spsolve
+import pyamg
 
 from ..generation.cpp import c_cgal
 
@@ -535,7 +536,11 @@ def laplacian2_fixed_point(vertices, entities):
     rhs = np.zeros((n, 2))
     rhs[bnd] = vertices[bnd]
 
-    vertices_new = spsolve(matrix, rhs)
+    #vertices_new = spsolve(matrix, rhs)
+
+    # use AMG
+    ml = pyamg.ruge_stuben_solver(matrix)
+    vertices_new = np.column_stack([ml.solve(rhs[:, 0]), ml.solve(rhs[:, 1])])
 
     return vertices_new, entities
 
