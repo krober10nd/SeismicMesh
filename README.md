@@ -624,6 +624,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 ### Added
+- Mesh improvement now solves Lapl. smoothing as a fixed-point problem using AMG solver.
 - User can now mesh user-defined sizing functions in parallel (not from :class:SizeFunction)
 
 ## [3.3.0] -2021-01-08
