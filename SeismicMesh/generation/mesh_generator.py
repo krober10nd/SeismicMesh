@@ -677,7 +677,8 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
         )
         # only do Laplacian smoothing if no immersed domains
         if opts["subdomains"] is None and opts["mesh_improvement"]:
-            p, t = geometry.laplacian2(p, t, verbose=verbose)
+            p, t = geometry.laplacian2_fixed_point(p, t)
+            # p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
