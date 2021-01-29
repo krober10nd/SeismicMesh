@@ -536,7 +536,7 @@ def laplacian2_fixed_point(vertices, entities):
     rhs = np.zeros((n, 2))
     rhs[bnd] = vertices[bnd]
 
-    #vertices_new = spsolve(matrix, rhs)
+    # vertices_new = spsolve(matrix, rhs)
 
     # use AMG
     ml = pyamg.ruge_stuben_solver(matrix)
