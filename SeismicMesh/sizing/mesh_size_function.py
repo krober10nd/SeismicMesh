@@ -567,7 +567,7 @@ def _read_velocity_model(
         return _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype)
 
 
-def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype="float32"):
+def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype):
     """Read a velocity model from a binary"""
     if (nz is None) or (nx is None) or (ny is None):
         raise ValueError(
@@ -581,7 +581,7 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dty
         if byte_order == "big":
             vp = np.fromfile(file, dtype=np.dtype(dtype).newbyteorder(">"))
         elif byte_order == "little":
-            vp = np.fromfile(file, dtype=np.dtype(dtype").newbyteorder("<"))
+            vp = np.fromfile(file, dtype=np.dtype(dtype).newbyteorder("<"))
         else:
             raise ValueError("Please specify byte_order as either: little or big.")
         vp = vp.reshape(*axes, order=axes_order_sort)
