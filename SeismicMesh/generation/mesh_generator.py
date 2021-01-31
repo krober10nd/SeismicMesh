@@ -339,6 +339,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             Psuedo-timestep to control movement of points (default=0.30)
         * *geps_mult* (`float`) --
             The tolerance used to determine if a vertex is "in" the domain. (default==0.1*h0)
+        * *mesh_improvement* (`boolean`) --
+            Whether or not to run a density-preserving Laplacian smoothing to improve mesh quality
+            at the end of mesh generation (default=True)
 
 
     :return: points: vertex coordinates of mesh
@@ -359,6 +362,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "delta_t": 0.30,
         "geps_mult": 0.1,
         "subdomains": None,
+        "mesh_improvement": True,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -650,6 +654,7 @@ def _parse_kwargs(kwargs):
             "subdomains",
             "gamma",
             "preserve",
+            "mesh_improvement",
         }:
             pass
         else:
@@ -671,8 +676,9 @@ def _termination(p, t, opts, comm, sliver=False, verbose=1):
             p, t, dim=2, min_qual=0.15, verbose=verbose
         )
         # only do Laplacian smoothing if no immersed domains
-        if opts["subdomains"] is None:
-            p, t = geometry.laplacian2(p, t, verbose=verbose)
+        if opts["subdomains"] is None and opts["mesh_improvement"]:
+            p, t = geometry.laplacian2_fixed_point(p, t)
+            # p, t = geometry.laplacian2(p, t, verbose=verbose)
     # perform linting if asked
     if comm.rank == 0 and opts["perform_checks"]:
         p, t = geometry.linter(p, t, dim=dim)
