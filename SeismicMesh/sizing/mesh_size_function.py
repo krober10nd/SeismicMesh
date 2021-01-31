@@ -166,7 +166,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "byte_order",
                 "axes_order",
                 "axes_order_sort",
-                "dytpe", 
+                "dytpe",
             }:
                 pass
             else:
@@ -265,7 +265,7 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
         "byte_order": "byte_order",
         "axes_order": (0, 1, 2),
         "axes_order_sort": "F",
-        "dtype': "float32",
+        "dtype": "float32",
     }
 
     comm = comm or MPI.COMM_WORLD
@@ -564,7 +564,9 @@ def _read_velocity_model(
     if filename.endswith(".segy"):
         return _read_segy(filename)
     else:
-        return _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype)
+        return _read_bin(
+            filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype
+        )
 
 
 def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype):
