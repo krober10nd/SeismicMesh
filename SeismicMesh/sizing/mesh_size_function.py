@@ -85,6 +85,8 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
              The order of the axes (assumes z,x,y is (0,1,2))
         * *axes_order_sort* (``string``) --
              The sort style of the data (either "F" for FORTRAN-style or "C" for C-style)
+        * *dtype* (``string``) --
+             The type of data (either "float32" or "float64")
 
     :return: a :class:`SizeFunction` object with a `obj.bbox` field and an `obj.eval` method.
     :rtype: a :class:`SizeFunction` object
@@ -111,6 +113,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         "byte_order": "byte_order",
         "axes_order": (0, 1, 2),
         "axes_order_sort": "F",
+        "dtype": "float32",
     }
     comm = comm or MPI.COMM_WORLD
     cell_size = None
@@ -126,6 +129,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
             byte_order=sz_opts["byte_order"],
             axes_order=sz_opts["axes_order"],
             axes_order_sort=sz_opts["axes_order_sort"],
+            dtype=sz_opts["dtype"],
         )
 
         if sz_opts["units"] == "km-s":
@@ -162,6 +166,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "byte_order",
                 "axes_order",
                 "axes_order_sort",
+                "dytpe",
             }:
                 pass
             else:
@@ -235,6 +240,8 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
              The order of the axes (assumes z,x,y is (0,1,2))
         * *axes_order_sort* (``string``) --
              The sort style of the data (either "F" for FORTRAN-style or "C" for C-style)
+        * *dtype* (``string``) --
+             The type of data (either "float32" or "float64")
 
     """
     # reasonable sizing function options go here
@@ -258,6 +265,7 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
         "byte_order": "byte_order",
         "axes_order": (0, 1, 2),
         "axes_order_sort": "F",
+        "dtype": "float32",
     }
 
     comm = comm or MPI.COMM_WORLD
@@ -276,6 +284,7 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             byte_order=opts["byte_order"],
             axes_order=opts["axes_order"],
             axes_order_sort=opts["axes_order_sort"],
+            dtype=opts["dtype"],
         )
 
         if opts["domain_pad"] > 0.0:
@@ -549,15 +558,18 @@ def _read_velocity_model(
     byte_order=None,
     axes_order=None,
     axes_order_sort=None,
+    dtype=None,
 ):
     """Read a velocity model"""
     if filename.endswith(".segy"):
         return _read_segy(filename)
     else:
-        return _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort)
+        return _read_bin(
+            filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype
+        )
 
 
-def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort):
+def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dtype):
     """Read a velocity model from a binary"""
     if (nz is None) or (nx is None) or (ny is None):
         raise ValueError(
@@ -569,9 +581,9 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort):
     with open(filename, "r") as file:
         print("Reading binary file: " + filename)
         if byte_order == "big":
-            vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder(">"))
+            vp = np.fromfile(file, dtype=np.dtype(dtype).newbyteorder(">"))
         elif byte_order == "little":
-            vp = np.fromfile(file, dtype=np.dtype("float32").newbyteorder("<"))
+            vp = np.fromfile(file, dtype=np.dtype(dtype).newbyteorder("<"))
         else:
             raise ValueError("Please specify byte_order as either: little or big.")
         vp = vp.reshape(*axes, order=axes_order_sort)
