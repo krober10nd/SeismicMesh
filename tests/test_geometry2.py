@@ -33,6 +33,8 @@ def test_geometry2():
 
     geo.laplacian2(p0, c0)
 
+    geo.laplacian2_fixed_point(p0, c0)
+
 
 if __name__ == "__main__":
     test_geometry2()

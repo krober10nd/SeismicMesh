@@ -1,6 +1,9 @@
 import numpy as np
 import scipy.sparse as spsparse
 
+# from scipy.sparse.linalg import spsolve
+import pyamg
+
 from ..generation.cpp import c_cgal
 
 # from . import signed_distance_functions as sdf
@@ -485,6 +488,62 @@ def _sparse(Ix, J, S, shape=None, dtype=None):
     II = Ix.flat
     J = J.flat
     return spsparse.coo_matrix((S, (II, J)), shape, dtype)
+
+
+def laplacian2_fixed_point(vertices, entities):
+    """Solve the laplacian smoothing problem as a fixed point problem
+    solve this once, i.e., (I - A) x = rhs vs.
+    repeating this x_{n+1} = A x_n
+
+    :param vertices: vertex coordinates of mesh
+    :type vertices: numpy.ndarray[`float` x dim]
+    :param entities: the mesh connectivity
+    :type entities: numpy.ndarray[`int` x (dim+1)]
+
+    :return vertices: updated vertices of mesh
+    :rtype: numpy.ndarray[`float` x dim]
+    :return: entities: updated mesh connectivity
+    :rtype: numpy.ndarray[`int` x (dim+1)]
+    """
+    if vertices.ndim != 2:
+        raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
+
+    n = len(vertices)
+
+    nds = entities.T
+    local_idx = np.array([[1, 2], [2, 0], [0, 1]]).T
+    idx = nds[local_idx]
+    row_idx = np.array([idx[0], idx[1], idx[0], idx[1]]).flat
+    col_idx = np.array([idx[0], idx[1], idx[1], idx[0]]).flat
+
+    a = np.ones(idx.shape[1:], dtype=int)
+    val = np.array([+a, +a, -a, -a]).flat
+
+    # Create CSR matrix for efficiency
+    matrix = spsparse.coo_matrix((val, (row_idx, col_idx)), shape=(n, n))
+    matrix = matrix.tocsr()
+
+    bnd = get_boundary_vertices(entities)
+
+    # Apply Dirichlet conditions.
+    # Set all Dirichlet rows to 0.
+    for b in bnd:
+        matrix.data[matrix.indptr[b] : matrix.indptr[b + 1]] = 0.0
+    # Set the diagonal and RHS.
+    d = matrix.diagonal()
+    d[bnd] = 1.0
+    matrix.setdiag(d)
+
+    rhs = np.zeros((n, 2))
+    rhs[bnd] = vertices[bnd]
+
+    # vertices_new = spsolve(matrix, rhs)
+
+    # use AMG
+    ml = pyamg.ruge_stuben_solver(matrix)
+    vertices_new = np.column_stack([ml.solve(rhs[:, 0]), ml.solve(rhs[:, 1])])
+
+    return vertices_new, entities
 
 
 def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
