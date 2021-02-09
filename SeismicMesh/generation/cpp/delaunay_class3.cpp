@@ -25,7 +25,32 @@ using DT = CGAL::Delaunay_triangulation_3<K, Tds>;
 
 using Point = K::Point_3;
 using Vertex_handle = DT::Vertex_handle;
+using Cell_handle = DT::Cell_handle;
+using Edge = DT::Edge;
 using Vi = DT::Finite_vertices_iterator;
+using Cc = DT::Cell_circulator;
+using Ci = DT::Finite_cells_iterator;
+
+template <typename T>
+      std::vector<T> vectorSortIntArr(std::vector<std::array<T, 2>> v) {
+        std::sort(v.begin(), v.end());
+        // double t = tmr.elapsed();
+        // tmr.reset();
+        auto iter = std::unique(v.begin(), v.end());
+        // t = tmr.elapsed();
+        // std::cout << t << std::endl;
+
+        size_t len = iter - v.begin();
+        std::vector<T> outvec;
+        outvec.reserve(len * 2);
+        for (auto i = v.begin(); i != iter; ++i) {
+          outvec.push_back(i->at(0));
+          outvec.push_back(i->at(1));
+        }
+        return outvec;
+      }
+
+
 
 template <typename T> class TypedInputIterator {
 public:
@@ -143,6 +168,94 @@ PYBIND11_MODULE(delaunay_class3, m) {
            })
 
       .def("number_of_vertices", [](DT &dt) { return dt.number_of_vertices(); })
+
+      .def("get_edges",[](const DT &dt, const std::vector<int> &cells_to_get){
+
+              // User supplies cells_to_get
+              std::unordered_set<Cell_handle> cell_handles;
+              cell_handles.reserve(cells_to_get.size());
+              int ix = 0;
+              for (Ci ci = dt.finite_cells_begin(); ci != dt.finite_cells_end(); ci++) {
+                  if(cells_to_get[ix] == 1){
+                      cell_handles.insert(ci);
+                    }
+                  ix += 1;
+              }
+              std::vector<int> edges;
+              edges.reserve(6*cells_to_get.size());
+              // this creates each edge of the tetrahedron
+              int indices[6][2];
+              // first edge
+              indices[0][0]=0;
+              indices[0][1]=1;
+              // second edge
+              indices[1][0]=1;
+              indices[1][1]=2;
+              // third edge
+              indices[2][0]=2;
+              indices[2][1]=0;
+              // fourth edge
+              indices[3][0]=0;
+              indices[3][1]=3;
+              // fifth edge
+              indices[4][0]=1;
+              indices[4][1]=3;
+              // sixth edge
+              indices[5][0]=2;
+              indices[5][1]=3;
+              // If it is in the set report the unique edge by comparing the &* of the two face handle
+              int n = 0;
+              for (const auto& cell : cell_handles){
+                  // for each cell look at its six edges
+                  for (std::size_t i = 0; i < 6; ++i){
+                     // build edge structure
+                     int indx0 = indices[i][0];
+                     int indx1 = indices[i][1];
+                     auto edge = Edge(cell, indx0, indx1);
+                     // circulate around the edge
+                     Cc nei_cells = dt.incident_cells(edge, cell);
+                     Cc done = nei_cells;
+                     bool is_smallest = true;
+                     do
+                     {
+                        Cell_handle nei_cell = nei_cells;
+                        if (cell > nei_cell && cell_handles.count(nei_cell)) {
+                           ++nei_cells; // advance to next neighoring cell
+                           is_smallest = false;
+                           break; // report interior edges once
+                        }
+                        ++nei_cells;
+                     }
+                     while(nei_cells != done);
+
+                     if (is_smallest)
+                     {
+                       Vertex_handle vs = cell->vertex(indx0);
+                       Vertex_handle vt = cell->vertex(indx1);
+
+                       edges.push_back(vs->info());
+                       edges.push_back(vt->info());
+                       n += 2;
+                     }
+                  }
+              }
+           edges.resize(n);
+           ssize_t soint = sizeof(int);
+           ssize_t num_edges = edges.size() / 2;
+           ssize_t ndim = 2;
+           std::vector<ssize_t> shape = {num_edges, 2};
+           std::vector<ssize_t> strides = {soint * 2, soint};
+
+           // return 2-D NumPy array
+           return py::array(py::buffer_info(
+               edges.data(), /* data as contiguous array  */
+               sizeof(int),  /* size of one scalar        */
+               py::format_descriptor<int>::format(), /* data type */
+               2,      /* number of dimensions      */
+               shape,  /* shape of the matrix       */
+               strides /* strides for each axis     */
+               ));
+           })
 
       .def("number_of_cells",
            [](DT &dt) {

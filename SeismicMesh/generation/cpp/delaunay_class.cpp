@@ -9,6 +9,7 @@
 #include <iterator>
 #include <string>
 #include <vector>
+#include <ctime>
 
 #include <boost/lexical_cast.hpp>
 
@@ -26,7 +27,9 @@ using DT = CGAL::Delaunay_triangulation_2<K, Tds>;
 
 using Point = K::Point_2;
 using Vertex_handle = DT::Vertex_handle;
+using Face_handle = DT::Face_handle;
 using Vi = DT::Finite_vertices_iterator;
+using Fi = DT::Finite_faces_iterator;
 
 template <typename T> class TypedInputIterator {
 public:
@@ -59,6 +62,23 @@ public:
 
 private:
   py::iterator py_iter_;
+};
+
+
+class Timer {
+public:
+  Timer() { clock_gettime(CLOCK_REALTIME, &beg_); }
+
+  double elapsed() {
+    clock_gettime(CLOCK_REALTIME, &end_);
+    return end_.tv_sec - beg_.tv_sec +
+           (end_.tv_nsec - beg_.tv_nsec) / 1000000000.;
+  }
+
+  void reset() { clock_gettime(CLOCK_REALTIME, &beg_); }
+
+private:
+  timespec beg_, end_;
 };
 
 PYBIND11_MODULE(delaunay_class, m) {
@@ -137,37 +157,58 @@ PYBIND11_MODULE(delaunay_class, m) {
              return dt;
            })
 
-      // get all the finite edges of the triangulation
+      // Put the face handles of these faces in a std::set<Face_handle>.
+      // Then for each face f in the list look at the three edges (f,i) for i = 0,1,2.
+      // For each edge get the opposite face, and check if it is in the set.
+      // If it is in the set report the unique edge by comparing the &* of the two face handles. If it is not report the edge e.
       .def("get_edges",
-              [](DT &dt){
-                std::vector<int> edges;
+              [](const DT &dt, const std::vector<int> &faces_to_get){
 
-                for(DT::Edge_iterator ei=dt.finite_edges_begin();ei!=dt.finite_edges_end(); ei++){
-                  // Get a vertex from the edge
-                  DT::Face& f = *(ei->first);
-                  int i = ei->second;
-                  Vertex_handle vs = f.vertex(f.cw(i));
-                  Vertex_handle vt = f.vertex(f.ccw(i));
+              // User supplies face_to_get
+              std::unordered_set<Face_handle> face_handles;
+              face_handles.reserve(faces_to_get.size());
+              int ix = 0;
+              for (Fi fi = dt.finite_faces_begin(); fi != dt.finite_faces_end(); fi++) {
+                  if(faces_to_get[ix] == 1){
+                      face_handles.insert(fi);
+                    }
+                  ix += 1;
+              }
+              std::vector<int> edges;
+              edges.reserve(3*faces_to_get.size());
+              // If it is in the set report the unique edge by comparing the &* of the two face handle
+              int n = 0;
+              for (const auto& face : face_handles){
+                  // for each face look at its three edges
+                  for (std::size_t i = 0; i < 3; ++i){
+                     Face_handle nei_face = face->neighbor(i);
+                     if (face > nei_face && face_handles.count(nei_face)) continue; // report interior edges once
 
-                  edges.push_back(vs->info());
-                  edges.push_back(vt->info());
-                  //std::cout << vs->info() << vt->info() << std::endl;
-                }
-             ssize_t soint = sizeof(int);
-             ssize_t num_edges = edges.size() / 2;
-             ssize_t ndim = 2;
-             std::vector<ssize_t> shape = {num_edges, 2};
-             std::vector<ssize_t> strides = {soint * 2, soint};
+                     Vertex_handle vs = face->vertex(face->cw(i));
+                     Vertex_handle vt = face->vertex(face->ccw(i));
 
-             // return 2-D NumPy array
-             return py::array(py::buffer_info(
-                 edges.data(), /* data as contiguous array  */
-                 sizeof(int),  /* size of one scalar        */
-                 py::format_descriptor<int>::format(), /* data type */
-                 2,      /* number of dimensions      */
-                 shape,  /* shape of the matrix       */
-                 strides /* strides for each axis     */
-                 ));
+                     edges.push_back(vs->info());
+                     edges.push_back(vt->info());
+                     n += 2;
+                  }
+              }
+              edges.resize(n);
+
+              ssize_t soint = sizeof(int);
+              ssize_t num_edges = edges.size() / 2;
+              ssize_t ndim = 2;
+              std::vector<ssize_t> shape = {num_edges, 2};
+              std::vector<ssize_t> strides = {soint * 2, soint};
+
+              // return 2-D NumPy array
+              return py::array(py::buffer_info(
+                  edges.data(), /* data as contiguous array  */
+                  sizeof(int),  /* size of one scalar        */
+                  py::format_descriptor<int>::format(), /* data type */
+                  2,      /* number of dimensions      */
+                  shape,  /* shape of the matrix       */
+                  strides /* strides for each axis     */
+                  ));
               })
 
       .def("number_of_vertices", &DT::number_of_vertices)
