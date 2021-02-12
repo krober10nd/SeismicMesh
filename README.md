@@ -41,6 +41,7 @@ Table of contents
      * [Intersection](#intersection)
      * [Difference](#difference)
      * [Immersion](#immersion)
+     * [Boundaries](#boundaries)
      * [Periodic](#periodic)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
@@ -555,6 +556,9 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+
+Boundaries
+-----------
 
 Boundary conditions can also be prescribed and written to `gmsh` compatible files using `mehsio`. In the following example, we immerse a disk into the connectivity and then prescribe boundary conditions around the circle and each wall of the domain for later usage inside a finite element solver.
 
