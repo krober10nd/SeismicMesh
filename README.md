@@ -283,6 +283,9 @@ Immersed disk with boundary conditions
 
 Boundary conditions can also be prescribed and written to `gmsh` compatible files using `mehsio`. In the following example, we immerse a disk into the connectivity and then prescribe boundary conditions around the circle and each wall of the domain for later usage inside a finite element solver. 
 
+<img width="1221" alt="Screen Shot 2021-02-12 at 12 04 03 PM" src="https://user-images.githubusercontent.com/18619644/107784877-b1902500-6d2a-11eb-98f3-e01c1175f498.png">
+
+
 ```python
 import numpy as np
 import meshio
