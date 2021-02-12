@@ -556,7 +556,7 @@ meshio.write_points_cells(
 )
 ```
 
-Boundary conditions can also be prescribed and written to `gmsh` compatible files using `mehsio`. In the following example, we immerse a disk into the connectivity and then prescribe boundary conditions around the circle and each wall of the domain for later usage inside a finite element solver. 
+Boundary conditions can also be prescribed and written to `gmsh` compatible files using `mehsio`. In the following example, we immerse a disk into the connectivity and then prescribe boundary conditions around the circle and each wall of the domain for later usage inside a finite element solver.
 
 <img width="1221" alt="Screen Shot 2021-02-12 at 12 04 03 PM" src="https://user-images.githubusercontent.com/18619644/107784877-b1902500-6d2a-11eb-98f3-e01c1175f498.png">
 
@@ -565,7 +565,7 @@ Boundary conditions can also be prescribed and written to `gmsh` compatible file
 import numpy as np
 import meshio
 import SeismicMesh as sm
- 
+
 bbox = (0.0, 10.0, 0.0, 1.0)
 channel = sm.Rectangle(bbox)
 suspension = sm.Disk([0.5, 0.5], 0.25)
@@ -579,53 +579,54 @@ points, cells = sm.generate_mesh(
     subdomains=[suspension],
     max_iter=1000,
  )
- # This gets the edges of the mesh in a winding order.
- ordered_bnde = sm.geometry.get_winded_boundary_edges(cells)
- mdpt = points[ordered_bnde].sum(1) / 2
- infl = ordered_bnde[mdpt[:, 0] < 1e-6, :]  # x=0.0
- outfl = ordered_bnde[mdpt[:, 0] > 9.9 + 1e-6, :]  # x=10.0
- walls = ordered_bnde[
-     (mdpt[:, 1] < 1e-6) | (mdpt[:, 1] > 0.99 + 1e-6), :
- ]  # y=0.0 or y=1.0
- cells_prune = cells[suspension.eval(sm.geometry.get_centroids(points, cells)) < 0]
- circle = sm.geometry.get_winded_boundary_edges(cells_prune)
- 
- # Write to gmsh22 format with boundary conditions
- meshio.write_points_cells(
-     "example.msh",
-     points,
-     cells=[
-         ("triangle", cells),
-         ("line", np.array(infl)),
-         ("line", np.array(outfl)),
-         ("line", np.array(walls)),
-         ("line", np.array(circle)),
-     ],
-     field_data={
-         "InFlow": np.array([11, 1]),
-         "OutFlow": np.array([12, 1]),
-         "Walls": np.array([13, 1]),
-         "Circle": np.array([14, 1]),
-     },
-     cell_data={
-         "gmsh:physical": [
-             np.repeat(3, len(cells)),
-             np.repeat(11, len(infl)),
-             np.repeat(12, len(outfl)),
-             np.repeat(13, len(walls)),
-             np.repeat(14, len(circle)),
-         ],
-         "gmsh:geometrical": [
-             np.repeat(1, len(cells)),
-             np.repeat(1, len(infl)),
-             np.repeat(1, len(outfl)),
-             np.repeat(1, len(walls)),
-             np.repeat(1, len(circle)),
-         ],
-     },
-     file_format="gmsh22",
-     binary=False,
- )
+# This gets the edges of the mesh in a winding order (clockwise or counterclockwise).
+ordered_bnde = sm.geometry.get_winded_boundary_edges(cells)
+# We use the midpoint of the edge to determine its boundary label
+mdpt = points[ordered_bnde].sum(1) / 2
+infl = ordered_bnde[mdpt[:, 0] < 1e-6, :]  # x=0.0
+outfl = ordered_bnde[mdpt[:, 0] > 9.9 + 1e-6, :]  # x=10.0
+walls = ordered_bnde[
+    (mdpt[:, 1] < 1e-6) | (mdpt[:, 1] > 0.99 + 1e-6), :
+]  # y=0.0 or y=1.0
+cells_prune = cells[suspension.eval(sm.geometry.get_centroids(points, cells)) < 0]
+circle = sm.geometry.get_winded_boundary_edges(cells_prune)
+
+# Write to gmsh22 format with boundary conditions for the walls and disk/circle.
+meshio.write_points_cells(
+    "example.msh",
+    points,
+    cells=[
+        ("triangle", cells),
+        ("line", np.array(infl)),
+        ("line", np.array(outfl)),
+        ("line", np.array(walls)),
+        ("line", np.array(circle)),
+    ],
+    field_data={
+        "InFlow": np.array([11, 1]),
+        "OutFlow": np.array([12, 1]),
+        "Walls": np.array([13, 1]),
+        "Circle": np.array([14, 1]),
+    },
+    cell_data={
+        "gmsh:physical": [
+            np.repeat(3, len(cells)),
+            np.repeat(11, len(infl)),
+            np.repeat(12, len(outfl)),
+            np.repeat(13, len(walls)),
+            np.repeat(14, len(circle)),
+        ],
+        "gmsh:geometrical": [
+            np.repeat(1, len(cells)),
+            np.repeat(1, len(infl)),
+            np.repeat(1, len(outfl)),
+            np.repeat(1, len(walls)),
+            np.repeat(1, len(circle)),
+        ],
+    },
+    file_format="gmsh22",
+    binary=False,
+)
 ```
 
 
@@ -701,6 +702,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Mesh improvement now solves Lapl. smoothing as a fixed-point problem using AMG solver.
 - User can now mesh user-defined sizing functions in parallel (not from :class:SizeFunction)
 - Ability to specify data type `dtype` of floating point number inside binary files.
+- Example how to specify and write boundary conditions.
 ### Improved
 - Faster unique edge calculation.
 
