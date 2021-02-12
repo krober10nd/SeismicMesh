@@ -31,6 +31,7 @@ Table of contents
    * [Examples](#examples)
      * [BP2004](#bp2004)
      * [EAGE Salt](#eage)
+     * [Immersed disk with boundary conditions](#imdisk)
      * [Cylinder](#cylinder)
      * [Disk](#disk)
      * [Square](#square)
@@ -276,6 +277,78 @@ if comm.rank == 0:
 
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
+
+Immersed disk with boundary conditions
+--------------------------------------
+
+Boundary conditions can also be prescribed and written to `gmsh` compatible files using `mehsio`. In the following example, we immerse a disk into the connectivity and then prescribe boundary conditions around the circle and each wall of the domain for later usage inside a finite element solver. 
+
+```python
+import numpy as np
+import meshio
+import SeismicMesh as sm
+ 
+bbox = (0.0, 10.0, 0.0, 1.0)
+channel = sm.Rectangle(bbox)
+suspension = sm.Disk([0.5, 0.5], 0.25)
+
+hmin = 0.10
+fh = lambda p: 0.05 * np.abs(suspension.eval(p)) + hmin
+points, cells = sm.generate_mesh(
+    domain=channel,
+    edge_length=fh,
+    h0=hmin,
+    subdomains=[suspension],
+    max_iter=1000,
+ )
+ # This gets the edges of the mesh in a winding order.
+ ordered_bnde = sm.geometry.get_winded_boundary_edges(cells)
+ mdpt = points[ordered_bnde].sum(1) / 2
+ infl = ordered_bnde[mdpt[:, 0] < 1e-6, :]  # x=0.0
+ outfl = ordered_bnde[mdpt[:, 0] > 9.9 + 1e-6, :]  # x=10.0
+ walls = ordered_bnde[
+     (mdpt[:, 1] < 1e-6) | (mdpt[:, 1] > 0.99 + 1e-6), :
+ ]  # y=0.0 or y=1.0
+ cells_prune = cells[suspension.eval(sm.geometry.get_centroids(points, cells)) < 0]
+ circle = sm.geometry.get_winded_boundary_edges(cells_prune)
+ 
+ # Write to gmsh22 format with boundary conditions
+ meshio.write_points_cells(
+     "example.msh",
+     points,
+     cells=[
+         ("triangle", cells),
+         ("line", np.array(infl)),
+         ("line", np.array(outfl)),
+         ("line", np.array(walls)),
+         ("line", np.array(circle)),
+     ],
+     field_data={
+         "InFlow": np.array([11, 1]),
+         "OutFlow": np.array([12, 1]),
+         "Walls": np.array([13, 1]),
+         "Circle": np.array([14, 1]),
+     },
+     cell_data={
+         "gmsh:physical": [
+             np.repeat(3, len(cells)),
+             np.repeat(11, len(infl)),
+             np.repeat(12, len(outfl)),
+             np.repeat(13, len(walls)),
+             np.repeat(14, len(circle)),
+         ],
+         "gmsh:geometrical": [
+             np.repeat(1, len(cells)),
+             np.repeat(1, len(infl)),
+             np.repeat(1, len(outfl)),
+             np.repeat(1, len(walls)),
+             np.repeat(1, len(circle)),
+         ],
+     },
+     file_format="gmsh22",
+     binary=False,
+ )
+```
 
 Cylinder
 --------
