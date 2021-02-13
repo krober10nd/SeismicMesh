@@ -166,7 +166,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 "byte_order",
                 "axes_order",
                 "axes_order_sort",
-                "dytpe",
+                "dtype",
             }:
                 pass
             else:
