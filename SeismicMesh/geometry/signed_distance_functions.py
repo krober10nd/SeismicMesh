@@ -183,27 +183,58 @@ class Rectangle:
         # translate back to unrotated space
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
-
         return drectangle_fast(
             x, self.bbox0[0], self.bbox0[1], self.bbox0[2], self.bbox0[3]
         )
 
 
 class Cube:
-    def __init__(self, bbox):
+    def __init__(self, bbox, rotate=0.0):
         self.dim = 3
         self.corners = corners(bbox)
+        self.bbox0 = bbox
         self.bbox = bbox
+        self.rotation = rotate
+        self.R = np.array(
+            [
+                [+1, +0, +0],
+                [+0, +np.cos(self.rotation), -np.sin(self.rotation)],
+                [+0, +np.sin(self.rotation), +np.cos(self.rotation)],
+            ]
+        )
+
+        self.R_inv = np.array(
+            [
+                [+np.cos(self.rotation), +np.sin(self.rotation), +0],
+                [-np.sin(self.rotation), +np.cos(self.rotation), +0],
+                [+0, +0, +1],
+            ]
+        )
+        if self.rotation != 0.0:
+            # get rotated extents
+            tmp = np.dot(self.R, self.corners.T).T
+            self.bbox = (
+                np.min(tmp[:, 0]),
+                np.max(tmp[:, 0]),
+                np.min(tmp[:, 1]),
+                np.max(tmp[:, 1]),
+                np.min(tmp[:, 2]),
+                np.max(tmp[:, 2]),
+            )
+            self.corners = corners(self.bbox)
 
     def eval(self, x):
+        # translate back to unrotated space
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         return dblock_fast(
             x,
-            self.bbox[0],
-            self.bbox[1],
-            self.bbox[2],
-            self.bbox[3],
-            self.bbox[4],
-            self.bbox[5],
+            self.bbox0[0],
+            self.bbox0[1],
+            self.bbox0[2],
+            self.bbox0[3],
+            self.bbox0[4],
+            self.bbox0[5],
         )
 
 
