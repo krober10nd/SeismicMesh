@@ -43,7 +43,7 @@ Table of contents
      * [Immersion](#immersion)
      * [Boundaries](#boundaries)
      * [Periodic](#periodic)
-     * [Rotations](#rotation)
+     * [Rotations](#rotations)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
