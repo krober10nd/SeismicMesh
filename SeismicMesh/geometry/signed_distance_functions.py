@@ -150,14 +150,42 @@ class Ball:
 
 
 class Rectangle:
-    def __init__(self, bbox):
+    def __init__(self, bbox, rotate=0.0):
         self.dim = 2
         self.corners = corners(bbox)
+        self.bbox0 = bbox
         self.bbox = bbox
+        self.rotation = rotate
+        self.R = np.array(
+            [
+                [+np.cos(self.rotation), -np.sin(self.rotation)],
+                [+np.sin(self.rotation), +np.cos(self.rotation)],
+            ]
+        )
+        self.R_inv = np.array(
+            [
+                [+np.cos(self.rotation), +np.sin(self.rotation)],
+                [-np.sin(self.rotation), +np.cos(self.rotation)],
+            ]
+        )
+        if self.rotation != 0.0:
+            # get rotated extents
+            tmp = np.dot(self.R, self.corners.T).T
+            self.bbox = (
+                np.min(tmp[:, 0]),
+                np.max(tmp[:, 0]),
+                np.min(tmp[:, 1]),
+                np.max(tmp[:, 1]),
+            )
+            self.corners = corners(self.bbox)
 
     def eval(self, x):
+        # translate back to unrotated space
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
+
         return drectangle_fast(
-            x, self.bbox[0], self.bbox[1], self.bbox[2], self.bbox[3]
+            x, self.bbox0[0], self.bbox0[1], self.bbox0[2], self.bbox0[3]
         )
 
 
