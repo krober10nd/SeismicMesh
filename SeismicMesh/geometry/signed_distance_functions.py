@@ -203,13 +203,7 @@ class Cube:
             ]
         )
 
-        self.R_inv = np.array(
-            [
-                [+np.cos(self.rotation), +np.sin(self.rotation), +0],
-                [-np.sin(self.rotation), +np.cos(self.rotation), +0],
-                [+0, +0, +1],
-            ]
-        )
+        self.R_inv = self.R.T
         if self.rotation != 0.0:
             # get rotated extents
             tmp = np.dot(self.R, self.corners.T).T
