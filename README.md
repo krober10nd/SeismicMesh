@@ -43,6 +43,7 @@ Table of contents
      * [Immersion](#immersion)
      * [Boundaries](#boundaries)
      * [Periodic](#periodic)
+     * [Rotations](#rotation)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
@@ -661,7 +662,34 @@ meshio.write_points_cells(
 )
 ```
 
+Rotations
+------------
+<img alt="Rotated squares" src="https://user-images.githubusercontent.com/18619644/108713669-4e0ab200-74f7-11eb-925e-d92705327557.png" width="30%">
 
+```python
+# Rotate squares in 2D
+import numpy as np
+
+import meshio
+import SeismicMesh
+
+bbox = (0.0, 1.0, 0.0, 1.0)
+rotations = np.linspace(-3.14, 3.14, 40)
+squares = []
+for _, rotate in enumerate(rotations):
+    squares.append(SeismicMesh.Rectangle(bbox, rotate=rotate))
+
+rotated_squares = SeismicMesh.Union(squares)
+
+points, cells = SeismicMesh.generate_mesh(domain=rotated_squares, edge_length=0.05)
+meshio.write_points_cells(
+    "square" + str(rotate) + ".vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+
+```
 Parallelism
 -----------
 
