@@ -23,6 +23,53 @@ def _gather_corners(domains):
         return np.concatenate(corners)
 
 
+def _build_rotation2(object):
+    object.R = np.array(
+        [
+            [+np.cos(object.rotation), -np.sin(object.rotation)],
+            [+np.sin(object.rotation), +np.cos(object.rotation)],
+        ]
+    )
+    object.R_inv = object.R.T
+    if object.rotation != 0.0:
+        # get rotated extents
+        object.corners = corners(object.bbox)
+        tmp = np.dot(object.R, object.corners.T).T
+        object.bbox = (
+            np.min(tmp[:, 0]),
+            np.max(tmp[:, 0]),
+            np.min(tmp[:, 1]),
+            np.max(tmp[:, 1]),
+        )
+        object.corners = corners(object.bbox)
+    return object
+
+
+def _build_rotation3(object):
+    object.R = np.array(
+        [
+            [+1, +0, +0],
+            [+0, +np.cos(object.rotation), -np.sin(object.rotation)],
+            [+0, +np.sin(object.rotation), +np.cos(object.rotation)],
+        ]
+    )
+    object.R_inv = object.R.T
+    if object.rotation != 0.0:
+        # get rotated extents
+        object.corners = corners(object.bbox)
+        tmp = np.dot(object.R, object.corners.T).T
+        object.bbox = (
+            np.min(tmp[:, 0]),
+            np.max(tmp[:, 0]),
+            np.min(tmp[:, 1]),
+            np.max(tmp[:, 1]),
+            np.min(tmp[:, 2]),
+            np.max(tmp[:, 2]),
+        )
+        object.corners = corners(object.bbox)
+    return object
+
+
 class Repeat:
     def __init__(self, bbox, domain, period):
         self.bbox = bbox
@@ -123,15 +170,19 @@ class Difference:
 
 
 class Disk:
-    def __init__(self, x0, r):
+    def __init__(self, x0, r, rotate=0.0):
         self.dim = 2
-        self.corners = None
         self.xc = x0[0]
         self.yc = x0[1]
         self.r = r
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
+        self.rotation = rotate
+        self = _build_rotation2(self)
+        self.corners = None
 
     def eval(self, x):
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         return _ddisk(x, self.xc, self.yc, self.r)
 
 
@@ -156,28 +207,7 @@ class Rectangle:
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
-        self.R = np.array(
-            [
-                [+np.cos(self.rotation), -np.sin(self.rotation)],
-                [+np.sin(self.rotation), +np.cos(self.rotation)],
-            ]
-        )
-        self.R_inv = np.array(
-            [
-                [+np.cos(self.rotation), +np.sin(self.rotation)],
-                [-np.sin(self.rotation), +np.cos(self.rotation)],
-            ]
-        )
-        if self.rotation != 0.0:
-            # get rotated extents
-            tmp = np.dot(self.R, self.corners.T).T
-            self.bbox = (
-                np.min(tmp[:, 0]),
-                np.max(tmp[:, 0]),
-                np.min(tmp[:, 1]),
-                np.max(tmp[:, 1]),
-            )
-            self.corners = corners(self.bbox)
+        self = _build_rotation2(self)
 
     def eval(self, x):
         # translate back to unrotated space
@@ -195,27 +225,7 @@ class Cube:
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
-        self.R = np.array(
-            [
-                [+1, +0, +0],
-                [+0, +np.cos(self.rotation), -np.sin(self.rotation)],
-                [+0, +np.sin(self.rotation), +np.cos(self.rotation)],
-            ]
-        )
-
-        self.R_inv = self.R.T
-        if self.rotation != 0.0:
-            # get rotated extents
-            tmp = np.dot(self.R, self.corners.T).T
-            self.bbox = (
-                np.min(tmp[:, 0]),
-                np.max(tmp[:, 0]),
-                np.min(tmp[:, 1]),
-                np.max(tmp[:, 1]),
-                np.min(tmp[:, 2]),
-                np.max(tmp[:, 2]),
-            )
-            self.corners = corners(self.bbox)
+        self = _build_rotation3(self)
 
     def eval(self, x):
         # translate back to unrotated space
