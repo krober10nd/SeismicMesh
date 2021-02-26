@@ -25,11 +25,11 @@ def test_rotations2d():
 def test_rotations3d():
     bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
     geo = []
-    # geo.append(Ball((0.5, 0.5, 0.5), 0.1, rotate=0.0 * 3.14))
+    geo.append(Ball((0.5, 0.5, 0.5), 0.1, rotate=0.0 * 3.14))
     geo.append(Cube(bbox, rotate=0.4 * 3.14))
-    # geo.append(Torus(1.0, 0.5, rotate=0.4 * 3.14))
-    # geo.append(Prism(0.5, 0.5, rotate=0.5 * 3.14))
-    # geo.append(Cylinder(1.0, 0.5, rotate=0.6 * 3.14))
+    geo.append(Torus(1.0, 0.5, rotate=0.4 * 3.14))
+    geo.append(Prism(0.5, 0.5, rotate=0.5 * 3.14))
+    geo.append(Cylinder(1.0, 0.5, rotate=0.6 * 3.14))
 
     for domain in geo:
         p, c = generate_mesh(domain=domain, edge_length=0.1)

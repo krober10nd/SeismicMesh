@@ -32,7 +32,6 @@ def _build_rotation2(object):
     )
     object.R_inv = object.R.T
     if object.rotation != 0.0:
-        # get rotated extents
         object.corners = corners(object.bbox)
         tmp = np.dot(object.R, object.corners.T).T
         object.bbox = (
@@ -55,7 +54,6 @@ def _build_rotation3(object):
     )
     object.R_inv = object.R.T
     if object.rotation != 0.0:
-        # get rotated extents
         object.corners = corners(object.bbox)
         tmp = np.dot(object.R, object.corners.T).T
         object.bbox = (
@@ -187,16 +185,20 @@ class Disk:
 
 
 class Ball:
-    def __init__(self, x0, r):
+    def __init__(self, x0, r, rotate=0.0):
         self.dim = 3
-        self.corners = None
         self.xc = x0[0]
         self.yc = x0[1]
         self.zc = x0[2]
         self.r = r
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r, x0[2] - r, x0[2] + r)
+        self.rotation = rotate
+        self = _build_rotation3(self)
+        self.corners = None
 
     def eval(self, x):
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         return dball(x, self.xc, self.yc, self.zc, self.r)
 
 
@@ -210,7 +212,6 @@ class Rectangle:
         self = _build_rotation2(self)
 
     def eval(self, x):
-        # translate back to unrotated space
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return drectangle_fast(
@@ -228,7 +229,6 @@ class Cube:
         self = _build_rotation3(self)
 
     def eval(self, x):
-        # translate back to unrotated space
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return dblock_fast(
@@ -243,29 +243,37 @@ class Cube:
 
 
 class Torus:
-    def __init__(self, r1, r2):
+    def __init__(self, r1, r2, rotate=0.0):
         """A torus with outer radius `r1` and inner radius of `r2`"""
         assert r1 > 0.0 and r2 > 0.0
         z = 2 * max(r1, r2)
         self.dim = 3
         self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
         self.t = (r1, r2)
+        self.rotation = rotate
+        self = _build_rotation3(self)
         self.corners = None
 
     def eval(self, x):
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         xz = np.column_stack((x[:, 0], x[:, 2]))
         q = np.column_stack((_length(xz) - self.t[0], x[:, 1]))
         return _length(q) - self.t[1]
 
 
 class Prism:
-    def __init__(self, b, h):
+    def __init__(self, b, h, rotate=0.0):
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
         self.dim = 3
+        self.rotation = rotate
+        self = _build_rotation3(self)
         self.corners = None
 
     def eval(self, x):
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         q = np.abs(x)
         return np.maximum(
             q[:, 2] - self.h[1],
@@ -274,16 +282,20 @@ class Prism:
 
 
 class Cylinder:
-    def __init__(self, h=1.0, r=0.5):
+    def __init__(self, h=1.0, r=0.5, rotate=0.0):
         assert h > 0.0 and r > 0.0
         h /= 2.0
         sz = max(h, r)
         self.dim = 3
         self.bbox = (-2 * sz, 2 * sz, -2 * sz, 2 * sz, -2 * sz, 2 * sz)
         self.h = (r, h)
+        self.rotation = rotate
+        self = _build_rotation3(self)
         self.corners = None
 
     def eval(self, x):
+        if self.rotation != 0.0:
+            x = np.dot(self.R_inv, x.T).T
         xz = np.column_stack((x[:, 0], x[:, 2]))
         lxz = np.column_stack((_length(xz), x[:, 1]))
         d = np.abs(lxz) - self.h
