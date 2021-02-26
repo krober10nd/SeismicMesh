@@ -45,6 +45,7 @@ Table of contents
      * [Immersion](#immersion)
      * [Boundaries](#boundaries)
      * [Periodic](#periodic)
+     * [Rotations](#rotations)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
@@ -663,6 +664,60 @@ meshio.write_points_cells(
 )
 ```
 
+Rotations
+------------
+<img alt="Rotated squares" src="https://user-images.githubusercontent.com/18619644/108713669-4e0ab200-74f7-11eb-925e-d92705327557.png" width="30%">
+
+```python
+# Rotate squares in 2D
+import numpy as np
+
+import meshio
+import SeismicMesh
+
+bbox = (0.0, 1.0, 0.0, 1.0)
+rotations = np.linspace(-3.14, 3.14, 40)
+squares = []
+for _, rotate in enumerate(rotations):
+    squares.append(SeismicMesh.Rectangle(bbox, rotate=rotate))
+
+rotated_squares = SeismicMesh.Union(squares)
+
+points, cells = SeismicMesh.generate_mesh(domain=rotated_squares, edge_length=0.05)
+meshio.write_points_cells(
+    "rotated_squares" + str(rotate) + ".vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+
+```
+
+<img alt="Rotated cubes" src="https://user-images.githubusercontent.com/18619644/108769631-03f5f080-7538-11eb-8db3-d215548496a8.png" width="30%">
+
+```python
+# Same as above but for cubes
+import numpy as np
+
+import meshio
+import SeismicMesh
+
+bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
+rotations = np.linspace(-3.14, 3.14, 40)
+cubes = []
+for _, rotate in enumerate(rotations):
+    cubes.append(SeismicMesh.Cube(bbox, rotate=rotate))
+
+rotated_cubes = SeismicMesh.Union(cubes)
+
+points, cells = SeismicMesh.generate_mesh(domain=rotated_cubes, edge_length=0.10)
+meshio.write_points_cells(
+    "rotated_cubes.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
 
 Parallelism
 -----------
@@ -703,7 +758,9 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Unrelease
-- None 
+### Added
+- Rotations for all geometric primitives
+
 ## [3.4.0]-2021-02-14
 ### Added
 - Mesh improvement now solves Lapl. smoothing as a fixed-point problem using AMG solver.
