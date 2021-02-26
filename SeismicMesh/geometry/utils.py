@@ -506,7 +506,7 @@ def laplacian2_fixed_point(vertices, entities):
     :rtype: numpy.ndarray[`int` x (dim+1)]
     """
     if vertices.ndim != 2:
-        raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
+        raise NotImplementedError("Laplacian smoothing only works in 2D for now")
 
     n = len(vertices)
 
@@ -565,7 +565,7 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     :rtype: numpy.ndarray[`int` x (dim+1)]
     """
     if vertices.ndim != 2:
-        raise NotImplementedError("Laplacian smoothing is only works in 2D for now")
+        raise NotImplementedError("Laplacian smoothing only works in 2D for now")
 
     eps = np.finfo(float).eps
 
