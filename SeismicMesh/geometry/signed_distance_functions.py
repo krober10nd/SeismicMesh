@@ -43,7 +43,7 @@ def _build_stretch2(object):
         object.corners = corners(object.bbox)
     return object
 
-
+  
 def _build_rotation2(object):
     object.R = np.array(
         [
