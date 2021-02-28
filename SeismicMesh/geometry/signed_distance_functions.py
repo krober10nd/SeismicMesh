@@ -253,7 +253,7 @@ class Rectangle:
 
     def eval(self, x):
         if self.v is not None:
-            x = _scale_back2(x)
+            x = _scale_back2(self, x)
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return drectangle_fast(
