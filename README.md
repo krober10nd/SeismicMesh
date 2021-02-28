@@ -719,6 +719,26 @@ meshio.write_points_cells(
 )
 ```
 
+<img alt="Stretched squares" src="https://user-images.githubusercontent.com/18619644/109436519-ab729780-79fe-11eb-9656-1470f7c766b9.png" width="30%">
+
+```python
+# Geometric primitives can be stretched (while being rotated)
+import meshio
+
+from SeismicMesh import *
+
+domain = Rectangle((0.0, 1.0, 0.0, 1.0), stretch=[0.5, 2.0], rotate=0.1*3.14)
+
+points, cells = generate_mesh(domain=domain, edge_length=0.1, verbose=2)
+
+meshio.write_points_cells(
+    "stretched_square.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
 Parallelism
 -----------
 

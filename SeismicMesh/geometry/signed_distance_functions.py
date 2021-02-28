@@ -23,6 +23,27 @@ def _gather_corners(domains):
         return np.concatenate(corners)
 
 
+def _build_stretch2(object):
+    if object.v is not None:
+        object.alpha = np.sqrt(np.dot(object.v, object.v))
+        object.v /= object.alpha
+
+        bb = object.bbox
+        _corners = np.array(
+            [[bb[0], bb[2]], [bb[1], bb[2]], [bb[1], bb[3]], [bb[0], bb[3]]]
+        )
+        vx = np.multiply.outer(np.dot(object.v, _corners.T), object.v)
+        stretched_corners = (vx * object.alpha + (_corners - vx)).T
+        object.bbox = (
+            np.min(stretched_corners[0]),
+            np.max(stretched_corners[0]),
+            np.min(stretched_corners[1]),
+            np.max(stretched_corners[1]),
+        )
+        object.corners = corners(object.bbox)
+    return object
+
+
 def _build_rotation2(object):
     object.R = np.array(
         [
@@ -203,15 +224,27 @@ class Ball:
 
 
 class Rectangle:
-    def __init__(self, bbox, rotate=0.0):
+    def __init__(self, bbox, rotate=0.0, stretch=None):
         self.dim = 2
         self.corners = corners(bbox)
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
+        self.v = stretch
+        self = _build_stretch2(self)
         self = _build_rotation2(self)
 
     def eval(self, x):
+        if self.v is not None:
+            # scale the component of x in direction v by 1/alpha
+            x = x.T
+            x_shape = x.shape
+            assert x.shape[0] == 2
+            x = x.reshape(2, -1)
+            vx = np.multiply.outer(np.dot(self.v, x), self.v)
+            x = vx / self.alpha + (x.T - vx)
+            x = x.T.reshape(x_shape)
+            x = x.T
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return drectangle_fast(
