@@ -46,6 +46,7 @@ Table of contents
      * [Boundaries](#boundaries)
      * [Periodic](#periodic)
      * [Rotations](#rotations)
+     * [Stretching](#stretching)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
@@ -718,6 +719,9 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+
+Stretching
+------------
 
 <img alt="Stretched squares" src="https://user-images.githubusercontent.com/18619644/109436519-ab729780-79fe-11eb-9656-1470f7c766b9.png" width="30%">
 
