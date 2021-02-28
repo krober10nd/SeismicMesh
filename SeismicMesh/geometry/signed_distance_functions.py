@@ -43,7 +43,20 @@ def _build_stretch2(object):
         object.corners = corners(object.bbox)
     return object
 
-  
+
+def _scale_back2(object, x):
+    # scale the component of x in direction v by 1/alpha
+    x = x.T
+    x_shape = x.shape
+    assert x.shape[0] == 2
+    x = x.reshape(2, -1)
+    vx = np.multiply.outer(np.dot(object.v, x), object.v)
+    x = vx / object.alpha + (x.T - vx)
+    x = x.T.reshape(x_shape)
+    x = x.T
+    return x
+
+
 def _build_rotation2(object):
     object.R = np.array(
         [
@@ -189,17 +202,21 @@ class Difference:
 
 
 class Disk:
-    def __init__(self, x0, r, rotate=0.0):
+    def __init__(self, x0, r, rotate=0.0, stretch=None):
         self.dim = 2
         self.xc = x0[0]
         self.yc = x0[1]
         self.r = r
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
         self.rotation = rotate
+        self.v = stretch
+        self = _build_stretch2(self)
         self = _build_rotation2(self)
         self.corners = None
 
     def eval(self, x):
+        if self.v is not None:
+            x = _scale_back2(self, x)
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return _ddisk(x, self.xc, self.yc, self.r)
@@ -236,15 +253,7 @@ class Rectangle:
 
     def eval(self, x):
         if self.v is not None:
-            # scale the component of x in direction v by 1/alpha
-            x = x.T
-            x_shape = x.shape
-            assert x.shape[0] == 2
-            x = x.reshape(2, -1)
-            vx = np.multiply.outer(np.dot(self.v, x), self.v)
-            x = vx / self.alpha + (x.T - vx)
-            x = x.T.reshape(x_shape)
-            x = x.T
+            x = _scale_back2(x)
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         return drectangle_fast(
