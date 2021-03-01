@@ -45,7 +45,6 @@ def _build_stretch2(object):
 
 
 def _scale_back2(object, x):
-    # scale the component of x in direction v by 1/alpha
     x = x.T
     x_shape = x.shape
     assert x.shape[0] == 2
@@ -215,10 +214,10 @@ class Disk:
         self.corners = None
 
     def eval(self, x):
-        if self.v is not None:
-            x = _scale_back2(self, x)
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
+        if self.v is not None:
+            x = _scale_back2(self, x)
         return _ddisk(x, self.xc, self.yc, self.r)
 
 
@@ -252,10 +251,10 @@ class Rectangle:
         self = _build_rotation2(self)
 
     def eval(self, x):
-        if self.v is not None:
-            x = _scale_back2(self, x)
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
+        if self.v is not None:
+            x = _scale_back2(self, x)
         return drectangle_fast(
             x, self.bbox0[0], self.bbox0[1], self.bbox0[2], self.bbox0[3]
         )
