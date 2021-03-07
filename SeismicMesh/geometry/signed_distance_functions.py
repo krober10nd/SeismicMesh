@@ -123,6 +123,10 @@ def _scale_back(object, x, sd=2):
     return x
 
 
+def _translate_back(object, x, sd=2):
+    return x - object.translation_vec
+
+
 def _build_rotation2(object):
     object.R = np.array(
         [
@@ -165,6 +169,28 @@ def _build_rotation3(object):
             np.max(tmp[:, 2]),
         )
         object.corners = corners(object.bbox)
+    return object
+
+
+def _build_translation(object, sd=2):
+    v = object.translation_vec
+    if v is not None:
+        if sd == 2:
+            object.bbox = (
+                object.bbox[0] + v[0],
+                object.bbox[1] + v[0],
+                object.bbox[2] + v[1],
+                object.bbox[3] + v[1],
+            )
+        elif sd == 3:
+            object.bbox = (
+                object.bbox[0] + v[0],
+                object.bbox[1] + v[0],
+                object.bbox[2] + v[1],
+                object.bbox[3] + v[1],
+                object.bbox[4] + v[2],
+                object.bbox[5] + v[2],
+            )
     return object
 
 
@@ -280,7 +306,7 @@ class Difference:
 
 
 class Disk:
-    def __init__(self, x0, r, rotate=0.0, stretch=None):
+    def __init__(self, x0, r, rotate=0.0, stretch=None, translate=None):
         if stretch is not None:
             assert len(stretch) == 2
         self.dim = 2
@@ -290,8 +316,10 @@ class Disk:
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
         self.rotation = rotate
         self.v = stretch
+        self.translation_vec = translate
         self = _build_stretch(self, sd=2)
         self = _build_rotation2(self)
+        self = _build_translation(self, sd=2)
         self.corners = None
 
     def eval(self, x):
@@ -299,6 +327,8 @@ class Disk:
             x = np.dot(self.R_inv, x.T).T
         if self.v is not None:
             x = _scale_back(self, x, sd=2)
+        if self.translation_vec is not None:
+            x = _translate_back(self, x, sd=2)
         return _ddisk(x, self.xc, self.yc, self.r)
 
     def show(self, filename=None, samples=10000):
