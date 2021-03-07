@@ -58,8 +58,7 @@ def _show(geo, filename=None, samples=10000):
     plt.title("Signed distance function")
     fig.colorbar(im, ax=ax)
     im.set_clim(-0.1, 0.1)
-    ax.set_aspect('auto')
-
+    ax.set_aspect("auto")
 
     if filename is None:
         plt.show()
@@ -284,7 +283,6 @@ class Disk:
     def __init__(self, x0, r, rotate=0.0, stretch=None):
         if stretch is not None:
             assert len(stretch) == 2
-        assert rotate >= 0.0
         self.dim = 2
         self.xc = x0[0]
         self.yc = x0[1]
@@ -311,7 +309,6 @@ class Ball:
     def __init__(self, x0, r, rotate=0.0, stretch=None):
         if stretch is not None:
             assert len(stretch) == 3
-        assert rotate >= 0.0
         self.dim = 3
         self.xc = x0[0]
         self.yc = x0[1]
@@ -339,7 +336,6 @@ class Rectangle:
     def __init__(self, bbox, rotate=0.0, stretch=None):
         if stretch is not None:
             assert len(stretch) == 2
-        assert rotate >= 0.0
         self.dim = 2
         self.corners = corners(bbox)
         self.bbox0 = bbox
@@ -366,7 +362,6 @@ class Cube:
     def __init__(self, bbox, rotate=0.0, stretch=None):
         if stretch is not None:
             assert len(stretch) == 3
-        assert rotate >= 0.0
         self.dim = 3
         self.corners = corners(bbox)
         self.bbox0 = bbox
@@ -399,7 +394,6 @@ class Torus:
     def __init__(self, r1, r2, rotate=0.0):
         """A torus with outer radius `r1` and inner radius of `r2`"""
         assert r1 > 0.0 and r2 > 0.0
-        assert rotate >= 0.0
         z = 2 * max(r1, r2)
         self.dim = 3
         self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
@@ -421,7 +415,6 @@ class Torus:
 
 class Prism:
     def __init__(self, b, h, rotate=0.0):
-        assert rotate >= 0.0
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
         self.dim = 3
@@ -445,7 +438,6 @@ class Prism:
 class Cylinder:
     def __init__(self, h=1.0, r=0.5, rotate=0.0):
         assert h > 0.0 and r > 0.0
-        assert rotate >= 0.0
         h /= 2.0
         sz = max(h, r)
         self.dim = 3
