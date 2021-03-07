@@ -47,6 +47,7 @@ Table of contents
      * [Periodic](#periodic)
      * [Rotations](#rotations)
      * [Stretching](#stretching)
+     * [Checking geometry](#checking)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
@@ -281,6 +282,7 @@ if comm.rank == 0:
 
 
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
+
 
 
 Cylinder
@@ -744,6 +746,13 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+
+Checking
+--------
+
+<img alt="Example of checking" src="https://user-images.githubusercontent.com/18619644/110243114-c336a800-7f37-11eb-813f-09c293bd721f.png" width="30%">
+
+SeismicMesh's mesh generator is sensitive to poor geometry definitions and thus you should probably check it prior to complex expensive meshing. We enable all signed distance functions to be visualized via the ``domain.show()`` method where `domain` is an instance of a signed distance function primitive from `SeismicMesh.geometry`. Note: you can increase the number of samples to visualize the signed distance function by increasing the kwarg `samples` to the `show` method, which is by default set to 10000.
 
 Parallelism
 -----------
