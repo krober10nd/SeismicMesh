@@ -46,6 +46,8 @@ Table of contents
      * [Boundaries](#boundaries)
      * [Periodic](#periodic)
      * [Rotations](#rotations)
+     * [Stretching](#stretching)
+     * [Checking geometry](#checking)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
    * [Changelog](#changelog)
@@ -282,6 +284,7 @@ if comm.rank == 0:
 **The user can still specify their own signed distance functions and sizing functions to `generate_mesh` (in serial or parallel) just like the original DistMesh algorithm but now with quality bounds in 3D. Try the codes below!**
 
 
+
 Cylinder
 --------
 
@@ -446,6 +449,8 @@ rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 0.5))
 rect1 = SeismicMesh.Rectangle((0.0, 0.5, 0.0, 1.0))
 disk0 = SeismicMesh.Disk([0.5, 0.5], 0.5)
 union = SeismicMesh.Union([rect0, rect1, disk0])
+# Visualize the signed distance function
+union.show()
 points, cells = SeismicMesh.generate_mesh(domain=union, edge_length=h)
 meshio.write_points_cells(
     "Lshape_wDisk.vtk",
@@ -719,6 +724,36 @@ meshio.write_points_cells(
 )
 ```
 
+Stretching
+------------
+
+<img alt="Stretched squares" src="https://user-images.githubusercontent.com/18619644/109436519-ab729780-79fe-11eb-9656-1470f7c766b9.png" width="30%">
+
+```python
+# Geometric primitives can be stretched (while being rotated)
+import meshio
+
+from SeismicMesh import *
+
+domain = Rectangle((0.0, 1.0, 0.0, 1.0), stretch=[0.5, 2.0], rotate=0.1*3.14)
+
+points, cells = generate_mesh(domain=domain, edge_length=0.1, verbose=2)
+
+meshio.write_points_cells(
+    "stretched_square.vtk",
+    points,
+    [("triangle", cells)],
+    file_format="vtk",
+)
+```
+
+Checking
+--------
+
+<img alt="Example of checking" src="https://user-images.githubusercontent.com/18619644/110243114-c336a800-7f37-11eb-813f-09c293bd721f.png" width="30%">
+
+SeismicMesh's mesh generator is sensitive to poor geometry definitions and thus you should probably check it prior to complex expensive meshing. We enable all signed distance functions to be visualized via the ``domain.show()`` method where `domain` is an instance of a signed distance function primitive from `SeismicMesh.geometry`. Note: you can increase the number of samples to visualize the signed distance function by increasing the kwarg `samples` to the `show` method, which is by default set to 10000.
+
 Parallelism
 -----------
 
@@ -757,9 +792,11 @@ Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## Unrelease
+## Unreleased
 ### Added
 - Rotations for all geometric primitives
+- Stretching for all geometric primitives
+- Visuzlization of signed distance functions
 
 ## [3.4.0]-2021-02-14
 ### Added
