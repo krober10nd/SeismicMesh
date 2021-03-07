@@ -42,7 +42,7 @@ def _generate_samples(bbox, dim, N):
 def _show(geo, filename=None, samples=10000):
     p = _generate_samples(geo.bbox, geo.dim, N=samples)
     d = geo.eval(p)
-    ix = d < 0
+    ix = np.logical_and(d > -0.01, d < 0.01)
 
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
@@ -55,7 +55,7 @@ def _show(geo, filename=None, samples=10000):
         ax.set_xlabel("X-axis")
         ax.set_ylabel("Y-axis")
         ax.set_zlabel("Z-axis")
-    plt.title("Signed distance function")
+    plt.title("Approximate 0-level set")
     fig.colorbar(im, ax=ax)
     im.set_clim(-0.1, 0.1)
     ax.set_aspect("auto")
