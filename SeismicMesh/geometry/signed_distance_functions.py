@@ -101,12 +101,12 @@ def _build_stretch(object, sd=2):
             )
         elif sd == 3:
             object.bbox = (
-                np.min(tmp[:, 0]),
-                np.max(tmp[:, 0]),
-                np.min(tmp[:, 1]),
-                np.max(tmp[:, 1]),
-                np.min(tmp[:, 2]),
-                np.max(tmp[:, 2]),
+                np.min(tmp[0]),
+                np.max(tmp[0]),
+                np.min(tmp[1]),
+                np.max(tmp[1]),
+                np.min(tmp[2]),
+                np.max(tmp[2]),
             )
         object.corners = corners(object.bbox)
     return object
