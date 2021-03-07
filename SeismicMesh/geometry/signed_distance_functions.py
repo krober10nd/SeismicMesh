@@ -8,8 +8,8 @@ import random
 
 
 def _generate_samples(bbox, dim, N):
+    N = int(N)
     points = []
-    print(N)
     _xrange = (bbox[0] - 0.01, bbox[1] + 0.01)
     _yrange = (bbox[2] - 0.01, bbox[3] + 0.01)
     if dim == 2:
