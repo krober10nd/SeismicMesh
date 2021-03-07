@@ -9,6 +9,7 @@ import random
 
 def _generate_samples(bbox, dim, N):
     points = []
+    print(N)
     _xrange = (bbox[0] - 0.01, bbox[1] + 0.01)
     _yrange = (bbox[2] - 0.01, bbox[3] + 0.01)
     if dim == 2:
@@ -57,6 +58,8 @@ def _show(geo, filename=None, samples=10000):
     plt.title("Signed distance function")
     fig.colorbar(im, ax=ax)
     im.set_clim(-0.1, 0.1)
+    ax.set_aspect('auto')
+
 
     if filename is None:
         plt.show()
@@ -178,8 +181,8 @@ class Repeat:
         q = np.mod(x + 0.5 * self.period, self.period) - 0.5 * self.period
         return np.maximum(self.domain.eval(q), self.parent.eval(x))
 
-    def show(self, filename=None):
-        _show(self, filename=None)
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=samples)
 
 
 class Union:
@@ -210,7 +213,7 @@ class Union:
         return np.minimum.reduce([d.eval(x) for d in self.domains])
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Intersection:
@@ -241,7 +244,7 @@ class Intersection:
         return np.maximum.reduce([d.eval(x) for d in self.domains])
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Difference:
@@ -274,7 +277,7 @@ class Difference:
         )
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Disk:
@@ -301,7 +304,7 @@ class Disk:
         return _ddisk(x, self.xc, self.yc, self.r)
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Ball:
@@ -329,7 +332,7 @@ class Ball:
         return dball(x, self.xc, self.yc, self.zc, self.r)
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Rectangle:
@@ -356,7 +359,7 @@ class Rectangle:
         )
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Cube:
@@ -389,7 +392,7 @@ class Cube:
         )
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Torus:
@@ -413,7 +416,7 @@ class Torus:
         return _length(q) - self.t[1]
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Prism:
@@ -436,7 +439,7 @@ class Prism:
         )
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 class Cylinder:
@@ -463,7 +466,7 @@ class Cylinder:
         )
 
     def show(self, filename=None, samples=10000):
-        _show(self, filename=None, samples=10000)
+        _show(self, filename=None, samples=samples)
 
 
 def _ddisk(p, xc, yc, r):
