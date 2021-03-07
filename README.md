@@ -447,6 +447,8 @@ rect0 = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 0.5))
 rect1 = SeismicMesh.Rectangle((0.0, 0.5, 0.0, 1.0))
 disk0 = SeismicMesh.Disk([0.5, 0.5], 0.5)
 union = SeismicMesh.Union([rect0, rect1, disk0])
+# Visualize the signed distance function
+union.show()
 points, cells = SeismicMesh.generate_mesh(domain=union, edge_length=h)
 meshio.write_points_cells(
     "Lshape_wDisk.vtk",

@@ -1,7 +1,67 @@
 import numpy as np
+import matplotlib.pyplot as plt
 import itertools
 
 from .cpp.fast_geometry import drectangle_fast, dblock_fast
+
+import random
+
+
+def _generate_samples(bbox, dim, N):
+    points = []
+    _xrange = (bbox[0] - 0.01, bbox[1] + 0.01)
+    _yrange = (bbox[2] - 0.01, bbox[3] + 0.01)
+    if dim == 2:
+        points.append(
+            [
+                (
+                    random.uniform(*_xrange),
+                    random.uniform(*_yrange),
+                )
+                for i in range(N)
+            ]
+        )
+    elif dim == 3:
+        _zrange = (bbox[4] - 0.01, bbox[5] + 0.01)
+        points.append(
+            [
+                (
+                    random.uniform(*_xrange),
+                    random.uniform(*_yrange),
+                    random.uniform(*_zrange),
+                )
+                for i in range(N)
+            ]
+        )
+    points = np.asarray(points)
+    points = points.reshape(-1, dim)
+    return points
+
+
+def _show(geo, filename=None, samples=10000):
+    p = _generate_samples(geo.bbox, geo.dim, N=samples)
+    d = geo.eval(p)
+    ix = d < 0
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="3d")
+    if geo.dim == 2:
+        im = ax.scatter(p[ix, 0], p[ix, 1], p[ix, 0] * 0.0, c=d[ix], marker=".", s=5.0)
+        ax.set_xlabel("X-axis")
+        ax.set_ylabel("Y-axis")
+    elif geo.dim == 3:
+        im = ax.scatter(p[ix, 0], p[ix, 1], p[ix, 2], c=d[ix], marker=".", s=5.0)
+        ax.set_xlabel("X-axis")
+        ax.set_ylabel("Y-axis")
+        ax.set_zlabel("Z-axis")
+    plt.title("Signed distance function")
+    fig.colorbar(im, ax=ax)
+    im.set_clim(-0.1, 0.1)
+
+    if filename is None:
+        plt.show()
+    else:
+        plt.savefig(filename)
 
 
 def _length(x):
@@ -23,32 +83,37 @@ def _gather_corners(domains):
         return np.concatenate(corners)
 
 
-def _build_stretch2(object):
+def _build_stretch(object, sd=2):
     if object.v is not None:
         object.alpha = np.sqrt(np.dot(object.v, object.v))
         object.v /= object.alpha
-
-        bb = object.bbox
-        _corners = np.array(
-            [[bb[0], bb[2]], [bb[1], bb[2]], [bb[1], bb[3]], [bb[0], bb[3]]]
-        )
+        _corners = corners(object.bbox)
         vx = np.multiply.outer(np.dot(object.v, _corners.T), object.v)
-        stretched_corners = (vx * object.alpha + (_corners - vx)).T
-        object.bbox = (
-            np.min(stretched_corners[0]),
-            np.max(stretched_corners[0]),
-            np.min(stretched_corners[1]),
-            np.max(stretched_corners[1]),
-        )
+        tmp = (vx * object.alpha + (_corners - vx)).T
+        if sd == 2:
+            object.bbox = (
+                np.min(tmp[0]),
+                np.max(tmp[0]),
+                np.min(tmp[1]),
+                np.max(tmp[1]),
+            )
+        elif sd == 3:
+            object.bbox = (
+                np.min(tmp[:, 0]),
+                np.max(tmp[:, 0]),
+                np.min(tmp[:, 1]),
+                np.max(tmp[:, 1]),
+                np.min(tmp[:, 2]),
+                np.max(tmp[:, 2]),
+            )
         object.corners = corners(object.bbox)
     return object
 
 
-def _scale_back2(object, x):
+def _scale_back(object, x, sd=2):
     x = x.T
     x_shape = x.shape
-    assert x.shape[0] == 2
-    x = x.reshape(2, -1)
+    x = x.reshape(sd, -1)
     vx = np.multiply.outer(np.dot(object.v, x), object.v)
     x = vx / object.alpha + (x.T - vx)
     x = x.T.reshape(x_shape)
@@ -113,6 +178,9 @@ class Repeat:
         q = np.mod(x + 0.5 * self.period, self.period) - 0.5 * self.period
         return np.maximum(self.domain.eval(q), self.parent.eval(x))
 
+    def show(self, filename=None):
+        _show(self, filename=None)
+
 
 class Union:
     def __init__(self, domains):
@@ -141,6 +209,9 @@ class Union:
     def eval(self, x):
         return np.minimum.reduce([d.eval(x) for d in self.domains])
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Intersection:
     def __init__(self, domains):
@@ -168,6 +239,9 @@ class Intersection:
 
     def eval(self, x):
         return np.maximum.reduce([d.eval(x) for d in self.domains])
+
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
 
 
 class Difference:
@@ -199,9 +273,15 @@ class Difference:
             [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
         )
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Disk:
     def __init__(self, x0, r, rotate=0.0, stretch=None):
+        if stretch is not None:
+            assert len(stretch) == 2
+        assert rotate >= 0.0
         self.dim = 2
         self.xc = x0[0]
         self.yc = x0[1]
@@ -209,7 +289,7 @@ class Disk:
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r)
         self.rotation = rotate
         self.v = stretch
-        self = _build_stretch2(self)
+        self = _build_stretch(self, sd=2)
         self = _build_rotation2(self)
         self.corners = None
 
@@ -217,12 +297,18 @@ class Disk:
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         if self.v is not None:
-            x = _scale_back2(self, x)
+            x = _scale_back(self, x, sd=2)
         return _ddisk(x, self.xc, self.yc, self.r)
+
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
 
 
 class Ball:
-    def __init__(self, x0, r, rotate=0.0):
+    def __init__(self, x0, r, rotate=0.0, stretch=None):
+        if stretch is not None:
+            assert len(stretch) == 3
+        assert rotate >= 0.0
         self.dim = 3
         self.xc = x0[0]
         self.yc = x0[1]
@@ -230,48 +316,68 @@ class Ball:
         self.r = r
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r, x0[2] - r, x0[2] + r)
         self.rotation = rotate
+        self.v = stretch
+        self = _build_stretch(self, sd=3)
         self = _build_rotation3(self)
         self.corners = None
 
     def eval(self, x):
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
+        if self.v is not None:
+            x = _scale_back(self, x, sd=3)
         return dball(x, self.xc, self.yc, self.zc, self.r)
+
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
 
 
 class Rectangle:
     def __init__(self, bbox, rotate=0.0, stretch=None):
+        if stretch is not None:
+            assert len(stretch) == 2
+        assert rotate >= 0.0
         self.dim = 2
         self.corners = corners(bbox)
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
         self.v = stretch
-        self = _build_stretch2(self)
+        self = _build_stretch(self, sd=2)
         self = _build_rotation2(self)
 
     def eval(self, x):
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
         if self.v is not None:
-            x = _scale_back2(self, x)
+            x = _scale_back(self, x, sd=2)
         return drectangle_fast(
             x, self.bbox0[0], self.bbox0[1], self.bbox0[2], self.bbox0[3]
         )
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Cube:
-    def __init__(self, bbox, rotate=0.0):
+    def __init__(self, bbox, rotate=0.0, stretch=None):
+        if stretch is not None:
+            assert len(stretch) == 3
+        assert rotate >= 0.0
         self.dim = 3
         self.corners = corners(bbox)
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
+        self.v = stretch
+        self = _build_stretch(self, sd=3)
         self = _build_rotation3(self)
 
     def eval(self, x):
         if self.rotation != 0.0:
             x = np.dot(self.R_inv, x.T).T
+        if self.v is not None:
+            x = _scale_back(self, x, sd=3)
         return dblock_fast(
             x,
             self.bbox0[0],
@@ -282,11 +388,15 @@ class Cube:
             self.bbox0[5],
         )
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Torus:
     def __init__(self, r1, r2, rotate=0.0):
         """A torus with outer radius `r1` and inner radius of `r2`"""
         assert r1 > 0.0 and r2 > 0.0
+        assert rotate >= 0.0
         z = 2 * max(r1, r2)
         self.dim = 3
         self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
@@ -302,9 +412,13 @@ class Torus:
         q = np.column_stack((_length(xz) - self.t[0], x[:, 1]))
         return _length(q) - self.t[1]
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Prism:
     def __init__(self, b, h, rotate=0.0):
+        assert rotate >= 0.0
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
         self.dim = 3
@@ -321,10 +435,14 @@ class Prism:
             np.maximum(q[:, 0] * 0.866025 + x[:, 1] * 0.5, -x[:, 1]) - self.h[0] * 0.5,
         )
 
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
+
 
 class Cylinder:
     def __init__(self, h=1.0, r=0.5, rotate=0.0):
         assert h > 0.0 and r > 0.0
+        assert rotate >= 0.0
         h /= 2.0
         sz = max(h, r)
         self.dim = 3
@@ -343,6 +461,9 @@ class Cylinder:
         return np.minimum(np.maximum(d[:, 0], d[:, 1]), 0.0) + _length(
             np.maximum(d, 0.0)
         )
+
+    def show(self, filename=None, samples=10000):
+        _show(self, filename=None, samples=10000)
 
 
 def _ddisk(p, xc, yc, r):
