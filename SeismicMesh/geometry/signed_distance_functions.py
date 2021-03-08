@@ -85,7 +85,49 @@ def _gather_corners(domains):
         return np.concatenate(corners)
 
 
-def _build_stretch(object, sd=2):
+def _manipulate(object, x):
+    if object.translation_vec is not None:
+        x = _translate_back(object, x)
+    if object.rotation != 0.0:
+        x = _rotate_back(object, x)
+    if object.v is not None:
+        x = _scale_back(object, x)
+    return x
+
+
+def _configure_manipulations(object):
+    object = _build_stretch(object)
+    object = _build_rotation(object)
+    object = _build_translation(object)
+    return object
+
+
+def _scale_back(object, x):
+    sd = object.dim
+    x = x.T
+    x_shape = x.shape
+    x = x.reshape(sd, -1)
+    vx = np.multiply.outer(np.dot(object.v, x), object.v)
+    x = vx / object.alpha + (x.T - vx)
+    x = x.T.reshape(x_shape)
+    x = x.T
+    return x
+
+
+def _translate_back(object, x):
+    return x - object.translation_vec
+
+
+def _rotate_back(object, x):
+    return np.dot(object.R_inv, x.T).T
+
+
+def _build_stretch(object):
+    sd = object.dim
+    if object.v is not None:
+        assert (
+            len(object.v) == object.dim
+        ), "Length of stretch vector does not equal dimension"
     if object.v is not None:
         object.alpha = np.sqrt(np.dot(object.v, object.v))
         object.v /= object.alpha
@@ -112,77 +154,64 @@ def _build_stretch(object, sd=2):
     return object
 
 
-def _scale_back(object, x, sd=2):
-    x = x.T
-    x_shape = x.shape
-    x = x.reshape(sd, -1)
-    vx = np.multiply.outer(np.dot(object.v, x), object.v)
-    x = vx / object.alpha + (x.T - vx)
-    x = x.T.reshape(x_shape)
-    x = x.T
-    return x
-
-
-def _translate_back(object, x, sd=2):
-    return x - object.translation_vec
-
-
-def _build_rotation2(object):
-    object.R = np.array(
-        [
-            [+np.cos(object.rotation), -np.sin(object.rotation)],
-            [+np.sin(object.rotation), +np.cos(object.rotation)],
-        ]
-    )
-    object.R_inv = object.R.T
-    if object.rotation != 0.0:
-        object.corners = corners(object.bbox)
-        tmp = np.dot(object.R, object.corners.T).T
-        object.bbox = (
-            np.min(tmp[:, 0]),
-            np.max(tmp[:, 0]),
-            np.min(tmp[:, 1]),
-            np.max(tmp[:, 1]),
+def _build_rotation(object):
+    if object.dim == 2:
+        object.R = np.array(
+            [
+                [+np.cos(object.rotation), -np.sin(object.rotation)],
+                [+np.sin(object.rotation), +np.cos(object.rotation)],
+            ]
         )
-        object.corners = corners(object.bbox)
+        object.R_inv = object.R.T
+        if object.rotation != 0.0:
+            object.corners = corners(object.bbox)
+            tmp = np.dot(object.R, object.corners.T).T
+            object.bbox = (
+                np.min(tmp[:, 0]),
+                np.max(tmp[:, 0]),
+                np.min(tmp[:, 1]),
+                np.max(tmp[:, 1]),
+            )
+            object.corners = corners(object.bbox)
+    elif object.dim == 3:
+        object.R = np.array(
+            [
+                [+1, +0, +0],
+                [+0, +np.cos(object.rotation), -np.sin(object.rotation)],
+                [+0, +np.sin(object.rotation), +np.cos(object.rotation)],
+            ]
+        )
+        object.R_inv = object.R.T
+        if object.rotation != 0.0:
+            object.corners = corners(object.bbox)
+            tmp = np.dot(object.R, object.corners.T).T
+            object.bbox = (
+                np.min(tmp[:, 0]),
+                np.max(tmp[:, 0]),
+                np.min(tmp[:, 1]),
+                np.max(tmp[:, 1]),
+                np.min(tmp[:, 2]),
+                np.max(tmp[:, 2]),
+            )
+            object.corners = corners(object.bbox)
     return object
 
 
-def _build_rotation3(object):
-    object.R = np.array(
-        [
-            [+1, +0, +0],
-            [+0, +np.cos(object.rotation), -np.sin(object.rotation)],
-            [+0, +np.sin(object.rotation), +np.cos(object.rotation)],
-        ]
-    )
-    object.R_inv = object.R.T
-    if object.rotation != 0.0:
-        object.corners = corners(object.bbox)
-        tmp = np.dot(object.R, object.corners.T).T
-        object.bbox = (
-            np.min(tmp[:, 0]),
-            np.max(tmp[:, 0]),
-            np.min(tmp[:, 1]),
-            np.max(tmp[:, 1]),
-            np.min(tmp[:, 2]),
-            np.max(tmp[:, 2]),
-        )
-        object.corners = corners(object.bbox)
-    return object
-
-
-def _build_translation(object, sd=2):
+def _build_translation(object):
     v = object.translation_vec
     if v is not None:
-        if sd == 2:
+        assert (
+            len(v) == object.dim
+        ), "Length of translation vector does not equal dimension"
+    if v is not None:
+        if object.dim == 2:
             object.bbox = (
                 object.bbox[0] + v[0],
                 object.bbox[1] + v[0],
                 object.bbox[2] + v[1],
                 object.bbox[3] + v[1],
             )
-        elif sd == 3:
+        elif object.dim == 3:
             object.bbox = (
                 object.bbox[0] + v[0],
                 object.bbox[1] + v[0],
@@ -307,8 +336,6 @@ class Difference:
 
 class Disk:
     def __init__(self, x0, r, rotate=0.0, stretch=None, translate=None):
-        if stretch is not None:
-            assert len(stretch) == 2
         self.dim = 2
         self.xc = x0[0]
         self.yc = x0[1]
@@ -317,18 +344,11 @@ class Disk:
         self.rotation = rotate
         self.v = stretch
         self.translation_vec = translate
-        self = _build_stretch(self, sd=2)
-        self = _build_rotation2(self)
-        self = _build_translation(self, sd=2)
+        self = _configure_manipulations(self)
         self.corners = None
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
-        if self.v is not None:
-            x = _scale_back(self, x, sd=2)
-        if self.translation_vec is not None:
-            x = _translate_back(self, x, sd=2)
+        x = _manipulate(self, x)
         return _ddisk(x, self.xc, self.yc, self.r)
 
     def show(self, filename=None, samples=10000):
@@ -336,7 +356,7 @@ class Disk:
 
 
 class Ball:
-    def __init__(self, x0, r, rotate=0.0, stretch=None):
+    def __init__(self, x0, r, rotate=0.0, stretch=None, translate=None):
         if stretch is not None:
             assert len(stretch) == 3
         self.dim = 3
@@ -347,15 +367,12 @@ class Ball:
         self.bbox = (x0[0] - r, x0[0] + r, x0[1] - r, x0[1] + r, x0[2] - r, x0[2] + r)
         self.rotation = rotate
         self.v = stretch
-        self = _build_stretch(self, sd=3)
-        self = _build_rotation3(self)
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
         self.corners = None
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
-        if self.v is not None:
-            x = _scale_back(self, x, sd=3)
+        x = _manipulate(self, x)
         return dball(x, self.xc, self.yc, self.zc, self.r)
 
     def show(self, filename=None, samples=10000):
@@ -363,23 +380,18 @@ class Ball:
 
 
 class Rectangle:
-    def __init__(self, bbox, rotate=0.0, stretch=None):
-        if stretch is not None:
-            assert len(stretch) == 2
+    def __init__(self, bbox, rotate=0.0, stretch=None, translate=None):
         self.dim = 2
         self.corners = corners(bbox)
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
         self.v = stretch
-        self = _build_stretch(self, sd=2)
-        self = _build_rotation2(self)
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
-        if self.v is not None:
-            x = _scale_back(self, x, sd=2)
+        x = _manipulate(self, x)
         return drectangle_fast(
             x, self.bbox0[0], self.bbox0[1], self.bbox0[2], self.bbox0[3]
         )
@@ -389,23 +401,18 @@ class Rectangle:
 
 
 class Cube:
-    def __init__(self, bbox, rotate=0.0, stretch=None):
-        if stretch is not None:
-            assert len(stretch) == 3
+    def __init__(self, bbox, rotate=0.0, stretch=None, translate=None):
         self.dim = 3
         self.corners = corners(bbox)
         self.bbox0 = bbox
         self.bbox = bbox
         self.rotation = rotate
         self.v = stretch
-        self = _build_stretch(self, sd=3)
-        self = _build_rotation3(self)
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
-        if self.v is not None:
-            x = _scale_back(self, x, sd=3)
+        x = _manipulate(self, x)
         return dblock_fast(
             x,
             self.bbox0[0],
@@ -421,7 +428,7 @@ class Cube:
 
 
 class Torus:
-    def __init__(self, r1, r2, rotate=0.0):
+    def __init__(self, r1, r2, rotate=0.0, stretch=None, translate=None):
         """A torus with outer radius `r1` and inner radius of `r2`"""
         assert r1 > 0.0 and r2 > 0.0
         z = 2 * max(r1, r2)
@@ -429,12 +436,13 @@ class Torus:
         self.bbox = (-2 * z, 2 * z, -2 * z, 2 * z, -2 * z, 2 * z)
         self.t = (r1, r2)
         self.rotation = rotate
-        self = _build_rotation3(self)
+        self.v = stretch
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
         self.corners = None
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
+        x = _manipulate(self, x)
         xz = np.column_stack((x[:, 0], x[:, 2]))
         q = np.column_stack((_length(xz) - self.t[0], x[:, 1]))
         return _length(q) - self.t[1]
@@ -444,17 +452,18 @@ class Torus:
 
 
 class Prism:
-    def __init__(self, b, h, rotate=0.0):
+    def __init__(self, b, h, rotate=0.0, stretch=None, translate=None):
         self.bbox = (-b, +b, -b, +b, -h, +h)
         self.h = (b, h)
         self.dim = 3
         self.rotation = rotate
-        self = _build_rotation3(self)
+        self.v = stretch
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
         self.corners = None
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
+        x = _manipulate(self, x)
         q = np.abs(x)
         return np.maximum(
             q[:, 2] - self.h[1],
@@ -466,7 +475,7 @@ class Prism:
 
 
 class Cylinder:
-    def __init__(self, h=1.0, r=0.5, rotate=0.0):
+    def __init__(self, h=1.0, r=0.5, rotate=0.0, stretch=None, translate=None):
         assert h > 0.0 and r > 0.0
         h /= 2.0
         sz = max(h, r)
@@ -474,12 +483,13 @@ class Cylinder:
         self.bbox = (-2 * sz, 2 * sz, -2 * sz, 2 * sz, -2 * sz, 2 * sz)
         self.h = (r, h)
         self.rotation = rotate
-        self = _build_rotation3(self)
+        self.v = stretch
+        self.translation_vec = translate
+        self = _configure_manipulations(self)
         self.corners = None
 
     def eval(self, x):
-        if self.rotation != 0.0:
-            x = np.dot(self.R_inv, x.T).T
+        x = _manipulate(self, x)
         xz = np.column_stack((x[:, 0], x[:, 2]))
         lxz = np.column_stack((_length(xz), x[:, 1]))
         d = np.abs(lxz) - self.h

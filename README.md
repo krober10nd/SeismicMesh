@@ -47,6 +47,7 @@ Table of contents
      * [Periodic](#periodic)
      * [Rotations](#rotations)
      * [Stretching](#stretching)
+     * [Translation](#translation)
      * [Checking geometry](#checking)
    * [Parallelism](#parallelism)
    * [Performance comparison](#performance)
@@ -746,6 +747,35 @@ meshio.write_points_cells(
     file_format="vtk",
 )
 ```
+
+Translation
+-----------
+<img alt="A translated cuboid" src="https://user-images.githubusercontent.com/18619644/110262382-45ec5100-7f92-11eb-844e-fc0a963a1541.png" width="30%">
+
+```python
+# Geometric primitives can be translated (while being rotated and stretched)
+import meshio
+
+from SeismicMesh import *
+
+cuboid = Cube(
+    (0.0, 1.0, 0.0, 1.0, 0.1, 1.0),
+    stretch=[1.5, 1.5, 1.5],
+    translate=[0.5, 4.0, 1.0],
+    rotate=4.5 * 3.14,
+)
+points, cells = generate_mesh(domain=cuboid, edge_length=0.10, max_iter=200)
+points, cells = sliver_removal(points=points, domain=cuboid, edge_length=0.10, preserve=True)
+
+
+meshio.write_points_cells(
+    "stretched_square.vtk",
+    points,
+    [("tetra", cells)],
+    file_format="vtk",
+)
+```
+
 
 Checking
 --------
