@@ -91,4 +91,4 @@ workflows:
       - build_3.6.5
       - build_3.7.4
       - build_3.8.1
-      - build_3.0.0
+      - build_3.9.0
