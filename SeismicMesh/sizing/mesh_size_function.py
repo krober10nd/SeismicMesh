@@ -17,7 +17,6 @@ import warnings
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
-import segyio
 from mpi4py import MPI
 from scipy import ndimage
 from scipy.interpolate import RegularGridInterpolator
@@ -25,6 +24,9 @@ from scipy.interpolate import RegularGridInterpolator
 from .size_function import SizeFunction
 
 from .cpp import limgrad
+
+
+from scipy.ndimage import gaussian_filter
 
 __all__ = [
     "get_sizing_function_from_segy",
@@ -404,9 +406,11 @@ def _gradient_sizing(vp, grad, stencil_size):
     win_mean = ndimage.uniform_filter(vp, tuple(window))
     win_sqr_mean = ndimage.uniform_filter(vp ** 2, tuple(window))
     win_var = win_sqr_mean - win_mean ** 2
+    print(win_var.shape)
 
     # normalize variance to [0,1]
-    win_var /= np.amax(win_var)
+    win_var = np.divide(win_var, np.amax(win_var))
+    # win_var /= np.amax(win_var)
     win_var -= np.amin(win_var)
     return grad / (win_var + 0.10)
 
@@ -587,11 +591,16 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dty
         else:
             raise ValueError("Please specify byte_order as either: little or big.")
         vp = vp.reshape(*axes, order=axes_order_sort)
-        return np.flipud(vp.transpose((*axes_order))), nz, nx, ny  # z, x and then y
+
+        vp = np.flipud(vp.transpose((*axes_order)))
+
+        return vp, nz, nx, ny  # z, x and then y
 
 
 def _read_segy(filename):
     """Read a velocity model from a SEG-y file"""
+    import segyio
+
     with segyio.open(filename, ignore_geometry=True) as f:
         nz, nx = len(f.samples), len(f.trace)
         vp = np.zeros(shape=(nz, nx))
