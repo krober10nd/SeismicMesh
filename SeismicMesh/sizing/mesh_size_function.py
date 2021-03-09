@@ -404,7 +404,6 @@ def _gradient_sizing(vp, grad, stencil_size):
     win_mean = ndimage.uniform_filter(vp, tuple(window))
     win_sqr_mean = ndimage.uniform_filter(vp ** 2, tuple(window))
     win_var = win_sqr_mean - win_mean ** 2
-    print(win_var.shape)
 
     # normalize variance to [0,1]
     win_var = np.divide(win_var, np.amax(win_var))
