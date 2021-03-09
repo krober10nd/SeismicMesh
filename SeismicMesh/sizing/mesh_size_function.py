@@ -589,7 +589,7 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dty
             raise ValueError("Please specify byte_order as either: little or big.")
         vp = vp.reshape(*axes, order=axes_order_sort)
 
-        vp = np.flipud(vp.transpose((*axes_order)))
+        vp = np.flipud(vp.transpose((*axes_order,)))
 
         return vp, nz, nx, ny  # z, x and then y
 
