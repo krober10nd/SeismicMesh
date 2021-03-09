@@ -51,7 +51,7 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         * *hmax* (``float``) --
             Maximum edge length in the domain (default==10,000 m)
         * *wl* (``int``) --
-            Number of vertices per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 vertices)
+            Number of cells per wavelength for a given 𝑓𝑚𝑎𝑥 (default==0 cells)
         * *freq* (``float``) --
             𝑓𝑚𝑎𝑥 in hertz for which to estimate `wl` (default==2 Hertz)
         * *grad* (``float``) --
