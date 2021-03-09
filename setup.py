@@ -12,26 +12,6 @@ try:
 except ImportError:
     print("Setuptools is required to build!")
 
-if sys.version_info < (3, 0):
-    print("Python 3.0 or higher required, please upgrade.")
-    sys.exit(1)
-
-if sys.version_info >= (3, 9, 0):
-    print(
-        "Python 3.9.0 or higher is not yet supported, please use an older Python version."
-    )
-    sys.exit(1)
-
-
-benchmarking = [
-    "meshplex == 0.13.3",
-    "pygalmesh == 0.8.2",
-    "pygmsh == 7.0.0",
-    "termplotlib == 0.3.2",
-    "meshio == 4.2.2",
-    "termplotlib == 0.3.2",
-]
-
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
@@ -104,8 +84,4 @@ setup(
         CMakeExtension("SeismicMesh/geometry/cpp/fast_geometry"),
     ],
     cmdclass=dict(build_ext=CMakeBuild),
-    extras_require={
-        "benchmarking": benchmarking,
-    },
-    python_requires=">=3.0",
 )

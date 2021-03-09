@@ -57,9 +57,6 @@ Table of contents
 Installation
 ============
 
-**Nov. 21, 2020 our software is not yet compatible with Python 3.9 because of the `segyio` package dependency which doesn't build yet with this version of Python. Until this is fixed, please use a Python version prior to 3.9 to run your scripts with this package.**
-
-
 For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 [pybind11](https://github.com/pybind/pybind11):
 
@@ -68,7 +65,7 @@ For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
 
-    pip install -U SeismicMesh
+    pip install -U SeismicMesh[io]
 
 For more detailed information about installation and requirements see:
 
@@ -827,6 +824,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Rotations for all geometric primitives
 - Stretching for all geometric primitives
 - Visuzlization of signed distance functions
+### Fixed
+- Support for Python 3.9
 
 ## [3.4.0]-2021-02-14
 ### Added
