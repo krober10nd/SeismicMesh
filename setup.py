@@ -12,10 +12,6 @@ try:
 except ImportError:
     print("Setuptools is required to build!")
 
-if sys.version_info < (3, 0):
-    print("Python 3.0 or higher required, please upgrade.")
-    sys.exit(1)
-
 benchmarking = [
     "meshplex == 0.13.3",
     "pygalmesh == 0.8.2",
