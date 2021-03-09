@@ -21,6 +21,8 @@ benchmarking = [
     "termplotlib == 0.3.2",
 ]
 
+segyio = ["segyio"] + benchmarking
+
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
@@ -95,5 +97,6 @@ setup(
     cmdclass=dict(build_ext=CMakeBuild),
     extras_require={
         "benchmarking": benchmarking,
+        "all": segyio,
     },
 )
