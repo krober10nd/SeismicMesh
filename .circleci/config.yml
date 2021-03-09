@@ -25,7 +25,7 @@ jobs:
       - run: sudo apt install -y python-pybind11
       - run: pip install .[io] --user
       - run:
-             pip install tox --user && pip uninstall -y virtualenv && tox -e py39
+             pip install tox --user && tox -e py39
       - run: bash <(curl -s https://codecov.io/bash)
 
   build_3.8.1:
