@@ -96,5 +96,4 @@ setup(
     extras_require={
         "benchmarking": benchmarking,
     },
-    python_requires=">=3.0",
 )
