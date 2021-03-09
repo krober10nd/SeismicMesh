@@ -64,7 +64,7 @@ For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
 
-    pip install -U SeismicMesh[all]
+    pip install -U SeismicMesh[io]
 
 For more detailed information about installation and requirements see:
 

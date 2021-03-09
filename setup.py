@@ -12,17 +12,6 @@ try:
 except ImportError:
     print("Setuptools is required to build!")
 
-benchmarking = [
-    "meshplex == 0.13.3",
-    "pygalmesh == 0.8.2",
-    "pygmsh == 7.0.0",
-    "termplotlib == 0.3.2",
-    "meshio == 4.2.2",
-    "termplotlib == 0.3.2",
-]
-
-segyio = ["segyio"] + benchmarking
-
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=""):
@@ -95,8 +84,4 @@ setup(
         CMakeExtension("SeismicMesh/geometry/cpp/fast_geometry"),
     ],
     cmdclass=dict(build_ext=CMakeBuild),
-    extras_require={
-        "benchmarking": benchmarking,
-        "all": segyio,
-    },
 )
