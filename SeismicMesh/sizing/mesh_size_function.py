@@ -26,8 +26,6 @@ from .size_function import SizeFunction
 from .cpp import limgrad
 
 
-from scipy.ndimage import gaussian_filter
-
 __all__ = [
     "get_sizing_function_from_segy",
     "write_velocity_model",
