@@ -240,6 +240,13 @@ class Repeat:
         _show(self, filename=None, samples=samples)
 
 
+def _recursive_call(func, d):
+    tmp = d[0]
+    for i in range(0, len(d) - 1):
+        tmp = func(tmp, d[i + 1])
+    return tmp
+
+
 class Union:
     def __init__(self, domains, smoothness=0.0):
         geom_dim = [d.dim for d in domains]
@@ -274,10 +281,7 @@ class Union:
         if self.k == 0.0:
             return np.minimum.reduce(d)
         else:
-            tmp = d[0]
-            for i in range(0, len(d) - 1):
-                tmp = self._smooth_union(tmp, d[i + 1])
-            return tmp
+            return _recursive_call(self._smooth_union, d)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
@@ -308,8 +312,15 @@ class Intersection:
         self.corners = _gather_corners(domains)
         self.domains = domains
 
+    def _smooth_intersection(self, d1, d2):
+        return 0
+
     def eval(self, x):
-        return np.maximum.reduce([d.eval(x) for d in self.domains])
+        d = [d.eval(x) for d in self.domains]
+        if self.k == 0.0:
+            return np.maximum.reduce(d)
+        else:
+            return 0
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
@@ -340,10 +351,16 @@ class Difference:
         self.corners = _gather_corners(domains)
         self.domains = domains
 
+    def _smooth_difference(self, d1, d2):
+        h = np.maximum(self.k - np.abs(d1, d2), 0.0)
+        return np.minimum(d1, d2) - np.divide(h * h * 0.25, self.k)
+
     def eval(self, x):
-        return np.maximum.reduce(
-            [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
-        )
+        d = [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
+        if self.k == 0.0:
+            return np.maximum.reduce(d)
+        else:
+            return 0
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
