@@ -240,7 +240,7 @@ class Repeat:
         _show(self, filename=None, samples=samples)
 
 
-def _recursive_call(func, d):
+def _loop_call(func, d):
     tmp = d[0]
     for i in range(0, len(d) - 1):
         tmp = func(tmp, d[i + 1])
@@ -281,7 +281,7 @@ class Union:
         if self.k == 0.0:
             return np.minimum.reduce(d)
         else:
-            return _recursive_call(self._smooth_union, d)
+            return _loop_call(self._smooth_union, d)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
@@ -320,7 +320,7 @@ class Intersection:
         if self.k == 0.0:
             return np.maximum.reduce(d)
         else:
-            return 0
+            return _loop_call(self._smooth_difference, d)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
@@ -360,7 +360,7 @@ class Difference:
         if self.k == 0.0:
             return np.maximum.reduce(d)
         else:
-            return 0
+            return _loop_call(self._smooth_difference, d)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
