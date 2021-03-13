@@ -230,6 +230,7 @@ class Repeat:
         self.corners = None
         self.period = np.array(period)
         self.parent = Cube(bbox)
+        self.dim = 3
 
     def eval(self, x):
         q = np.mod(x + 0.5 * self.period, self.period) - 0.5 * self.period
@@ -240,10 +241,11 @@ class Repeat:
 
 
 class Union:
-    def __init__(self, domains):
+    def __init__(self, domains, smoothness=None):
         geom_dim = [d.dim for d in domains]
         assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
         self.dim = geom_dim[0]
+        self.k = smoothness
         if self.dim == 2:
             self.bbox = (
                 min(d.bbox[0] for d in domains),
@@ -264,7 +266,12 @@ class Union:
         self.domains = domains
 
     def eval(self, x):
-        return np.minimum.reduce([d.eval(x) for d in self.domains])
+        if self.k is None:
+            return np.minimum.reduce([d.eval(x) for d in self.domains])
+        else:
+            d = [d.eval(x) for d in self.domains]
+            h = np.maximum(self.k - np.abs(d[0] - d[1]), 0.0)
+            return np.minimum(d[0], d[1]) - np.divide(h * h * 0.25, self.k)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
