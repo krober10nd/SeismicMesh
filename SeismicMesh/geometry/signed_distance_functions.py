@@ -363,7 +363,7 @@ class Difference:
             )
         else:
             d = [d.eval(x) for d in self.domains]
-            return _loop_call(self._smooth_difference, d)
+            return _loop_call(self._smooth_difference, d[::-1])
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
