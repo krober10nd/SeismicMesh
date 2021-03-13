@@ -241,7 +241,7 @@ class Repeat:
 
 
 class Union:
-    def __init__(self, domains, smoothness=None):
+    def __init__(self, domains, smoothness=0.0):
         geom_dim = [d.dim for d in domains]
         assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
         self.dim = geom_dim[0]
@@ -266,7 +266,7 @@ class Union:
         self.domains = domains
 
     def eval(self, x):
-        if self.k is None:
+        if self.k > 0.0:
             return np.minimum.reduce([d.eval(x) for d in self.domains])
         else:
             d = [d.eval(x) for d in self.domains]
@@ -278,10 +278,11 @@ class Union:
 
 
 class Intersection:
-    def __init__(self, domains):
+    def __init__(self, domains, smoothness=0.0):
         geom_dim = [d.dim for d in domains]
         assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
         self.dim = geom_dim[0]
+        self.k = smoothness
         if self.dim == 2:
             self.bbox = (
                 min(d.bbox[0] for d in domains),
@@ -309,10 +310,11 @@ class Intersection:
 
 
 class Difference:
-    def __init__(self, domains):
+    def __init__(self, domains, smoothness=0.0):
         geom_dim = [d.dim for d in domains]
         assert np.all(geom_dim != 2) or np.all(geom_dim != 3)
         self.dim = geom_dim[0]
+        self.k = smoothness
         if self.dim == 2:
             self.bbox = (
                 min(d.bbox[0] for d in domains),
