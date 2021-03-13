@@ -313,14 +313,15 @@ class Intersection:
         self.domains = domains
 
     def _smooth_intersection(self, d1, d2):
-        return 0
+        h = np.maximum(self.k - np.abs(d1 - d2), 0.0)
+        return np.maximum(d1, d2) + h * h * 0.25 / self.k
 
     def eval(self, x):
         d = [d.eval(x) for d in self.domains]
         if self.k == 0.0:
             return np.maximum.reduce(d)
         else:
-            return _loop_call(self._smooth_difference, d)
+            return _loop_call(self._smooth_intersection, d)
 
     def show(self, filename=None, samples=10000):
         _show(self, filename=None, samples=samples)
@@ -352,14 +353,16 @@ class Difference:
         self.domains = domains
 
     def _smooth_difference(self, d1, d2):
-        h = np.maximum(self.k - np.abs(d1, d2), 0.0)
-        return np.minimum(d1, d2) - np.divide(h * h * 0.25, self.k)
+        h = np.maximum(self.k - np.abs(-d1 - d2), 0.0)
+        return np.maximum(-d1, d2) + np.divide(h * h * 0.25, self.k)
 
     def eval(self, x):
-        d = [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
         if self.k == 0.0:
-            return np.maximum.reduce(d)
+            return np.maximum.reduce(
+                [-d.eval(x) if n > 0 else d.eval(x) for n, d in enumerate(self.domains)]
+            )
         else:
+            d = [d.eval(x) for d in self.domains]
             return _loop_call(self._smooth_difference, d)
 
     def show(self, filename=None, samples=10000):
