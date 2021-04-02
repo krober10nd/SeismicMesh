@@ -12,15 +12,14 @@ def test_smooth_diff():
     domain = sm.Difference([ball1, cube1], smoothness=0.20)
     points, cells = sm.generate_mesh(
         domain=domain,
-        edge_length=0.05,
+        edge_length=0.10,
     )
     points, cells = sm.sliver_removal(
         points=points,
         domain=domain,
-        edge_length=0.05,
-        preserve=True,
+        edge_length=0.10,
     )
-    assert np.abs(cells.shape[0] - 9363) < 100
+    assert np.abs(cells.shape[0] - 9004) < 100
 
 
 if __name__ == "__main__":
