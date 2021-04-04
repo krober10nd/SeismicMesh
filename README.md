@@ -822,6 +822,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
+### Improved
+- Simplified pybind11 build system.
 
 ## [3.5.0]-2021-03-09
 ### Added
