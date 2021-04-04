@@ -14,7 +14,7 @@ build *SeismicMesh*:
 .. note ::
     On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
 
-* pybind11 >= 2.5
+* pybind11 >= 2.6
 
 * C++ compiler (GNU or Intel) with support for std++14 or newer.
 
