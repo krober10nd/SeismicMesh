@@ -5,7 +5,8 @@ from mpi4py import MPI
 from scipy.interpolate import RegularGridInterpolator
 
 from .. import geometry
-from .cpp import cpputils
+
+from _SeismicMesh import cpputils
 
 """
 Migration routines for moving things during parallel Delaunay

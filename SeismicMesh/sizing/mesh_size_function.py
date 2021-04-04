@@ -23,7 +23,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 from .size_function import SizeFunction
 
-from .cpp import limgrad
+from _SeismicMesh.FastHJ import limgrad
 
 
 __all__ = [
