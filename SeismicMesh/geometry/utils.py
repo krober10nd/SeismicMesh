@@ -30,7 +30,7 @@ def calc_re_ratios(vertices, entities, dim=2):
         bars = np.concatenate(
             [entities[:, [0, 1]], entities[:, [1, 2]], entities[:, [2, 0]]]
         )
-        cc = c_cgal.circumballs2(vertices[entities.ravel()])
+        cc = c_cgal._circumballs2(vertices[entities.ravel()])
     elif dim == 3:
         bars = np.concatenate(
             [
@@ -42,7 +42,7 @@ def calc_re_ratios(vertices, entities, dim=2):
                 entities[:, [2, 3]],
             ]
         )
-        cc = c_cgal.circumballs3(vertices[entities.flatten()])
+        cc = c_cgal._circumballs3(vertices[entities.flatten()])
     else:
         raise ValueError("Dimension invalid")
     r = cc[:, -1]
