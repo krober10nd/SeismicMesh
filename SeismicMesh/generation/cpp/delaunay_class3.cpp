@@ -85,7 +85,7 @@ private:
   py::iterator py_iter_;
 };
 
-PYBIND11_MODULE(delaunay_class3, m) {
+PYBIND11_MODULE(_delaunay_class3, m) {
   py::class_<Point>(m, "Point")
       .def(py::init<int, int, int>(), py::arg("x"), py::arg("y"), py::arg("z"))
       .def(py::init<double, double, double>(), py::arg("x"), py::arg("y"),

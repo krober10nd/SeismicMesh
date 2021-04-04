@@ -267,9 +267,9 @@ delaunay3(py::array_t<double, py::array::c_style | py::array::forcecast> x,
                       ));
 }
 
-PYBIND11_MODULE(c_cgal, m) {
-  m.def("circumballs3", &circumballs3);
-  m.def("circumballs2", &circumballs2);
-  m.def("delaunay2", &delaunay2);
-  m.def("delaunay3", &delaunay3);
+PYBIND11_MODULE(_delaunay, m) {
+  m.def("_circumballs3", &circumballs3);
+  m.def("_circumballs2", &circumballs2);
+  m.def("_delaunay2", &delaunay2);
+  m.def("_delaunay3", &delaunay3);
 }

@@ -186,7 +186,7 @@ limgrad(py::array_t<int, py::array::c_style | py::array::forcecast> dims,
                       ));
 }
 
-PYBIND11_MODULE(FastHJ, m) {
+PYBIND11_MODULE(_FastHJ, m) {
 
   m.doc() = "pybind11 module for gradient limiting a scalar field";
 
