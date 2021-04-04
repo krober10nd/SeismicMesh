@@ -702,7 +702,7 @@ py::array calc_circumsphere_grad(
                       ));
 }
 
-PYBIND11_MODULE(fast_geometry, m) {
+PYBIND11_MODULE(_fast_geometry, m) {
   m.def("remove_external_entities2", &remove_external_entities2);
   m.def("remove_external_entities3", &remove_external_entities3);
   m.def("drectangle_fast", &drectangle_fast);

@@ -1,4 +1,4 @@
-from _SeismicMesh.fast_geometry import (
+from _fast_geometry import (
     calc_3x3determinant,
     calc_4x4determinant,
     calc_circumsphere_grad,

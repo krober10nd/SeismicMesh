@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import itertools
 
-from _SeismicMesh.fast_geometry import drectangle_fast, dblock_fast
+from _fast_geometry import drectangle_fast, dblock_fast
 
 import random
 

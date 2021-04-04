@@ -6,7 +6,7 @@ from scipy.interpolate import RegularGridInterpolator
 
 from .. import geometry
 
-from _SeismicMesh import cpputils
+import _cpputils as cpputils
 
 """
 Migration routines for moving things during parallel Delaunay

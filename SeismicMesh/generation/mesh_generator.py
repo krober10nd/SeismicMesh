@@ -24,8 +24,8 @@ from .. import decomp, geometry, migration
 from .. import sizing
 from . import utils as mutils
 
-from _SeismicMesh.delaunay_class import DelaunayTriangulation as DT2
-from _SeismicMesh.delaunay_class3 import DelaunayTriangulation3 as DT3
+from _delaunay_class import DelaunayTriangulation as DT2
+from _delaunay_class3 import DelaunayTriangulation3 as DT3
 
 __all__ = ["sliver_removal", "generate_mesh"]
 

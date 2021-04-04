@@ -427,7 +427,7 @@ where_to3(py::array_t<double, py::array::c_style | py::array::forcecast> points,
                       ));
 }
 
-PYBIND11_MODULE(cpputils, m) {
+PYBIND11_MODULE(_cpputils, m) {
   m.def("where_to2", &where_to2);
   m.def("where_to3", &where_to3);
 }

@@ -4,10 +4,10 @@ import scipy.sparse as spsparse
 # from scipy.sparse.linalg import spsolve
 import pyamg
 
-from _SeismicMesh.generation import c_cgal
+import _delaunay as c_cgal
 
 # from . import signed_distance_functions as sdf
-from _SeismicMesh import fast_geometry as gutils
+import _fast_geometry as gutils
 
 
 # cpp implementation of 4x4 determinant calc
