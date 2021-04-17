@@ -133,7 +133,11 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
         )
 
         if sz_opts["units"] == "km-s":
+            print("Converting from km-s to m-s...", flush=True)
             vp *= 1000.0
+        elif sz_opts["units"] == "ft-s":
+            print("Converting from ft-s to m-s...", flush=True)
+            vp *= 0.30
 
         # check the bbox
         if len(bbox) == 4:

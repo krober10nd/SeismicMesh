@@ -822,6 +822,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unreleased
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
+- Conversion of velocity data from feet-second to meters-second
 ### Improved
 - Simplified pybind11 build system.
 
