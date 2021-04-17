@@ -57,7 +57,7 @@ def test_2dmesher_par_adapt():
             "test2d.vtk", points / 1000, [("triangle", cells)], file_format="vtk"
         )
         area = geometry.simp_vol(points / 1000, cells)
-        assert np.abs(100 - np.sum(area)) < 0.50  # km2
+        assert np.abs(100 - np.sum(area)) < 0.60  # km2
 
 
 if __name__ == "__main__":
