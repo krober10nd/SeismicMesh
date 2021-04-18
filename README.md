@@ -823,6 +823,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
 - Conversion of velocity data from feet-second to meters-second
+- Support for fixed points in iterative Laplacian mesh smoother.
 ### Improved
 - Simplified pybind11 build system.
 
@@ -833,6 +834,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Visuzlization of signed distance functions
 ### Fixed
 - Support for Python 3.9
+### Improved
+- Fixed points in iterative Laplacian smooth
 
 ## [3.4.0]-2021-02-14
 ### Added

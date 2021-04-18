@@ -547,7 +547,7 @@ def laplacian2_fixed_point(vertices, entities):
     return vertices_new, entities
 
 
-def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
+def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1, pfix=None):
     """Move vertices to the average position of their connected neighbors
     with the goal to hopefully improve geometric entity quality.
 
@@ -559,6 +559,10 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     :type max_iter: `int`, optional
     :param tol: iterations will cease when movement < tol
     :type tol: `float`, optional
+    :param verbose: display progress to the screen
+    :type verbose: `float`, optional
+    :param pfix: coordinates that you don't wish to move
+    :type pfix: array-like
 
     :return vertices: updated vertices of mesh
     :rtype: numpy.ndarray[`float` x dim]
@@ -567,6 +571,12 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     """
     if vertices.ndim != 2:
         raise NotImplementedError("Laplacian smoothing only works in 2D for now")
+
+    def _closest_node(node, nodes):
+        nodes = np.asarray(nodes)
+        deltas = nodes - node
+        dist_2 = np.einsum("ij,ij->i", deltas, deltas)
+        return np.argmin(dist_2)
 
     eps = np.finfo(float).eps
 
@@ -580,6 +590,13 @@ def laplacian2(vertices, entities, max_iter=20, tol=0.01, verbose=1):
     )
     bnd = get_boundary_vertices(entities)
     edge = get_edges(entities)
+    if pfix is not None:
+        ifix = []
+        for fix in pfix:
+            ifix.append(_closest_node(fix, vertices))
+        ifix = np.asarray(ifix)
+        bnd = np.concatenate((bnd, ifix))
+
     W = np.sum(S, 1)
     if np.any(W == 0):
         print("Invalid mesh. Disjoint vertices found. Returning", flush=True)
