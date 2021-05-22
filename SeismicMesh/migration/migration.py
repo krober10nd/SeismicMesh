@@ -53,7 +53,7 @@ def localize_sizing_function(fh, h0, bbox, dim, axis, comm):
 
 
 def localize_points(blocks, extents, comm, dim):
-    """ Distribute points to local subdomains """
+    """Distribute points to local subdomains"""
     rank = comm.Get_rank()
     size = comm.Get_size()
     for local in range(1, size):

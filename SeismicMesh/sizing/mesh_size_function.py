@@ -435,7 +435,7 @@ def _enforce_courant_sizing(vp, cell_size, cr_max, dt, space_order):
 
 
 def _enforce_gradation_sizing(cell_size, grade, elen):
-    """Call-back to the cpp gradient limiter code """
+    """Call-back to the cpp gradient limiter code"""
     if grade == 0.0:
         warnings.warn(
             "Mesh size gradient is deactiavted. This may compromise mesh quality"
