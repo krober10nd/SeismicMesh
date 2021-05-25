@@ -899,7 +899,7 @@ def _select_cgal_dim(dim):
 
 
 def _get_topology(dt):
-    """ Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
+    """Get points and entities from :clas:`CGAL:DelaunayTriangulation2/3` object"""
     p = dt.get_finite_vertices()
     t = dt.get_finite_cells()
     return p, t

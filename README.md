@@ -201,7 +201,7 @@ size.**
 
 ![Above shows the mesh in ParaView that results from running the code below.](https://user-images.githubusercontent.com/18619644/103445790-52cd8b00-4c57-11eb-8bd4-4af8f24d4c88.jpg)
 
-<!--exdown-skip-->
+<!--pytest-codeblocks:skip-->
 ```python
 from mpi4py import MPI
 import zipfile
@@ -819,13 +819,16 @@ Changelog
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-## Unreleased
+## Unrelease
+- None
+## [3.6.1]-2021-05-22
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
 - Conversion of velocity data from feet-second to meters-second
 - Support for fixed points in iterative Laplacian mesh smoother.
 ### Improved
 - Simplified pybind11 build system.
+- Now using pytest-codeblocks instead of exdown
 
 ## [3.5.0]-2021-03-09
 ### Added
