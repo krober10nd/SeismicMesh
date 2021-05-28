@@ -46,3 +46,4 @@ jobs:
       run: |
         pip install tox
         tox
+    - uses: codecov/codecov-action@v1
