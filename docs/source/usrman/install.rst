@@ -9,7 +9,7 @@ build *SeismicMesh*:
 
 * Python >= 3.0
 .. note ::
-    The file ``requirements.txt`` in the main directory indicates all the Python dependencies and their respective version numbers. These packages should be installed at compile time by setuptools
+    The file ``setup.cfg`` in the main directory indicates all the Python dependencies and their respective version numbers (if necessary). These packages should be installed at compile time by setuptools
 
 .. note ::
     On some Linux systems, users may have to resort to `apt install python3-segyio` to installing segyio on their systems.
