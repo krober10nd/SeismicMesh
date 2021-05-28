@@ -7,6 +7,22 @@ on:
     branches: [ master ]
 
 jobs:
+   lint:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-python@v2
+      with:
+        python-version: "3.x"
+    - uses: actions/checkout@v2
+    - name: Lint with flake8
+      run: |
+        pip install flake8
+        flake8 .
+    - name: Lint with black
+      run: |
+        pip install black
+        black --check .
+
   build:
     runs-on: ubuntu-latest
     strategy:
@@ -19,23 +35,13 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Lint with flake8
-      run: |
-        pip install flake8
-        flake8 .
-    - name: Lint with black
-      run: |
-        pip install black
-        black --check .
     - name: Install CGAL 5
       run: |
         sudo apt install -y libcgal-dev
     - name: Install other dependencies
       run: |
-        sudo apt-get install -y python3-pip
         sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
         sudo apt install -y libhdf5-dev
-        pip install .[io] --user
     - name: Test with tox
       run: |
         pip install tox
