@@ -57,10 +57,9 @@ Table of contents
 Installation
 ============
 
-For installation, SeismicMesh needs [CGAL](https://www.cgal.org/) and
-[pybind11](https://github.com/pybind/pybind11):
+For installation, SeismicMesh needs [CGAL](https://www.cgal.org/):
 
-    sudo apt install libcgal-dev python3-pybind11
+    sudo apt install libcgal-dev
 
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
