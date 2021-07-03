@@ -183,10 +183,10 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
                 _gradient_sizing(vp, sz_opts["grad"], sz_opts["stencil_size"]),
             )
 
-        print("Enforcing minimum edge length of " + str(sz_opts["hmin"]))
+        print(f"Enforcing minimum edge length of {sz_opts['hmin']}")
         cell_size[cell_size < sz_opts["hmin"]] = sz_opts["hmin"]
 
-        print("Enforcing maximum edge length of " + str(sz_opts["hmax"]))
+        print(f"Enforcing maximum edge length of {sz_opts['hmax']}")
         cell_size[cell_size > sz_opts["hmax"]] = sz_opts["hmax"]
 
         cell_size = _enforce_courant_sizing(
@@ -297,7 +297,7 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             _, vp, _ = _build_domain_pad(tmp, vp, opts["bbox"], opts)
 
         ofname += ".hdf5"
-        print("Writing velocity model: " + ofname, flush=True)
+        print(f"Writing velocity model: {ofname}", flush=True)
         with h5py.File(ofname, "w") as f:
             f.create_dataset("velocity_model", data=vp, dtype="f")
             f.attrs["shape"] = vp.shape
@@ -382,14 +382,7 @@ def _wavelength_sizing(vp, wl=5, freq=2.0):
         raise ValueError("Parameter `wl` must be set > 0")
     if freq < 0.0:
         raise ValueError("Parameter `freq` must be set > 0.0")
-    print(
-        "Mesh sizes will be built to resolve an estimate of wavelength of a "
-        + str(freq)
-        + " hz wavelet with "
-        + str(wl)
-        + " vertices...",
-        flush=True,
-    )
+    print(f"Mesh sizes will be built to resolve an estimate of wavelength of a {freq}  hz wavelet with {wl} vertices", flush=True)
     return vp / (freq * wl)
 
 
@@ -420,7 +413,7 @@ def _enforce_courant_sizing(vp, cell_size, cr_max, dt, space_order):
     """Ensure mesh resolution distribution doesn't violate CFL (cr_max > 1.0)"""
     if (cr_max == 0.0) or (dt == 0.0) or (space_order == 0.0):
         return cell_size
-    print("Enforcing timestep of " + str(dt) + " seconds...", flush=True)
+    print(f"Enforcing timestep of {dt} seconds...", flush=True)
     if cr_max < 0:
         raise ValueError("Parameter `cr_max` must be > 0.0")
     if dt < 0:
@@ -445,7 +438,7 @@ def _enforce_gradation_sizing(cell_size, grade, elen):
         raise ValueError("Parameter `grade` must be > 0.0")
     if grade > 1.0:
         warnings.warn("Parameter `grade` is set pretty high (> 1.0)!")
-    print("Enforcing mesh size gradation of " + str(grade) + " decimal percent...")
+    print(f"Enforcing mesh size gradation of {grade} decimal percent...")
 
     dim = cell_size.ndim
     sz = cell_size.shape
@@ -500,7 +493,7 @@ def _build_domain_pad(cell_size, vp, bbox, opts):
         raise ValueError("Domain extension must be >= 0")
 
     if domain_pad > 0:
-        print("Including a " + str(domain_pad) + " meter domain extension...")
+        print(f"Including a {domain_pad} meter domain extension...")
         if dim == 2:
             nz, nx, dz, dx = _get_dimensions(vp, bbox)
             nnz = int(domain_pad / dz)
@@ -525,7 +518,7 @@ def _build_domain_pad(cell_size, vp, bbox, opts):
                 bbox[5] + domain_pad,
             )
 
-        print("Using the pad_style: " + pad_style)
+        print(f"Using the pad_style: {pad_style}")
         if dim == 2:
             padding = ((nnz, 0), (nnx, nnx))
         elif dim == 3:
@@ -584,7 +577,7 @@ def _read_bin(filename, nz, nx, ny, byte_order, axes_order, axes_order_sort, dty
     ix = np.argsort(axes_order)
     axes = [axes[o] for o in ix]
     with open(filename, "r") as file:
-        print("Reading binary file: " + filename)
+        print(f"Reading binary file: {filename}")
         if byte_order == "big":
             vp = np.fromfile(file, dtype=np.dtype(dtype).newbyteorder(">"))
         elif byte_order == "little":
