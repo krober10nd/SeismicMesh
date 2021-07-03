@@ -10,7 +10,7 @@ import SeismicMesh
 def test_verbose():
     square = SeismicMesh.Rectangle((0.0, 1.0, 0.0, 1.0))
 
-    for verbosity, correct_size in zip([0, 1, 2], [0, 192, 6013]):
+    for verbosity, correct_size in zip([0, 1, 2], [0, 192, 6014]):
         sys.stdout = open("output.txt", "w")
         points, cells = SeismicMesh.generate_mesh(
             domain=square, edge_length=0.1, verbose=verbosity
