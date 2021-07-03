@@ -382,7 +382,10 @@ def _wavelength_sizing(vp, wl=5, freq=2.0):
         raise ValueError("Parameter `wl` must be set > 0")
     if freq < 0.0:
         raise ValueError("Parameter `freq` must be set > 0.0")
-    print(f"Mesh sizes will be built to resolve an estimate of wavelength of a {freq}  hz wavelet with {wl} vertices", flush=True)
+    print(
+        f"Mesh sizes will be built to resolve an estimate of wavelength of a {freq}  hz wavelet with {wl} vertices",
+        flush=True,
+    )
     return vp / (freq * wl)
 
 
