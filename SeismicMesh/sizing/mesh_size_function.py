@@ -33,7 +33,9 @@ __all__ = [
 ]
 
 
-def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
+def get_sizing_function_from_segy(
+    filename: str, bbox: tuple, comm: MPI.Intracomm = None, **kwargs
+) -> SizeFunction:
     r"""Build a mesh size function from a seismic velocity model.
 
     :param filename:
@@ -212,7 +214,9 @@ def get_sizing_function_from_segy(filename, bbox, comm=None, **kwargs):
     return SizeFunction(bbox, fh, sz_opts["hmin"])
 
 
-def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
+def write_velocity_model(
+    filename: str, ofname: str = None, comm: MPI.Intracomm = None, **kwargs
+) -> None:
     r"""Reads and then writes a velocity model as a hdf5 file
 
     :param filename: filename of a velocity model (either .segy or .bin)
@@ -304,7 +308,12 @@ def write_velocity_model(filename, ofname=None, comm=None, **kwargs):
             f.attrs["units"] = "m/s"
 
 
-def plot_sizing_function(cell_size, stride=1, comm=None, filename=None):
+def plot_sizing_function(
+    cell_size: SizeFunction,
+    stride: int = 1,
+    comm: MPI.Intracomm = None,
+    filename: str = None,
+) -> None:
     """Plot the mesh size function in 2D
 
     :param cell_size: a callable function that takes a point and gives a size
