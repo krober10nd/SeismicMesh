@@ -840,7 +840,9 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Unrelease
-- None
+### Added 
+- Short blurb about using `write_velocity_model`
+
 ## [3.6.1]-2021-05-22
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
