@@ -186,6 +186,27 @@ if comm.rank == 0:
     )
 ```
 
+Note SeismicMesh can also be used to write velocity models to disk in a hdf5 format using the function `write_velocity_model`. Following the previous example above with the BP2004 velocity model, we create an hdf5 file with a domain pad of 1000 m.
+
+```python
+from SeismicMesh import write_velocity_model
+
+# Name of SEG-Y file containg velocity model.
+fname = "vel_z6.25m_x12.5m_exact.segy"
+
+# Bounding box describing domain extents (corner coordinates)
+bbox = (-12000.0, 0.0, 0.0, 67000.0)
+
+write_velocity_model(
+     fname,
+     ofname="bp2004_velocity_model",  # how the file will be called (with a .hdf5 extension)
+     bbox=bbox,
+     domain_pad=500,  # the width of the domain pad in meters
+     pad_style="edge",  # how the velocity data will be extended into the layer 
+     units="m-s",  # the units that the velocity model is in.
+ )
+```
+
 
 EAGE
 ----------
@@ -819,7 +840,9 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Unrelease
-- None
+### Added 
+- Short blurb about using `write_velocity_model`
+
 ## [3.6.1]-2021-05-22
 ### Added
 - Smoothed sets (e.g., intersections, differences, and unions)
