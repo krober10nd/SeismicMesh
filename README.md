@@ -842,6 +842,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Unrelease
 ### Added 
 - Short blurb about using `write_velocity_model`
+### Fixed
+- Bug fix to gradient limiting of mesh size functions
 
 ## [3.6.1]-2021-05-22
 ### Added
