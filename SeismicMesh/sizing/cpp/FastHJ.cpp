@@ -126,7 +126,7 @@ std::vector<double> c_limgrad(const std::vector<int> &dims, const double &elen,
       assert(nod1 < ffun_s.size());
       assert(nod1 > -1);
 
-      for (std::size_t p = 2; p < 7; p++) {
+      for (std::size_t p = 1; p < 7; p++) {
 
         int nod2 = npos[p];
         assert(nod2 < ffun_s.size());
