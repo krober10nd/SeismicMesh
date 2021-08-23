@@ -168,9 +168,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
         raise ValueError("`max_iter` must be > 0")
     max_iter = sliver_opts["max_iter"]
 
-    print_msg1(
-        "Will attempt " + str(max_iter) + " iterations to bound the dihedral angles..."
-    )
+    print_msg1(f"Will attempt {max_iter} iterations to bound the dihedral angles...")
 
     geps = sliver_opts["geps_mult"] * h0
 
@@ -179,14 +177,10 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
     max_dh_bound = sliver_opts["max_dh_angle_bound"] * math.pi / 180
 
     print_msg1(
-        "Enforcing a min. dihedral bound of: "
-        + str(min_dh_bound * 180 / math.pi)
-        + " degrees..."
+        f"Enforcing a min. dihedral bound of: {min_dh_bound * 180 / math.pi} degrees..."
     )
     print_msg1(
-        "Enforcing a max. dihedral bound of: "
-        + str(max_dh_bound * 180 / math.pi)
-        + " degrees..."
+        f"Enforcing a max. dihedral bound of: {max_dh_bound * 180 / math.pi} degrees..."
     )
 
     DT = _select_cgal_dim(dim)
@@ -235,13 +229,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
             p, t = _termination(p, t, sliver_opts, comm, sliver=True)
             break
 
-        print_msg1(
-            "On rank: "
-            + str(comm.rank)
-            + " There are "
-            + str(len(ele_nums))
-            + " slivers...",
-        )
+        print_msg1(f"On rank: {comm.rank}. There are {len(ele_nums)} slivers...")
 
         move = t[ele_nums, 0]
 
@@ -249,9 +237,7 @@ def sliver_removal(points, domain, edge_length, comm=None, **kwargs):  # noqa: C
 
         if num_move == 0:
             print_msg1(
-                "Termination reached in "
-                + str(count)
-                + " iterations...no slivers detected!",
+                f"Termination reached in {count} iterations...no slivers detected!"
             )
             p, t, _ = geometry.fix_mesh(p, t, dim=dim, delete_unused=True)
             return p, t
@@ -440,7 +426,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         nfix = len(pfix)
 
     if comm.rank == 0:
-        print_msg1("Constraining " + str(nfix) + " fixed points..")
+        print_msg1(f"Constraining {nfix} fixed points...")
 
     fh, p, extents = _initialize_points(
         dim, geps, bbox, fh, fd, h0, gen_opts, pfix, comm, lsf
@@ -470,9 +456,6 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
     while True:
 
         start = time.time()
-
-        # Remove non-unique points
-        # p = np.array(list(set(tuple(p) for p in p)))
 
         # (Re)-triangulation by the Delaunay algorithm
         dt = DT()
