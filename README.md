@@ -64,6 +64,10 @@ For installation, SeismicMesh needs [CGAL](https://www.cgal.org/):
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
 
+    pip install -U SeismicMesh
+
+If you'd like to read and write velocity models from segy/h5 format, you can install like:
+
     pip install -U SeismicMesh[io]
 
 For more detailed information about installation and requirements see:
@@ -202,7 +206,7 @@ write_velocity_model(
      ofname="bp2004_velocity_model",  # how the file will be called (with a .hdf5 extension)
      bbox=bbox,
      domain_pad=500,  # the width of the domain pad in meters
-     pad_style="edge",  # how the velocity data will be extended into the layer 
+     pad_style="edge",  # how the velocity data will be extended into the layer
      units="m-s",  # the units that the velocity model is in.
  )
 ```
@@ -840,7 +844,7 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Unrelease
-### Added 
+### Added
 - Short blurb about using `write_velocity_model`
 ### Fixed
 - Bug fix to gradient limiting of mesh size functions
