@@ -98,6 +98,8 @@ Some things that will increase the chance that your pull request is accepted:
 Codebase
 ========
 
+Here is a visualize overview of the repository. An interactive version of this image can be found here: https://octo-repo-visualization.vercel.app/?repo=krober10nd%2FSeismicMesh
+
 ![Visualization of this repo](./diagram.svg)
 
 Citing
