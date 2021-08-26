@@ -95,6 +95,11 @@ Some things that will increase the chance that your pull request is accepted:
 
 [style]: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
 
+Codebase
+========
+
+![Visualization of this repo](./diagram.svg)
+
 Citing
 =======
 
@@ -202,7 +207,7 @@ write_velocity_model(
      ofname="bp2004_velocity_model",  # how the file will be called (with a .hdf5 extension)
      bbox=bbox,
      domain_pad=500,  # the width of the domain pad in meters
-     pad_style="edge",  # how the velocity data will be extended into the layer 
+     pad_style="edge",  # how the velocity data will be extended into the layer
      units="m-s",  # the units that the velocity model is in.
  )
 ```
@@ -840,7 +845,7 @@ Changelog
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ## Unrelease
-### Added 
+### Added
 - Short blurb about using `write_velocity_model`
 ### Fixed
 - Bug fix to gradient limiting of mesh size functions
