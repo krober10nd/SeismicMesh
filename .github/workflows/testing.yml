@@ -42,6 +42,9 @@ jobs:
       run: |
         sudo apt install -y libopenmpi3 libopenmpi-dev openmpi-bin
         sudo apt install -y libhdf5-dev
+    - name: Install pip dependencies
+      run: |
+        pip install -v -e ".[io]"
     - name: Test with tox
       run: |
         pip install tox
