@@ -65,6 +65,10 @@ For installation, SeismicMesh needs [CGAL](https://www.cgal.org/):
 After that, SeismicMesh can be installed from the Python Package Index
 ([pypi](https://pypi.org/project/SeismicMesh/)), so with:
 
+    pip install -U SeismicMesh
+
+If you'd like to read and write velocity models from segy/h5 format, you can install like:
+
     pip install -U SeismicMesh[io]
 
 For more detailed information about installation and requirements see:
