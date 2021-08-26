@@ -28,6 +28,7 @@ Table of contents
 <!--ts-->
    * [Installation](#installation)
    * [Contributing](#contributing)
+   * [Codebase](#codebase)
    * [Citing](#citing)
    * [Getting help](#problems)
    * [Examples](#examples)
