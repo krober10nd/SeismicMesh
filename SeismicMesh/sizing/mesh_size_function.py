@@ -14,7 +14,6 @@
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import warnings
 
-import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 from mpi4py import MPI
@@ -217,6 +216,8 @@ def get_sizing_function_from_segy(
 def write_velocity_model(
     filename: str, ofname: str = None, comm: MPI.Intracomm = None, **kwargs
 ) -> None:
+    import h5py
+
     r"""Reads and then writes a velocity model as a hdf5 file
 
     :param filename: filename of a velocity model (either .segy or .bin)
