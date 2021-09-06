@@ -345,7 +345,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "pfix": None,
         "axis": 1,
         "points": None,
-        "delta_t": 0.10,
+        "delta_t": 0.30,
         "geps_mult": 0.1,
         "subdomains": None,
         "mesh_improvement": True,
@@ -520,9 +520,9 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
                 "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                 % (count + 1, maxdp, len(p), len(t)),
             )
-            assert (
-                maxdp < 1000 * h0
-            ), "max movement indicates there's a convergence problem"
+            # assert (
+            #    maxdp < 1000 * h0
+            # ), "max movement indicates there's a convergence problem"
 
         count += 1
 
@@ -530,19 +530,22 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         if comm.rank == 0:
             print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
+    colors = {0.05: "b", 0.10: "g", 0.15: "r", 0.20: "m", 0.25: "c", 0.30: "y"}
     if gen_opts["force_function"] == "PS":
         plt.plot(
             np.array(range(0, count)),
             np.array(qual_per_iter[:-1]),
-            color="r",
-            label="Persson-Strang",
+            "-",
+            color=colors[delta_t],
+            label=f"dt={delta_t}, Persson-Strang",
         )
     else:
         plt.plot(
             np.array(range(0, count)),
             np.array(qual_per_iter[:-1]),
-            color="b",
-            label="Bossens-Heckbert",
+            "--",
+            color=colors[delta_t],
+            label=f"dt={delta_t}, Bossens-Heckbert",
         )
     return p, t
 
