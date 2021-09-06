@@ -17,15 +17,14 @@ import math
 import time
 import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
-from mpi4py import MPI
-
-from .. import decomp, geometry, migration
-from .. import sizing
-from . import utils as mutils
-
 from _delaunay_class import DelaunayTriangulation as DT2
 from _delaunay_class3 import DelaunayTriangulation3 as DT3
+from mpi4py import MPI
+
+from .. import decomp, geometry, migration, sizing
+from . import utils as mutils
 
 __all__ = ["sliver_removal", "generate_mesh"]
 
@@ -346,10 +345,11 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "pfix": None,
         "axis": 1,
         "points": None,
-        "delta_t": 0.30,
+        "delta_t": 0.10,
         "geps_mult": 0.1,
         "subdomains": None,
         "mesh_improvement": True,
+        "force_function": "PS",  # or BH
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -453,6 +453,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             fd_subdomains, _, _ = _unpack_domain(subdomains, gen_opts)
             levels.append(fd_subdomains)
 
+    qual_per_iter = []
     while True:
 
         start = time.time()
@@ -477,6 +478,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         # Remove points outside the domain
         t = _remove_triangles_outside(p, t, fd, geps)
 
+        # Calculate the quality
+        ce_ratios = geometry.simp_qual(p, t)
+        qual_per_iter.append(np.mean(ce_ratios))
+
         # Number of iterations reached, stop.
         if count == (max_iter - 1):
             if comm.rank == 0:
@@ -490,7 +495,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             break
 
         # Compute the forces on the edges
-        Ftot = _compute_forces(p, t, fh, h0, L0mult)
+        if gen_opts["force_function"] == "PS":
+            Ftot = _compute_forces_persson_strang(p, t, fh, h0, L0mult)
+        elif gen_opts["force_function"] == "BH":
+            Ftot = _compute_forces_bossens_heckbert(p, t, fh, h0, L0mult)
 
         Ftot[ifix] = 0  # Force = 0 at fixed points
 
@@ -522,6 +530,20 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         if comm.rank == 0:
             print_msg2("     Elapsed wall-clock time %f : " % (end - start))
 
+    if gen_opts["force_function"] == "PS":
+        plt.plot(
+            np.array(range(0, count)),
+            np.array(qual_per_iter[:-1]),
+            color="r",
+            label="Persson-Strang",
+        )
+    else:
+        plt.plot(
+            np.array(range(0, count)),
+            np.array(qual_per_iter[:-1]),
+            color="b",
+            label="Bossens-Heckbert",
+        )
     return p, t
 
 
@@ -639,6 +661,7 @@ def _parse_kwargs(kwargs):
             "gamma",
             "preserve",
             "mesh_improvement",
+            "force_function",
         }:
             pass
         else:
@@ -683,7 +706,30 @@ def _get_edges(t):
     return geometry.unique_edges(edges)
 
 
-def _compute_forces(p, t, fh, h0, L0mult):
+def _compute_forces_bossens_heckbert(p, t, fh, min_edge_length, L0mult):
+    """Compute the forces on each edge based on the sizing function"""
+    N = p.shape[0]
+    bars = _get_edges(t)
+    barvec = p[bars[:, 0]] - p[bars[:, 1]]  # List of bar vectors
+    L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
+    L[L == 0] = np.finfo(float).eps
+    hbars = fh(p[bars].sum(1) / 2)
+    L0 = hbars * L0mult * (np.nanmedian(L) / np.nanmedian(hbars))
+    LN = L / L0
+    F = (1 - LN ** 4) * np.exp(-(LN ** 4)) / LN
+    Fvec = (
+        F[:, None] / LN[:, None].dot(np.ones((1, 2))) * barvec
+    )  # Bar forces (x,y components)
+    Ftot = mutils.dense(
+        bars[:, [0] * 2 + [1] * 2],
+        np.repeat([list(range(2)) * 2], len(F), axis=0),
+        np.hstack((Fvec, -Fvec)),
+        shape=(N, 2),
+    )
+    return Ftot
+
+
+def _compute_forces_persson_strang(p, t, fh, h0, L0mult):
     """Compute the forces on each edge based on the sizing function"""
     dim = p.shape[1]
     N = p.shape[0]
@@ -786,7 +832,10 @@ def _user_defined_points(dim, fh, h0, bbox, points, comm, opts):
         p = None
         if comm.rank == 0:
             blocks, extents = decomp.blocker(
-                points=points, rank=comm.rank, num_blocks=comm.size, axis=opts["axis"]
+                points=points,
+                rank=comm.rank,
+                num_blocks=comm.size,
+                axis=opts["axis"],
             )
         else:
             blocks = None
