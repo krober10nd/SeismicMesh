@@ -16,19 +16,18 @@ import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
+from _FastHJ import limgrad
 from mpi4py import MPI
 from scipy import ndimage
 from scipy.interpolate import RegularGridInterpolator
 
 from .size_function import SizeFunction
 
-from _FastHJ import limgrad
-
-
 __all__ = [
     "get_sizing_function_from_segy",
     "write_velocity_model",
     "plot_sizing_function",
+    "read_velocity_model",
 ]
 
 
@@ -47,6 +46,8 @@ def get_sizing_function_from_segy(
         See below
 
     :Keyword Arguments:
+        * *velocity_data* (``array-like) --
+            A numpy array can also be passed containing velocity data (default==None)
         * *hmin* (``float``) --
             Minimum edge length in the domain (default==150 m)
         * *hmax* (``float``) --
@@ -95,6 +96,7 @@ def get_sizing_function_from_segy(
     """
     # reasonable sizing function options go here
     sz_opts = {
+        "velocity_data": None,
         "hmin": 150.0,
         "hmax": 10000.0,
         "wl": 0,
@@ -122,16 +124,21 @@ def get_sizing_function_from_segy(
     sz_opts.update(kwargs)
     if comm.rank == 0:
 
-        vp, nz, nx, ny = _read_velocity_model(
-            filename=filename,
-            nz=sz_opts["nz"],
-            nx=sz_opts["nx"],
-            ny=sz_opts["ny"],
-            byte_order=sz_opts["byte_order"],
-            axes_order=sz_opts["axes_order"],
-            axes_order_sort=sz_opts["axes_order_sort"],
-            dtype=sz_opts["dtype"],
-        )
+        vp = sz_opts["velocity_data"]
+        nz = sz_opts["nz"]
+        nx = sz_opts["nx"]
+        ny = sz_opts["ny"]
+        if vp is None:
+            vp, nz, nx, ny = read_velocity_model(
+                filename=filename,
+                nz=sz_opts["nz"],
+                nx=sz_opts["nx"],
+                ny=sz_opts["ny"],
+                byte_order=sz_opts["byte_order"],
+                axes_order=sz_opts["axes_order"],
+                axes_order_sort=sz_opts["axes_order_sort"],
+                dtype=sz_opts["dtype"],
+            )
 
         if sz_opts["units"] == "km-s":
             print("Converting from km-s to m-s...", flush=True)
@@ -172,6 +179,7 @@ def get_sizing_function_from_segy(
                 "axes_order",
                 "axes_order_sort",
                 "dtype",
+                "velocity_data",
             }:
                 pass
             else:
@@ -285,7 +293,7 @@ def write_velocity_model(
             warnings.warn("No output filename specified, name will be `filename`")
             ofname = filename
 
-        vp, nz, nx, ny = _read_velocity_model(
+        vp, nz, nx, ny = read_velocity_model(
             filename=filename,
             nz=opts["nz"],
             nx=opts["nx"],
@@ -561,7 +569,7 @@ def _pad_it(array, padding, style, extra):
     return array
 
 
-def _read_velocity_model(
+def read_velocity_model(
     filename,
     nz=None,
     nx=None,
