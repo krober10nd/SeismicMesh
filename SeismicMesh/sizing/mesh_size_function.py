@@ -16,19 +16,18 @@ import warnings
 
 import matplotlib.pyplot as plt
 import numpy as np
+from _FastHJ import limgrad
 from mpi4py import MPI
 from scipy import ndimage
 from scipy.interpolate import RegularGridInterpolator
 
 from .size_function import SizeFunction
 
-from _FastHJ import limgrad
-
-
 __all__ = [
     "get_sizing_function_from_segy",
     "write_velocity_model",
     "plot_sizing_function",
+    "read_velocity_model",
 ]
 
 
@@ -122,7 +121,7 @@ def get_sizing_function_from_segy(
     sz_opts.update(kwargs)
     if comm.rank == 0:
 
-        vp, nz, nx, ny = _read_velocity_model(
+        vp, nz, nx, ny = read_velocity_model(
             filename=filename,
             nz=sz_opts["nz"],
             nx=sz_opts["nx"],
@@ -285,7 +284,7 @@ def write_velocity_model(
             warnings.warn("No output filename specified, name will be `filename`")
             ofname = filename
 
-        vp, nz, nx, ny = _read_velocity_model(
+        vp, nz, nx, ny = read_velocity_model(
             filename=filename,
             nz=opts["nz"],
             nx=opts["nx"],
@@ -561,7 +560,7 @@ def _pad_it(array, padding, style, extra):
     return array
 
 
-def _read_velocity_model(
+def read_velocity_model(
     filename,
     nz=None,
     nx=None,

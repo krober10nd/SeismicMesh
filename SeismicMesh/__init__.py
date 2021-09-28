@@ -7,31 +7,17 @@
 #  see <http://www.gnu.org/licenses/>.
 
 from . import decomp, geometry, migration
-from .geometry import (
-    Ball,
-    Disk,
-    Cube,
-    Cylinder,
-    Rectangle,
-    Union,
-    Intersection,
-    Difference,
-    Repeat,
-    Torus,
-    Prism,
-)
-from .generation import generate_mesh, sliver_removal
-from .sizing import (
-    get_sizing_function_from_segy,
-    write_velocity_model,
-    plot_sizing_function,
-    SizeFunction,
-)
 from .__about__ import __version__
-
+from .generation import generate_mesh, sliver_removal
+from .geometry import (Ball, Cube, Cylinder, Difference, Disk, Intersection,
+                       Prism, Rectangle, Repeat, Torus, Union)
+from .sizing import (SizeFunction, get_sizing_function_from_segy,
+                     plot_sizing_function, read_velocity_model,
+                     write_velocity_model)
 
 __all__ = [
     "__version__",
+    "read_velocity_model",
     "geometry",
     "Rectangle",
     "Cube",
