@@ -480,14 +480,14 @@ def _get_dimensions(vp, bbox):
     dim = vp.ndim
     if dim == 2:
         nz, nx = vp.shape
-        dz = int((bbox[1] - bbox[0]) / nz)
-        dx = int((bbox[3] - bbox[2]) / nx)
+        dz = (bbox[1] - bbox[0]) / nz
+        dx = (bbox[3] - bbox[2]) / nx
         return nz, nx, dz, dx
     elif dim == 3:
         nz, nx, ny = vp.shape
-        dz = int((bbox[1] - bbox[0]) / nz)
-        dx = int((bbox[3] - bbox[2]) / nx)
-        dy = int((bbox[5] - bbox[4]) / ny)
+        dz = (bbox[1] - bbox[0]) / nz
+        dx = (bbox[3] - bbox[2]) / nx
+        dy = (bbox[5] - bbox[4]) / ny
         return nz, nx, ny, dz, dx, dy
     else:
         raise ValueError("Dimension not supported")
