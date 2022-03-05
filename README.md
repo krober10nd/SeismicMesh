@@ -715,7 +715,7 @@ bbox = (0.0, 1.0, 0.0, 1.0)
 rotations = np.linspace(-3.14, 3.14, 40)
 squares = []
 for _, rotate in enumerate(rotations):
-    squares.append(SeismicMesh.Rectangle(bbox, rotate=rotate))
+    squares.append(SeismicMesh.Rectangle(bbox, rotate=[rotate,0,0]))
 
 rotated_squares = SeismicMesh.Union(squares)
 
@@ -742,7 +742,7 @@ bbox = (0.0, 1.0, 0.0, 1.0, 0.0, 1.0)
 rotations = np.linspace(-3.14, 3.14, 40)
 cubes = []
 for _, rotate in enumerate(rotations):
-    cubes.append(SeismicMesh.Cube(bbox, rotate=rotate))
+    cubes.append(SeismicMesh.Cube(bbox, rotate=[rotate,0,0]))
 
 rotated_cubes = SeismicMesh.Union(cubes)
 
