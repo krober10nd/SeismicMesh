@@ -48,6 +48,8 @@ def get_sizing_function_from_segy(
     :Keyword Arguments:
         * *velocity_data* (``array-like) --
             A numpy array can also be passed containing velocity data (default==None)
+        * *vp_water* (``float``) --
+            P-wave velocity in water in m/s (default==1500 m/s)
         * *hmin* (``float``) --
             Minimum edge length in the domain (default==150 m)
         * *hmax* (``float``) --
@@ -97,6 +99,7 @@ def get_sizing_function_from_segy(
     # reasonable sizing function options go here
     sz_opts = {
         "velocity_data": None,
+        "vp_water": 1500.0,  # always in m/s
         "hmin": 150.0,
         "hmax": 10000.0,
         "wl": 0,
@@ -147,6 +150,20 @@ def get_sizing_function_from_segy(
             print("Converting from ft-s to m-s...", flush=True)
             vp *= 0.30
 
+        # vp must be in m/s here
+        pos = np.where(vp < 1e-3)  # for Vs (water positions in shear velocity data)
+        if len(pos) > 0 and any(pos[0]):
+            if (
+                sz_opts["vp_water"] is None
+                or sz_opts["vp_water"] < 1300
+                or sz_opts["vp_water"] > 1800
+            ):
+                raise ValueError(
+                    "vp_water is None or out of bounds. It should be >1300 and <1800 m/s"
+                )
+            else:
+                vp[pos] = sz_opts["vp_water"]  # vp_water in m/s
+
         # check the bbox
         if len(bbox) == 4:
             dim = 2
@@ -180,6 +197,7 @@ def get_sizing_function_from_segy(
                 "axes_order_sort",
                 "dtype",
                 "velocity_data",
+                "vp_water",
             }:
                 pass
             else:
@@ -420,8 +438,8 @@ def _gradient_sizing(vp, grad, stencil_size):
     else:
         window = stencil_size
     win_mean = ndimage.uniform_filter(vp, tuple(window))
-    win_sqr_mean = ndimage.uniform_filter(vp ** 2, tuple(window))
-    win_var = win_sqr_mean - win_mean ** 2
+    win_sqr_mean = ndimage.uniform_filter(vp**2, tuple(window))
+    win_var = win_sqr_mean - win_mean**2
 
     # normalize variance to [0,1]
     win_var = np.divide(win_var, np.amax(win_var))
