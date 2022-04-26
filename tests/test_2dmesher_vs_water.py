@@ -1,5 +1,3 @@
-import os
-
 import pytest
 import numpy as np
 
@@ -8,7 +6,6 @@ from SeismicMesh import (
     generate_mesh,
     get_sizing_function_from_segy,
     plot_sizing_function,
-    write_velocity_model,
 )
 
 
@@ -26,8 +23,8 @@ def test_2dmesher_vs_water():
     rectangle = Rectangle(bbox)
     nz = 200
     nx = 200
-    vs = np.zeros((nz,nx)) # it will be replaced by 1500 m/s
-    vs[0:150,:] = 1000 # m/s
+    vs = np.zeros((nz, nx))  # it will be replaced by 1500 m/s
+    vs[0:150, :] = 1000  # m/s
     ef = get_sizing_function_from_segy(
         fname,
         bbox=bbox,
@@ -42,9 +39,9 @@ def test_2dmesher_vs_water():
         nx=nx,
     )
     plot_sizing_function(ef)
-    assert ef.eval((-5000,5000))==100
-    assert ef.eval((-1,5000))==150  # water layer
-    ef.hmin = None # to force h0 equal to 125 m (see below)
+    assert ef.eval((-5000, 5000)) == 100
+    assert ef.eval((-1, 5000)) == 150  # water layer
+    ef.hmin = None  # to force h0 equal to 125 m (see below)
     points, cells = generate_mesh(
         rectangle,
         ef,
@@ -55,7 +52,7 @@ def test_2dmesher_vs_water():
     print(len(points), len(cells))
     assert np.allclose([len(points), len(cells)], [5616, 10955], atol=100)
 
-    #if True:
+    # if True:
     #    import meshio
 
     #    meshio.write_points_cells(
