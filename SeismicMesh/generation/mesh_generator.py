@@ -328,7 +328,10 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
             The tolerance used to determine if a vertex is "in" the domain. (default==0.1*h0)
         * *mesh_improvement* (`boolean`) --
             Whether or not to run a density-preserving Laplacian smoothing to improve mesh quality
-            at the end of mesh generation (default=True)
+            at the end of mesh generation. (default=True)
+        * *r0m_is_h0* (`boolean`) --
+            Set r0m in _generate_initial_points to h0; if False, r0m will be equal to min(r0).
+            r0m controls the number of initial points that will remain on the mesh. (default=False)
 
 
     :return: points: vertex coordinates of mesh
@@ -350,6 +353,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
         "geps_mult": 0.1,
         "subdomains": None,
         "mesh_improvement": True,
+        "r0m_is_h0": False,
     }
     # check call was correct
     gen_opts.update(kwargs)
@@ -507,7 +511,7 @@ def generate_mesh(domain, edge_length, comm=None, **kwargs):  # noqa: C901
 
         # Show the user some progress so they know something is happening
         if comm.rank == 0:
-            maxdp = delta_t * np.sqrt((Ftot ** 2).sum(1)).max()
+            maxdp = delta_t * np.sqrt((Ftot**2).sum(1)).max()
             print_msg2(
                 "Iteration #%d, max movement is %f, there are %d vertices and %d cells"
                 % (count + 1, maxdp, len(p), len(t)),
@@ -639,6 +643,7 @@ def _parse_kwargs(kwargs):
             "gamma",
             "preserve",
             "mesh_improvement",
+            "r0m_is_h0",
         }:
             pass
         else:
@@ -689,10 +694,10 @@ def _compute_forces(p, t, fh, h0, L0mult):
     N = p.shape[0]
     edges = _get_edges(t)
     barvec = p[edges[:, 0]] - p[edges[:, 1]]  # List of bar vectors
-    L = np.sqrt((barvec ** 2).sum(1))  # L = Bar lengths
+    L = np.sqrt((barvec**2).sum(1))  # L = Bar lengths
     L[L == 0] = np.finfo(float).eps
     hedges = fh(p[edges].sum(1) / 2)
-    L0 = hedges * L0mult * ((L ** dim).sum() / (hedges ** dim).sum()) ** (1.0 / dim)
+    L0 = hedges * L0mult * ((L**dim).sum() / (hedges**dim).sum()) ** (1.0 / dim)
     F = L0 - L
     F[F < 0] = 0  # Bar forces (scalars)
     Fvec = (
@@ -747,7 +752,7 @@ def _improve_level_set_newton(p, t, fd, deps, tol):
             return a
 
         dgrads = [(fd(p[bid] + _deps_vec(i)) - d) / deps for i in range(dim)]
-        dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+        dgrad2 = sum(dgrad**2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
         p[bid] -= alpha * (d * np.vstack(dgrads) / dgrad2).T  # Project
         alpha /= iteration + 1
@@ -773,7 +778,7 @@ def _project_points_back_newton(p, fd, deps, hmin, idx):
             return a
 
         dgrads = [(fd(p[ix] + _deps_vec(i)) - d[ix]) / deps for i in range(dim)]
-        dgrad2 = sum(dgrad ** 2 for dgrad in dgrads)
+        dgrad2 = sum(dgrad**2 for dgrad in dgrads)
         dgrad2 = np.where(dgrad2 < deps, deps, dgrad2)
         p[ix] -= (d[ix] * np.vstack(dgrads) / dgrad2).T  # Project
     return p
@@ -817,7 +822,22 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts, lsf)
     # Remove points outside the region, apply the rejection method
     p = p[fd(p) < geps]  # Keep only d<0 points
     r0 = fh(p)
-    r0m = r0.min()
+    if opts["r0m_is_h0"]:
+        # Ideally, r0m should be h0 <= r0m < r0.min(), if h0<r0.min(),
+        # so try to set r0m = alpha * h0, where alpha is a small adjustment
+        _alpha_2D = 1.1
+        _alpha_3D = 1.1  # not tested
+        if dim == 2 and _alpha_2D * h0 < r0.min():
+            r0m = _alpha_2D * h0
+        elif dim == 3 and _alpha_3D * h0 < r0.min():
+            r0m = _alpha_3D * h0
+            if comm.rank == 0:
+                warnings.warn("Warning: r0m_is_h0 option not test for 3D meshes.")
+        else:
+            r0m = h0
+    else:
+        r0m = r0.min()  # default
+
     # Make sure decimation occurs uniformly accross ranks
     if comm.size > 1:
         r0m = comm.allreduce(r0m, op=MPI.MIN)
@@ -825,7 +845,7 @@ def _generate_initial_points(h0, geps, dim, bbox, fh, fd, pfix, comm, opts, lsf)
     p = np.vstack(
         (
             pfix,
-            p[np.random.rand(p.shape[0]) < r0m ** dim / r0 ** dim],
+            p[np.random.rand(p.shape[0]) < r0m**dim / r0**dim],
         )
     )
     extents = _form_extents(p, h0, comm, opts)
