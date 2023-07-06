@@ -1,5 +1,5 @@
 numpy==1.22.0
-scipy==1.4.1
+scipy==1.10.0
 segyio
 matplotlib
 meshio==4.0.10
